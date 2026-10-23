@@ -1134,6 +1134,16 @@ version = "0.1.0"
 [[package]]
 name = "mh-store"
 version = "0.1.0"
+dependencies = [
+ "mh-core",
+ "mh-platform",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "time",
+ "tracing",
+]
 
 [[package]]
 name = "mh-supervisor"
