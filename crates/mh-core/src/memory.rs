@@ -1,0 +1,125 @@
+//! Giới hạn RAM cho JVM và đề xuất RAM theo máy.
+
+use serde::{Deserialize, Serialize};
+
+use crate::error::InvalidValue;
+
+/// `-Xms` và `-Xmx` của server, tính bằng MB. Luôn có `FLOOR_MB <= min <= max <= CEILING_MB`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(try_from = "RawLimits", into = "RawLimits")]
+pub struct MemoryLimits {
+    min: u32,
+    max: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+struct RawLimits {
+    min: u32,
+    max: u32,
+}
+
+impl MemoryLimits {
+    /// Dưới mức này Paper không khởi động nổi.
+    pub const FLOOR_MB: u32 = 512;
+    /// Chặn số gõ nhầm (thừa vài số 0) trước khi tới JVM.
+    pub const CEILING_MB: u32 = 1024 * 1024;
+
+    pub const fn new(min: u32, max: u32) -> Result<Self, InvalidValue> {
+        if min < Self::FLOOR_MB {
+            return Err(InvalidValue::new("MemoryLimits", "min nhỏ hơn 512 MB"));
+        }
+        if min > max {
+            return Err(InvalidValue::new("MemoryLimits", "min lớn hơn max"));
+        }
+        if max > Self::CEILING_MB {
+            return Err(InvalidValue::new("MemoryLimits", "max lớn quá 1 TB"));
+        }
+        Ok(Self { min, max })
+    }
+
+    pub const fn min_mb(self) -> u32 {
+        self.min
+    }
+
+    pub const fn max_mb(self) -> u32 {
+        self.max
+    }
+}
+
+impl TryFrom<RawLimits> for MemoryLimits {
+    type Error = InvalidValue;
+
+    fn try_from(raw: RawLimits) -> Result<Self, Self::Error> {
+        Self::new(raw.min, raw.max)
+    }
+}
+
+impl From<MemoryLimits> for RawLimits {
+    fn from(m: MemoryLimits) -> Self {
+        Self {
+            min: m.min,
+            max: m.max,
+        }
+    }
+}
+
+/// Đề xuất RAM cho server mới (spec P1, mục 4.3).
+///
+/// `max` = 1/4 RAM máy, làm tròn xuống bội số 512, kẹp trong 1024..=8192; `min` = `min(1024, max)`.
+/// Trên 8 GB Paper ít khi cần thêm cho vài người chơi, còn GC chậm đi khi heap quá lớn.
+pub fn suggest_memory_mb(total_mb: u64) -> MemoryLimits {
+    const STEP: u64 = 512;
+    let quarter = total_mb / 4 / STEP * STEP;
+    // Đã kẹp trong 1024..=8192 nên ép sang u32 không mất dữ liệu.
+    let max = quarter.clamp(1024, 8192) as u32;
+    MemoryLimits {
+        min: max.min(1024),
+        max,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn suggestion_for_common_machines() {
+        let cases = [(4, 1024), (8, 2048), (16, 4096), (32, 8192), (64, 8192)];
+        for (gb, max) in cases {
+            let m = suggest_memory_mb(gb * 1024);
+            assert_eq!((m.min_mb(), m.max_mb()), (1024, max), "{gb} GB");
+        }
+    }
+
+    #[test]
+    fn suggestion_rounds_down_and_clamps_small_machines() {
+        // Máy 12 GB thường báo thiếu vài chục MB vì phần cứng giữ lại.
+        assert_eq!(suggest_memory_mb(12 * 1024 - 100).max_mb(), 2560);
+        assert_eq!(suggest_memory_mb(2048).max_mb(), 1024);
+        assert_eq!(suggest_memory_mb(0).max_mb(), 1024);
+    }
+
+    #[test]
+    fn suggestion_always_passes_validation() {
+        for total in (0..200_000).step_by(997) {
+            let m = suggest_memory_mb(total);
+            assert_eq!(MemoryLimits::new(m.min_mb(), m.max_mb()), Ok(m));
+        }
+    }
+
+    #[test]
+    fn limits_validation() {
+        assert!(MemoryLimits::new(1024, 4096).is_ok());
+        assert!(MemoryLimits::new(512, 512).is_ok());
+        assert!(MemoryLimits::new(511, 4096).is_err());
+        assert!(MemoryLimits::new(4096, 1024).is_err());
+        assert!(MemoryLimits::new(1024, MemoryLimits::CEILING_MB + 1).is_err());
+    }
+
+    #[test]
+    fn limits_serde_rejects_invalid() {
+        let ok: MemoryLimits = serde_json::from_str(r#"{"min":1024,"max":2048}"#).unwrap();
+        assert_eq!(ok.max_mb(), 2048);
+        assert!(serde_json::from_str::<MemoryLimits>(r#"{"min":4096,"max":1024}"#).is_err());
+    }
+}

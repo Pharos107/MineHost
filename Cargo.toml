@@ -37,12 +37,14 @@ serde_json = "1.0.154"
 sysinfo = { version = "0.39.6", default-features = false, features = ["system", "disk"] }
 tempfile = "3.27.0"
 thiserror = "2.0.21"
+time = { version = "0.3.55", features = ["serde", "formatting", "parsing", "macros"] }
 tokio = { version = "1.54.1", features = ["macros", "rt-multi-thread", "net", "signal", "fs", "sync"] }
 toml = "1.1.8"
 tower = { version = "0.5.3", features = ["util"] }
 tracing = "0.1.44"
 tracing-appender = "0.2.5"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+ulid = "3.0.0"
 utoipa = "6.0.0"
 
 [workspace.lints.rust]

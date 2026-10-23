@@ -30,6 +30,16 @@
     "INVALID_INPUT": "Dữ liệu không hợp lệ.",
     "PATH_OUTSIDE_ROOT": "Đường dẫn nằm ngoài thư mục được phép.",
     "PORT_IN_USE": "Cổng {{port}} đang bị chương trình khác dùng.",
-    "CONFIG_INVALID": "File cấu hình không hợp lệ."
+    "CONFIG_INVALID": "File cấu hình không hợp lệ.",
+    "SERVER_BUSY": "Server đang bận, không làm được thao tác này lúc này.",
+    "EULA_NOT_ACCEPTED": "Bạn cần đồng ý EULA của Minecraft trước khi bật server.",
+    "VERSION_NOT_FOUND": "Không tìm thấy phiên bản Minecraft này.",
+    "NETWORK_UNAVAILABLE": "Không kết nối được Internet. Kiểm tra mạng rồi thử lại.",
+    "DOWNLOAD_FAILED": "Tải file bị lỗi giữa chừng. Hãy thử lại.",
+    "CHECKSUM_MISMATCH": "File tải về bị hỏng. Hãy thử lại.",
+    "JAVA_INSTALL_FAILED": "Không cài được Java. Hãy thử lại.",
+    "NOT_ENOUGH_DISK": "Ổ đĩa còn dưới 1 GB trống. Hãy dọn bớt rồi thử lại.",
+    "JOB_CANCELLED": "Đã hủy.",
+    "SERVER_CRASHED": "Server bị dừng đột ngột."
   }
 }

@@ -18,6 +18,21 @@ pub enum ErrorCode {
     PathOutsideRoot,
     PortInUse,
     ConfigInvalid,
+    /// Thao tác không hợp lệ với trạng thái hiện tại của server.
+    ServerBusy,
+    EulaNotAccepted,
+    /// Phiên bản không có trên Mojang hoặc Paper.
+    VersionNotFound,
+    /// Không gọi được API sau khi đã retry.
+    NetworkUnavailable,
+    DownloadFailed,
+    ChecksumMismatch,
+    /// Giải nén hoặc chạy thử Java thất bại.
+    JavaInstallFailed,
+    NotEnoughDisk,
+    JobCancelled,
+    /// Server thoát bất thường; chi tiết nằm trong `hint`.
+    ServerCrashed,
 }
 
 impl ErrorCode {
@@ -30,6 +45,16 @@ impl ErrorCode {
             Self::PathOutsideRoot => "PATH_OUTSIDE_ROOT",
             Self::PortInUse => "PORT_IN_USE",
             Self::ConfigInvalid => "CONFIG_INVALID",
+            Self::ServerBusy => "SERVER_BUSY",
+            Self::EulaNotAccepted => "EULA_NOT_ACCEPTED",
+            Self::VersionNotFound => "VERSION_NOT_FOUND",
+            Self::NetworkUnavailable => "NETWORK_UNAVAILABLE",
+            Self::DownloadFailed => "DOWNLOAD_FAILED",
+            Self::ChecksumMismatch => "CHECKSUM_MISMATCH",
+            Self::JavaInstallFailed => "JAVA_INSTALL_FAILED",
+            Self::NotEnoughDisk => "NOT_ENOUGH_DISK",
+            Self::JobCancelled => "JOB_CANCELLED",
+            Self::ServerCrashed => "SERVER_CRASHED",
         }
     }
 }
@@ -40,17 +65,47 @@ impl fmt::Display for ErrorCode {
     }
 }
 
+/// Giá trị không qua được hàm kiểm tra của một kiểu domain.
+///
+/// `kind` và `reason` là chuỗi tĩnh để log dễ lọc; client chỉ nhận `INVALID_INPUT`.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("{kind} không hợp lệ: {reason}")]
+pub struct InvalidValue {
+    pub kind: &'static str,
+    pub reason: &'static str,
+}
+
+impl InvalidValue {
+    pub(crate) const fn new(kind: &'static str, reason: &'static str) -> Self {
+        Self { kind, reason }
+    }
+
+    pub const fn code(&self) -> ErrorCode {
+        ErrorCode::InvalidInput
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 6] = [
+    const ALL: [ErrorCode; 16] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::InvalidInput,
         ErrorCode::PathOutsideRoot,
         ErrorCode::PortInUse,
         ErrorCode::ConfigInvalid,
+        ErrorCode::ServerBusy,
+        ErrorCode::EulaNotAccepted,
+        ErrorCode::VersionNotFound,
+        ErrorCode::NetworkUnavailable,
+        ErrorCode::DownloadFailed,
+        ErrorCode::ChecksumMismatch,
+        ErrorCode::JavaInstallFailed,
+        ErrorCode::NotEnoughDisk,
+        ErrorCode::JobCancelled,
+        ErrorCode::ServerCrashed,
     ];
 
     #[test]
@@ -67,6 +122,23 @@ mod tests {
             let json = serde_json::to_string(&code).unwrap();
             let back: ErrorCode = serde_json::from_str(&json).unwrap();
             assert_eq!(back, code);
+        }
+    }
+
+    /// Mỗi mã phải có bản dịch, nếu không UI hiện nguyên mã cho người dùng.
+    #[test]
+    fn every_code_has_translations() {
+        let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../../ui/src/i18n");
+        for lang in ["vi", "en"] {
+            let path = format!("{root}/{lang}.json");
+            let text = std::fs::read_to_string(&path).unwrap();
+            let json: serde_json::Value = serde_json::from_str(&text).unwrap();
+            for code in ALL {
+                assert!(
+                    json["errors"][code.as_str()].is_string(),
+                    "{path} thiếu errors.{code}"
+                );
+            }
         }
     }
 }
