@@ -1,3 +1,10 @@
-//! Nguồn server và mod: Mojang, Paper, Fabric, Forge, NeoForge, Modrinth, CurseForge.
+//! Nguồn server: danh sách phiên bản, file cần tải và cách chạy.
 //!
-//! Crate này mới là khung rỗng. Nội dung được viết từ P1, theo spec MineHost v2.
+//! P1 có Mojang (phiên bản và Java cần dùng) và Paper. Fabric, Forge, NeoForge, Modrinth,
+//! CurseForge thêm từ P3.
+
+mod error;
+pub mod mojang;
+
+pub use error::ProviderError;
+pub use mojang::{Mojang, Release, ServerJar, VersionDetail};

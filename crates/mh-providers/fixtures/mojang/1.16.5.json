@@ -1,0 +1,18 @@
+{
+  "id": "1.16.5",
+  "type": "release",
+  "releaseTime": "2021-01-14T16:05:32+00:00",
+  "time": "2021-01-14T16:05:32+00:00",
+  "mainClass": "net.minecraft.client.main.Main",
+  "javaVersion": {
+    "component": "jre-legacy",
+    "majorVersion": 8
+  },
+  "downloads": {
+    "server": {
+      "sha1": "1b557e7b033b583cd9f66746b7a9ab1ec1673ced",
+      "size": 37962360,
+      "url": "https://piston-data.mojang.com/v1/objects/1b557e7b033b583cd9f66746b7a9ab1ec1673ced/server.jar"
+    }
+  }
+}

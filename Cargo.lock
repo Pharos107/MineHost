@@ -1055,6 +1055,19 @@ dependencies = [
 [[package]]
 name = "mh-providers"
 version = "0.1.0"
+dependencies = [
+ "mh-core",
+ "mh-net",
+ "serde",
+ "serde_json",
+ "sha1",
+ "tempfile",
+ "thiserror",
+ "time",
+ "tokio",
+ "tracing",
+ "wiremock",
+]
 
 [[package]]
 name = "mh-runtime"

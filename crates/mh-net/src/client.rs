@@ -7,7 +7,8 @@ use std::time::{Duration, Instant};
 use serde::de::DeserializeOwned;
 use sha2::{Digest, Sha256};
 
-use crate::NetError;
+use crate::download::digest_hex;
+use crate::{Checksum, NetError};
 
 /// PaperMC yêu cầu User-Agent có thông tin liên hệ; thiếu thì có thể bị chặn.
 pub const USER_AGENT: &str = concat!(
@@ -102,21 +103,39 @@ impl HttpClient {
         url: &str,
         ttl: Duration,
     ) -> Result<Fetched<T>, NetError> {
+        self.fetch_json(url, ttl, None).await
+    }
+
+    /// Như `get_json`, thêm kiểm tra hash của thân response (ví dụ `sha1` mà manifest Mojang
+    /// ghi cho JSON của từng phiên bản).
+    pub async fn get_json_checked<T: DeserializeOwned>(
+        &self,
+        url: &str,
+        ttl: Duration,
+        checksum: &Checksum,
+    ) -> Result<Fetched<T>, NetError> {
+        self.fetch_json(url, ttl, Some(checksum)).await
+    }
+
+    async fn fetch_json<T: DeserializeOwned>(
+        &self,
+        url: &str,
+        ttl: Duration,
+        checksum: Option<&Checksum>,
+    ) -> Result<Fetched<T>, NetError> {
+        let fresh = |value| Fetched {
+            value,
+            stale: false,
+        };
         if let Some(body) = self.memory_hit(url, ttl) {
-            return decode(url, &body).map(|value| Fetched {
-                value,
-                stale: false,
-            });
+            return decode(url, &body, checksum).map(fresh);
         }
         let err = match self.fetch_bytes(url).await {
             Ok(body) => {
-                // Giải mã trước khi lưu, để dữ liệu hỏng không bao giờ vào cache.
-                let value = decode(url, &body)?;
+                // Kiểm tra trước khi lưu, để dữ liệu hỏng không bao giờ vào cache.
+                let value = decode(url, &body, checksum)?;
                 self.remember(url, body).await;
-                return Ok(Fetched {
-                    value,
-                    stale: false,
-                });
+                return Ok(fresh(value));
             }
             Err(err) => err,
         };
@@ -127,7 +146,7 @@ impl HttpClient {
             return Err(err);
         };
         tracing::warn!(url, error = %err, "mạng lỗi, dùng bản lưu lần trước");
-        decode(url, &body).map(|value| Fetched { value, stale: true })
+        decode(url, &body, checksum).map(|value| Fetched { value, stale: true })
     }
 
     /// GET có retry khi timeout, lỗi kết nối, 5xx hoặc 429. Chỉ trả response 2xx.
@@ -187,7 +206,21 @@ impl HttpClient {
     }
 }
 
-fn decode<T: DeserializeOwned>(url: &str, body: &[u8]) -> Result<T, NetError> {
+fn decode<T: DeserializeOwned>(
+    url: &str,
+    body: &[u8],
+    checksum: Option<&Checksum>,
+) -> Result<T, NetError> {
+    if let Some(expected) = checksum {
+        let actual = digest_hex(expected, body);
+        if actual != expected.hex() {
+            return Err(NetError::ChecksumMismatch {
+                url: url.to_owned(),
+                expected: expected.hex().to_owned(),
+                actual,
+            });
+        }
+    }
     serde_json::from_slice(body).map_err(|e| {
         tracing::error!(url, error = %e, "JSON từ API không đúng cấu trúc mong đợi");
         NetError::Decode {
