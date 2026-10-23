@@ -1,0 +1,11 @@
+[package]
+name = "mh-store"
+description = "Đọc/ghi instance.toml, chỉ mục SQLite, migration và đối chiếu đĩa với DB."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,11 @@
+[package]
+name = "mh-java"
+description = "Tìm Java có sẵn, chọn phiên bản Java theo bản Minecraft, tải JRE Temurin."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

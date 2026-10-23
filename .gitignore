@@ -1,0 +1,8 @@
+/target
+/dist
+node_modules/
+ui/dist/
+*.log
+.env
+.DS_Store
+/.minehost-dev/
