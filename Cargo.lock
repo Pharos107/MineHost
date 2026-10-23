@@ -1156,6 +1156,17 @@ dependencies = [
 [[package]]
 name = "mh-supervisor"
 version = "0.1.0"
+dependencies = [
+ "mh-core",
+ "mh-runtime",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "time",
+ "tokio",
+ "tracing",
+]
 
 [[package]]
 name = "mime"
