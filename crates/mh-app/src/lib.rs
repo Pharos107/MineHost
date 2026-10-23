@@ -21,11 +21,12 @@ use mh_net::{FreeSpaceFn, HttpClient, NetConfig};
 use mh_platform::{DataDirs, SystemInfo};
 use mh_runtime::ProcessRuntime;
 use mh_store::ServerStore;
-use mh_supervisor::{SupervisorConfig, SupervisorHandle};
+use mh_supervisor::SupervisorConfig;
 
 pub use create::{CreateRequest, Created};
 pub use error::AppError;
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};
+pub use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
 pub use servers::{ServerView, SettingsPatch};
 pub use sources::{CatalogVersion, JavaSource, ServerCatalog};
 
@@ -57,6 +58,12 @@ impl std::fmt::Debug for AppDeps {
     }
 }
 
+/// Sự kiện cấp app cho WebSocket. Chỉ báo "server này đã đổi"; người nghe tự đọc lại `get`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AppEvent {
+    ServerChanged(ServerId),
+}
+
 /// Server đang được Job `create` cài, chưa có `instance.toml`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Installing {
@@ -82,6 +89,7 @@ pub struct App {
     total_memory_mb: u64,
     supervisor_config: SupervisorConfig,
     shutdown: tokio::sync::Notify,
+    events: tokio::sync::broadcast::Sender<AppEvent>,
 }
 
 impl std::fmt::Debug for App {
@@ -125,6 +133,7 @@ impl App {
             total_memory_mb: deps.total_memory_mb,
             supervisor_config: deps.supervisor,
             shutdown: tokio::sync::Notify::new(),
+            events: tokio::sync::broadcast::channel(256).0,
         })
     }
 
@@ -150,6 +159,15 @@ impl App {
         loader: LoaderKind,
     ) -> Result<Vec<CatalogVersion>, AppError> {
         self.catalog.versions(loader).await
+    }
+
+    pub fn subscribe_events(&self) -> tokio::sync::broadcast::Receiver<AppEvent> {
+        self.events.subscribe()
+    }
+
+    pub(crate) fn notify_changed(&self, id: ServerId) {
+        // Không ai nghe thì thôi.
+        let _ = self.events.send(AppEvent::ServerChanged(id));
     }
 
     pub fn lan_addresses(&self) -> Vec<std::net::Ipv4Addr> {

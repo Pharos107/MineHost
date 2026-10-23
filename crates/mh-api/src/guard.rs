@@ -6,6 +6,7 @@
 //!   `X-MineHost: 1` (cho CLI và test). Trình duyệt không cho trang khác tự đặt header này
 //!   mà không qua preflight CORS, mà MineHost không trả lời CORS.
 //! - Body của request thay đổi dữ liệu phải là JSON, để form HTML của trang khác không gửi được.
+//! - WebSocket cũng phải đúng `Origin`, vì trình duyệt không áp dụng same-origin cho WebSocket.
 
 use axum::extract::{Request, State};
 use axum::http::{HeaderMap, Method, StatusCode, header};
@@ -62,16 +63,16 @@ pub async fn check(State(guard): State<LocalGuard>, req: Request, next: Next) ->
         tracing::warn!(host = ?req.headers().get(header::HOST), "chặn request có Host lạ");
         return forbidden("host");
     }
-    if is_mutating(req.method()) {
-        if !guard.origin_ok(req.headers()) {
-            tracing::warn!(origin = ?req.headers().get(header::ORIGIN), "chặn request có Origin lạ");
-            return forbidden("origin");
-        }
-        if has_body(req.headers()) && !is_json(req.headers()) {
-            return ApiError::new(StatusCode::UNSUPPORTED_MEDIA_TYPE, ErrorCode::InvalidInput)
-                .with_params(serde_json::json!({ "field": "content-type" }))
-                .into_response();
-        }
+    let mutating = is_mutating(req.method());
+    // WebSocket là GET nhưng mở kênh hai chiều (gửi được lệnh console), nên cũng phải đúng Origin.
+    if (mutating || is_websocket(req.headers())) && !guard.origin_ok(req.headers()) {
+        tracing::warn!(origin = ?req.headers().get(header::ORIGIN), "chặn request có Origin lạ");
+        return forbidden("origin");
+    }
+    if mutating && has_body(req.headers()) && !is_json(req.headers()) {
+        return ApiError::new(StatusCode::UNSUPPORTED_MEDIA_TYPE, ErrorCode::InvalidInput)
+            .with_params(serde_json::json!({ "field": "content-type" }))
+            .into_response();
     }
     next.run(req).await
 }
@@ -87,6 +88,13 @@ fn is_mutating(method: &Method) -> bool {
         *method,
         Method::POST | Method::PUT | Method::PATCH | Method::DELETE
     )
+}
+
+fn is_websocket(headers: &HeaderMap) -> bool {
+    headers
+        .get(header::UPGRADE)
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| v.eq_ignore_ascii_case("websocket"))
 }
 
 fn has_body(headers: &HeaderMap) -> bool {

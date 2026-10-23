@@ -5,11 +5,11 @@ use std::sync::Arc;
 
 use mh_core::{ErrorCode, GamePort, InstanceSpec, MemoryLimits, ServerId, ServerName, ServerState};
 use mh_store::BrokenReason;
-use mh_supervisor::{Status, SupervisorHandle};
+use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
 use time::OffsetDateTime;
 
 use crate::launcher::{AppLauncher, port_in_use, read_properties, write_eula, write_properties};
-use crate::{App, AppError, Installing, lock};
+use crate::{App, AppError, AppEvent, Installing, lock};
 
 /// Một server như UI thấy: đang cài, hỏng, hoặc đã cài kèm trạng thái chạy.
 #[derive(Debug, Clone)]
@@ -86,6 +86,7 @@ impl App {
             spec.policy.restart_on_crash = restart;
         }
         self.store.save(&spec)?;
+        self.notify_changed(id);
         Ok(spec)
     }
 
@@ -98,6 +99,7 @@ impl App {
             spec.eula.accepted_at = Some(now.replace_nanosecond(0).unwrap_or(now));
             self.store.save(&spec)?;
         }
+        self.notify_changed(id);
         Ok(spec)
     }
 
@@ -128,6 +130,7 @@ impl App {
         }
         lock(&self.supervisors).remove(&id);
         let dest = self.store.trash(id, OffsetDateTime::now_utc())?;
+        self.notify_changed(id);
         tracing::info!(server = %id, dest = %dest.display(), "đã chuyển server vào thùng rác");
         Ok(dest)
     }
@@ -206,7 +209,9 @@ impl App {
                 java: Arc::clone(&self.java),
                 port_free: Arc::clone(&self.port_free),
             };
-            mh_supervisor::spawn(config, Arc::clone(&self.runtime), launcher)
+            let handle = mh_supervisor::spawn(config, Arc::clone(&self.runtime), launcher);
+            forward_status(id, &handle, self.events.clone());
+            handle
         });
         handle.clone()
     }
@@ -267,6 +272,27 @@ impl App {
             status: Some(status),
         }
     }
+}
+
+/// Chuyển mỗi lần supervisor đổi trạng thái thành `AppEvent`. Task tự dừng khi supervisor dừng.
+fn forward_status(
+    id: ServerId,
+    handle: &SupervisorHandle,
+    events: tokio::sync::broadcast::Sender<AppEvent>,
+) {
+    use tokio::sync::broadcast::error::RecvError;
+    let mut rx = handle.subscribe();
+    tokio::spawn(async move {
+        loop {
+            match rx.recv().await {
+                Ok(SupervisorEvent::Status(_)) | Err(RecvError::Lagged(_)) => {
+                    let _ = events.send(AppEvent::ServerChanged(id));
+                }
+                Ok(SupervisorEvent::Console(_)) => {}
+                Err(RecvError::Closed) => break,
+            }
+        }
+    });
 }
 
 fn installing_view(id: ServerId, info: Installing) -> ServerView {
