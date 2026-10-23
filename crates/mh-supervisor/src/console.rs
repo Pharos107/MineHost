@@ -67,6 +67,14 @@ impl Console {
             .collect()
     }
 
+    /// Đóng file log; dòng tiếp theo sẽ mở lại. Gọi khi process thoát, vì Windows không cho
+    /// đổi tên (chuyển vào thùng rác) thư mục server khi còn file mở bên trong.
+    pub(crate) fn close_log(&self) {
+        if let Some(log) = self.lock().log.as_mut() {
+            log.current = None;
+        }
+    }
+
     /// `n` dòng cuối, dùng cho thông tin crash.
     pub fn tail(&self, n: usize) -> Vec<String> {
         let inner = self.lock();
@@ -204,6 +212,27 @@ mod tests {
         let name = log_name(OffsetDateTime::now_utc().date());
         let text = fs::read_to_string(tmp.path().join(name)).unwrap();
         assert_eq!(text, "xin chào\n> say hi\n");
+    }
+
+    #[test]
+    fn closed_log_reopens_on_next_line() {
+        let tmp = tempfile::tempdir().unwrap();
+        let console = Console::new(10, Some(tmp.path().to_path_buf()), 14);
+        console.push(ConsoleStream::Stdout, "một".to_owned());
+        console.close_log();
+        // Không còn file mở: đổi tên thư mục được (trên Windows thì lỗi nếu còn mở).
+        let moved = tmp.path().with_extension("moved");
+        fs::rename(tmp.path(), &moved).unwrap();
+        fs::rename(&moved, tmp.path()).unwrap();
+        console.push(ConsoleStream::Stdout, "hai".to_owned());
+        let name = log_name(OffsetDateTime::now_utc().date());
+        let text = fs::read_to_string(tmp.path().join(name)).unwrap();
+        assert_eq!(
+            text,
+            "một
+hai
+"
+        );
     }
 
     #[test]
