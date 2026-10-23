@@ -245,6 +245,7 @@ impl<L: Launcher> Actor<L> {
                 self.on_line(line);
             }
         }
+        self.console.close_log();
         self.stop_deadline = None;
         self.slow_start_at = None;
         self.status.pid = None;
