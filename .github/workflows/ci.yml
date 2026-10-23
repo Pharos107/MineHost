@@ -1,9 +1,9 @@
 name: CI
 
+# Tạm thời chỉ chạy tay (tab Actions → CI → Run workflow).
+# Khi muốn bật lại tự động, thêm `push: { branches: [main] }` và `pull_request:`.
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
