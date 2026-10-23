@@ -11,7 +11,7 @@ fn test_app() -> (tempfile::TempDir, axum::Router) {
     let tmp = tempfile::tempdir().unwrap();
     let dirs = DataDirs::resolve(Some(tmp.path().to_path_buf())).unwrap();
     dirs.ensure().unwrap();
-    (tmp, crate::router(Arc::new(App::new(dirs))))
+    (tmp, crate::router(Arc::new(App::new(dirs).unwrap())))
 }
 
 async fn get_json(router: axum::Router, uri: &str) -> (StatusCode, serde_json::Value) {

@@ -24,12 +24,21 @@ pub async fn run(dirs: DataDirs, config: Config, allow_browser: bool) -> anyhow:
         tracing::warn!(%err, "không mở được trình duyệt; hãy tự mở {url}");
     }
 
-    let router = mh_api::router(Arc::new(App::new(dirs)));
+    let app = Arc::new(App::new(dirs).context("không khởi tạo được MineHost")?);
+    match app.reconcile().await {
+        Ok(0) => {}
+        Ok(n) => tracing::info!(n, "đã bật lại các server đang chạy lần trước"),
+        Err(err) => tracing::error!(%err, "không đọc được danh sách server"),
+    }
+    let router = mh_api::router(Arc::clone(&app));
     axum::serve(listener, router)
         .with_graceful_shutdown(shutdown_signal())
         .await
         .context("máy chủ web dừng bất thường")?;
 
+    // Tắt an toàn mọi server trước khi thoát; PR-15 sẽ thêm nút "Thoát" và khay đi chung đường này.
+    app.shutdown_all(|done, total| tracing::info!(done, total, "đang tắt các server"))
+        .await;
     tracing::info!("MineHost đã tắt");
     Ok(())
 }

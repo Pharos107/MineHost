@@ -50,6 +50,18 @@ pub fn probe(data_dir: &Path) -> SystemInfo {
     }
 }
 
+/// Số byte còn trống trên ổ chứa `path`; `None` nếu không tìm được ổ.
+pub fn free_space(path: &Path) -> Option<u64> {
+    disk_for(path).map(|disk| disk.available_bytes)
+}
+
+/// Tổng RAM của máy, rẻ hơn `probe` vì không đọc CPU và ổ đĩa.
+pub fn total_memory_bytes() -> u64 {
+    let mut sys = System::new();
+    sys.refresh_memory();
+    sys.total_memory()
+}
+
 /// Chọn ổ có điểm gắn dài nhất mà vẫn là tiền tố của `path`.
 fn disk_for(path: &Path) -> Option<DiskSpace> {
     let disks = Disks::new_with_refreshed_list();
@@ -78,5 +90,12 @@ mod tests {
         assert!(info.memory_total_bytes > 0);
         assert!(info.memory_available_bytes <= info.memory_total_bytes);
         assert_eq!(info.os, std::env::consts::OS);
+    }
+
+    #[test]
+    fn free_space_and_memory_are_known_for_current_dir() {
+        let dir = std::env::current_dir().unwrap();
+        assert!(free_space(&dir).is_some_and(|b| b > 0));
+        assert!(total_memory_bytes() > 0);
     }
 }
