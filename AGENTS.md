@@ -6,7 +6,12 @@ Windows và Linux, chạy server **trực tiếp bằng Java là mặc định**
 Spec đầy đủ: tài liệu "MineHost v2 — Spec kiến trúc (Rust)" trên Claude
 (https://claude.ai/artifact/Np2aG7LQ2r5SpNcuefRyEw). File này tóm những gì phải tuân theo khi code.
 
-## Giai đoạn hiện tại: P0 — Nền móng
+## Giai đoạn hiện tại: P1 — Một server chạy được
+
+- Spec: [docs/specs/p1-mot-server-chay-duoc.md](docs/specs/p1-mot-server-chay-duoc.md)
+- Kế hoạch 17 PR và thứ tự phụ thuộc: [docs/specs/p1-ke-hoach-pr.md](docs/specs/p1-ke-hoach-pr.md)
+- Quyết định riêng của P1: chưa dùng SQLite; chỉ dùng Java do MineHost tải; icon khay chỉ có trên
+  Windows; xóa server là chuyển vào `trash/`.
 
 Chỉ làm việc thuộc giai đoạn hiện tại. Ý tưởng ngoài phạm vi ghi vào backlog, không code.
 
