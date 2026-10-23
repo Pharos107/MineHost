@@ -1,0 +1,185 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MineHost API",
+    "description": "API của controller MineHost.",
+    "license": {
+      "name": "UNLICENSED",
+      "identifier": "UNLICENSED"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "Controller đang chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "operationId": "system_info",
+        "responses": {
+          "200": {
+            "description": "RAM, CPU và ổ đĩa của máy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Lỗi nội bộ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DiskDto": {
+        "type": "object",
+        "required": [
+          "mount_point",
+          "total_bytes",
+          "available_bytes"
+        ],
+        "properties": {
+          "available_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "mount_point": {
+            "type": "string"
+          },
+          "total_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "ErrorBody": {
+        "type": "object",
+        "description": "Thân response khi có lỗi. Frontend dịch theo `code`; backend không gửi câu chữ đã dịch.",
+        "required": [
+          "code",
+          "params"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Một giá trị của `ErrorCode`, ví dụ `NOT_FOUND`."
+          },
+          "params": {
+            "type": "object",
+            "description": "Tham số để ghép vào bản dịch, ví dụ `{ \"port\": 25565 }`."
+          }
+        }
+      },
+      "Health": {
+        "type": "object",
+        "required": [
+          "status",
+          "version"
+        ],
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "SystemDto": {
+        "type": "object",
+        "description": "Thông tin máy gửi cho UI. Tách khỏi `mh_platform::SystemInfo` để thay đổi bên trong\nkhông vô tình làm đổi API.",
+        "required": [
+          "version",
+          "os",
+          "arch",
+          "cpu_brand",
+          "cpu_threads",
+          "memory_total_bytes",
+          "memory_available_bytes",
+          "data_dir"
+        ],
+        "properties": {
+          "arch": {
+            "type": "string"
+          },
+          "cpu_brand": {
+            "type": "string"
+          },
+          "cpu_threads": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "data_dir": {
+            "type": "string"
+          },
+          "data_disk": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DiskDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "memory_available_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "memory_total_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "os": {
+            "type": "string"
+          },
+          "os_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

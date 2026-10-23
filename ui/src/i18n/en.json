@@ -1,0 +1,35 @@
+{
+  "app": {
+    "tagline": "Host a Minecraft server for your friends, no command line needed.",
+    "language": "Language"
+  },
+  "language": {
+    "vi": "Tiếng Việt",
+    "en": "English"
+  },
+  "common": {
+    "retry": "Try again"
+  },
+  "system": {
+    "heading": "Your computer",
+    "loading": "Reading system information…",
+    "os": "Operating system",
+    "cpu": "CPU",
+    "cpuValue": "{{brand}}, {{threads}} threads",
+    "memory": "RAM",
+    "disk": "Data disk",
+    "freeOfTotal": "{{free}} free of {{total}}",
+    "unknown": "Unknown",
+    "dataDir": "Data folder",
+    "version": "MineHost version"
+  },
+  "errors": {
+    "INTERNAL": "Something went wrong. See the MineHost log file for details.",
+    "NETWORK": "Cannot reach MineHost. Check that MineHost is still running.",
+    "NOT_FOUND": "Not found.",
+    "INVALID_INPUT": "Invalid input.",
+    "PATH_OUTSIDE_ROOT": "The path is outside the allowed folder.",
+    "PORT_IN_USE": "Port {{port}} is used by another program.",
+    "CONFIG_INVALID": "The configuration file is invalid."
+  }
+}
