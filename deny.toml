@@ -24,6 +24,12 @@ allow = [
 ]
 confidence-threshold = 0.9
 
+# Kho chứng chỉ gốc của Mozilla mà rustls dùng khi không đọc được kho của OS. CDLA-Permissive-2.0
+# là giấy phép dữ liệu cho dùng và phân phối tự do; chỉ mở cho đúng crate này.
+[[licenses.exceptions]]
+crate = "webpki-root-certs"
+allow = ["CDLA-Permissive-2.0"]
+
 [licenses.private]
 ignore = true
 
