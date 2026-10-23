@@ -68,10 +68,29 @@ async fn vietnamese_survives_the_pipe() {
 #[tokio::test]
 async fn stderr_is_merged_and_tagged() {
     let rt = ProcessRuntime::new().unwrap();
-    let mut proc = rt.spawn(fake_mc(&["--no-done"])).await.unwrap();
-    let lines = read_until(&mut proc, "ra stderr").await;
-    assert_eq!(lines.last().unwrap().stream, ConsoleStream::Stderr);
-    assert!(lines.iter().any(|l| l.stream == ConsoleStream::Stdout));
+    let mut proc = rt.spawn(fake_mc(&[])).await.unwrap();
+    // Hai pipe riêng nên thứ tự giữa stdout và stderr không cố định; chỉ kiểm tra đủ cả hai.
+    let mut lines = Vec::new();
+    while !(lines
+        .iter()
+        .any(|l: &OutputLine| l.text.contains("ra stderr"))
+        && lines.iter().any(|l| l.text.contains("Done (")))
+    {
+        let line = tokio::time::timeout(WAIT, proc.output.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        lines.push(line);
+    }
+    let tag = |needle: &str| {
+        lines
+            .iter()
+            .find(|l| l.text.contains(needle))
+            .unwrap()
+            .stream
+    };
+    assert_eq!(tag("ra stderr"), ConsoleStream::Stderr);
+    assert_eq!(tag("Done ("), ConsoleStream::Stdout);
     proc.control.kill();
 }
 
