@@ -40,6 +40,7 @@
     "JAVA_INSTALL_FAILED": "Could not install Java. Please try again.",
     "NOT_ENOUGH_DISK": "Less than 1 GB of disk space is free. Free up some space and try again.",
     "JOB_CANCELLED": "Cancelled.",
-    "SERVER_CRASHED": "The server stopped unexpectedly."
+    "SERVER_CRASHED": "The server stopped unexpectedly.",
+    "FORBIDDEN": "The request was refused because it did not come from the MineHost page on this computer."
   }
 }

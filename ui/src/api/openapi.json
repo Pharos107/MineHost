@@ -10,6 +10,51 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/v1/app/shutdown": {
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "operationId": "shutdown",
+        "responses": {
+          "202": {
+            "description": "MineHost đang tắt an toàn mọi server rồi thoát"
+          }
+        }
+      }
+    },
+    "/api/v1/catalog/paper/versions": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "operationId": "paper_versions",
+        "responses": {
+          "200": {
+            "description": "Bản release Paper có build STABLE, mới nhất trước",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CatalogVersionDto"
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health": {
       "get": {
         "tags": [
@@ -23,6 +68,536 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{id}": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{id}/cancel": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "operationId": "cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Đã yêu cầu hủy"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers": {
+      "get": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServerDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateServerBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Job cài server đã chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}": {
+      "get": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "trash",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "confirm_name",
+            "in": "path",
+            "description": "Tên server người dùng gõ lại để xác nhận.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrashedDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchServerBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/actions/{action}": {
+      "post": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "action",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "in": "path",
+            "description": "start, stop, restart, kill",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Đã nhận lệnh"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/console": {
+      "get": {
+        "tags": [
+          "console"
+        ],
+        "operationId": "console",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "after_seq",
+            "in": "path",
+            "description": "Chỉ lấy các dòng có `seq` lớn hơn giá trị này.",
+            "required": true,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int64",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsoleDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "console"
+        ],
+        "operationId": "send_command",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommandBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Đã gửi lệnh"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/eula": {
+      "post": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "eula",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EulaBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/properties": {
+      "get": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "get_properties",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertiesDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "put_properties",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PropertiesDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Đã lưu"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -63,6 +638,160 @@
   },
   "components": {
     "schemas": {
+      "CatalogVersionDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "release_time"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "java_major": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Chưa có ở P1: biết được bản Java phải tải JSON của từng phiên bản.",
+            "minimum": 0
+          },
+          "release_time": {
+            "type": "string",
+            "description": "RFC 3339."
+          }
+        }
+      },
+      "CommandBody": {
+        "type": "object",
+        "required": [
+          "command"
+        ],
+        "properties": {
+          "command": {
+            "type": "string"
+          }
+        }
+      },
+      "ConsoleDto": {
+        "type": "object",
+        "required": [
+          "lines"
+        ],
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsoleLineDto"
+            }
+          }
+        }
+      },
+      "ConsoleLineDto": {
+        "type": "object",
+        "required": [
+          "seq",
+          "stream",
+          "text"
+        ],
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "stream": {
+            "$ref": "#/components/schemas/StreamDto"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "CrashDto": {
+        "type": "object",
+        "required": [
+          "last_lines"
+        ],
+        "properties": {
+          "exit_code": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "hint": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Ví dụ `NOT_ENOUGH_MEMORY`; không có nếu không đoán được nguyên nhân."
+          },
+          "last_lines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CreateServerBody": {
+        "type": "object",
+        "required": [
+          "name",
+          "loader",
+          "minecraft"
+        ],
+        "properties": {
+          "loader": {
+            "type": "string",
+            "description": "P1 chỉ có `paper`."
+          },
+          "memory_mb": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MemoryDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "minecraft": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "port": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "CreatedDto": {
+        "type": "object",
+        "required": [
+          "server_id",
+          "job_id"
+        ],
+        "properties": {
+          "job_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "server_id": {
+            "type": "string"
+          }
+        }
+      },
       "DiskDto": {
         "type": "object",
         "required": [
@@ -104,6 +833,18 @@
           }
         }
       },
+      "EulaBody": {
+        "type": "object",
+        "required": [
+          "accept"
+        ],
+        "properties": {
+          "accept": {
+            "type": "boolean",
+            "description": "Phải là `true`: người dùng bấm \"Tôi đồng ý\"."
+          }
+        }
+      },
       "Health": {
         "type": "object",
         "required": [
@@ -119,6 +860,349 @@
           }
         }
       },
+      "JobDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "state"
+        ],
+        "properties": {
+          "error": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody",
+                "description": "Có khi `state` là `failed`."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "kind": {
+            "type": "string",
+            "description": "Ví dụ `create_server`."
+          },
+          "progress": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ProgressDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "server_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "$ref": "#/components/schemas/JobStateDto"
+          }
+        }
+      },
+      "JobStateDto": {
+        "type": "string",
+        "enum": [
+          "running",
+          "succeeded",
+          "failed",
+          "cancelled"
+        ]
+      },
+      "MemoryDto": {
+        "type": "object",
+        "required": [
+          "min",
+          "max"
+        ],
+        "properties": {
+          "max": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "min": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "PatchServerBody": {
+        "type": "object",
+        "properties": {
+          "autostart": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "memory_mb": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MemoryDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "port": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "restart_on_crash": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
+      "ProgressDto": {
+        "type": "object",
+        "required": [
+          "step",
+          "step_index",
+          "step_count"
+        ],
+        "properties": {
+          "bytes_done": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "bytes_total": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "step": {
+            "type": "object",
+            "description": "Bước đang làm, ví dụ `{ \"kind\": \"download_java\", \"major\": 21 }`."
+          },
+          "step_count": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "step_index": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "PropertiesDto": {
+        "type": "object",
+        "required": [
+          "properties"
+        ],
+        "properties": {
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PropertyDto"
+            },
+            "description": "Theo thứ tự trong file."
+          }
+        }
+      },
+      "PropertyDto": {
+        "type": "object",
+        "required": [
+          "key",
+          "value"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "ServerDto": {
+        "type": "object",
+        "description": "Một server trong danh sách. Server đang cài hoặc bị hỏng chỉ có một phần thông tin.",
+        "required": [
+          "id",
+          "state",
+          "eula_accepted",
+          "slow_start",
+          "restart_pending"
+        ],
+        "properties": {
+          "autostart": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "broken": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Lý do server hỏng, ví dụ `{ \"kind\": \"newer_schema\", \"found\": 2 }`."
+          },
+          "build": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "crash": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CrashDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "RFC 3339."
+          },
+          "eula_accepted": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "java_major": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "job_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Job đang cài server này.",
+            "minimum": 0
+          },
+          "loader": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "memory_mb": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MemoryDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "minecraft": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pid": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "port": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "restart_on_crash": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "restart_pending": {
+            "type": "boolean",
+            "description": "Đang chờ tự khởi động lại sau crash."
+          },
+          "slow_start": {
+            "type": "boolean",
+            "description": "Đã quá 5 phút mà server chưa sẵn sàng."
+          },
+          "state": {
+            "$ref": "#/components/schemas/StateDto"
+          }
+        }
+      },
+      "StateDto": {
+        "type": "string",
+        "enum": [
+          "installing",
+          "stopped",
+          "starting",
+          "running",
+          "stopping",
+          "crashed",
+          "broken"
+        ]
+      },
+      "StreamDto": {
+        "type": "string",
+        "enum": [
+          "stdout",
+          "stderr",
+          "stdin"
+        ]
+      },
       "SystemDto": {
         "type": "object",
         "description": "Thông tin máy gửi cho UI. Tách khỏi `mh_platform::SystemInfo` để thay đổi bên trong\nkhông vô tình làm đổi API.",
@@ -130,7 +1214,9 @@
           "cpu_threads",
           "memory_total_bytes",
           "memory_available_bytes",
-          "data_dir"
+          "data_dir",
+          "suggested_memory_mb",
+          "lan_addresses"
         ],
         "properties": {
           "arch": {
@@ -156,6 +1242,13 @@
               }
             ]
           },
+          "lan_addresses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Địa chỉ IPv4 trong mạng LAN, để bạn bè vào chơi."
+          },
           "memory_available_bytes": {
             "type": "integer",
             "format": "int64",
@@ -175,8 +1268,24 @@
               "null"
             ]
           },
+          "suggested_memory_mb": {
+            "$ref": "#/components/schemas/MemoryDto",
+            "description": "RAM đề xuất cho server mới (spec P1, mục 4.3)."
+          },
           "version": {
             "type": "string"
+          }
+        }
+      },
+      "TrashedDto": {
+        "type": "object",
+        "required": [
+          "trash_path"
+        ],
+        "properties": {
+          "trash_path": {
+            "type": "string",
+            "description": "Thư mục trong thùng rác, để người dùng tự lấy lại."
           }
         }
       }

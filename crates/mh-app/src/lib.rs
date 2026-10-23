@@ -81,6 +81,7 @@ pub struct App {
     free_space: FreeSpaceFn,
     total_memory_mb: u64,
     supervisor_config: SupervisorConfig,
+    shutdown: tokio::sync::Notify,
 }
 
 impl std::fmt::Debug for App {
@@ -123,6 +124,7 @@ impl App {
             free_space: deps.free_space,
             total_memory_mb: deps.total_memory_mb,
             supervisor_config: deps.supervisor,
+            shutdown: tokio::sync::Notify::new(),
         })
     }
 
@@ -148,6 +150,20 @@ impl App {
         loader: LoaderKind,
     ) -> Result<Vec<CatalogVersion>, AppError> {
         self.catalog.versions(loader).await
+    }
+
+    pub fn lan_addresses(&self) -> Vec<std::net::Ipv4Addr> {
+        mh_platform::system::lan_ipv4()
+    }
+
+    /// Nút "Thoát" trong UI: báo cho binary dừng web server rồi gọi `shutdown_all`.
+    pub fn request_shutdown(&self) {
+        // `notify_one` giữ lại tín hiệu nếu chưa ai chờ, nên không bị mất.
+        self.shutdown.notify_one();
+    }
+
+    pub async fn shutdown_requested(&self) {
+        self.shutdown.notified().await;
     }
 
     /// Thời gian chờ một server dừng khi thoát MineHost: hạn `stop` cộng thêm một chút.

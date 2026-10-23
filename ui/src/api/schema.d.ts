@@ -4,6 +4,38 @@
  */
 
 export interface paths {
+    "/api/v1/app/shutdown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["shutdown"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/paper/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["paper_versions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -13,6 +45,134 @@ export interface paths {
         };
         get: operations["health"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jobs/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put?: never;
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get"];
+        put?: never;
+        post?: never;
+        delete: operations["trash"];
+        options?: never;
+        head?: never;
+        patch: operations["patch"];
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/actions/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["action"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/console": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["console"];
+        put?: never;
+        post: operations["send_command"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/eula": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["eula"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/properties": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_properties"];
+        put: operations["put_properties"];
         post?: never;
         delete?: never;
         options?: never;
@@ -40,6 +200,49 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        CatalogVersionDto: {
+            id: string;
+            /**
+             * Format: int32
+             * @description Chưa có ở P1: biết được bản Java phải tải JSON của từng phiên bản.
+             */
+            java_major?: number | null;
+            /** @description RFC 3339. */
+            release_time: string;
+        };
+        CommandBody: {
+            command: string;
+        };
+        ConsoleDto: {
+            lines: components["schemas"]["ConsoleLineDto"][];
+        };
+        ConsoleLineDto: {
+            /** Format: int64 */
+            seq: number;
+            stream: components["schemas"]["StreamDto"];
+            text: string;
+        };
+        CrashDto: {
+            /** Format: int32 */
+            exit_code?: number | null;
+            /** @description Ví dụ `NOT_ENOUGH_MEMORY`; không có nếu không đoán được nguyên nhân. */
+            hint?: string | null;
+            last_lines: string[];
+        };
+        CreateServerBody: {
+            /** @description P1 chỉ có `paper`. */
+            loader: string;
+            memory_mb?: components["schemas"]["MemoryDto"] | null;
+            minecraft: string;
+            name: string;
+            /** Format: int32 */
+            port?: number | null;
+        };
+        CreatedDto: {
+            /** Format: int64 */
+            job_id: number;
+            server_id: string;
+        };
         DiskDto: {
             /** Format: int64 */
             available_bytes: number;
@@ -54,10 +257,98 @@ export interface components {
             /** @description Tham số để ghép vào bản dịch, ví dụ `{ "port": 25565 }`. */
             params: Record<string, never>;
         };
+        EulaBody: {
+            /** @description Phải là `true`: người dùng bấm "Tôi đồng ý". */
+            accept: boolean;
+        };
         Health: {
             status: string;
             version: string;
         };
+        JobDto: {
+            error?: components["schemas"]["ErrorBody"] | null;
+            /** Format: int64 */
+            id: number;
+            /** @description Ví dụ `create_server`. */
+            kind: string;
+            progress?: components["schemas"]["ProgressDto"] | null;
+            server_id?: string | null;
+            state: components["schemas"]["JobStateDto"];
+        };
+        /** @enum {string} */
+        JobStateDto: "running" | "succeeded" | "failed" | "cancelled";
+        MemoryDto: {
+            /** Format: int32 */
+            max: number;
+            /** Format: int32 */
+            min: number;
+        };
+        PatchServerBody: {
+            autostart?: boolean | null;
+            memory_mb?: components["schemas"]["MemoryDto"] | null;
+            name?: string | null;
+            /** Format: int32 */
+            port?: number | null;
+            restart_on_crash?: boolean | null;
+        };
+        ProgressDto: {
+            /** Format: int64 */
+            bytes_done?: number | null;
+            /** Format: int64 */
+            bytes_total?: number | null;
+            /** @description Bước đang làm, ví dụ `{ "kind": "download_java", "major": 21 }`. */
+            step: Record<string, never>;
+            /** Format: int32 */
+            step_count: number;
+            /** Format: int32 */
+            step_index: number;
+        };
+        PropertiesDto: {
+            /** @description Theo thứ tự trong file. */
+            properties: components["schemas"]["PropertyDto"][];
+        };
+        PropertyDto: {
+            key: string;
+            value: string;
+        };
+        /** @description Một server trong danh sách. Server đang cài hoặc bị hỏng chỉ có một phần thông tin. */
+        ServerDto: {
+            autostart?: boolean | null;
+            /** @description Lý do server hỏng, ví dụ `{ "kind": "newer_schema", "found": 2 }`. */
+            broken?: Record<string, never> | null;
+            /** Format: int32 */
+            build?: number | null;
+            crash?: components["schemas"]["CrashDto"] | null;
+            /** @description RFC 3339. */
+            created_at?: string | null;
+            eula_accepted: boolean;
+            id: string;
+            /** Format: int32 */
+            java_major?: number | null;
+            /**
+             * Format: int64
+             * @description Job đang cài server này.
+             */
+            job_id?: number | null;
+            loader?: string | null;
+            memory_mb?: components["schemas"]["MemoryDto"] | null;
+            minecraft?: string | null;
+            name?: string | null;
+            /** Format: int32 */
+            pid?: number | null;
+            /** Format: int32 */
+            port?: number | null;
+            restart_on_crash?: boolean | null;
+            /** @description Đang chờ tự khởi động lại sau crash. */
+            restart_pending: boolean;
+            /** @description Đã quá 5 phút mà server chưa sẵn sàng. */
+            slow_start: boolean;
+            state: components["schemas"]["StateDto"];
+        };
+        /** @enum {string} */
+        StateDto: "installing" | "stopped" | "starting" | "running" | "stopping" | "crashed" | "broken";
+        /** @enum {string} */
+        StreamDto: "stdout" | "stderr" | "stdin";
         /**
          * @description Thông tin máy gửi cho UI. Tách khỏi `mh_platform::SystemInfo` để thay đổi bên trong
          *     không vô tình làm đổi API.
@@ -68,13 +359,21 @@ export interface components {
             cpu_threads: number;
             data_dir: string;
             data_disk?: components["schemas"]["DiskDto"] | null;
+            /** @description Địa chỉ IPv4 trong mạng LAN, để bạn bè vào chơi. */
+            lan_addresses: string[];
             /** Format: int64 */
             memory_available_bytes: number;
             /** Format: int64 */
             memory_total_bytes: number;
             os: string;
             os_version?: string | null;
+            /** @description RAM đề xuất cho server mới (spec P1, mục 4.3). */
+            suggested_memory_mb: components["schemas"]["MemoryDto"];
             version: string;
+        };
+        TrashedDto: {
+            /** @description Thư mục trong thùng rác, để người dùng tự lấy lại. */
+            trash_path: string;
         };
     };
     responses: never;
@@ -85,6 +384,52 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    shutdown: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description MineHost đang tắt an toàn mọi server rồi thoát */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    paper_versions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bản release Paper có build STABLE, mới nhất trước */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogVersionDto"][];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     health: {
         parameters: {
             query?: never;
@@ -101,6 +446,402 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã yêu cầu hủy */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerDto"][];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateServerBody"];
+            };
+        };
+        responses: {
+            /** @description Job cài server đã chạy */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    trash: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Tên server người dùng gõ lại để xác nhận. */
+                confirm_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashedDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchServerBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    action: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description start, stop, restart, kill */
+                action: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã nhận lệnh */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    console: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Chỉ lấy các dòng có `seq` lớn hơn giá trị này. */
+                after_seq: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsoleDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    send_command: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommandBody"];
+            };
+        };
+        responses: {
+            /** @description Đã gửi lệnh */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    eula: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EulaBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    get_properties: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PropertiesDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    put_properties: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PropertiesDto"];
+            };
+        };
+        responses: {
+            /** @description Đã lưu */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
         };

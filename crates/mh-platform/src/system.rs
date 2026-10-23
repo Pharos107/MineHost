@@ -62,6 +62,26 @@ pub fn total_memory_bytes() -> u64 {
     sys.total_memory()
 }
 
+/// Địa chỉ IPv4 trong mạng LAN của máy, để bạn bè vào chơi.
+///
+/// Mở một socket UDP "kết nối" tới một địa chỉ ngoài để OS chọn card mạng mặc định; UDP
+/// không gửi gói tin nào khi `connect`, nên hàm này chạy được cả khi không có Internet.
+pub fn lan_ipv4() -> Vec<std::net::Ipv4Addr> {
+    let probe = || -> std::io::Result<std::net::SocketAddr> {
+        let socket = std::net::UdpSocket::bind(("0.0.0.0", 0))?;
+        socket.connect(("10.255.255.255", 9))?;
+        socket.local_addr()
+    };
+    match probe() {
+        Ok(std::net::SocketAddr::V4(addr))
+            if !addr.ip().is_loopback() && !addr.ip().is_unspecified() =>
+        {
+            vec![*addr.ip()]
+        }
+        _ => Vec::new(),
+    }
+}
+
 /// Chọn ổ có điểm gắn dài nhất mà vẫn là tiền tố của `path`.
 fn disk_for(path: &Path) -> Option<DiskSpace> {
     let disks = Disks::new_with_refreshed_list();

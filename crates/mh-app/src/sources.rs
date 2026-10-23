@@ -6,12 +6,18 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use mh_core::{ErrorCode, LoaderKind, McVersion};
-use mh_java::{JavaManager, JavaRuntime};
-use mh_net::{CancellationToken, Download, HttpClient};
-use mh_providers::{Mojang, Paper, ServerJar};
+use mh_java::JavaManager;
+use mh_net::{Download, HttpClient};
+use mh_providers::{Mojang, Paper};
 use time::OffsetDateTime;
 
 use crate::AppError;
+
+// Kiểu cần để tự cài `ServerCatalog`/`JavaSource` (ví dụ trong test) mà không phụ thuộc thẳng
+// các crate tầng dưới.
+pub use mh_java::JavaRuntime;
+pub use mh_net::{CancellationToken, Checksum};
+pub use mh_providers::ServerJar;
 
 pub type BoxFut<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 pub type ProgressFn<'a> = &'a mut (dyn FnMut(u64, Option<u64>) + Send);

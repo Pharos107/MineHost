@@ -33,6 +33,8 @@ pub enum ErrorCode {
     JobCancelled,
     /// Server thoát bất thường; chi tiết nằm trong `hint`.
     ServerCrashed,
+    /// Request không đến từ giao diện MineHost trên máy này (sai Host hoặc Origin).
+    Forbidden,
 }
 
 impl ErrorCode {
@@ -55,6 +57,7 @@ impl ErrorCode {
             Self::NotEnoughDisk => "NOT_ENOUGH_DISK",
             Self::JobCancelled => "JOB_CANCELLED",
             Self::ServerCrashed => "SERVER_CRASHED",
+            Self::Forbidden => "FORBIDDEN",
         }
     }
 }
@@ -89,7 +92,7 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 16] = [
+    const ALL: [ErrorCode; 17] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::InvalidInput,
@@ -106,6 +109,7 @@ mod tests {
         ErrorCode::NotEnoughDisk,
         ErrorCode::JobCancelled,
         ErrorCode::ServerCrashed,
+        ErrorCode::Forbidden,
     ];
 
     #[test]
