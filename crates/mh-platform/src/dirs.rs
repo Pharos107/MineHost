@@ -35,6 +35,7 @@ impl DataDirs {
             self.java(),
             self.cache(),
             self.backups(),
+            self.trash(),
         ] {
             fs::create_dir_all(&dir).map_err(|e| PlatformError::io(&dir, e))?;
         }
@@ -68,6 +69,11 @@ impl DataDirs {
     pub fn backups(&self) -> PathBuf {
         self.root.join("backups")
     }
+
+    /// Server bị xóa được chuyển vào đây, vì chưa có backup thì không được xóa vĩnh viễn.
+    pub fn trash(&self) -> PathBuf {
+        self.root.join("trash")
+    }
 }
 
 fn default_root() -> Result<PathBuf, PlatformError> {
@@ -91,6 +97,7 @@ mod tests {
             dirs.java(),
             dirs.cache(),
             dirs.backups(),
+            dirs.trash(),
         ] {
             assert!(dir.is_dir(), "thiếu thư mục {}", dir.display());
         }
