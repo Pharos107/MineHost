@@ -1039,7 +1039,21 @@ dependencies = [
 name = "mh-app"
 version = "0.1.0"
 dependencies = [
+ "mh-core",
+ "mh-java",
+ "mh-net",
  "mh-platform",
+ "mh-providers",
+ "mh-runtime",
+ "mh-store",
+ "mh-supervisor",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "time",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

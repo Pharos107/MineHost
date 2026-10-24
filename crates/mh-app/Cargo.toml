@@ -8,7 +8,31 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+mh-core.workspace = true
+mh-java.workspace = true
+mh-net.workspace = true
 mh-platform.workspace = true
+mh-providers.workspace = true
+mh-runtime.workspace = true
+mh-store.workspace = true
+mh-supervisor.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+time.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+
+# Cùng mã nguồn với `fake-mc` của mh-runtime; test dùng nó thay cho Java.
+[[bin]]
+name = "app-fake-mc"
+path = "../mh-runtime/src/bin/fake-mc.rs"
+test = false
+doc = false
 
 [lints]
 workspace = true
