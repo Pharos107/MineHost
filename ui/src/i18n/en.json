@@ -24,7 +24,13 @@
     "version": "MineHost version"
   },
   "ui": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyFailed": "Couldn't copy. Select the text and copy it manually.",
     "recommended": "Recommended: {{value}}",
+    "typeToConfirm": "Type “{{text}}” to confirm",
     "stepOf": "Step {{current}} of {{total}}"
   },
   "serverState": {

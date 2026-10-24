@@ -24,7 +24,13 @@
     "version": "Phiên bản MineHost"
   },
   "ui": {
+    "close": "Đóng",
+    "cancel": "Hủy",
+    "copy": "Chép",
+    "copied": "Đã chép",
+    "copyFailed": "Không chép được, hãy bôi đen rồi chép tay.",
     "recommended": "Đề xuất: {{value}}",
+    "typeToConfirm": "Gõ “{{text}}” để xác nhận",
     "stepOf": "Bước {{current}} trên {{total}}"
   },
   "serverState": {
