@@ -48,6 +48,8 @@ async function request<T>(method: "GET" | "POST", path: string, body?: unknown):
     const error = (await response.json().catch(() => null)) as ErrorBody | null;
     throw new ApiError(error?.code ?? "INTERNAL", error?.params ?? {}, response.status);
   }
+  // 204: thao tác thành công, không có thân response.
+  if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
 
@@ -58,6 +60,7 @@ export const api = {
   createServer: (body: CreateServer) => request<Created>("POST", "/servers", body),
   paperVersions: () => request<CatalogVersion[]>("GET", "/catalog/paper/versions"),
   job: (id: number) => request<Job>("GET", `/jobs/${id}`),
+  cancelJob: (id: number) => request<void>("POST", `/jobs/${id}/cancel`),
 };
 
 /** Câu thông báo đã dịch cho một lỗi bất kỳ. */

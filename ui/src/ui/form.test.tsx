@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { Field, ProgressBar, Slider, Steps, Switch, TextInput } from ".";
+import { ChoiceGroup, Field, ProgressBar, Slider, Steps, Switch, TextInput } from ".";
 
 describe("Field", () => {
   it("nối nhãn, gợi ý và lỗi vào ô nhập", () => {
@@ -75,5 +75,29 @@ describe("ProgressBar", () => {
   it("không có value thì là thanh vô định, không có aria-valuenow", () => {
     render(<ProgressBar label="Chuẩn bị file" />);
     expect(screen.getByRole("progressbar").hasAttribute("aria-valuenow")).toBe(false);
+  });
+});
+
+describe("ChoiceGroup", () => {
+  it("là nhóm radio có tên, lựa chọn bị khóa thì không chọn được", async () => {
+    const onChange = vi.fn();
+    render(
+      <ChoiceGroup
+        label="Loại server"
+        value="paper"
+        onChange={onChange}
+        options={[
+          { value: "paper", label: "Paper" },
+          { value: "vanilla", label: "Vanilla", disabled: true },
+          { value: "fabric", label: "Fabric" },
+        ]}
+      />,
+    );
+    expect(screen.getByRole("group", { name: "Loại server" })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Vanilla" })).toHaveProperty("disabled", true);
+    await userEvent.click(screen.getByText("Vanilla"));
+    expect(onChange).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByText("Fabric"));
+    expect(onChange).toHaveBeenLastCalledWith("fabric");
   });
 });

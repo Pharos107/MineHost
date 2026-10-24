@@ -1,7 +1,7 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-import type { Server } from "./client";
+import { api, type Job, type Server } from "./client";
 import { live } from "./ws";
 
 export const SERVERS_KEY = ["servers"] as const;
@@ -34,4 +34,27 @@ export function useServersLive() {
       }),
     [queryClient],
   );
+}
+
+/** Job theo id: lấy qua REST một lần rồi cập nhật theo topic `job.<id>` tới khi xong. */
+export function useJob(id: number) {
+  const queryClient = useQueryClient();
+  const key = ["jobs", id];
+  const query = useQuery({
+    queryKey: key,
+    // REST về sau tin WebSocket thì giữ tin WebSocket, vì nó mới hơn.
+    queryFn: async () => {
+      const job = await api.job(id);
+      return queryClient.getQueryData<Job>(key) ?? job;
+    },
+    staleTime: Infinity,
+  });
+  useEffect(
+    () =>
+      live.subscribe(`job.${id}`, (message) => {
+        if (!message.error) queryClient.setQueryData(["jobs", id], message.data as Job);
+      }),
+    [id, queryClient],
+  );
+  return query;
 }

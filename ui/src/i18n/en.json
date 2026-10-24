@@ -43,6 +43,54 @@
     "port": "Port",
     "back": "All servers"
   },
+  "wizard": {
+    "title": "Create server",
+    "steps": {
+      "loader": "Server type",
+      "version": "Version",
+      "settings": "Name and RAM"
+    },
+    "loader": "Choose a server type",
+    "paperDescription": "Fast, supports plugins.",
+    "vanillaDescription": "The original server from Mojang.",
+    "recommended": "Recommended",
+    "soon": "Coming soon",
+    "version": "Minecraft version",
+    "versionHint": "Your friends need this exact version to join.",
+    "latest": "{{version}} (latest)",
+    "showOlder": "Show older versions",
+    "noVersions": "Paper has no stable version yet. Please try again later.",
+    "name": "Server name",
+    "nameHint": "Friends also see this name in Minecraft's server list.",
+    "nameInvalid": "The name must be 1 to 64 characters long.",
+    "defaultName": "My server",
+    "memory": "Maximum RAM",
+    "memoryHint": "More players or plugins need more RAM.",
+    "memoryWarning": "Only {{free}} of RAM is free. The server will run, but your computer may slow down.",
+    "advanced": "Advanced",
+    "port": "Port",
+    "portHint": "Leave empty and MineHost picks a free port, starting at 25565.",
+    "portAuto": "Automatic",
+    "portInvalid": "The port must be a number from 1024 to 65535.",
+    "back": "Back",
+    "next": "Next",
+    "create": "Create server",
+    "creatingTitle": "Creating server",
+    "creatingDescription": "The first time can take a few minutes because MineHost needs to download Java.",
+    "failedTitle": "Could not create the server",
+    "cancelledTitle": "Server creation was cancelled."
+  },
+  "jobs": {
+    "starting": "Starting…",
+    "working": "Working…",
+    "steps": {
+      "check_disk": "Checking disk space",
+      "resolve_version": "Looking up version {{minecraft}}",
+      "download_java": "Downloading Java {{major}}",
+      "download_server": "Downloading Paper {{minecraft}}",
+      "prepare_files": "Preparing files"
+    }
+  },
   "ui": {
     "close": "Close",
     "cancel": "Cancel",

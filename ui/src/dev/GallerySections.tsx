@@ -4,8 +4,10 @@ import { useTranslation } from "react-i18next";
 
 import { formatBytes } from "../format";
 import {
+  Badge,
   Button,
   Card,
+  ChoiceGroup,
   ConfirmDialog,
   CopyField,
   Dialog,
@@ -30,9 +32,19 @@ export function FormSection() {
   const [name, setName] = useState("Server của tôi");
   const [memory, setMemory] = useState(4096);
   const [autoStart, setAutoStart] = useState(true);
+  const [loader, setLoader] = useState("paper");
 
   return (
-    <Card title="Field / TextInput / Select / Switch / Slider">
+    <Card title="Field / TextInput / Select / Switch / Slider / ChoiceGroup">
+      <ChoiceGroup
+        label="Loại server"
+        value={loader}
+        onChange={setLoader}
+        options={[
+          { value: "paper", label: "Paper", description: "Nhanh, hỗ trợ plugin.", badge: <Badge tone="primary">Khuyên dùng</Badge> },
+          { value: "vanilla", label: "Vanilla", description: "Bản gốc của Mojang.", badge: <Badge>Sắp có</Badge>, disabled: true },
+        ]}
+      />
       <Field label="Tên server" hint="1–64 ký tự." error={name.trim() === "" ? "Tên không được để trống." : undefined}>
         <TextInput value={name} onChange={(e) => setName(e.target.value)} maxLength={64} />
       </Field>

@@ -40,6 +40,7 @@ khoảng cách; mọi giá trị đó là token trong `ui/src/ui/tokens.css`.
 | Form (13b) | `Field` (nhãn, gợi ý, lỗi; tự nối `id` và `aria-describedby`) | wizard, cài đặt |
 | | `TextInput`, `Select`, `Switch`, `Slider` (có vạch "đề xuất") | wizard, cài đặt |
 | | `Steps` (wizard 3 bước), `ProgressBar` (có số %, hoặc chạy vô định) | wizard, tiến độ Job |
+| | `ChoiceGroup` (chọn một trong vài thẻ lớn, radio bên dưới; thêm ở PR-13) | wizard: loại server |
 | Lớp phủ (13c) | `Dialog` (dựa trên `<dialog>`: khóa focus, Esc để đóng) | EULA |
 | | `ConfirmDialog` (tùy chọn bắt gõ lại một chuỗi mới cho bấm) | Buộc dừng, Xóa, Thoát |
 | | `Tabs` (phím mũi tên chuyển tab) | chi tiết server |
