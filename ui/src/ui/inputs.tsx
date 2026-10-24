@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import type { InputHTMLAttributes, SelectHTMLAttributes } from "react";
 
 import { cx } from "./cx";
@@ -21,6 +21,30 @@ export function TextInput({ type = "text", ...rest }: TextInputProps) {
       type={type}
       className={styles.control}
     />
+  );
+}
+
+interface SearchInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  /** Đã dịch; dùng làm cả placeholder và nhãn cho trình đọc màn hình. */
+  label: string;
+}
+
+/** Ô tìm kiếm có kính lúp, dùng chung cho mọi danh sách. */
+export function SearchInput({ value, onChange, label }: SearchInputProps) {
+  return (
+    <span className={styles.searchWrap}>
+      <Search className={styles.searchIcon} size={16} aria-hidden />
+      <input
+        type="search"
+        className={cx(styles.control, styles.search)}
+        value={value}
+        placeholder={label}
+        aria-label={label}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </span>
   );
 }
 
