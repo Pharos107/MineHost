@@ -19,3 +19,4 @@ export { Spinner } from "./Spinner";
 export { Stack, type Space } from "./Stack";
 export { Switch } from "./Switch";
 export { Tabs, type TabItem } from "./Tabs";
+export { Terminal, type TerminalHandle, type TerminalTone } from "./Terminal";

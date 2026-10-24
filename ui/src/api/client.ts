@@ -11,6 +11,8 @@ export type JobProgress = components["schemas"]["ProgressDto"];
 export type CatalogVersion = components["schemas"]["CatalogVersionDto"];
 export type CreateServer = components["schemas"]["CreateServerBody"];
 export type Created = components["schemas"]["CreatedDto"];
+export type ConsoleLine = components["schemas"]["ConsoleLineDto"];
+export type ServerAction = "start" | "stop" | "restart" | "kill";
 type ErrorBody = components["schemas"]["ErrorBody"];
 
 /** Lỗi từ API. Thông báo được dịch theo `code`, không lấy câu chữ từ backend. */
@@ -53,11 +55,18 @@ async function request<T>(method: "GET" | "POST", path: string, body?: unknown):
   return (await response.json()) as T;
 }
 
+function serverPath(id: string): string {
+  return `/servers/${encodeURIComponent(id)}`;
+}
+
 export const api = {
   system: () => request<SystemInfo>("GET", "/system"),
   servers: () => request<Server[]>("GET", "/servers"),
-  server: (id: string) => request<Server>("GET", `/servers/${encodeURIComponent(id)}`),
+  server: (id: string) => request<Server>("GET", serverPath(id)),
   createServer: (body: CreateServer) => request<Created>("POST", "/servers", body),
+  action: (id: string, action: ServerAction) => request<void>("POST", `${serverPath(id)}/actions/${action}`),
+  acceptEula: (id: string) => request<Server>("POST", `${serverPath(id)}/eula`, { accept: true }),
+  sendCommand: (id: string, command: string) => request<void>("POST", `${serverPath(id)}/console`, { command }),
   paperVersions: () => request<CatalogVersion[]>("GET", "/catalog/paper/versions"),
   job: (id: number) => request<Job>("GET", `/jobs/${id}`),
   cancelJob: (id: number) => request<void>("POST", `/jobs/${id}/cancel`),

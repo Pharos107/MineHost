@@ -91,6 +91,53 @@
       "prepare_files": "Chuẩn bị file"
     }
   },
+  "server": {
+    "start": "Bật server",
+    "stop": "Tắt",
+    "restart": "Khởi động lại",
+    "more": "Thao tác khác",
+    "kill": "Buộc dừng",
+    "killTitle": "Buộc dừng server?",
+    "killBody": "Server bị tắt ngay mà không kịp lưu. Người chơi có thể mất những gì vừa làm trong vài phút gần nhất.",
+    "copyAddress": "Chép địa chỉ",
+    "tabsLabel": "Mục của server",
+    "tabs": {
+      "console": "Console"
+    },
+    "crashed": "Server bị dừng đột ngột",
+    "restartPending": "Server sẽ tự bật lại sau ít giây.",
+    "slowStart": "Server đã bật hơn 5 phút mà chưa xong. Xem console để biết server đang làm gì.",
+    "broken": {
+      "title": "Không đọc được server này",
+      "missing_instance": "Thư mục server thiếu file instance.toml.",
+      "unreadable": "Không đọc được instance.toml: {{detail}}",
+      "invalid": "instance.toml không hợp lệ: {{detail}}",
+      "newer_schema": "Server được tạo bởi bản MineHost mới hơn. Hãy cập nhật MineHost.",
+      "id_mismatch": "ID trong instance.toml ({{found}}) khác tên thư mục. Có thể thư mục đã bị chép tay.",
+      "unknown": "Thư mục server bị hỏng."
+    }
+  },
+  "crashHints": {
+    "NOT_ENOUGH_MEMORY": "Server hết RAM. Hãy tăng RAM trong tab Cài đặt server.",
+    "WRONG_JAVA": "Server cần bản Java khác. Đây là lỗi của MineHost, hãy báo cho nhóm phát triển.",
+    "PORT_IN_USE": "Cổng của server đang bị chương trình khác dùng. Hãy đổi cổng trong tab Cài đặt server.",
+    "EULA_NOT_ACCEPTED": "Bạn cần đồng ý EULA của Minecraft rồi bật lại server.",
+    "GAME_ERROR": "Game hoặc một plugin bị lỗi. Xem console để biết chi tiết rồi thử khởi động lại.",
+    "unknown": "Không rõ nguyên nhân. Xem console để biết chi tiết."
+  },
+  "eula": {
+    "title": "Điều khoản người dùng của Minecraft",
+    "body": "Minecraft yêu cầu bạn đồng ý Điều khoản người dùng (EULA) của Mojang trước khi chạy server.",
+    "link": "Đọc EULA của Minecraft",
+    "accept": "Tôi đồng ý"
+  },
+  "console": {
+    "label": "Log của server",
+    "command": "Lệnh",
+    "placeholder": "Gõ lệnh rồi bấm Enter, ví dụ: say xin chào",
+    "offline": "Bật server để gửi lệnh",
+    "send": "Gửi"
+  },
   "ui": {
     "close": "Đóng",
     "cancel": "Hủy",

@@ -91,6 +91,53 @@
       "prepare_files": "Preparing files"
     }
   },
+  "server": {
+    "start": "Start server",
+    "stop": "Stop",
+    "restart": "Restart",
+    "more": "More actions",
+    "kill": "Force stop",
+    "killTitle": "Force stop the server?",
+    "killBody": "The server stops immediately without saving. Players may lose what they did in the last few minutes.",
+    "copyAddress": "Copy address",
+    "tabsLabel": "Server sections",
+    "tabs": {
+      "console": "Console"
+    },
+    "crashed": "The server stopped unexpectedly",
+    "restartPending": "The server will start again in a few seconds.",
+    "slowStart": "The server has been starting for over 5 minutes. Check the console to see what it is doing.",
+    "broken": {
+      "title": "This server cannot be read",
+      "missing_instance": "The server folder has no instance.toml file.",
+      "unreadable": "Could not read instance.toml: {{detail}}",
+      "invalid": "instance.toml is invalid: {{detail}}",
+      "newer_schema": "This server was created by a newer MineHost. Please update MineHost.",
+      "id_mismatch": "The ID in instance.toml ({{found}}) does not match the folder name. The folder may have been copied by hand.",
+      "unknown": "The server folder is damaged."
+    }
+  },
+  "crashHints": {
+    "NOT_ENOUGH_MEMORY": "The server ran out of RAM. Give it more RAM in the Server settings tab.",
+    "WRONG_JAVA": "The server needs a different Java version. This is a MineHost bug, please report it.",
+    "PORT_IN_USE": "Another program is using the server's port. Change the port in the Server settings tab.",
+    "EULA_NOT_ACCEPTED": "Accept the Minecraft EULA, then start the server again.",
+    "GAME_ERROR": "The game or a plugin failed. Check the console for details, then try restarting.",
+    "unknown": "The cause is unknown. Check the console for details."
+  },
+  "eula": {
+    "title": "Minecraft End User License Agreement",
+    "body": "Minecraft requires you to accept Mojang's End User License Agreement (EULA) before running a server.",
+    "link": "Read the Minecraft EULA",
+    "accept": "I agree"
+  },
+  "console": {
+    "label": "Server log",
+    "command": "Command",
+    "placeholder": "Type a command and press Enter, e.g. say hello",
+    "offline": "Start the server to send commands",
+    "send": "Send"
+  },
   "ui": {
     "close": "Close",
     "cancel": "Cancel",
