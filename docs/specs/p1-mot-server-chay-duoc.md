@@ -1,6 +1,7 @@
 # Spec P1 — Một server chạy được
 
-- Trạng thái: bản nháp để review
+- Trạng thái: đã làm xong 17 PR; còn chờ lần thử tay 5 phút trên Windows mới cài
+  ([kết quả thử tay](p1-ket-qua-thu-tay.md))
 - Ngày: 2026-10-23
 - Spec gốc: "MineHost v2 — Spec kiến trúc (Rust)", phần Lộ trình P1
 - Kế hoạch PR: [p1-ke-hoach-pr.md](p1-ke-hoach-pr.md)
@@ -14,9 +15,9 @@ Người chưa từng host server, trên máy Windows chưa cài Java và Docker
 
 - [ ] Trên máy Windows mới cài, người chưa từng dùng tạo được Paper và vào từ LAN trong dưới 5 phút
       (đo theo checklist ở mục 11).
-- [ ] Test tích hợp trong CI chạy Paper thật trên Windows và Linux: tạo, chờ `Done`, gửi lệnh, dừng sạch.
-- [ ] Kill controller giữa chừng thì không còn process Java mồ côi; khởi động lại thì server tự bật lại.
-- [ ] Bấm "Thoát" khi có 3 server đang chạy: cả 3 dừng bằng `stop`, world mở lại được, không server nào bị kill.
+- [x] Test tích hợp trong CI chạy Paper thật trên Windows và Linux: tạo, chờ `Done`, gửi lệnh, dừng sạch.
+- [x] Kill controller giữa chừng thì không còn process Java mồ côi; khởi động lại thì server tự bật lại.
+- [x] Bấm "Thoát" khi có 3 server đang chạy: cả 3 dừng bằng `stop`, world mở lại được, không server nào bị kill.
 
 ### Không làm trong P1
 

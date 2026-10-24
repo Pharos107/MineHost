@@ -1130,7 +1130,7 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "mh-api"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "axum",
  "futures-util",
@@ -1154,7 +1154,7 @@ dependencies = [
 
 [[package]]
 name = "mh-app"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "mh-core",
  "mh-java",
@@ -1175,11 +1175,11 @@ dependencies = [
 
 [[package]]
 name = "mh-backup"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "mh-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "proptest",
  "serde",
@@ -1192,7 +1192,7 @@ dependencies = [
 
 [[package]]
 name = "mh-java"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "flate2",
  "mh-core",
@@ -1212,7 +1212,7 @@ dependencies = [
 
 [[package]]
 name = "mh-net"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "mh-core",
  "reqwest",
@@ -1231,7 +1231,7 @@ dependencies = [
 
 [[package]]
 name = "mh-platform"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "directories",
  "mh-core",
@@ -1243,7 +1243,7 @@ dependencies = [
 
 [[package]]
 name = "mh-providers"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "mh-core",
  "mh-net",
@@ -1260,7 +1260,7 @@ dependencies = [
 
 [[package]]
 name = "mh-runtime"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "libc",
  "mh-core",
@@ -1272,7 +1272,7 @@ dependencies = [
 
 [[package]]
 name = "mh-store"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "mh-core",
  "mh-platform",
@@ -1286,7 +1286,7 @@ dependencies = [
 
 [[package]]
 name = "mh-supervisor"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "mh-core",
  "mh-runtime",
@@ -1317,7 +1317,7 @@ dependencies = [
 
 [[package]]
 name = "minehost"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "axum",
