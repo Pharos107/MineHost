@@ -1,0 +1,90 @@
+[
+  {
+    "id": 232,
+    "time": "2025-06-09T10:18:55.778Z",
+    "channel": "STABLE",
+    "commits": [
+      {
+        "sha": "12d8fe0beb21c1a1d9b093fb411884367cce9e7e",
+        "time": "2025-06-09T09:57:21Z",
+        "message": "Fix infinite loop in RegionFile IO\n\nIf an exception is thrown during decompress then the read process\nwould be started again, which of course would eventually throw in\nthe decompress process.\n"
+      }
+    ],
+    "downloads": {
+      "server:default": {
+        "name": "paper-1.21.4-232.jar",
+        "checksums": {
+          "sha256": "5ee4f542f628a14c644410b08c94ea42e772ef4d29fe92973636b6813d4eaffc"
+        },
+        "size": 51437498,
+        "url": "https://fill-data.papermc.io/v1/objects/5ee4f542f628a14c644410b08c94ea42e772ef4d29fe92973636b6813d4eaffc/paper-1.21.4-232.jar"
+      }
+    }
+  },
+  {
+    "id": 231,
+    "time": "2025-05-19T18:02:12.861Z",
+    "channel": "STABLE",
+    "commits": [
+      {
+        "sha": "09e9afd2952b44a922697bdfe795481b89334aba",
+        "time": "2025-05-19T17:44:47Z",
+        "message": "Avoid off-main mutations of state\n"
+      }
+    ],
+    "downloads": {
+      "server:default": {
+        "name": "paper-1.21.4-231.jar",
+        "checksums": {
+          "sha256": "608cba072c0fe0c4d8aa8279125eb79e9513037e2074e838304cb662d835bdef"
+        },
+        "size": 51442161,
+        "url": "https://fill-data.papermc.io/v1/objects/608cba072c0fe0c4d8aa8279125eb79e9513037e2074e838304cb662d835bdef/paper-1.21.4-231.jar"
+      }
+    }
+  },
+  {
+    "id": 230,
+    "time": "2025-05-11T20:57:58.640Z",
+    "channel": "STABLE",
+    "commits": [
+      {
+        "sha": "af71568bb3f80370c9cc594dbf2ce81228cb449c",
+        "time": "2025-05-11T20:29:09Z",
+        "message": "Update mache\n"
+      }
+    ],
+    "downloads": {
+      "server:default": {
+        "name": "paper-1.21.4-230.jar",
+        "checksums": {
+          "sha256": "ea38c61a9e68c74f7219dfd4ad7b9588a685ebad9b85cfad2074ed21a6dae523"
+        },
+        "size": 51441115,
+        "url": "https://fill-data.papermc.io/v1/objects/ea38c61a9e68c74f7219dfd4ad7b9588a685ebad9b85cfad2074ed21a6dae523/paper-1.21.4-230.jar"
+      }
+    }
+  },
+  {
+    "id": 99,
+    "time": "2025-01-12T17:08:04.890Z",
+    "channel": "ALPHA",
+    "commits": [
+      {
+        "sha": "eb4db794eb2b2837ad101716034bc9a4f0fa2629",
+        "time": "2025-01-12T16:50:08Z",
+        "message": "Make CommandSourceStack respect hidden players (#11898)\n\n"
+      }
+    ],
+    "downloads": {
+      "server:default": {
+        "name": "paper-1.21.4-99.jar",
+        "checksums": {
+          "sha256": "c0bb11aa74394473d1270f8a75a83e8ae4af94f7c8f912887f73b8252ef8cba6"
+        },
+        "size": 51357705,
+        "url": "https://fill-data.papermc.io/v1/objects/c0bb11aa74394473d1270f8a75a83e8ae4af94f7c8f912887f73b8252ef8cba6/paper-1.21.4-99.jar"
+      }
+    }
+  }
+]
