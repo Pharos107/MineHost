@@ -3,6 +3,7 @@ export { AppShell } from "./AppShell";
 export { Badge, StatusBadge, type BadgeTone } from "./Badge";
 export { Button, IconButton, type ButtonSize, type ButtonVariant } from "./Button";
 export { Card, PageHeader } from "./Card";
+export { ChoiceGroup, type Choice } from "./ChoiceGroup";
 export { CopyField } from "./CopyField";
 export { DataTable, type Column, type RowAction } from "./DataTable";
 export { ConfirmDialog, Dialog, DialogBody, DialogFooter } from "./Dialog";
