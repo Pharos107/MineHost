@@ -1,0 +1,27 @@
+.field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mh-space-1);
+  max-width: 100%;
+  padding: 2px 2px 2px var(--mh-space-3);
+  background: var(--mh-surface-raised);
+  border: 1px solid var(--mh-border);
+  border-radius: var(--mh-radius-md);
+}
+
+/* Địa chỉ như "192.168.1.10:25565" chỉ ngắt dòng khi thật sự không đủ chỗ, nút chép luôn ở bên cạnh. */
+.value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.field > button {
+  flex: none;
+}
+
+.failed {
+  padding-right: var(--mh-space-2);
+  color: var(--mh-danger);
+  font-size: var(--mh-text-sm);
+}
