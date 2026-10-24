@@ -13,6 +13,9 @@ export type CreateServer = components["schemas"]["CreateServerBody"];
 export type Created = components["schemas"]["CreatedDto"];
 export type ConsoleLine = components["schemas"]["ConsoleLineDto"];
 export type ServerAction = "start" | "stop" | "restart" | "kill";
+export type Property = components["schemas"]["PropertyDto"];
+export type ServerPatch = components["schemas"]["PatchServerBody"];
+export type Trashed = components["schemas"]["TrashedDto"];
 type ErrorBody = components["schemas"]["ErrorBody"];
 
 /** Lỗi từ API. Thông báo được dịch theo `code`, không lấy câu chữ từ backend. */
@@ -29,7 +32,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+async function request<T>(method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
   // Controller bắt request thay đổi dữ liệu phải có Origin của nó hoặc header này.
@@ -67,6 +70,11 @@ export const api = {
   action: (id: string, action: ServerAction) => request<void>("POST", `${serverPath(id)}/actions/${action}`),
   acceptEula: (id: string) => request<Server>("POST", `${serverPath(id)}/eula`, { accept: true }),
   sendCommand: (id: string, command: string) => request<void>("POST", `${serverPath(id)}/console`, { command }),
+  updateServer: (id: string, patch: ServerPatch) => request<Server>("PATCH", serverPath(id), patch),
+  trashServer: (id: string, confirmName: string) =>
+    request<Trashed>("DELETE", `${serverPath(id)}?confirm_name=${encodeURIComponent(confirmName)}`),
+  properties: (id: string) => request<{ properties: Property[] }>("GET", `${serverPath(id)}/properties`),
+  saveProperties: (id: string, properties: Property[]) => request<void>("PUT", `${serverPath(id)}/properties`, { properties }),
   paperVersions: () => request<CatalogVersion[]>("GET", "/catalog/paper/versions"),
   job: (id: number) => request<Job>("GET", `/jobs/${id}`),
   cancelJob: (id: number) => request<void>("POST", `/jobs/${id}/cancel`),

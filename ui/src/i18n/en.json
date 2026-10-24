@@ -102,7 +102,9 @@
     "copyAddress": "Copy address",
     "tabsLabel": "Server sections",
     "tabs": {
-      "console": "Console"
+      "console": "Console",
+      "game": "Game settings",
+      "settings": "Server settings"
     },
     "crashed": "The server stopped unexpectedly",
     "restartPending": "The server will start again in a few seconds.",
@@ -137,6 +139,58 @@
     "placeholder": "Type a command and press Enter, e.g. say hello",
     "offline": "Start the server to send commands",
     "send": "Send"
+  },
+  "game": {
+    "common": "Common settings",
+    "advanced": "Advanced",
+    "advancedHint": "Every key in server.properties. Change the port in the Server settings tab.",
+    "key": "Key",
+    "value": "Value",
+    "empty": "server.properties has no keys yet. Start the server once so Minecraft fills it in.",
+    "restartNote": "Takes effect after the server restarts.",
+    "fields": {
+      "motd": "Welcome message",
+      "max-players": "Maximum players",
+      "gamemode": "Game mode",
+      "difficulty": "Difficulty",
+      "pvp": "Allow players to fight each other (PvP)",
+      "white-list": "Only let whitelisted players join",
+      "online-mode": "Check for official Minecraft accounts"
+    },
+    "hints": {
+      "motd": "Shown under the server name in Minecraft's server list.",
+      "white-list": "Add players with the command whitelist add <name> in the console.",
+      "online-mode": "When off, anyone can join with any name, including someone else's."
+    },
+    "options": {
+      "survival": "Survival",
+      "creative": "Creative",
+      "adventure": "Adventure",
+      "spectator": "Spectator",
+      "peaceful": "Peaceful",
+      "easy": "Easy",
+      "normal": "Normal",
+      "hard": "Hard"
+    }
+  },
+  "settings": {
+    "title": "Server settings",
+    "autostart": "Start when MineHost opens",
+    "autostartHint": "The server runs every time MineHost starts.",
+    "restartOnCrash": "Restart after a crash",
+    "restartOnCrashHint": "Tries up to 3 times within 10 minutes.",
+    "save": "Save",
+    "undo": "Undo",
+    "saved": "Saved."
+  },
+  "delete": {
+    "title": "Delete server",
+    "description": "The server folder moves to MineHost's trash and can be restored by hand.",
+    "stopFirst": "Stop the server before deleting it.",
+    "button": "Delete server",
+    "confirmTitle": "Delete “{{name}}”?",
+    "confirmBody": "The server disappears from MineHost. The world and files stay in MineHost's trash/ folder.",
+    "done": "The server was moved to the trash"
   },
   "ui": {
     "close": "Close",

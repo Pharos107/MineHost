@@ -102,7 +102,9 @@
     "copyAddress": "Chép địa chỉ",
     "tabsLabel": "Mục của server",
     "tabs": {
-      "console": "Console"
+      "console": "Console",
+      "game": "Cài đặt game",
+      "settings": "Cài đặt server"
     },
     "crashed": "Server bị dừng đột ngột",
     "restartPending": "Server sẽ tự bật lại sau ít giây.",
@@ -137,6 +139,58 @@
     "placeholder": "Gõ lệnh rồi bấm Enter, ví dụ: say xin chào",
     "offline": "Bật server để gửi lệnh",
     "send": "Gửi"
+  },
+  "game": {
+    "common": "Cài đặt thường dùng",
+    "advanced": "Nâng cao",
+    "advancedHint": "Mọi khóa trong server.properties. Cổng được đổi ở tab Cài đặt server.",
+    "key": "Khóa",
+    "value": "Giá trị",
+    "empty": "server.properties chưa có khóa nào. Bật server một lần để Minecraft tạo đủ.",
+    "restartNote": "Có hiệu lực sau khi khởi động lại server.",
+    "fields": {
+      "motd": "Lời chào",
+      "max-players": "Số người chơi tối đa",
+      "gamemode": "Chế độ chơi",
+      "difficulty": "Độ khó",
+      "pvp": "Cho người chơi đánh nhau (PvP)",
+      "white-list": "Chỉ cho người trong danh sách trắng vào",
+      "online-mode": "Kiểm tra tài khoản Minecraft chính thức"
+    },
+    "hints": {
+      "motd": "Hiện dưới tên server trong danh sách server của Minecraft.",
+      "white-list": "Thêm người chơi bằng lệnh whitelist add <tên> trong console.",
+      "online-mode": "Tắt thì ai cũng vào được với tên bất kỳ, kể cả mạo danh người khác."
+    },
+    "options": {
+      "survival": "Sinh tồn",
+      "creative": "Sáng tạo",
+      "adventure": "Phiêu lưu",
+      "spectator": "Khán giả",
+      "peaceful": "Hòa bình",
+      "easy": "Dễ",
+      "normal": "Thường",
+      "hard": "Khó"
+    }
+  },
+  "settings": {
+    "title": "Cài đặt server",
+    "autostart": "Tự bật khi mở MineHost",
+    "autostartHint": "Server chạy ngay mỗi khi MineHost khởi động.",
+    "restartOnCrash": "Tự khởi động lại khi bị lỗi",
+    "restartOnCrashHint": "Thử bật lại tối đa 3 lần trong 10 phút.",
+    "save": "Lưu",
+    "undo": "Hoàn tác",
+    "saved": "Đã lưu."
+  },
+  "delete": {
+    "title": "Xóa server",
+    "description": "Thư mục server được chuyển vào thùng rác của MineHost, lấy lại được bằng tay.",
+    "stopFirst": "Tắt server trước khi xóa.",
+    "button": "Xóa server",
+    "confirmTitle": "Xóa “{{name}}”?",
+    "confirmBody": "Server biến mất khỏi MineHost. World và file vẫn nằm trong thư mục trash/ của MineHost.",
+    "done": "Đã chuyển server vào thùng rác"
   },
   "ui": {
     "close": "Đóng",

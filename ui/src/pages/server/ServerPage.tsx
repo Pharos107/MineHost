@@ -9,8 +9,11 @@ import { SERVERS_KEY } from "../../api/live";
 import { Button, CopyField, Notice, PageHeader, Spinner, Stack, StatusBadge, Tabs } from "../../ui";
 import { serverName } from "../ServerListPage";
 import { ConsoleTab } from "./ConsoleTab";
+import { DeleteServer } from "./DeleteServer";
+import { GameSettingsTab } from "./GameSettingsTab";
 import { ServerActions } from "./ServerActions";
 import { ServerNotices } from "./ServerNotices";
+import { ServerSettingsTab } from "./ServerSettingsTab";
 
 /** Trang chi tiết server (spec P1, mục 2.4). Trạng thái tự cập nhật qua topic `servers`. */
 export function ServerPage() {
@@ -39,7 +42,11 @@ function ServerView({ server, back }: { server: Server; back: ReactNode }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState("console");
   const ready = server.state !== "installing" && server.state !== "broken";
-  const tabs = [{ id: "console", label: t("server.tabs.console"), panel: <ConsoleTab server={server} /> }];
+  const tabs = [
+    { id: "console", label: t("server.tabs.console"), panel: <ConsoleTab server={server} /> },
+    { id: "game", label: t("server.tabs.game"), panel: <GameSettingsTab server={server} /> },
+    { id: "settings", label: t("server.tabs.settings"), panel: <ServerSettingsTab server={server} /> },
+  ];
 
   return (
     <Stack gap={5}>
@@ -56,6 +63,7 @@ function ServerView({ server, back }: { server: Server; back: ReactNode }) {
       />
       <ServerNotices server={server} />
       {ready && <Tabs label={t("server.tabsLabel")} value={tab} onChange={setTab} items={tabs} />}
+      {server.state === "broken" && <DeleteServer server={server} />}
     </Stack>
   );
 }

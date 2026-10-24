@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Plus, RotateCw, Server as ServerIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 
 import { api, errorMessage, type Server } from "../api/client";
 import { SERVERS_KEY } from "../api/live";
@@ -19,6 +19,8 @@ export function ServerListPage() {
   const servers = useQuery({ queryKey: SERVERS_KEY, queryFn: api.servers });
   const rows = servers.data ?? [];
   const goCreate = () => void navigate("/new");
+  // Trang chi tiết chuyển về đây sau khi xóa, kèm thư mục trong thùng rác để người dùng biết chỗ lấy lại.
+  const trashed = (useLocation().state as { trashed?: string } | null)?.trashed;
 
   const columns: Column<Server>[] = [
     {
@@ -58,6 +60,11 @@ export function ServerListPage() {
           )
         }
       />
+      {trashed && (
+        <Notice tone="success" title={t("delete.done")}>
+          <code>{trashed}</code>
+        </Notice>
+      )}
       {servers.isError ? (
         <Notice
           tone="danger"
