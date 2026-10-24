@@ -19,6 +19,7 @@ import {
   Stack,
   StatusBadge,
 } from "../ui";
+import { FormSection, ProgressSection } from "./GallerySections";
 
 const STATES: ServerState[] = ["installing", "stopped", "starting", "running", "stopping", "crashed", "broken"];
 
@@ -35,6 +36,8 @@ export function Gallery() {
         <BadgeSection />
         <NoticeSection />
         <CardSection />
+        <FormSection />
+        <ProgressSection />
       </Stack>
     </AppShell>
   );

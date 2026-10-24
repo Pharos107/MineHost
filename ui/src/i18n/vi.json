@@ -23,6 +23,10 @@
     "dataDir": "Thư mục dữ liệu",
     "version": "Phiên bản MineHost"
   },
+  "ui": {
+    "recommended": "Đề xuất: {{value}}",
+    "stepOf": "Bước {{current}} trên {{total}}"
+  },
   "serverState": {
     "installing": "Đang cài",
     "stopped": "Đã tắt",

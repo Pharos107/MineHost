@@ -5,6 +5,11 @@ export { Button, IconButton, type ButtonSize, type ButtonVariant } from "./Butto
 export { Card, PageHeader } from "./Card";
 export { EmptyState } from "./EmptyState";
 export { Facts, type Fact } from "./Facts";
+export { Field } from "./Field";
+export { Select, TextInput } from "./inputs";
 export { Notice, type NoticeTone } from "./Notice";
+export { ProgressBar, Steps } from "./progress";
+export { Slider } from "./Slider";
 export { Spinner } from "./Spinner";
 export { Stack, type Space } from "./Stack";
+export { Switch } from "./Switch";
