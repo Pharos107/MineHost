@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
 import { RotateCw, Save, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,7 +11,14 @@ import { COMMON_PROPERTIES, getProperty, MANAGED_KEYS, sameProperties, setProper
 /** Tab "Cài đặt game": các khóa phổ biến của `server.properties` và bảng sửa mọi khóa. */
 export function GameSettingsTab({ server }: { server: Server }) {
   const { t } = useTranslation();
-  const query = useQuery({ queryKey: [...SERVERS_KEY, server.id, "properties"], queryFn: () => api.properties(server.id) });
+  const queryClient = useQueryClient();
+  const key = [...SERVERS_KEY, server.id, "properties"];
+  const query = useQuery({ queryKey: key, queryFn: () => api.properties(server.id) });
+  // Mutation nằm ở đây để thông báo "Đã lưu" còn lại sau khi form được dựng lại.
+  const save = useMutation({
+    mutationFn: (draft: Property[]) => api.saveProperties(server.id, draft),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: key }),
+  });
 
   if (query.isPending) return <Spinner label={t("ui.loading")} />;
   if (query.isError) {
@@ -29,17 +36,18 @@ export function GameSettingsTab({ server }: { server: Server }) {
     );
   }
   // Lưu xong thì dữ liệu mới về: dựng lại form từ file thật thay vì giữ bản đang sửa.
-  return <PropertiesForm key={query.dataUpdatedAt} server={server} initial={query.data.properties} />;
+  return <PropertiesForm key={query.dataUpdatedAt} server={server} initial={query.data.properties} save={save} />;
 }
 
-function PropertiesForm({ server, initial }: { server: Server; initial: Property[] }) {
+interface PropertiesFormProps {
+  server: Server;
+  initial: Property[];
+  save: UseMutationResult<void, Error, Property[]>;
+}
+
+function PropertiesForm({ server, initial, save }: PropertiesFormProps) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [draft, setDraft] = useState(initial);
-  const save = useMutation({
-    mutationFn: () => api.saveProperties(server.id, draft),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [...SERVERS_KEY, server.id, "properties"] }),
-  });
   const set = (key: string, value: string) => setDraft((current) => setProperty(current, key, value));
   const dirty = !sameProperties(draft, initial);
 
@@ -52,7 +60,7 @@ function PropertiesForm({ server, initial }: { server: Server; initial: Property
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (dirty) save.mutate();
+        if (dirty) save.mutate(draft);
       }}
     >
       <Stack gap={5}>
