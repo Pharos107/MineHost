@@ -12,3 +12,8 @@ export function formatBytes(bytes: number, locale: string): string {
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(value);
   return `${number} ${UNITS[unit]}`;
 }
+
+/** RAM của server tính bằng MB, ví dụ 4096 → "4 GB", 1536 → "1,5 GB" (vi). */
+export function formatMemoryMb(mb: number, locale: string): string {
+  return formatBytes(mb * 1024 * 1024, locale);
+}

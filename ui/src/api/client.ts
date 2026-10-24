@@ -5,6 +5,12 @@ import type { components } from "./schema";
 // Kiểu dữ liệu sinh từ OpenAPI của backend (`npm run gen:api`), không tự viết tay.
 export type SystemInfo = components["schemas"]["SystemDto"];
 export type ServerState = components["schemas"]["StateDto"];
+export type Server = components["schemas"]["ServerDto"];
+export type Job = components["schemas"]["JobDto"];
+export type JobProgress = components["schemas"]["ProgressDto"];
+export type CatalogVersion = components["schemas"]["CatalogVersionDto"];
+export type CreateServer = components["schemas"]["CreateServerBody"];
+export type Created = components["schemas"]["CreatedDto"];
 type ErrorBody = components["schemas"]["ErrorBody"];
 
 /** Lỗi từ API. Thông báo được dịch theo `code`, không lấy câu chữ từ backend. */
@@ -21,23 +27,37 @@ export class ApiError extends Error {
   }
 }
 
-async function getJson<T>(path: string): Promise<T> {
+async function request<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  // Controller bắt request thay đổi dữ liệu phải có Origin của nó hoặc header này.
+  if (method !== "GET") headers["X-MineHost"] = "1";
+
   let response: Response;
   try {
-    response = await fetch(`/api/v1${path}`, { headers: { Accept: "application/json" } });
+    response = await fetch(`/api/v1${path}`, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
   } catch {
     throw new ApiError("NETWORK", {}, 0);
   }
 
   if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as ErrorBody | null;
-    throw new ApiError(body?.code ?? "INTERNAL", body?.params ?? {}, response.status);
+    const error = (await response.json().catch(() => null)) as ErrorBody | null;
+    throw new ApiError(error?.code ?? "INTERNAL", error?.params ?? {}, response.status);
   }
   return (await response.json()) as T;
 }
 
 export const api = {
-  system: () => getJson<SystemInfo>("/system"),
+  system: () => request<SystemInfo>("GET", "/system"),
+  servers: () => request<Server[]>("GET", "/servers"),
+  server: (id: string) => request<Server>("GET", `/servers/${encodeURIComponent(id)}`),
+  createServer: (body: CreateServer) => request<Created>("POST", "/servers", body),
+  paperVersions: () => request<CatalogVersion[]>("GET", "/catalog/paper/versions"),
+  job: (id: number) => request<Job>("GET", `/jobs/${id}`),
 };
 
 /** Câu thông báo đã dịch cho một lỗi bất kỳ. */

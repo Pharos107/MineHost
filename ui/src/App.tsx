@@ -1,16 +1,31 @@
-import { useTranslation } from "react-i18next";
+import { BrowserRouter, Route, Routes } from "react-router";
 
+import { useServersLive } from "./api/live";
 import { LanguageSwitch } from "./components/LanguageSwitch";
-import { SystemCard } from "./components/SystemCard";
-import { AppShell, PageHeader } from "./ui";
+import { NotFoundPage } from "./pages/NotFoundPage";
+import { ServerListPage } from "./pages/ServerListPage";
+import { ServerPage } from "./pages/ServerPage";
+import { AppShell } from "./ui";
+
+/** Các trang theo spec P1, mục 6. Backend trả `index.html` cho mọi đường dẫn lạ. */
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<ServerListPage />} />
+      <Route path="/servers/:id" element={<ServerPage />} />
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+}
 
 export function App() {
-  const { t } = useTranslation();
+  useServersLive();
 
   return (
-    <AppShell actions={<LanguageSwitch />}>
-      <PageHeader title="MineHost" description={t("app.tagline")} />
-      <SystemCard />
-    </AppShell>
+    <BrowserRouter>
+      <AppShell actions={<LanguageSwitch />}>
+        <AppRoutes />
+      </AppShell>
+    </BrowserRouter>
   );
 }

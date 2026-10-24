@@ -27,6 +27,8 @@ export default defineConfig({
       "/api": {
         target: CONTROLLER,
         changeOrigin: true,
+        // Vite gọi `bypass` cho cả request nâng cấp WebSocket, nên Origin cũng được đổi ở đó.
+        ws: true,
         bypass: (req) => {
           rewriteDevOrigin(req);
           return undefined;
