@@ -79,3 +79,11 @@
 .ghost:hover:not(:disabled) {
   background: var(--mh-surface-hover);
 }
+
+.dangerText {
+  color: var(--mh-danger);
+}
+
+.dangerText:hover:not(:disabled) {
+  background: var(--mh-danger-soft);
+}

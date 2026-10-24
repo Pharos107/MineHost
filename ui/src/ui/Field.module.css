@@ -65,6 +65,25 @@
   cursor: pointer;
 }
 
+.searchWrap {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.search {
+  padding-left: calc(var(--mh-space-3) + 16px + var(--mh-space-2));
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: var(--mh-space-3);
+  transform: translateY(-50%);
+  color: var(--mh-text-muted);
+  pointer-events: none;
+}
+
 .chevron {
   position: absolute;
   top: 50%;

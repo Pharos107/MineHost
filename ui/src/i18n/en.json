@@ -31,7 +31,16 @@
     "copyFailed": "Couldn't copy. Select the text and copy it manually.",
     "recommended": "Recommended: {{value}}",
     "typeToConfirm": "Type “{{text}}” to confirm",
-    "stepOf": "Step {{current}} of {{total}}"
+    "stepOf": "Step {{current}} of {{total}}",
+    "loading": "Loading…",
+    "table": {
+      "search": "Search",
+      "actions": "Actions",
+      "actionOn": "{{action}}: {{row}}",
+      "moreFor": "More actions for {{row}}",
+      "noMatch": "No results for “{{query}}”.",
+      "count": "Showing {{shown}} of {{total}}"
+    }
   },
   "serverState": {
     "installing": "Installing",

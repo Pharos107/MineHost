@@ -20,6 +20,7 @@ import {
   StatusBadge,
 } from "../ui";
 import { FormSection, OverlaySection, ProgressSection } from "./GallerySections";
+import { TableSection } from "./GalleryTable";
 
 const STATES: ServerState[] = ["installing", "stopped", "starting", "running", "stopping", "crashed", "broken"];
 
@@ -36,6 +37,7 @@ export function Gallery() {
         <BadgeSection />
         <NoticeSection />
         <CardSection />
+        <TableSection />
         <FormSection />
         <ProgressSection />
         <OverlaySection />

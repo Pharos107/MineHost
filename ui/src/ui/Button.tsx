@@ -49,14 +49,16 @@ interface IconButtonProps extends NativeProps {
   label: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** Icon màu đỏ trên nền trong suốt: thao tác phá hủy nằm giữa các nút thường (ví dụ trong bảng). */
+  tone?: "danger";
 }
 
-export function IconButton({ icon: Icon, label, variant = "ghost", size = "md", type = "button", ...rest }: IconButtonProps) {
+export function IconButton({ icon: Icon, label, variant = "ghost", size = "md", tone, type = "button", ...rest }: IconButtonProps) {
   return (
     <button
       {...rest}
       type={type}
-      className={cx(styles.button, styles.iconOnly, styles[variant], styles[size])}
+      className={cx(styles.button, styles.iconOnly, styles[variant], styles[size], tone === "danger" && styles.dangerText)}
       aria-label={label}
       title={label}
     >

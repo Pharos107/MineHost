@@ -31,7 +31,16 @@
     "copyFailed": "Không chép được, hãy bôi đen rồi chép tay.",
     "recommended": "Đề xuất: {{value}}",
     "typeToConfirm": "Gõ “{{text}}” để xác nhận",
-    "stepOf": "Bước {{current}} trên {{total}}"
+    "stepOf": "Bước {{current}} trên {{total}}",
+    "loading": "Đang tải…",
+    "table": {
+      "search": "Tìm kiếm",
+      "actions": "Thao tác",
+      "actionOn": "{{action}}: {{row}}",
+      "moreFor": "Thao tác khác cho {{row}}",
+      "noMatch": "Không có kết quả cho “{{query}}”.",
+      "count": "Hiển thị {{shown}}/{{total}}"
+    }
   },
   "serverState": {
     "installing": "Đang cài",
