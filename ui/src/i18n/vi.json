@@ -3,6 +3,17 @@
     "tagline": "Host server Minecraft cho bạn bè, không cần biết dòng lệnh.",
     "language": "Ngôn ngữ"
   },
+  "quit": {
+    "button": "Thoát",
+    "title": "Thoát MineHost?",
+    "body_one": "Có {{count}} server đang chạy. Tắt an toàn tất cả rồi thoát?",
+    "body_other": "Có {{count}} server đang chạy. Tắt an toàn tất cả rồi thoát?",
+    "confirm": "Tắt an toàn và thoát",
+    "progressTitle": "Đang thoát MineHost",
+    "progress": "Đã tắt {{done}}/{{total}} server",
+    "closing": "Đang tắt MineHost…",
+    "done": "MineHost đã tắt. Bạn có thể đóng tab này; chạy lại MineHost khi muốn dùng tiếp."
+  },
   "language": {
     "vi": "Tiếng Việt",
     "en": "English"

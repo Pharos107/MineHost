@@ -3,6 +3,17 @@
     "tagline": "Host a Minecraft server for your friends, no command line needed.",
     "language": "Language"
   },
+  "quit": {
+    "button": "Quit",
+    "title": "Quit MineHost?",
+    "body_one": "{{count}} server is running. Stop it safely and quit?",
+    "body_other": "{{count}} servers are running. Stop them all safely and quit?",
+    "confirm": "Stop safely and quit",
+    "progressTitle": "Quitting MineHost",
+    "progress": "Stopped {{done}}/{{total}} servers",
+    "closing": "Shutting down MineHost…",
+    "done": "MineHost has shut down. You can close this tab; start MineHost again when you need it."
+  },
   "language": {
     "vi": "Tiếng Việt",
     "en": "English"

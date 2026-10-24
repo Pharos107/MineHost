@@ -53,9 +53,9 @@ async function request<T>(method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", p
     const error = (await response.json().catch(() => null)) as ErrorBody | null;
     throw new ApiError(error?.code ?? "INTERNAL", error?.params ?? {}, response.status);
   }
-  // 204: thao tác thành công, không có thân response.
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+  // 202/204 của thao tác không trả dữ liệu thì thân rỗng.
+  const text = await response.text();
+  return (text === "" ? undefined : JSON.parse(text)) as T;
 }
 
 function serverPath(id: string): string {
@@ -63,7 +63,10 @@ function serverPath(id: string): string {
 }
 
 export const api = {
+  health: () => request<components["schemas"]["Health"]>("GET", "/health"),
   system: () => request<SystemInfo>("GET", "/system"),
+  /** Tắt an toàn mọi server rồi thoát MineHost. */
+  shutdown: () => request<void>("POST", "/app/shutdown"),
   servers: () => request<Server[]>("GET", "/servers"),
   server: (id: string) => request<Server>("GET", serverPath(id)),
   createServer: (body: CreateServer) => request<Created>("POST", "/servers", body),
