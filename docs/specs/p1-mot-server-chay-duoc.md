@@ -66,7 +66,8 @@ rồi bật server. Controller **không bao giờ** tự ghi `eula=true` khi ng�
 
 Chọn "Thoát" từ icon khay (hoặc nút trong UI): nếu có server đang chạy thì hỏi "Có N server đang
 chạy. Tắt an toàn tất cả rồi thoát?". Đồng ý thì UI hiện tiến độ tắt từng server, xong thì
-controller tắt hẳn. Đóng tab trình duyệt không ảnh hưởng gì.
+controller tắt hẳn. Ở khay không có hộp thoại: chữ trên menu đổi thành "Thoát (tắt an toàn N server)"
+(ADR 0002). Đóng tab trình duyệt không ảnh hưởng gì.
 
 ## 3. Quyết định riêng của P1
 
@@ -264,7 +265,7 @@ Lệnh chạy:
   suốt vòng đời controller ("spawner thread"). Không được spawn từ `spawn_blocking`: luồng đó tự thoát
   sau 10 giây rảnh, kéo theo server bị kill.
 - Phần `unsafe` (Job Object, `prctl`) nằm trong `crates/mh-runtime/src/os/{windows,linux}.rs`, mỗi
-  khối có comment `// SAFETY:`. `mh-runtime` là crate duy nhất mở `unsafe_code`.
+  khối có comment `// SAFETY:`. Ngoài ra chỉ có `minehost/src/win32.rs` mở `unsafe_code` (ADR 0002).
 - Test: dùng binary giả `fake-mc` (một `[[bin]]` chỉ có trong test) in ra `Done (0.1s)!`, đọc stdin,
   thoát khi nhận `stop`, và có cờ để giả lập crash hoặc treo. Test không cần Java.
 
@@ -345,7 +346,7 @@ request tới `127.0.0.1:7878`. Vì vậy:
 - `#![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]`: bản release trên
   Windows không có cửa sổ console. Khi chạy từ terminal, gọi `AttachConsole(ATTACH_PARENT_PROCESS)` để
   các lệnh như `minehost paths` vẫn in ra được.
-- **Một bản duy nhất:** khóa `<data>/minehost.lock` (fs4) và ghi `<data>/runtime.json` `{ url, pid }`.
+- **Một bản duy nhất:** khóa `<data>/minehost.lock` (`File::try_lock` của std) và ghi `<data>/runtime.json` `{ url, pid }`.
   Chạy bản thứ hai thì đọc `runtime.json`, mở trình duyệt tới `url` rồi thoát với mã 0.
 - **Khay (Windows):** `tray-icon` chạy vòng lặp sự kiện trên luồng chính, tokio chạy trên các luồng
   khác. Menu gồm "Mở MineHost", "Thoát". Tooltip: "MineHost — 2 server đang chạy".
@@ -369,7 +370,7 @@ request tới `127.0.0.1:7878`. Vì vậy:
 | `mh-net` | `reqwest` (rustls, stream), `sha1`, `sha2`, `tokio-util` | HTTP, kiểm tra hash, hủy |
 | `mh-java` | `zip`, `flate2`, `tar` | Giải nén JRE |
 | `mh-runtime` | `windows-sys` (Windows), `libc` (Linux) | Job Object, `prctl` |
-| `minehost` | `fs4`, `tray-icon` (Windows) | Khóa một bản duy nhất, icon khay |
+| `minehost` | `tray-icon` (Windows) | Icon khay; khóa một bản dùng `File::try_lock` của std |
 | `ui` | `react-router`, `@xterm/xterm`, `@xterm/addon-fit` | Điều hướng, console |
 | `ui` | `lucide-react` | Icon dùng chung cho bộ component |
 | `ui` (dev) | `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/user-event` | Test component |

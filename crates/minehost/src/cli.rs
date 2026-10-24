@@ -13,6 +13,10 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub no_browser: bool,
 
+    /// Không hiện icon ở khay hệ thống (chỉ có trên Windows), ví dụ khi chạy trong test.
+    #[arg(long, global = true)]
+    pub no_tray: bool,
+
     #[command(subcommand)]
     pub command: Option<Command>,
 }
