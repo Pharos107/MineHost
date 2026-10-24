@@ -23,6 +23,15 @@
     "dataDir": "Data folder",
     "version": "MineHost version"
   },
+  "serverState": {
+    "installing": "Installing",
+    "stopped": "Stopped",
+    "starting": "Starting…",
+    "running": "Running",
+    "stopping": "Stopping…",
+    "crashed": "Crashed",
+    "broken": "Broken"
+  },
   "errors": {
     "INTERNAL": "Something went wrong. See the MineHost log file for details.",
     "NETWORK": "Cannot reach MineHost. Check that MineHost is still running.",

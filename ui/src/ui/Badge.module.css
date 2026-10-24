@@ -1,0 +1,52 @@
+.badge {
+  --tone: var(--mh-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone) 35%, transparent);
+  border-radius: var(--mh-radius-full);
+  color: var(--tone);
+  font-size: var(--mh-text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.primary {
+  --tone: var(--mh-primary);
+}
+
+.info {
+  --tone: var(--mh-info);
+}
+
+.success {
+  --tone: var(--mh-success);
+}
+
+.warning {
+  --tone: var(--mh-warning);
+}
+
+.danger {
+  --tone: var(--mh-danger);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pulse {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}

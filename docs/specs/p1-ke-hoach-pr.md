@@ -21,6 +21,10 @@ flowchart LR
     PR09 --> PR10
     PR10 --> PR11[11 api: REST + bảo vệ localhost]
     PR11 --> PR12[12 api: WebSocket]
+    PR13a[13a ui: component cơ bản] --> PR13b[13b ui: component form]
+    PR13b --> PR13c[13c ui: component lớp phủ]
+    PR13c --> PR13d[13d ui: bảng]
+    PR13d --> PR13
     PR11 --> PR13[13 ui: danh sách + wizard]
     PR12 --> PR14[14 ui: chi tiết + console]
     PR13 --> PR14
@@ -124,6 +128,17 @@ Mỗi PR có: phạm vi, file chính, test bắt buộc, và điều kiện xong
 
 - Phạm vi: `/api/v1/ws`, đăng ký topic, gửi tiếp theo `since`, kiểm tra Origin.
 - Test: đăng ký console, nhận dòng mới; kết nối lại với `since` thì nhận đủ phần bị lỡ; Origin lạ bị từ chối.
+
+### PR-13a, 13b, 13c, 13d · `feat(ui)`: bộ component dùng chung
+
+- Spec: [p1-ui-components.md](p1-ui-components.md). Không phụ thuộc backend, làm song song được với PR-15.
+- 13a: token, CSS nền, Vitest, `Button`, `IconButton`, `Card`, `PageHeader`, `Notice`, `Badge`,
+  `StatusBadge`, `Spinner`, `EmptyState`, `Stack`, `Facts`, `AppShell`, trang `#/ui` khi chạy dev.
+- 13b: `Field`, `TextInput`, `Select`, `Switch`, `Slider`, `Steps`, `ProgressBar`.
+- 13c: `Dialog`, `ConfirmDialog`, `Tabs`, `Menu`, `CopyField`.
+- 13d: `DataTable`, `SearchInput`.
+- Test: như mục "Tiêu chí chấp nhận" của spec.
+- Xong khi: PR-13 và PR-14 ghép trang chỉ từ các component này.
 
 ### PR-13 · `feat(ui)`: danh sách server và wizard tạo server
 

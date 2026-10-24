@@ -1,0 +1,96 @@
+/*
+ * Token giao diện. Component chỉ dùng biến ở đây, không ghi mã màu hay kích thước trực tiếp.
+ * Màu đặt theo vai trò (nền, chữ, trạng thái) để đổi bảng màu mà không phải sửa component.
+ */
+:root {
+  color-scheme: light;
+
+  --mh-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mh-font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  --mh-text-sm: 0.8125rem;
+  --mh-text-md: 0.9375rem;
+  --mh-text-lg: 1.125rem;
+  --mh-text-xl: 1.5rem;
+
+  --mh-space-1: 4px;
+  --mh-space-2: 8px;
+  --mh-space-3: 12px;
+  --mh-space-4: 16px;
+  --mh-space-5: 20px;
+  --mh-space-6: 24px;
+  --mh-space-8: 32px;
+
+  --mh-radius-sm: 4px;
+  --mh-radius-md: 6px;
+  --mh-radius-lg: 10px;
+  --mh-radius-full: 999px;
+
+  --mh-control-height: 36px;
+  --mh-control-height-sm: 28px;
+  --mh-content-width: 1120px;
+  --mh-z-menu: 20;
+  --mh-z-header: 10;
+
+  --mh-bg: #f4f6f9;
+  --mh-surface: #ffffff;
+  --mh-surface-raised: #eef2f6;
+  --mh-surface-hover: #e3e9f0;
+  --mh-input-bg: #ffffff;
+  --mh-border: #d3dbe5;
+  --mh-border-strong: #a9b6c6;
+  --mh-text: #0f1b2a;
+  --mh-text-muted: #52627a;
+
+  --mh-primary: #0f766e;
+  --mh-primary-hover: #0d625b;
+  --mh-on-primary: #ffffff;
+  --mh-focus: #0d9488;
+
+  --mh-success: #15803d;
+  --mh-warning: #b45309;
+  --mh-danger: #be123c;
+  --mh-on-danger: #ffffff;
+  --mh-info: #1d4ed8;
+
+  --mh-shadow-md: 0 8px 24px rgb(15 27 42 / 0.12);
+}
+
+/* Bảng màu "Midnight Aurora" của dự án cũ: nền xanh đêm, nhấn teal. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --mh-bg: #07101b;
+    --mh-surface: #0b1522;
+    --mh-surface-raised: #101c2a;
+    --mh-surface-hover: #17293d;
+    --mh-input-bg: #08121e;
+    --mh-border: #243448;
+    --mh-border-strong: #3a5068;
+    --mh-text: #e8f0f7;
+    --mh-text-muted: #9aaabd;
+
+    --mh-primary: #2dd4bf;
+    --mh-primary-hover: #5eead4;
+    --mh-on-primary: #042f2b;
+    --mh-focus: #2dd4bf;
+
+    --mh-success: #34d399;
+    --mh-warning: #fbbf24;
+    --mh-danger: #fb7185;
+    --mh-on-danger: #3b0712;
+    --mh-info: #60a5fa;
+
+    --mh-shadow-md: 0 12px 32px rgb(0 0 0 / 0.45);
+  }
+}
+
+/* Nền nhạt cho từng trạng thái, tự theo bảng màu đang dùng. */
+:root {
+  --mh-primary-soft: color-mix(in srgb, var(--mh-primary) 14%, transparent);
+  --mh-success-soft: color-mix(in srgb, var(--mh-success) 14%, transparent);
+  --mh-warning-soft: color-mix(in srgb, var(--mh-warning) 14%, transparent);
+  --mh-danger-soft: color-mix(in srgb, var(--mh-danger) 14%, transparent);
+  --mh-info-soft: color-mix(in srgb, var(--mh-info) 14%, transparent);
+}
