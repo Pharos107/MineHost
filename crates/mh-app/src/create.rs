@@ -67,11 +67,13 @@ impl App {
                 app.supervisor(id);
                 tracing::info!(server = %id, "đã tạo server");
             }
+            app.notify_changed(id);
             result
         });
         if let Some(entry) = lock(&self.installing).get_mut(&id) {
             entry.job_id = Some(job_id);
         }
+        self.notify_changed(id);
         Ok(Created {
             server_id: id,
             job_id,

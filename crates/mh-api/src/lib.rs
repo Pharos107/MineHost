@@ -1,4 +1,4 @@
-//! REST API của MineHost tại `/api/v1`, kèm UI tĩnh ở mọi đường dẫn còn lại.
+//! REST API và WebSocket của MineHost tại `/api/v1`, kèm UI tĩnh ở mọi đường dẫn còn lại.
 
 mod dto;
 mod error;
@@ -7,6 +7,7 @@ mod jobs;
 mod servers;
 mod system;
 mod ui;
+mod ws;
 
 use std::sync::Arc;
 
@@ -99,6 +100,7 @@ pub fn router(app: Arc<App>, port: u16) -> Router {
         .route("/jobs/{id}/cancel", post(jobs::cancel))
         .route("/catalog/paper/versions", get(jobs::paper_versions))
         .route("/app/shutdown", post(jobs::shutdown))
+        .route("/ws", get(ws::upgrade))
         .fallback(error::api_not_found)
         .with_state(app);
 
