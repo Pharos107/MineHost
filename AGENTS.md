@@ -72,6 +72,9 @@ Quyết định đã chốt:
 - Kiểu dữ liệu API sinh từ OpenAPI: sửa DTO trong `mh-api` rồi chạy `npm run gen:api`,
   commit cả `src/api/openapi.json` và `src/api/schema.d.ts`. CI kiểm tra hai file này khớp backend.
 - Không hard-code chuỗi hiển thị; mọi chuỗi đi qua `t(...)`.
+- Trang chỉ ghép từ bộ component trong `ui/src/ui/` (spec `docs/specs/p1-ui-components.md`); không tự
+  đặt màu, cỡ chữ, khoảng cách, không ghi đè style của component. Thiếu kiểu thì thêm `variant` vào
+  component. Xem mọi component tại `http://localhost:5173/#/ui` khi chạy `npm run dev`.
 - TypeScript giữ ở 5.9 vì `typescript-eslint` và `openapi-typescript` chưa hỗ trợ TypeScript 7.
 
 ## Lệnh thường dùng
@@ -88,7 +91,7 @@ cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 bash scripts/check-file-size.sh
-cd ui && npm run lint && npm run typecheck
+cd ui && npm run lint && npm run typecheck && npm test
 ```
 
 Khi phát triển UI: chạy controller như trên, rồi `cd ui && npm run dev` (Vite chuyển `/api` tới cổng 7878).

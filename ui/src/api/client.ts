@@ -4,6 +4,7 @@ import type { components } from "./schema";
 
 // Kiểu dữ liệu sinh từ OpenAPI của backend (`npm run gen:api`), không tự viết tay.
 export type SystemInfo = components["schemas"]["SystemDto"];
+export type ServerState = components["schemas"]["StateDto"];
 type ErrorBody = components["schemas"]["ErrorBody"];
 
 /** Lỗi từ API. Thông báo được dịch theo `code`, không lấy câu chữ từ backend. */

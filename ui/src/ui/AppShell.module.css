@@ -1,0 +1,46 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: var(--mh-z-header);
+  background: var(--mh-surface);
+  border-bottom: 1px solid var(--mh-border);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mh-space-4);
+  max-width: var(--mh-content-width);
+  min-height: 56px;
+  margin: 0 auto;
+  padding: 0 var(--mh-space-4);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mh-space-2);
+  color: var(--mh-primary);
+  font-size: var(--mh-text-lg);
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--mh-space-2);
+}
+
+.main {
+  width: 100%;
+  max-width: var(--mh-content-width);
+  margin: 0 auto;
+  padding: var(--mh-space-6) var(--mh-space-4) var(--mh-space-8);
+}

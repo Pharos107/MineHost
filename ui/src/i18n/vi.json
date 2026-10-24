@@ -23,6 +23,15 @@
     "dataDir": "Thư mục dữ liệu",
     "version": "Phiên bản MineHost"
   },
+  "serverState": {
+    "installing": "Đang cài",
+    "stopped": "Đã tắt",
+    "starting": "Đang bật…",
+    "running": "Đang chạy",
+    "stopping": "Đang tắt…",
+    "crashed": "Bị lỗi",
+    "broken": "Bị hỏng"
+  },
   "errors": {
     "INTERNAL": "Có lỗi xảy ra. Xem chi tiết trong file log của MineHost.",
     "NETWORK": "Không kết nối được tới MineHost. Kiểm tra xem MineHost còn đang chạy không.",

@@ -371,6 +371,8 @@ request tới `127.0.0.1:7878`. Vì vậy:
 | `mh-runtime` | `windows-sys` (Windows), `libc` (Linux) | Job Object, `prctl` |
 | `minehost` | `fs4`, `tray-icon` (Windows) | Khóa một bản duy nhất, icon khay |
 | `ui` | `react-router`, `@xterm/xterm`, `@xterm/addon-fit` | Điều hướng, console |
+| `ui` | `lucide-react` | Icon dùng chung cho bộ component |
+| `ui` (dev) | `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/user-event` | Test component |
 
 Thêm phụ thuộc thì chạy `cargo deny check` trên máy trước khi mở PR.
 

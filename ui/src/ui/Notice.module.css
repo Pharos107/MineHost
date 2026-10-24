@@ -1,0 +1,51 @@
+.notice {
+  --tone: var(--mh-info);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--mh-space-3);
+  padding: var(--mh-space-3) var(--mh-space-4);
+  background: color-mix(in srgb, var(--tone) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone) 40%, transparent);
+  border-radius: var(--mh-radius-md);
+}
+
+.success {
+  --tone: var(--mh-success);
+}
+
+.warning {
+  --tone: var(--mh-warning);
+}
+
+.danger {
+  --tone: var(--mh-danger);
+}
+
+.icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--tone);
+}
+
+.content {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.body {
+  overflow-wrap: anywhere;
+}
+
+.body > p {
+  margin: 0;
+}
+
+.action {
+  align-self: center;
+}
