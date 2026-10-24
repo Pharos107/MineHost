@@ -1,8 +1,15 @@
+use std::collections::HashMap;
+
 use axum::Json;
+use axum::extract::rejection::JsonRejection;
+use axum::extract::{FromRequest, FromRequestParts, Path, Request};
 use axum::http::StatusCode;
+use axum::http::request::Parts;
 use axum::response::{IntoResponse, Response};
-use mh_core::ErrorCode;
+use mh_app::AppError;
+use mh_core::{ErrorCode, ServerId};
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use utoipa::ToSchema;
 
 /// Thân response khi có lỗi. Frontend dịch theo `code`; backend không gửi câu chữ đã dịch.
@@ -41,6 +48,44 @@ impl ApiError {
         tracing::error!(%detail, "lỗi nội bộ khi xử lý request");
         Self::new(StatusCode::INTERNAL_SERVER_ERROR, ErrorCode::Internal)
     }
+
+    /// Dữ liệu gửi lên sai; `field` cho UI biết ô nào cần sửa.
+    pub fn invalid(field: &str) -> Self {
+        Self::new(StatusCode::BAD_REQUEST, ErrorCode::InvalidInput)
+            .with_params(serde_json::json!({ "field": field }))
+    }
+}
+
+/// HTTP status ứng với từng mã lỗi.
+fn status_for(code: ErrorCode) -> StatusCode {
+    match code {
+        ErrorCode::NotFound | ErrorCode::VersionNotFound => StatusCode::NOT_FOUND,
+        ErrorCode::InvalidInput | ErrorCode::PathOutsideRoot => StatusCode::BAD_REQUEST,
+        ErrorCode::Forbidden => StatusCode::FORBIDDEN,
+        ErrorCode::ServerBusy
+        | ErrorCode::EulaNotAccepted
+        | ErrorCode::PortInUse
+        | ErrorCode::JobCancelled
+        | ErrorCode::ServerCrashed => StatusCode::CONFLICT,
+        ErrorCode::NetworkUnavailable | ErrorCode::DownloadFailed | ErrorCode::ChecksumMismatch => {
+            StatusCode::BAD_GATEWAY
+        }
+        ErrorCode::NotEnoughDisk => StatusCode::INSUFFICIENT_STORAGE,
+        ErrorCode::ConfigInvalid => StatusCode::UNPROCESSABLE_ENTITY,
+        _ => StatusCode::INTERNAL_SERVER_ERROR,
+    }
+}
+
+impl From<AppError> for ApiError {
+    fn from(err: AppError) -> Self {
+        let status = status_for(err.code);
+        if status.is_server_error() {
+            tracing::error!(error = %err, "lỗi khi xử lý request");
+        } else {
+            tracing::debug!(error = %err, "request bị từ chối");
+        }
+        Self::new(status, err.code).with_params(err.params)
+    }
 }
 
 impl IntoResponse for ApiError {
@@ -55,4 +100,64 @@ impl IntoResponse for ApiError {
 
 pub async fn api_not_found() -> ApiError {
     ApiError::new(StatusCode::NOT_FOUND, ErrorCode::NotFound)
+}
+
+/// Như `Json`, nhưng body sai trả `ErrorBody` với `INVALID_INPUT` thay vì chữ của axum.
+#[derive(Debug)]
+pub struct ApiJson<T>(pub T);
+
+impl<S: Send + Sync, T: DeserializeOwned> FromRequest<S> for ApiJson<T> {
+    type Rejection = ApiError;
+
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
+        match Json::<T>::from_request(req, state).await {
+            Ok(Json(value)) => Ok(Self(value)),
+            Err(rejection) => {
+                tracing::debug!(%rejection, "body JSON không hợp lệ");
+                let status = match rejection {
+                    JsonRejection::MissingJsonContentType(_) => StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                    _ => StatusCode::BAD_REQUEST,
+                };
+                Err(ApiError::new(status, ErrorCode::InvalidInput))
+            }
+        }
+    }
+}
+
+/// `{id}` trong đường dẫn, đã kiểm tra là ULID trước khi được ghép vào đường dẫn trên đĩa.
+#[derive(Debug, Clone, Copy)]
+pub struct IdPath(pub ServerId);
+
+impl<S: Send + Sync> FromRequestParts<S> for IdPath {
+    type Rejection = ApiError;
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        // Đọc theo tên, vì có route còn tham số khác sau `{id}` (ví dụ `{action}`).
+        let Path(params) = Path::<HashMap<String, String>>::from_request_parts(parts, state)
+            .await
+            .map_err(|_| ApiError::invalid("id"))?;
+        let raw = params.get("id").ok_or_else(|| ApiError::invalid("id"))?;
+        ServerId::parse(raw)
+            .map(Self)
+            .map_err(|_| ApiError::invalid("id"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_known_code_has_a_sensible_status() {
+        assert_eq!(status_for(ErrorCode::EulaNotAccepted), StatusCode::CONFLICT);
+        assert_eq!(status_for(ErrorCode::Forbidden), StatusCode::FORBIDDEN);
+        assert_eq!(
+            status_for(ErrorCode::Internal),
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_for(ErrorCode::VersionNotFound),
+            StatusCode::NOT_FOUND
+        );
+    }
 }

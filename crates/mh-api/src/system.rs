@@ -7,6 +7,7 @@ use serde::Serialize;
 use utoipa::ToSchema;
 
 use crate::ApiError;
+use crate::dto::MemoryDto;
 use crate::error::ErrorBody;
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -29,6 +30,10 @@ pub struct SystemDto {
     pub memory_available_bytes: u64,
     pub data_dir: String,
     pub data_disk: Option<DiskDto>,
+    /// RAM đề xuất cho server mới (spec P1, mục 4.3).
+    pub suggested_memory_mb: MemoryDto,
+    /// Địa chỉ IPv4 trong mạng LAN, để bạn bè vào chơi.
+    pub lan_addresses: Vec<String>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -62,6 +67,12 @@ pub async fn health() -> Json<Health> {
 )]
 pub async fn system_info(State(app): State<Arc<App>>) -> Result<Json<SystemDto>, ApiError> {
     let data_dir = app.dirs().root().display().to_string();
+    let suggested = app.suggested_memory();
+    let lan_addresses = app
+        .lan_addresses()
+        .iter()
+        .map(ToString::to_string)
+        .collect();
     let info = tokio::task::spawn_blocking(move || app.system_info())
         .await
         .map_err(ApiError::internal)?;
@@ -81,5 +92,10 @@ pub async fn system_info(State(app): State<Arc<App>>) -> Result<Json<SystemDto>,
             total_bytes: disk.total_bytes,
             available_bytes: disk.available_bytes,
         }),
+        suggested_memory_mb: MemoryDto {
+            min: suggested.min_mb(),
+            max: suggested.max_mb(),
+        },
+        lan_addresses,
     }))
 }

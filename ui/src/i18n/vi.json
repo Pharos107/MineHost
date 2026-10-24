@@ -40,6 +40,7 @@
     "JAVA_INSTALL_FAILED": "Không cài được Java. Hãy thử lại.",
     "NOT_ENOUGH_DISK": "Ổ đĩa còn dưới 1 GB trống. Hãy dọn bớt rồi thử lại.",
     "JOB_CANCELLED": "Đã hủy.",
-    "SERVER_CRASHED": "Server bị dừng đột ngột."
+    "SERVER_CRASHED": "Server bị dừng đột ngột.",
+    "FORBIDDEN": "Yêu cầu bị từ chối vì không đến từ giao diện MineHost trên máy này."
   }
 }

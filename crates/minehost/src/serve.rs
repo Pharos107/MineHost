@@ -14,7 +14,8 @@ pub async fn run(dirs: DataDirs, config: Config, allow_browser: bool) -> anyhow:
     let listener = TcpListener::bind(config.listen)
         .await
         .map_err(|e| bind_error(&config, e))?;
-    let url = format!("http://{}", listener.local_addr()?);
+    let addr = listener.local_addr()?;
+    let url = format!("http://{addr}");
     tracing::info!(version = mh_app::VERSION, data_dir = %dirs.root().display(), %url, "MineHost đã chạy");
 
     if allow_browser
@@ -30,9 +31,16 @@ pub async fn run(dirs: DataDirs, config: Config, allow_browser: bool) -> anyhow:
         Ok(n) => tracing::info!(n, "đã bật lại các server đang chạy lần trước"),
         Err(err) => tracing::error!(%err, "không đọc được danh sách server"),
     }
-    let router = mh_api::router(Arc::clone(&app));
+    let router = mh_api::router(Arc::clone(&app), addr.port());
+    let stop_app = Arc::clone(&app);
+    let stop = async move {
+        tokio::select! {
+            () = shutdown_signal() => {}
+            () = stop_app.shutdown_requested() => tracing::info!("nhận lệnh Thoát từ giao diện"),
+        }
+    };
     axum::serve(listener, router)
-        .with_graceful_shutdown(shutdown_signal())
+        .with_graceful_shutdown(stop)
         .await
         .context("máy chủ web dừng bất thường")?;
 
