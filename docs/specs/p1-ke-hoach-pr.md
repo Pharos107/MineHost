@@ -144,6 +144,9 @@ Mỗi PR có: phạm vi, file chính, test bắt buộc, và điều kiện xong
 
 - Phạm vi: router; trang danh sách; wizard 3 bước; hiện tiến độ Job; client WebSocket dùng chung.
 - Test: Vitest cho đề xuất RAM và format; test i18n kiểm tra `vi.json` và `en.json` đủ khóa như nhau.
+- Tách làm hai PR vì vượt khoảng 400 dòng:
+  - 13 (1/2): `react-router`, client REST và WebSocket dùng chung, trang danh sách, đầu trang chi tiết.
+  - 13 (2/2): wizard 3 bước, tiến độ Job, đề xuất RAM.
 
 ### PR-14 · `feat(ui)`: trang chi tiết server
 

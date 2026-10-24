@@ -23,6 +23,26 @@
     "dataDir": "Data folder",
     "version": "MineHost version"
   },
+  "notFound": {
+    "title": "This page does not exist.",
+    "home": "Back to servers"
+  },
+  "loaders": {
+    "paper": "Paper"
+  },
+  "servers": {
+    "heading": "Your servers",
+    "create": "Create server",
+    "createFirst": "Create your first server",
+    "emptyTitle": "No servers yet",
+    "emptyDescription": "Set up a Paper server in a few minutes. MineHost downloads Java and everything else for you.",
+    "name": "Name",
+    "state": "Status",
+    "version": "Version",
+    "memory": "RAM",
+    "port": "Port",
+    "back": "All servers"
+  },
   "ui": {
     "close": "Close",
     "cancel": "Cancel",

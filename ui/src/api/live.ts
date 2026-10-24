@@ -1,0 +1,37 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+
+import type { Server } from "./client";
+import { live } from "./ws";
+
+export const SERVERS_KEY = ["servers"] as const;
+
+type ServerEvent = Server | { id: string; removed: true };
+
+/** Ghép một tin của topic `servers` vào danh sách đang có; giữ thứ tự cũ, server mới thêm cuối. */
+export function applyServerEvent(list: Server[] | undefined, event: ServerEvent): Server[] {
+  const current = list ?? [];
+  if ("removed" in event) return current.filter((server) => server.id !== event.id);
+  const index = current.findIndex((server) => server.id === event.id);
+  if (index === -1) return [...current, event];
+  return current.map((server, i) => (i === index ? event : server));
+}
+
+/**
+ * Giữ cache `["servers"]` (và `["servers", id]`) theo sự kiện WebSocket, để danh sách và
+ * trang chi tiết đổi trạng thái ngay mà không phải hỏi lại REST. Gọi một lần ở gốc app.
+ */
+export function useServersLive() {
+  const queryClient = useQueryClient();
+  useEffect(
+    () =>
+      live.subscribe("servers", (message) => {
+        if (message.error) return;
+        const event = message.data as ServerEvent;
+        queryClient.setQueryData<Server[]>(SERVERS_KEY, (list) => applyServerEvent(list, event));
+        if ("removed" in event) queryClient.removeQueries({ queryKey: [...SERVERS_KEY, event.id] });
+        else queryClient.setQueryData([...SERVERS_KEY, event.id], event);
+      }),
+    [queryClient],
+  );
+}

@@ -23,6 +23,26 @@
     "dataDir": "Thư mục dữ liệu",
     "version": "Phiên bản MineHost"
   },
+  "notFound": {
+    "title": "Không có trang này.",
+    "home": "Về danh sách server"
+  },
+  "loaders": {
+    "paper": "Paper"
+  },
+  "servers": {
+    "heading": "Server của bạn",
+    "create": "Tạo server",
+    "createFirst": "Tạo server đầu tiên",
+    "emptyTitle": "Chưa có server nào",
+    "emptyDescription": "Tạo một server Paper trong vài phút. MineHost tự tải Java và mọi thứ cần thiết.",
+    "name": "Tên",
+    "state": "Trạng thái",
+    "version": "Phiên bản",
+    "memory": "RAM",
+    "port": "Cổng",
+    "back": "Danh sách server"
+  },
   "ui": {
     "close": "Đóng",
     "cancel": "Hủy",
