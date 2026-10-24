@@ -1,5 +1,6 @@
 use std::io;
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::Context;
 use mh_app::App;
@@ -8,21 +9,33 @@ use mh_platform::DataDirs;
 use tokio::net::TcpListener;
 
 use crate::config::Config;
+use crate::instance::InstanceLock;
 
-/// Chạy API và UI cho tới khi nhận Ctrl+C hoặc `SIGTERM`.
-pub async fn run(dirs: DataDirs, config: Config, allow_browser: bool) -> anyhow::Result<()> {
+/// Gọi một lần khi controller đã mở cổng và tạo xong `App`; khay dùng để biết url và gọi Thoát.
+pub type ReadyHook = Box<dyn FnOnce(&Arc<App>, &str) + Send>;
+
+/// Web server tắt xong các kết nối trong chừng này; quá thì thoát luôn.
+const HTTP_DRAIN: Duration = Duration::from_secs(5);
+
+/// Chạy API và UI tới khi có yêu cầu thoát: Ctrl+C, `SIGTERM`, nút Thoát trong UI hoặc ở khay.
+/// Mọi đường đều đi qua `shutdown_all`, nên không server nào bị kill khi người dùng thoát.
+pub async fn run(
+    dirs: DataDirs,
+    config: Config,
+    allow_browser: bool,
+    lock: &InstanceLock,
+    on_ready: ReadyHook,
+) -> anyhow::Result<()> {
     let listener = TcpListener::bind(config.listen)
         .await
         .map_err(|e| bind_error(&config, e))?;
     let addr = listener.local_addr()?;
     let url = format!("http://{addr}");
+    lock.publish(&url)?;
     tracing::info!(version = mh_app::VERSION, data_dir = %dirs.root().display(), %url, "MineHost đã chạy");
 
-    if allow_browser
-        && config.open_browser
-        && let Err(err) = open::that_detached(&url)
-    {
-        tracing::warn!(%err, "không mở được trình duyệt; hãy tự mở {url}");
+    if allow_browser && config.open_browser {
+        open_browser(&url);
     }
 
     let app = Arc::new(App::new(dirs).context("không khởi tạo được MineHost")?);
@@ -31,24 +44,37 @@ pub async fn run(dirs: DataDirs, config: Config, allow_browser: bool) -> anyhow:
         Ok(n) => tracing::info!(n, "đã bật lại các server đang chạy lần trước"),
         Err(err) => tracing::error!(%err, "không đọc được danh sách server"),
     }
-    let router = mh_api::router(Arc::clone(&app), addr.port());
-    let stop_app = Arc::clone(&app);
-    let stop = async move {
-        tokio::select! {
-            () = shutdown_signal() => {}
-            () = stop_app.shutdown_requested() => tracing::info!("nhận lệnh Thoát từ giao diện"),
-        }
-    };
-    axum::serve(listener, router)
-        .with_graceful_shutdown(stop)
-        .await
-        .context("máy chủ web dừng bất thường")?;
+    on_ready(&app, &url);
 
-    // Tắt an toàn mọi server trước khi thoát; PR-15 sẽ thêm nút "Thoát" và khay đi chung đường này.
+    let router = mh_api::router(Arc::clone(&app), addr.port());
+    let (stop_http, http_stopped) = tokio::sync::oneshot::channel::<()>();
+    let server = axum::serve(listener, router).with_graceful_shutdown(async {
+        let _ = http_stopped.await;
+    });
+    let server = tokio::spawn(server.into_future());
+
+    tokio::select! {
+        () = shutdown_signal() => {}
+        () = app.shutdown_requested() => tracing::info!("nhận lệnh Thoát"),
+    }
+    // Web vẫn chạy trong lúc tắt server, để giao diện thấy từng server dừng.
     app.shutdown_all(|done, total| tracing::info!(done, total, "đang tắt các server"))
         .await;
+    let _ = stop_http.send(());
+    match tokio::time::timeout(HTTP_DRAIN, server).await {
+        Ok(Ok(Ok(()))) => {}
+        Ok(Ok(Err(err))) => tracing::warn!(%err, "máy chủ web dừng bất thường"),
+        Ok(Err(err)) => tracing::warn!(%err, "task máy chủ web lỗi"),
+        Err(_) => tracing::warn!("còn kết nối chưa đóng, thoát luôn"),
+    }
     tracing::info!("MineHost đã tắt");
     Ok(())
+}
+
+pub fn open_browser(url: &str) {
+    if let Err(err) = open::that_detached(url) {
+        tracing::warn!(%err, "không mở được trình duyệt; hãy tự mở {url}");
+    }
 }
 
 fn bind_error(config: &Config, err: io::Error) -> anyhow::Error {

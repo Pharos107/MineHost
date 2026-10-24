@@ -57,8 +57,9 @@ Quyết định đã chốt:
 - Mỗi file tối đa **500 dòng**, mỗi hàm tối đa khoảng 60 dòng. `scripts/check-file-size.sh` chặn trong CI.
 - Không `unwrap()`, `expect()`, `panic!()` ngoài test; clippy đã đặt `deny`.
 - Thư viện dùng `thiserror`; `anyhow` chỉ dùng trong bin `minehost`.
-- `unsafe` bị cấm ở cấp workspace. Khi P1 cần Job Object/`prctl`, gói phần đó trong một module
-  nhỏ của `mh-runtime` kèm comment `// SAFETY:` và mở `unsafe_code` riêng cho crate đó.
+- `unsafe` bị cấm ở cấp workspace. Chỉ mở bằng `#![allow(unsafe_code)]` trong vài module nhỏ, mỗi
+  khối có comment `// SAFETY:`: `mh-runtime/src/os/` (Job Object, `prctl`) và `minehost/src/win32.rs`
+  (console, vòng lặp message của khay; xem `docs/adr/0002-unsafe-trong-binary-cho-khay.md`).
 - Mọi đường dẫn nhận từ người dùng đi qua `SafeRoot::join`. Mọi file cấu hình ghi bằng
   `mh_platform::fs::write_atomic`.
 - Lỗi gửi cho client dùng `ErrorCode` (`mh-core`) và `ApiError` (`mh-api`). Backend không gửi
