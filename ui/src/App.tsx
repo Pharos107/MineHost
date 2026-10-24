@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router";
 
 import { useServersLive } from "./api/live";
 import { LanguageSwitch } from "./components/LanguageSwitch";
+import { QuitButton } from "./components/QuitButton";
 import { CreateServerPage } from "./pages/create/CreateServerPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ServerListPage } from "./pages/ServerListPage";
@@ -25,7 +26,14 @@ export function App() {
 
   return (
     <BrowserRouter>
-      <AppShell actions={<LanguageSwitch />}>
+      <AppShell
+        actions={
+          <>
+            <LanguageSwitch />
+            <QuitButton />
+          </>
+        }
+      >
         <AppRoutes />
       </AppShell>
     </BrowserRouter>
