@@ -4,6 +4,11 @@ name: CI
 # Khi muốn bật lại tự động, thêm `push: { branches: [main] }` và `pull_request:`.
 on:
   workflow_dispatch:
+    inputs:
+      integration:
+        description: "Chạy cả test tích hợp với Paper thật (vài phút mỗi OS)"
+        type: boolean
+        default: true
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -70,6 +75,42 @@ jobs:
         run: cargo test --workspace --locked
       - name: build release
         run: cargo build --release --locked -p minehost
+
+  integration:
+    name: Tích hợp Paper thật (${{ matrix.name }})
+    if: inputs.integration
+    needs: ui
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+          - name: linux-x64
+            os: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    env:
+      MINEHOST_E2E_DIR: ${{ github.workspace }}/.minehost-e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ui-dist
+          path: ui/dist
+      - name: Cài toolchain theo rust-toolchain.toml
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      # Java và file Paper tải về nằm trong java/ và cache/ của thư mục dữ liệu; khóa theo phiên
+      # bản cố định trong test (Paper 1.21.4, Java 21) để lần sau không phải tải lại.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .minehost-e2e/java
+            .minehost-e2e/cache
+          key: e2e-${{ runner.os }}-paper-1.21.4-java-21-v1
+      - name: Test tích hợp
+        run: cargo test -p minehost --test paper --locked -- --ignored --test-threads=1
+        timeout-minutes: 40
 
   checks:
     name: Kiểm tra repo
