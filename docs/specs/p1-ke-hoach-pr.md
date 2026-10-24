@@ -153,6 +153,9 @@ Mỗi PR có: phạm vi, file chính, test bắt buộc, và điều kiện xong
 - Phạm vi: trạng thái và các nút; hộp thoại EULA; tab Console (xterm.js); tab Cài đặt game
   (`server.properties`); tab Cài đặt server; xóa với xác nhận gõ lại tên.
 - Test: Vitest cho phần tách lịch sử lệnh; kiểm tra tay trên trình duyệt.
+- Tách làm hai PR vì vượt khoảng 400 dòng:
+  - 14 (1/2): đầu trang, các nút, Buộc dừng, EULA, thông báo crash/hỏng/đang cài, tab Console.
+  - 14 (2/2): tab Cài đặt game, tab Cài đặt server, xóa server.
 
 ### PR-15 · `feat(bin)`: một bản duy nhất, khay Windows, thoát an toàn
 

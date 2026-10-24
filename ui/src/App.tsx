@@ -5,7 +5,7 @@ import { LanguageSwitch } from "./components/LanguageSwitch";
 import { CreateServerPage } from "./pages/create/CreateServerPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ServerListPage } from "./pages/ServerListPage";
-import { ServerPage } from "./pages/ServerPage";
+import { ServerPage } from "./pages/server/ServerPage";
 import { AppShell } from "./ui";
 
 /** Các trang theo spec P1, mục 6. Backend trả `index.html` cho mọi đường dẫn lạ. */
