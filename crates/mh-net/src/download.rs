@@ -84,6 +84,13 @@ impl Hasher {
     }
 }
 
+/// Hash của `data` theo cùng thuật toán với `checksum`, dạng hex chữ thường.
+pub(crate) fn digest_hex(checksum: &Checksum, data: &[u8]) -> String {
+    let mut hasher = Hasher::new(checksum);
+    hasher.update(data);
+    hasher.finish()
+}
+
 impl HttpClient {
     /// Tải `url` về `dest`, gọi `progress(done, total)` sau mỗi đoạn.
     ///

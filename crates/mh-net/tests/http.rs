@@ -292,3 +292,22 @@ fn checksum_requires_hex_of_right_length() {
         "ab".repeat(20)
     );
 }
+
+#[tokio::test]
+async fn checked_json_rejects_wrong_hash() {
+    let server = MockServer::start().await;
+    mock(&server, "/v", 200, "[1]", None).await;
+    let tmp = tempfile::tempdir().unwrap();
+    let http = client(&tmp);
+    let url = format!("{}/v", server.uri());
+
+    let good = sha256_of(b"[1]");
+    let got = http.get_json_checked::<Vec<u8>>(&url, TTL, &good).await;
+    assert_eq!(got.unwrap().value, [1]);
+    let bad = sha256_of(b"[2]");
+    let err = client(&tmp)
+        .get_json_checked::<Vec<u8>>(&url, TTL, &bad)
+        .await
+        .unwrap_err();
+    assert_eq!(err.code(), ErrorCode::ChecksumMismatch);
+}
