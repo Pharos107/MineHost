@@ -1,0 +1,75 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label {
+  font-size: var(--mh-text-sm);
+  font-weight: 600;
+}
+
+.hint {
+  color: var(--mh-text-muted);
+  font-size: var(--mh-text-sm);
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--mh-space-1);
+  margin: 0;
+  color: var(--mh-danger);
+  font-size: var(--mh-text-sm);
+}
+
+/* Dùng chung cho TextInput và Select. */
+.control {
+  width: 100%;
+  min-height: var(--mh-control-height);
+  padding: 0 var(--mh-space-3);
+  background: var(--mh-input-bg);
+  border: 1px solid var(--mh-border);
+  border-radius: var(--mh-radius-md);
+  color: var(--mh-text);
+}
+
+.control:hover:not(:disabled) {
+  border-color: var(--mh-border-strong);
+}
+
+.control:focus-visible {
+  outline-offset: 0;
+  border-color: var(--mh-focus);
+}
+
+.control[aria-invalid="true"] {
+  border-color: var(--mh-danger);
+}
+
+.control:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.selectWrap {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.select {
+  appearance: none;
+  padding-right: var(--mh-space-8);
+  cursor: pointer;
+}
+
+.chevron {
+  position: absolute;
+  top: 50%;
+  right: var(--mh-space-3);
+  transform: translateY(-50%);
+  color: var(--mh-text-muted);
+  pointer-events: none;
+}

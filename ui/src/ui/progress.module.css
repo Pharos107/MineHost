@@ -1,0 +1,103 @@
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mh-space-2) var(--mh-space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--mh-space-2);
+  color: var(--mh-text-muted);
+}
+
+.index {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--mh-border-strong);
+  border-radius: 50%;
+  font-size: var(--mh-text-sm);
+  font-weight: 600;
+}
+
+.active {
+  color: var(--mh-text);
+  font-weight: 600;
+}
+
+.active .index {
+  background: var(--mh-primary);
+  border-color: var(--mh-primary);
+  color: var(--mh-on-primary);
+}
+
+.done .index {
+  background: var(--mh-primary-soft);
+  border-color: var(--mh-primary);
+  color: var(--mh-primary);
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progressText {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--mh-space-3);
+  font-size: var(--mh-text-sm);
+}
+
+.percent {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.bar {
+  --tone: var(--mh-primary);
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  background: var(--mh-surface-hover);
+  border-radius: var(--mh-radius-full);
+}
+
+.success {
+  --tone: var(--mh-success);
+}
+
+.danger {
+  --tone: var(--mh-danger);
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  background: var(--tone);
+  border-radius: inherit;
+  transition: width 200ms ease;
+}
+
+.indeterminate {
+  position: absolute;
+  width: 35%;
+  animation: slide 1.2s ease-in-out infinite;
+}
+
+@keyframes slide {
+  from {
+    left: -35%;
+  }
+  to {
+    left: 100%;
+  }
+}

@@ -1,0 +1,57 @@
+.slider {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--mh-space-4);
+}
+
+.track {
+  /* Độ rộng nút kéo của trình duyệt, để vạch đề xuất trùng tâm nút. */
+  --thumb: 16px;
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.range {
+  width: 100%;
+  height: var(--mh-control-height);
+  margin: 0;
+  accent-color: var(--mh-primary);
+  cursor: pointer;
+}
+
+.range:disabled {
+  cursor: not-allowed;
+}
+
+.mark {
+  position: absolute;
+  top: calc(var(--mh-control-height) - 6px);
+  width: 2px;
+  height: 8px;
+  margin-left: -1px;
+  background: var(--mh-primary);
+  border-radius: 1px;
+}
+
+.markLabel {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  color: var(--mh-primary);
+  font-size: var(--mh-text-sm);
+  white-space: nowrap;
+}
+
+.value {
+  min-width: 5.5rem;
+  min-height: var(--mh-control-height);
+  padding: 0 var(--mh-space-3);
+  background: var(--mh-surface-raised);
+  border: 1px solid var(--mh-border);
+  border-radius: var(--mh-radius-md);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: calc(var(--mh-control-height) - 2px);
+  text-align: center;
+}

@@ -23,6 +23,10 @@
     "dataDir": "Data folder",
     "version": "MineHost version"
   },
+  "ui": {
+    "recommended": "Recommended: {{value}}",
+    "stepOf": "Step {{current}} of {{total}}"
+  },
   "serverState": {
     "installing": "Installing",
     "stopped": "Stopped",
