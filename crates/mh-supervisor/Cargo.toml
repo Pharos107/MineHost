@@ -7,5 +7,27 @@ rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
 
+[dependencies]
+mh-core.workspace = true
+mh-runtime.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+time.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+
+# Cùng mã nguồn với `fake-mc` của mh-runtime; khai báo lại để test ở đây có `CARGO_BIN_EXE_*`.
+# Tên khác để không trùng file output trong `target/`.
+[[bin]]
+name = "supervisor-fake-mc"
+path = "../mh-runtime/src/bin/fake-mc.rs"
+test = false
+doc = false
+
 [lints]
 workspace = true
