@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router";
 
 import { useServersLive } from "./api/live";
 import { LanguageSwitch } from "./components/LanguageSwitch";
+import { CreateServerPage } from "./pages/create/CreateServerPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ServerListPage } from "./pages/ServerListPage";
 import { ServerPage } from "./pages/ServerPage";
@@ -12,6 +13,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<ServerListPage />} />
+      <Route path="/new" element={<CreateServerPage />} />
       <Route path="/servers/:id" element={<ServerPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

@@ -43,6 +43,54 @@
     "port": "Cổng",
     "back": "Danh sách server"
   },
+  "wizard": {
+    "title": "Tạo server",
+    "steps": {
+      "loader": "Loại server",
+      "version": "Phiên bản",
+      "settings": "Tên và RAM"
+    },
+    "loader": "Chọn loại server",
+    "paperDescription": "Nhanh, hỗ trợ plugin.",
+    "vanillaDescription": "Bản gốc của Mojang.",
+    "recommended": "Khuyên dùng",
+    "soon": "Sắp có",
+    "version": "Phiên bản Minecraft",
+    "versionHint": "Bạn bè cần dùng đúng phiên bản này để vào chơi.",
+    "latest": "{{version}} (mới nhất)",
+    "showOlder": "Hiện bản cũ hơn",
+    "noVersions": "Paper chưa có phiên bản ổn định nào. Hãy thử lại sau.",
+    "name": "Tên server",
+    "nameHint": "Tên này cũng hiện cho bạn bè trong danh sách server của Minecraft.",
+    "nameInvalid": "Tên phải có từ 1 đến 64 ký tự.",
+    "defaultName": "Server của tôi",
+    "memory": "RAM tối đa",
+    "memoryHint": "Càng nhiều người chơi hoặc plugin thì càng cần nhiều RAM.",
+    "memoryWarning": "Máy chỉ còn trống {{free}} RAM. Server vẫn chạy được nhưng máy có thể bị chậm.",
+    "advanced": "Nâng cao",
+    "port": "Cổng",
+    "portHint": "Để trống thì MineHost tự chọn cổng trống, bắt đầu từ 25565.",
+    "portAuto": "Tự chọn",
+    "portInvalid": "Cổng phải là số từ 1024 đến 65535.",
+    "back": "Quay lại",
+    "next": "Tiếp",
+    "create": "Tạo server",
+    "creatingTitle": "Đang tạo server",
+    "creatingDescription": "Lần đầu có thể mất vài phút vì MineHost cần tải Java.",
+    "failedTitle": "Không tạo được server",
+    "cancelledTitle": "Đã hủy tạo server."
+  },
+  "jobs": {
+    "starting": "Đang bắt đầu…",
+    "working": "Đang xử lý…",
+    "steps": {
+      "check_disk": "Kiểm tra ổ đĩa",
+      "resolve_version": "Lấy thông tin phiên bản {{minecraft}}",
+      "download_java": "Tải Java {{major}}",
+      "download_server": "Tải Paper {{minecraft}}",
+      "prepare_files": "Chuẩn bị file"
+    }
+  },
   "ui": {
     "close": "Đóng",
     "cancel": "Hủy",
