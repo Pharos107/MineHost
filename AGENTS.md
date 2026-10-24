@@ -6,12 +6,15 @@ Windows và Linux, chạy server **trực tiếp bằng Java là mặc định**
 Spec đầy đủ: tài liệu "MineHost v2 — Spec kiến trúc (Rust)" trên Claude
 (https://claude.ai/artifact/Np2aG7LQ2r5SpNcuefRyEw). File này tóm những gì phải tuân theo khi code.
 
-## Giai đoạn hiện tại: P1 — Một server chạy được
+## Giai đoạn hiện tại: P2 — Nhiều server, backup, quản lý
 
-- Spec: [docs/specs/p1-mot-server-chay-duoc.md](docs/specs/p1-mot-server-chay-duoc.md)
-- Kế hoạch 17 PR và thứ tự phụ thuộc: [docs/specs/p1-ke-hoach-pr.md](docs/specs/p1-ke-hoach-pr.md)
-- Quyết định riêng của P1: chưa dùng SQLite; chỉ dùng Java do MineHost tải; icon khay chỉ có trên
-  Windows; xóa server là chuyển vào `trash/`.
+- Spec P2: chưa có. Việc đầu tiên của P2 là viết `docs/specs/p2-*.md` và kế hoạch PR (như P1),
+  rồi mới code.
+- Còn mở từ P1: lần thử tay 5 phút trên Windows mới cài
+  ([kết quả thử tay](docs/specs/p1-ket-qua-thu-tay.md)). Lỗi tìm được ở đó sửa trước việc của P2.
+- P1 đã xong (v0.2.0): [spec](docs/specs/p1-mot-server-chay-duoc.md),
+  [kế hoạch PR](docs/specs/p1-ke-hoach-pr.md). Quyết định từ P1 vẫn giữ: chưa dùng SQLite; chỉ dùng
+  Java do MineHost tải; icon khay chỉ có trên Windows; xóa server là chuyển vào `trash/`.
 
 Chỉ làm việc thuộc giai đoạn hiện tại. Ý tưởng ngoài phạm vi ghi vào backlog, không code.
 
@@ -93,6 +96,9 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 bash scripts/check-file-size.sh
 cd ui && npm run lint && npm run typecheck && npm test
+
+# Test tích hợp với Paper thật (tải Java và Paper, vài phút; CI chạy trong job `integration`)
+cargo test -p minehost --test paper -- --ignored --test-threads=1
 ```
 
 Khi phát triển UI: chạy controller như trên, rồi `cd ui && npm run dev` (Vite chuyển `/api` tới cổng 7878).
