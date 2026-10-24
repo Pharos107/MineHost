@@ -1130,6 +1130,14 @@ dependencies = [
 [[package]]
 name = "mh-runtime"
 version = "0.1.0"
+dependencies = [
+ "libc",
+ "mh-core",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "windows-sys 0.61.2",
+]
 
 [[package]]
 name = "mh-store"

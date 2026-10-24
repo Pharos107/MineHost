@@ -1,11 +1,33 @@
 [package]
 name = "mh-runtime"
-description = "Chạy server Minecraft: runtime Process (mặc định) và Docker (tùy chọn)."
+description = "Chạy server Minecraft dưới dạng process con. Không biết gì về provider."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
+
+[dependencies]
+mh-core.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+
+# Server Minecraft giả cho test của mh-runtime và mh-supervisor; không cần Java.
+[[bin]]
+name = "fake-mc"
+path = "src/bin/fake-mc.rs"
+test = false
+doc = false
 
 [lints]
 workspace = true
