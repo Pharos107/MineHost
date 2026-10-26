@@ -307,5 +307,15 @@
       "failed": "Failed",
       "cancelled": "Cancelled"
     }
+  },
+  "home": {
+    "running": "Servers running",
+    "jobs": "Tasks running",
+    "cpu": "Machine CPU",
+    "memory": "RAM in use",
+    "ofTotal": "of {{total}}",
+    "diskFree": "Free disk space",
+    "runningServers": "Running servers",
+    "noneRunning": "No servers are running."
   }
 }
