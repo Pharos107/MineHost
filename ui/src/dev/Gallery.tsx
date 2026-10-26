@@ -20,6 +20,7 @@ import {
   StatusBadge,
 } from "../ui";
 import { NavSectionDemo } from "./GalleryNav";
+import { ChartSection } from "./GalleryCharts";
 import { FormSection, OverlaySection, ProgressSection } from "./GallerySections";
 import { TableSection } from "./GalleryTable";
 
@@ -42,6 +43,7 @@ export function Gallery() {
         <FormSection />
         <ProgressSection />
         <OverlaySection />
+        <ChartSection />
         <NavSectionDemo />
       </Stack>
     </AppShell>
