@@ -152,8 +152,10 @@ fn json_text(text: &str) -> Result<String, InvalidValue> {
 }
 
 /// Xuống dòng trong stdin là một lệnh mới. Ký tự điều khiển khác cũng không được vào dòng lệnh.
+/// U+2028/U+2029 không phải ký tự điều khiển nhưng có công cụ coi là xuống dòng, nên chặn luôn.
 fn reject_controls(text: &str, kind: &'static str) -> Result<(), InvalidValue> {
-    if text.chars().any(char::is_control) {
+    let breaks_line = |c: char| c.is_control() || c == '\u{2028}' || c == '\u{2029}';
+    if text.chars().any(breaks_line) {
         Err(InvalidValue::new(
             kind,
             "có ký tự điều khiển hoặc xuống dòng",
