@@ -62,7 +62,9 @@ impl ApiError {
 /// cùng nhóm với các từ chối vì trạng thái, không phải lỗi của controller.
 fn status_for(code: ErrorCode) -> StatusCode {
     match code {
-        ErrorCode::NotFound | ErrorCode::VersionNotFound => StatusCode::NOT_FOUND,
+        ErrorCode::NotFound | ErrorCode::VersionNotFound | ErrorCode::PlayerNotFound => {
+            StatusCode::NOT_FOUND
+        }
         ErrorCode::InvalidInput | ErrorCode::PathOutsideRoot => StatusCode::BAD_REQUEST,
         ErrorCode::Forbidden => StatusCode::FORBIDDEN,
         ErrorCode::ServerBusy
@@ -167,6 +169,7 @@ mod tests {
             status_for(ErrorCode::VersionNotFound),
             StatusCode::NOT_FOUND
         );
+        assert_eq!(status_for(ErrorCode::PlayerNotFound), StatusCode::NOT_FOUND);
         assert_eq!(
             status_for(ErrorCode::BackupCorrupt),
             StatusCode::UNPROCESSABLE_ENTITY

@@ -266,6 +266,7 @@
     "INTERNAL": "Có lỗi xảy ra. Xem chi tiết trong file log của MineHost.",
     "NETWORK": "Không kết nối được tới MineHost. Kiểm tra xem MineHost còn đang chạy không.",
     "NOT_FOUND": "Không tìm thấy.",
+    "PLAYER_NOT_FOUND": "Không tìm thấy tài khoản Minecraft có tên này.",
     "INVALID_INPUT": "Dữ liệu không hợp lệ.",
     "PATH_OUTSIDE_ROOT": "Đường dẫn nằm ngoài thư mục được phép.",
     "PORT_IN_USE": "Cổng {{port}} đang bị chương trình khác dùng.",

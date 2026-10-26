@@ -1,10 +1,24 @@
+use std::io;
+use std::path::PathBuf;
+
 use mh_core::ErrorCode;
 use mh_net::NetError;
+use mh_platform::PlatformError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ProviderError {
     #[error(transparent)]
     Net(#[from] NetError),
+
+    #[error(transparent)]
+    Platform(#[from] PlatformError),
+
+    #[error("lỗi I/O tại `{path}`: {source}")]
+    Io {
+        path: PathBuf,
+        #[source]
+        source: io::Error,
+    },
 
     #[error("{source_name} không có phiên bản {version}")]
     VersionNotFound {
@@ -18,16 +32,30 @@ pub enum ProviderError {
         source_name: &'static str,
         reason: String,
     },
+
+    /// Mojang không có tài khoản đúng tên này. Khác với phiên bản server không tồn tại.
+    #[error("không có tài khoản Minecraft tên {0}")]
+    PlayerNotFound(String),
+
+    /// Hồ sơ không có ảnh. App dùng skin mặc định; không phải `PLAYER_NOT_FOUND`.
+    #[error("không có skin")]
+    NoSkin,
 }
 
 impl ProviderError {
     pub fn code(&self) -> ErrorCode {
         match self {
-            // API của Paper trả 404 cho phiên bản không có.
+            // API của Paper trả 404 cho phiên bản không có. 404 của hồ sơ người chơi
+            // được đổi thành `PlayerNotFound` trước khi tới đây.
             Self::Net(e) if e.code() == ErrorCode::NotFound => ErrorCode::VersionNotFound,
             Self::Net(e) => e.code(),
+            Self::Platform(e) => e.code(),
+            Self::Io { .. } => ErrorCode::Internal,
             Self::VersionNotFound { .. } => ErrorCode::VersionNotFound,
             Self::Invalid { .. } => ErrorCode::NetworkUnavailable,
+            Self::PlayerNotFound(_) => ErrorCode::PlayerNotFound,
+            // Người gọi phải khớp biến thể này để lấy skin mặc định, không dựa vào mã HTTP.
+            Self::NoSkin => ErrorCode::NotFound,
         }
     }
 

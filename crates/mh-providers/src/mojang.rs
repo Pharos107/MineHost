@@ -1,4 +1,6 @@
-//! Manifest phiên bản của Mojang (spec P1, mục 5.3).
+//! Manifest phiên bản của Mojang (spec P1, mục 5.3) và hồ sơ người chơi (spec P2, mục 5.4).
+
+mod profile;
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -10,8 +12,14 @@ use time::OffsetDateTime;
 
 use crate::ProviderError;
 
+pub use profile::Profile;
+
 pub const MANIFEST_URL: &str = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
-const SOURCE: &str = "Mojang";
+pub const PROFILE_BASE: &str = "https://api.mojang.com";
+pub const SESSION_BASE: &str = "https://sessionserver.mojang.com";
+/// Ảnh skin chỉ được tải khi URL có đúng scheme và host này.
+pub const SKIN_ORIGIN: &str = "https://textures.minecraft.net";
+pub(crate) const SOURCE: &str = "Mojang";
 /// Manifest chỉ đổi khi Mojang ra bản mới; một giờ là đủ mới cho wizard.
 const MANIFEST_TTL: Duration = Duration::from_secs(60 * 60);
 /// JSON của từng phiên bản không bao giờ đổi, vì URL chứa sha1 của chính nó.
@@ -23,6 +31,10 @@ const LEGACY_JAVA_MAJOR: u16 = 8;
 pub struct Mojang {
     http: Arc<HttpClient>,
     manifest_url: String,
+    profile_base: String,
+    session_base: String,
+    /// Origin được phép của URL ảnh. Test trỏ vào wiremock; bản chạy thật là [`SKIN_ORIGIN`].
+    skin_origin: String,
 }
 
 /// Một bản release, kèm thời điểm phát hành để sắp xếp (spec P1, mục 3.5).
@@ -97,9 +109,44 @@ impl Mojang {
 
     /// Dùng trong test để trỏ tới server giả.
     pub fn with_manifest_url(http: Arc<HttpClient>, manifest_url: impl Into<String>) -> Self {
+        Self::assemble(
+            http,
+            manifest_url.into(),
+            PROFILE_BASE,
+            SESSION_BASE,
+            SKIN_ORIGIN,
+        )
+    }
+
+    /// Test đổi API hồ sơ, session và origin ảnh skin. Bản chạy thật dùng [`Mojang::new`].
+    pub fn with_player_urls(
+        http: Arc<HttpClient>,
+        profile_base: impl Into<String>,
+        session_base: impl Into<String>,
+        skin_origin: impl Into<String>,
+    ) -> Self {
+        Self::assemble(
+            http,
+            MANIFEST_URL.to_owned(),
+            profile_base.into(),
+            session_base.into(),
+            skin_origin.into(),
+        )
+    }
+
+    fn assemble(
+        http: Arc<HttpClient>,
+        manifest_url: String,
+        profile_base: impl Into<String>,
+        session_base: impl Into<String>,
+        skin_origin: impl Into<String>,
+    ) -> Self {
         Self {
             http,
-            manifest_url: manifest_url.into(),
+            manifest_url,
+            profile_base: profile_base.into(),
+            session_base: session_base.into(),
+            skin_origin: skin_origin.into(),
         }
     }
 
