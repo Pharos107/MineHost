@@ -308,5 +308,15 @@
       "failed": "Lỗi",
       "cancelled": "Đã hủy"
     }
+  },
+  "home": {
+    "running": "Server đang chạy",
+    "jobs": "Tác vụ đang chạy",
+    "cpu": "CPU của máy",
+    "memory": "RAM đã dùng",
+    "ofTotal": "trên {{total}}",
+    "diskFree": "Ổ đĩa còn trống",
+    "runningServers": "Server đang chạy",
+    "noneRunning": "Chưa có server nào đang chạy."
   }
 }
