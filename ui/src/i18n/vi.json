@@ -161,7 +161,13 @@
     "command": "Lệnh",
     "placeholder": "Gõ lệnh rồi bấm Enter, ví dụ: say xin chào",
     "offline": "Bật server để gửi lệnh",
-    "send": "Gửi"
+    "send": "Gửi",
+    "filter": "Lọc dòng",
+    "pause": "Tạm dừng",
+    "resume": "Tiếp tục",
+    "clear": "Xóa màn hình",
+    "newLines_one": "{{count}} dòng mới",
+    "newLines_other": "{{count}} dòng mới"
   },
   "game": {
     "common": "Cài đặt thường dùng",
