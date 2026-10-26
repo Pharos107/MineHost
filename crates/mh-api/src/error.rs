@@ -76,6 +76,12 @@ fn status_for(code: ErrorCode) -> StatusCode {
         }
         ErrorCode::NotEnoughDisk => StatusCode::INSUFFICIENT_STORAGE,
         ErrorCode::ConfigInvalid => StatusCode::UNPROCESSABLE_ENTITY,
+        ErrorCode::FileTooLarge => StatusCode::PAYLOAD_TOO_LARGE,
+        // File nhị phân không đọc được như văn bản: đúng kiểu 415, không phải 400.
+        ErrorCode::FileNotText => StatusCode::UNSUPPORTED_MEDIA_TYPE,
+        // `If-Match` lệch là precondition HTTP (RFC 9110). 409 dành cho tên đã có.
+        ErrorCode::FileChanged => StatusCode::PRECONDITION_FAILED,
+        ErrorCode::FileExists => StatusCode::CONFLICT,
         _ => StatusCode::INTERNAL_SERVER_ERROR,
     }
 }
@@ -167,5 +173,18 @@ mod tests {
             status_for(ErrorCode::VersionNotFound),
             StatusCode::NOT_FOUND
         );
+        assert_eq!(
+            status_for(ErrorCode::FileTooLarge),
+            StatusCode::PAYLOAD_TOO_LARGE
+        );
+        assert_eq!(
+            status_for(ErrorCode::FileNotText),
+            StatusCode::UNSUPPORTED_MEDIA_TYPE
+        );
+        assert_eq!(
+            status_for(ErrorCode::FileChanged),
+            StatusCode::PRECONDITION_FAILED
+        );
+        assert_eq!(status_for(ErrorCode::FileExists), StatusCode::CONFLICT);
     }
 }
