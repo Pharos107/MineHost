@@ -262,9 +262,11 @@ pub async fn login(
     }
     state.auth.clear_failures(ip);
     match state.auth.open_session() {
-        Ok((token, csrf_token)) => {
-            (jar.add(session_cookie(&token)), Json(CsrfDto { csrf_token })).into_response()
-        }
+        Ok((token, csrf_token)) => (
+            jar.add(session_cookie(&token)),
+            Json(CsrfDto { csrf_token }),
+        )
+            .into_response(),
         Err(err) => err.into_response(),
     }
 }
