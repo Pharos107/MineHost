@@ -1,0 +1,9 @@
+# Vanilla 1.16.5. log4j: [%d{HH:mm:ss}] [%t/%level]
+# Câu joined / left / list giữ nguyên từ 1.13. Dòng 0 người có dấu cách sau dấu hai chấm
+# vì chuỗi dịch là "online: %s" và %s rỗng.
+# Thứ tự: joined, left, list 0 người, list nhiều người, chat chứa "joined the game".
+[10:00:01] [Server thread/INFO]: Notch joined the game
+[10:00:02] [Server thread/INFO]: Notch left the game
+[10:00:03] [Server thread/INFO]: There are 0 of a max of 20 players online: 
+[10:00:04] [Server thread/INFO]: There are 2 of a max of 20 players online: Notch, Steve
+[10:00:05] [Server thread/INFO]: <Notch> joined the game

@@ -11,6 +11,7 @@ pub mod error;
 pub mod ids;
 pub mod instance;
 pub mod memory;
+pub mod players;
 pub mod properties;
 pub mod state;
 pub mod version;
@@ -21,6 +22,10 @@ pub use error::{ErrorCode, InvalidValue};
 pub use ids::{GamePort, ServerId, ServerName};
 pub use instance::{InstanceError, InstanceSpec};
 pub use memory::{MemoryLimits, suggest_memory_mb};
+pub use players::{
+    FreezeAttribute, PlayerAction, PlayerCommandError, PlayerLogEvent, PlayerName,
+    UnsupportedVersion, command, freeze_attributes, offline_uuid, parse_log_line,
+};
 pub use properties::Properties;
 pub use state::{ServerEvent, ServerState, transition};
 pub use version::{LoaderKind, McVersion};

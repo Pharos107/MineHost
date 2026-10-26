@@ -280,6 +280,7 @@
     "NOT_ENOUGH_DISK": "Ổ đĩa còn dưới 1 GB trống. Hãy dọn bớt rồi thử lại.",
     "JOB_CANCELLED": "Đã hủy.",
     "SERVER_CRASHED": "Server bị dừng đột ngột.",
-    "FORBIDDEN": "Yêu cầu bị từ chối vì không đến từ giao diện MineHost trên máy này."
+    "FORBIDDEN": "Yêu cầu bị từ chối vì không đến từ giao diện MineHost trên máy này.",
+    "UNSUPPORTED_BY_VERSION": "Phiên bản Minecraft này không hỗ trợ thao tác này."
   }
 }

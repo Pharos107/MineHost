@@ -1,0 +1,8 @@
+# Console Paper. log4j: [%d{HH:mm:ss} %level]
+# File logs/latest.log của Paper lại giống Vanilla; MineHost đọc stdout nên dùng dạng này.
+# Thứ tự: joined, left, list 0 người, list nhiều người, chat chứa "joined the game".
+[10:00:01 INFO]: Notch joined the game
+[10:00:02 INFO]: Notch left the game
+[10:00:03 INFO]: There are 0 of a max of 20 players online: 
+[10:00:04 INFO]: There are 2 of a max of 20 players online: Notch, Steve
+[10:00:05 INFO]: <Notch> joined the game
