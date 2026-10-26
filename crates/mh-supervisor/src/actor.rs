@@ -133,7 +133,9 @@ impl<L: Launcher> Actor<L> {
             Command::Stop(reply) => respond(reply, self.stop().await),
             Command::Kill(reply) => respond(reply, self.kill()),
             Command::Restart(reply) => respond(reply, self.restart().await),
-            Command::Send(line, reply) => respond(reply, self.send(line).await),
+            Command::Send(line, reply) => {
+                let _ = reply.send(self.send(line).await);
+            }
         }
     }
 
@@ -209,21 +211,21 @@ impl<L: Launcher> Actor<L> {
         }
     }
 
-    async fn send(&mut self, line: String) -> Result<(), SupervisorError> {
+    async fn send(&mut self, line: String) -> Result<u64, SupervisorError> {
         let state = self.status.state;
         let Some(live) = self.live.as_ref().filter(|_| state.has_process()) else {
             return Err(SupervisorError::Busy(state));
         };
         let control = live.control.clone();
         control.send_line(&line).await?;
-        self.echo(line);
-        Ok(())
+        Ok(self.echo(line).seq)
     }
 
     /// Ghi lệnh đã gửi vào console, để lịch sử hiện đủ cả lệnh lẫn kết quả.
-    fn echo(&self, line: String) {
+    fn echo(&self, line: String) -> mh_core::ConsoleLine {
         let echoed = self.console.push(ConsoleStream::Stdin, line);
-        let _ = self.events.send(SupervisorEvent::Console(echoed));
+        let _ = self.events.send(SupervisorEvent::Console(echoed.clone()));
+        echoed
     }
 
     async fn on_line(&mut self, line: OutputLine) {

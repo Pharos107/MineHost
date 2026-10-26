@@ -381,3 +381,45 @@ async fn writes_console_log_file() {
     assert!(text.contains("Xin chào thế giới"), "{text}");
     assert!(text.contains("> stop"), "{text}");
 }
+
+#[tokio::test]
+async fn send_and_wait_matches_only_a_new_stdout_line() {
+    let (sup, _) = supervisor(Setup::default());
+    sup.start().await.unwrap();
+    wait_state(&sup, ServerState::Running).await;
+
+    sup.send_and_wait("save-all flush", "Saved the game", Duration::from_secs(2))
+        .await
+        .unwrap();
+
+    // Dòng "Starting minecraft" đã có từ lúc bật, không được tính là câu trả lời mới.
+    let err = sup
+        .send_and_wait("say ping", "Starting minecraft", Duration::from_millis(200))
+        .await
+        .unwrap_err();
+    let text = err.to_string();
+    assert!(text.contains("Starting minecraft"), "{text}");
+    sup.kill().await.unwrap();
+}
+
+#[tokio::test]
+async fn send_and_wait_times_out_when_save_all_never_answers() {
+    let (sup, _) = supervisor(Setup {
+        args: &["--hang-on-save-all"],
+        ..Setup::default()
+    });
+    sup.start().await.unwrap();
+    wait_state(&sup, ServerState::Running).await;
+    let err = sup
+        .send_and_wait(
+            "save-all flush",
+            "Saved the game",
+            Duration::from_millis(200),
+        )
+        .await
+        .unwrap_err();
+    let text = err.to_string();
+    assert!(text.contains("Saved the game"), "{text}");
+    assert!(text.contains("200ms"), "{text}");
+    sup.kill().await.unwrap();
+}
