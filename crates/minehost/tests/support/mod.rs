@@ -217,9 +217,15 @@ pub fn process_alive(pid: u32) -> bool {
     }
     #[cfg(unix)]
     {
-        // Process zombie chưa được thu dọn vẫn có trong /proc nhưng đã chết.
-        std::fs::read_to_string(format!("/proc/{pid}/stat"))
-            .map(|stat| !stat.contains(") Z "))
+        // Luồng chính của Java thành zombie trước khi các luồng khác thoát và nhả socket, nên
+        // xét từng luồng: còn luồng nào chưa thành zombie thì process vẫn đang chạy.
+        std::fs::read_dir(format!("/proc/{pid}/task"))
+            .map(|tasks| {
+                tasks.flatten().any(|task| {
+                    std::fs::read_to_string(task.path().join("stat"))
+                        .is_ok_and(|stat| !stat.contains(") Z "))
+                })
+            })
             .unwrap_or(false)
     }
 }
