@@ -351,9 +351,8 @@ async fn trash_needs_matching_name_and_stopped_server() {
     assert!(app.list().unwrap().is_empty());
 }
 
-#[tokio::test]
-async fn reconcile_restarts_servers_left_running() {
-    let env = Env::new();
+/// Bật server rồi drop app giống controller chết: process bị kill nhưng dấu `.running` còn lại.
+async fn leave_running(env: &Env) -> InstanceSpec {
     let spec = {
         let app = env.app(FakeCatalog::default());
         let spec = create(&app, "A").await;
@@ -362,7 +361,6 @@ async fn reconcile_restarts_servers_left_running() {
         wait_state(&app, &spec, ServerState::Running).await;
         spec
     };
-    // App cũ bị drop giống controller chết: process bị kill nhưng dấu `.running` vẫn còn.
     let marker = env.server_dir(&spec).join(".running");
     let gone = tokio::time::timeout(WAIT, async {
         while !marker.exists() {
@@ -370,6 +368,14 @@ async fn reconcile_restarts_servers_left_running() {
         }
     });
     gone.await.unwrap();
+    spec
+}
+
+#[tokio::test]
+async fn reconcile_restarts_servers_left_running() {
+    let env = Env::new();
+    let spec = leave_running(&env).await;
+    let marker = env.server_dir(&spec).join(".running");
 
     let app = env.app(FakeCatalog::default());
     assert_eq!(app.reconcile().await.unwrap(), 1);
@@ -377,6 +383,51 @@ async fn reconcile_restarts_servers_left_running() {
     app.shutdown_all(|_, _| {}).await;
     wait_state(&app, &spec, ServerState::Stopped).await;
     assert!(!marker.exists());
+}
+
+#[tokio::test]
+async fn reconcile_waits_for_old_process_to_release_port() {
+    let env = Env::new();
+    let spec = leave_running(&env).await;
+    // Java cũ còn giữ cổng thêm một lúc sau khi controller chết.
+    let port = spec.network.port.get();
+    env.busy_ports.lock().unwrap().push(port);
+    let busy = Arc::clone(&env.busy_ports);
+    let release = std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(600));
+        busy.lock().unwrap().clear();
+    });
+
+    let app = env.app(FakeCatalog::default());
+    assert_eq!(app.reconcile().await.unwrap(), 1);
+    release.join().unwrap();
+    wait_state(&app, &spec, ServerState::Running).await;
+    app.kill(spec.id).await.unwrap();
+}
+
+#[tokio::test]
+async fn reconcile_does_not_wait_for_autostart_on_busy_port() {
+    let env = Env::new();
+    let app = env.app(FakeCatalog::default());
+    let spec = create(&app, "A").await;
+    app.accept_eula(spec.id).unwrap();
+    let patch = SettingsPatch {
+        autostart: Some(true),
+        ..SettingsPatch::default()
+    };
+    app.update_settings(spec.id, patch).unwrap();
+    drop(app);
+    // Không có dấu `.running`: cổng bận là do chương trình khác, chờ cũng vô ích.
+    env.busy_ports.lock().unwrap().push(spec.network.port.get());
+
+    let app = env.app(FakeCatalog::default());
+    let begun = std::time::Instant::now();
+    assert_eq!(app.reconcile().await.unwrap(), 0);
+    assert!(
+        begun.elapsed() < Duration::from_secs(2),
+        "{:?}",
+        begun.elapsed()
+    );
 }
 
 #[tokio::test]

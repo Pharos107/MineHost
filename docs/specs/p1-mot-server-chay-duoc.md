@@ -285,7 +285,9 @@ Lệnh chạy:
   `servers/<id>/logs/console-YYYY-MM-DD.log`, giữ 14 ngày.
 - **Dấu đang chạy:** khi bật, tạo file `servers/<id>/.running`; khi dừng sạch, xóa file đó. Lúc
   controller khởi động, server nào còn file này (tức controller đã chết giữa chừng) hoặc có
-  `autostart = true` thì được bật lại.
+  `autostart = true` thì được bật lại. Các server bật song song, sau khi web đã mở. Server còn
+  dấu mà gặp cổng bận thì thử lại mỗi 250 ms trong tối đa 10 giây, vì Java của lần chạy trước có
+  thể chưa nhả cổng; server chỉ có `autostart` thì không chờ.
 - **`diagnose` (`CrashHint`):** đọc các dòng log cuối.
 
 | Dấu hiệu trong log | Hint | Gợi ý cho người dùng |

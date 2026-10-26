@@ -39,19 +39,20 @@ pub async fn run(
     }
 
     let app = Arc::new(App::new(dirs).context("không khởi tạo được MineHost")?);
-    match app.reconcile().await {
-        Ok(0) => {}
-        Ok(n) => tracing::info!(n, "đã bật lại các server đang chạy lần trước"),
-        Err(err) => tracing::error!(%err, "không đọc được danh sách server"),
-    }
-    on_ready(&app, &url);
-
     let router = mh_api::router(Arc::clone(&app), addr.port());
     let (stop_http, http_stopped) = tokio::sync::oneshot::channel::<()>();
     let server = axum::serve(listener, router).with_graceful_shutdown(async {
         let _ = http_stopped.await;
     });
     let server = tokio::spawn(server.into_future());
+
+    // Mở web trước: reconcile có thể phải chờ Java cũ nhả cổng tới vài giây.
+    match app.reconcile().await {
+        Ok(0) => {}
+        Ok(n) => tracing::info!(n, "đã bật lại các server đang chạy lần trước"),
+        Err(err) => tracing::error!(%err, "không đọc được danh sách server"),
+    }
+    on_ready(&app, &url);
 
     tokio::select! {
         () = shutdown_signal() => {}
