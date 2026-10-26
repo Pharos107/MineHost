@@ -6,6 +6,8 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
+# Có thêm binary `e2e-fake-mc` (feature e2e) nên `cargo run -p minehost` cần biết chạy cái nào.
+default-run = "minehost"
 
 [[bin]]
 name = "minehost"
