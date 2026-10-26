@@ -5,6 +5,7 @@
 
 mod create;
 mod error;
+mod files;
 pub mod jobs;
 mod launcher;
 mod lifecycle;
@@ -26,6 +27,7 @@ use mh_supervisor::SupervisorConfig;
 
 pub use create::{CreateRequest, Created};
 pub use error::AppError;
+pub use files::{FileEntry, FileKind, TEXT_LIMIT, TextFile};
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};
 pub use metrics::{MetricSample, MetricsConfig, MetricsEvent, ServerMetrics};
 pub use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
