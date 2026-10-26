@@ -75,7 +75,7 @@ fn status_for(code: ErrorCode) -> StatusCode {
             StatusCode::BAD_GATEWAY
         }
         ErrorCode::NotEnoughDisk => StatusCode::INSUFFICIENT_STORAGE,
-        ErrorCode::ConfigInvalid => StatusCode::UNPROCESSABLE_ENTITY,
+        ErrorCode::ConfigInvalid | ErrorCode::BackupCorrupt => StatusCode::UNPROCESSABLE_ENTITY,
         _ => StatusCode::INTERNAL_SERVER_ERROR,
     }
 }
@@ -166,6 +166,10 @@ mod tests {
         assert_eq!(
             status_for(ErrorCode::VersionNotFound),
             StatusCode::NOT_FOUND
+        );
+        assert_eq!(
+            status_for(ErrorCode::BackupCorrupt),
+            StatusCode::UNPROCESSABLE_ENTITY
         );
     }
 }
