@@ -23,6 +23,10 @@ time.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 
+[features]
+# Catalog Paper và Java giả. Tắt ở bản phát hành; `minehost` bật khi build test giao diện.
+e2e = []
+
 [dev-dependencies]
 tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

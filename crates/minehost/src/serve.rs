@@ -38,7 +38,7 @@ pub async fn run(
         open_browser(&url);
     }
 
-    let app = Arc::new(App::new(dirs).context("không khởi tạo được MineHost")?);
+    let app = Arc::new(open_app(dirs)?);
     let router = mh_api::router(Arc::clone(&app), addr.port());
     let (stop_http, http_stopped) = tokio::sync::oneshot::channel::<()>();
     let server = axum::serve(listener, router).with_graceful_shutdown(async {
@@ -70,6 +70,42 @@ pub async fn run(
     }
     tracing::info!("MineHost đã tắt");
     Ok(())
+}
+
+fn open_app(dirs: DataDirs) -> anyhow::Result<App> {
+    #[cfg(feature = "e2e")]
+    if let Some(java) = e2e_java_bin() {
+        return e2e_app(dirs, java);
+    }
+    App::new(dirs).context("không khởi tạo được MineHost")
+}
+
+/// Đường dẫn trong `MINEHOST_E2E_JAVA`. Biến rỗng thì coi như không bật chế độ e2e.
+#[cfg(feature = "e2e")]
+fn e2e_java_bin() -> Option<std::path::PathBuf> {
+    let raw = std::path::PathBuf::from(std::env::var_os(mh_app::e2e::JAVA_BIN_ENV)?);
+    if raw.as_os_str().is_empty() {
+        return None;
+    }
+    // Java chạy với thư mục làm việc là thư mục server, nên đường dẫn tương đối phải
+    // được gắn vào cwd của controller trước khi spawn.
+    let path = match std::env::current_dir() {
+        Ok(cwd) => cwd.join(&raw),
+        Err(_) => raw,
+    };
+    Some(path)
+}
+
+#[cfg(feature = "e2e")]
+fn e2e_app(dirs: DataDirs, java: std::path::PathBuf) -> anyhow::Result<App> {
+    // Bản này không tải Paper hay Java. Một dòng warn để khỏi tưởng đang chạy server thật.
+    tracing::warn!(
+        java = %java.display(),
+        env = mh_app::e2e::JAVA_BIN_ENV,
+        "chế độ e2e: không gọi mạng; Paper giả 1.21.4 và 1.20.4; Java là binary trong biến môi trường"
+    );
+    let deps = mh_app::e2e::deps(java);
+    App::with_deps(dirs, deps).context("không khởi tạo được MineHost")
 }
 
 pub fn open_browser(url: &str) {

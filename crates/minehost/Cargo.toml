@@ -11,6 +11,19 @@ publish.workspace = true
 name = "minehost"
 path = "src/main.rs"
 
+# Cùng mã nguồn với `fake-mc` của mh-runtime. Chỉ có khi build `--features e2e`,
+# để test tích hợp lấy đường dẫn qua `CARGO_BIN_EXE_e2e-fake-mc`.
+[[bin]]
+name = "e2e-fake-mc"
+path = "../mh-runtime/src/bin/fake-mc.rs"
+required-features = ["e2e"]
+test = false
+doc = false
+
+[features]
+# Catalog và Java giả cho Playwright. Tắt ở bản phát hành.
+e2e = ["mh-app/e2e"]
+
 [dependencies]
 anyhow.workspace = true
 axum.workspace = true
