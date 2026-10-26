@@ -19,6 +19,7 @@ import {
   Stack,
   StatusBadge,
 } from "../ui";
+import { NavSectionDemo } from "./GalleryNav";
 import { FormSection, OverlaySection, ProgressSection } from "./GallerySections";
 import { TableSection } from "./GalleryTable";
 
@@ -41,6 +42,7 @@ export function Gallery() {
         <FormSection />
         <ProgressSection />
         <OverlaySection />
+        <NavSectionDemo />
       </Stack>
     </AppShell>
   );

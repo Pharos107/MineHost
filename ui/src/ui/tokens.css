@@ -29,6 +29,8 @@
   --mh-control-height: 36px;
   --mh-control-height-sm: 28px;
   --mh-content-width: 1120px;
+  --mh-sidebar-width: 240px;
+  --mh-z-drawer: 30;
   --mh-z-menu: 20;
   --mh-z-header: 10;
 

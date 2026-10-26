@@ -19,7 +19,7 @@ export function DeleteServer({ server }: { server: Server }) {
   const name = serverName(server);
   const trash = useMutation({
     mutationFn: () => api.trashServer(server.id, name),
-    onSuccess: (result) => void navigate("/", { state: { trashed: result.trash_path } }),
+    onSuccess: (result) => void navigate("/servers", { state: { trashed: result.trash_path } }),
   });
   const allowed = DELETABLE.includes(server.state) && !server.restart_pending;
 
