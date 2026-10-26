@@ -286,7 +286,12 @@
     "AUTH_INVALID": "Incorrect password.",
     "AUTH_RATE_LIMITED": "Too many wrong passwords. Try again in {{retry_after_s}} seconds.",
     "PASSWORD_TOO_SHORT": "Password must be at least 8 characters.",
-    "LAN_NEEDS_PASSWORD": "Set a password before turning on LAN access."
+    "LAN_NEEDS_PASSWORD": "Set a password before turning on LAN access.",
+    "BACKUP_CORRUPT": "The backup is damaged or its checksum does not match.",
+    "FILE_TOO_LARGE": "The file is larger than allowed.",
+    "FILE_NOT_TEXT": "This file is not valid UTF-8 text.",
+    "FILE_CHANGED": "The file changed since it was opened. Reload the latest version.",
+    "FILE_EXISTS": "A file or folder with that name already exists."
   },
   "jobsPage": {
     "description": "What MineHost is doing or just finished, such as creating a server or making a backup.",
@@ -312,5 +317,37 @@
       "failed": "Failed",
       "cancelled": "Cancelled"
     }
+  },
+  "overview": {
+    "cpu": "CPU",
+    "cpuHint": "of the whole machine",
+    "memory": "RAM",
+    "memoryOf": "of {{max}} allowed",
+    "uptime": "Uptime",
+    "disk": "Disk usage",
+    "diskPending": "Calculating…",
+    "cpuChart": "CPU over the last hour",
+    "memoryChart": "RAM over the last hour",
+    "offline": "The server is stopped. Start it to see CPU and RAM."
+  },
+  "duration": {
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "hours_one": "{{count}} hour",
+    "hours_other": "{{count}} hours",
+    "minutes_one": "{{count}} minute",
+    "minutes_other": "{{count}} minutes",
+    "seconds_one": "{{count}} second",
+    "seconds_other": "{{count}} seconds"
+  },
+  "home": {
+    "running": "Servers running",
+    "jobs": "Tasks running",
+    "cpu": "Machine CPU",
+    "memory": "RAM in use",
+    "ofTotal": "of {{total}}",
+    "diskFree": "Free disk space",
+    "runningServers": "Running servers",
+    "noneRunning": "No servers are running."
   }
 }

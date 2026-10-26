@@ -134,6 +134,7 @@ impl Env {
                 stop_timeout: Duration::from_millis(500),
                 ..SupervisorConfig::default()
             },
+            metrics: mh_app::MetricsConfig::default(),
         };
         Arc::new(App::with_deps(dirs, deps).unwrap())
     }

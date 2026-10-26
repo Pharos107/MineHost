@@ -572,6 +572,65 @@
         }
       }
     },
+    "/api/v1/servers/{id}/metrics": {
+      "get": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "metrics",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "since",
+            "in": "path",
+            "description": "RFC 3339. Chỉ lấy mẫu sau thời điểm này. Dấu `+` trong offset phải viết `%2B`.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerMetricsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}/properties": {
       "get": {
         "tags": [
@@ -994,6 +1053,38 @@
           }
         }
       },
+      "MetricSampleDto": {
+        "type": "object",
+        "required": [
+          "at",
+          "cpu_percent",
+          "memory_bytes"
+        ],
+        "properties": {
+          "at": {
+            "type": "string",
+            "description": "RFC 3339."
+          },
+          "cpu_percent": {
+            "type": "number",
+            "format": "float"
+          },
+          "memory_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "players": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "`null` cho tới khi có theo dõi người chơi.",
+            "minimum": 0
+          }
+        }
+      },
       "PatchServerBody": {
         "type": "object",
         "properties": {
@@ -1237,6 +1328,35 @@
           },
           "state": {
             "$ref": "#/components/schemas/StateDto"
+          }
+        }
+      },
+      "ServerMetricsDto": {
+        "type": "object",
+        "required": [
+          "samples"
+        ],
+        "properties": {
+          "disk_bytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "running_since": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "RFC 3339. Có khi server đang ở trạng thái chạy."
+          },
+          "samples": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetricSampleDto"
+            }
           }
         }
       },

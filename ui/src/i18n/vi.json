@@ -286,7 +286,12 @@
     "AUTH_INVALID": "Mật khẩu không đúng.",
     "AUTH_RATE_LIMITED": "Nhập sai quá nhiều lần. Hãy thử lại sau {{retry_after_s}} giây.",
     "PASSWORD_TOO_SHORT": "Mật khẩu phải có ít nhất 8 ký tự.",
-    "LAN_NEEDS_PASSWORD": "Hãy đặt mật khẩu trước khi bật truy cập từ mạng LAN."
+    "LAN_NEEDS_PASSWORD": "Hãy đặt mật khẩu trước khi bật truy cập từ mạng LAN.",
+    "BACKUP_CORRUPT": "Bản sao lưu bị hỏng hoặc không khớp mã kiểm tra.",
+    "FILE_TOO_LARGE": "File lớn hơn mức cho phép.",
+    "FILE_NOT_TEXT": "File này không phải văn bản UTF-8.",
+    "FILE_CHANGED": "File đã đổi kể từ lúc mở. Hãy tải lại bản mới.",
+    "FILE_EXISTS": "Đã có file hoặc thư mục trùng tên."
   },
   "jobsPage": {
     "description": "Việc MineHost đang làm hoặc vừa làm xong, như tạo server hay sao lưu.",
@@ -312,5 +317,37 @@
       "failed": "Lỗi",
       "cancelled": "Đã hủy"
     }
+  },
+  "overview": {
+    "cpu": "CPU",
+    "cpuHint": "trên toàn máy",
+    "memory": "RAM",
+    "memoryOf": "trên {{max}} đã đặt",
+    "uptime": "Thời gian chạy",
+    "disk": "Dung lượng",
+    "diskPending": "Đang tính…",
+    "cpuChart": "CPU trong 1 giờ qua",
+    "memoryChart": "RAM trong 1 giờ qua",
+    "offline": "Server đang tắt. Bật server để xem CPU và RAM."
+  },
+  "duration": {
+    "days_one": "{{count}} ngày",
+    "days_other": "{{count}} ngày",
+    "hours_one": "{{count}} giờ",
+    "hours_other": "{{count}} giờ",
+    "minutes_one": "{{count}} phút",
+    "minutes_other": "{{count}} phút",
+    "seconds_one": "{{count}} giây",
+    "seconds_other": "{{count}} giây"
+  },
+  "home": {
+    "running": "Server đang chạy",
+    "jobs": "Tác vụ đang chạy",
+    "cpu": "CPU của máy",
+    "memory": "RAM đã dùng",
+    "ofTotal": "trên {{total}}",
+    "diskFree": "Ổ đĩa còn trống",
+    "runningServers": "Server đang chạy",
+    "noneRunning": "Chưa có server nào đang chạy."
   }
 }

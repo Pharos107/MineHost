@@ -49,7 +49,7 @@ describe("AppRoutes", () => {
   it("đường dẫn cũ của P1 /servers/:id vẫn mở được, giờ là Tổng quan", async () => {
     renderAt("/servers/01JB");
     expect(await screen.findByRole("heading", { level: 1, name: "Survival" })).toBeTruthy();
-    expect(screen.getByText("Sắp có")).toBeTruthy();
+    expect(await screen.findByText("Thời gian chạy")).toBeTruthy();
     const nav = screen.getByRole("navigation", { name: "Điều hướng chính" });
     expect(within(nav).getByRole("link", { name: "Tổng quan" }).getAttribute("aria-current")).toBe("page");
   });

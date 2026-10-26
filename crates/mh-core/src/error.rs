@@ -47,6 +47,16 @@ pub enum ErrorCode {
     PasswordTooShort,
     /// Bật LAN khi chưa đặt mật khẩu.
     LanNeedsPassword,
+    /// File văn bản hoặc bản tải lên vượt giới hạn kích thước.
+    FileTooLarge,
+    /// Không phải UTF-8 hợp lệ, hoặc có byte NUL.
+    FileNotText,
+    /// `If-Match` không khớp nội dung hiện trên đĩa.
+    FileChanged,
+    /// Tạo, tải lên hoặc đổi tên đè lên mục đã có.
+    FileExists,
+    /// Hash của file backup không khớp với file mô tả.
+    BackupCorrupt,
 }
 
 impl ErrorCode {
@@ -76,6 +86,11 @@ impl ErrorCode {
             Self::AuthRateLimited => "AUTH_RATE_LIMITED",
             Self::PasswordTooShort => "PASSWORD_TOO_SHORT",
             Self::LanNeedsPassword => "LAN_NEEDS_PASSWORD",
+            Self::FileTooLarge => "FILE_TOO_LARGE",
+            Self::FileNotText => "FILE_NOT_TEXT",
+            Self::FileChanged => "FILE_CHANGED",
+            Self::FileExists => "FILE_EXISTS",
+            Self::BackupCorrupt => "BACKUP_CORRUPT",
         }
     }
 }
@@ -110,7 +125,7 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 23] = [
+    const ALL: [ErrorCode; 28] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::InvalidInput,
@@ -134,6 +149,11 @@ mod tests {
         ErrorCode::AuthRateLimited,
         ErrorCode::PasswordTooShort,
         ErrorCode::LanNeedsPassword,
+        ErrorCode::FileTooLarge,
+        ErrorCode::FileNotText,
+        ErrorCode::FileChanged,
+        ErrorCode::FileExists,
+        ErrorCode::BackupCorrupt,
     ];
 
     #[test]
