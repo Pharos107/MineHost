@@ -69,8 +69,10 @@ impl std::fmt::Display for CancelMark {
 
 impl Error for CancelMark {}
 
+/// Không dùng `ErrorKind::Interrupted`: `io::copy` (tar dùng bên trong) gặp lỗi đó thì tự đọc
+/// lại, thành vòng lặp vô hạn sau khi đã hủy.
 pub(crate) fn cancel_err() -> io::Error {
-    io::Error::new(io::ErrorKind::Interrupted, CancelMark)
+    io::Error::other(CancelMark)
 }
 
 /// `io::Error::source` không trả về lỗi gắn bằng `Error::new`, chỉ trả về
@@ -84,7 +86,8 @@ fn contains_cancel(err: &(dyn Error + 'static)) -> bool {
         return true;
     }
     if let Some(io_err) = err.downcast_ref::<io::Error>() {
-        if io_err.get_ref().is_some_and(contains_cancel) {
+        // Closure để ép `&(dyn Error + Send + Sync)` về `&dyn Error`.
+        if io_err.get_ref().is_some_and(|inner| contains_cancel(inner)) {
             return true;
         }
     }
@@ -99,7 +102,7 @@ mod tests {
     fn cancel_mark_is_detected_inside_io_error() {
         let err = cancel_err();
         assert!(is_cancel(&err));
-        let wrapped = io::Error::new(io::ErrorKind::Other, err);
+        let wrapped = io::Error::other(err);
         assert!(is_cancel(&wrapped));
         assert!(!is_cancel(&io::Error::other("đĩa đầy")));
     }

@@ -107,7 +107,7 @@ fn read_sorted(dir: &Path) -> Result<Vec<fs::DirEntry>, BackupError> {
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| BackupError::io(dir, e))?;
     // Tên sắp xếp cố định để hai lần nén cùng một cây ra cùng byte.
-    entries.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+    entries.sort_by_key(fs::DirEntry::file_name);
     Ok(entries)
 }
 
