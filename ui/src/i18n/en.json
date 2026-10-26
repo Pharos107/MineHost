@@ -282,7 +282,11 @@
     "JOB_CANCELLED": "Cancelled.",
     "SERVER_CRASHED": "The server stopped unexpectedly.",
     "FORBIDDEN": "The request was refused because it did not come from the MineHost page on this computer.",
-    "UNSUPPORTED_BY_VERSION": "This Minecraft version does not support this action."
+    "UNSUPPORTED_BY_VERSION": "This Minecraft version does not support this action.",
+    "FILE_TOO_LARGE": "The file is larger than allowed.",
+    "FILE_NOT_TEXT": "This file is not valid UTF-8 text.",
+    "FILE_CHANGED": "The file changed since it was opened. Reload the latest version.",
+    "FILE_EXISTS": "A file or folder with that name already exists."
   },
   "jobsPage": {
     "description": "What MineHost is doing or just finished, such as creating a server or making a backup.",
@@ -330,5 +334,15 @@
     "minutes_other": "{{count}} minutes",
     "seconds_one": "{{count}} second",
     "seconds_other": "{{count}} seconds"
+  },
+  "home": {
+    "running": "Servers running",
+    "jobs": "Tasks running",
+    "cpu": "Machine CPU",
+    "memory": "RAM in use",
+    "ofTotal": "of {{total}}",
+    "diskFree": "Free disk space",
+    "runningServers": "Running servers",
+    "noneRunning": "No servers are running."
   }
 }

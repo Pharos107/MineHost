@@ -282,7 +282,11 @@
     "JOB_CANCELLED": "Đã hủy.",
     "SERVER_CRASHED": "Server bị dừng đột ngột.",
     "FORBIDDEN": "Yêu cầu bị từ chối vì không đến từ giao diện MineHost trên máy này.",
-    "UNSUPPORTED_BY_VERSION": "Phiên bản Minecraft này không hỗ trợ thao tác này."
+    "UNSUPPORTED_BY_VERSION": "Phiên bản Minecraft này không hỗ trợ thao tác này.",
+    "FILE_TOO_LARGE": "File lớn hơn mức cho phép.",
+    "FILE_NOT_TEXT": "File này không phải văn bản UTF-8.",
+    "FILE_CHANGED": "File đã đổi kể từ lúc mở. Hãy tải lại bản mới.",
+    "FILE_EXISTS": "Đã có file hoặc thư mục trùng tên."
   },
   "jobsPage": {
     "description": "Việc MineHost đang làm hoặc vừa làm xong, như tạo server hay sao lưu.",
@@ -330,5 +334,15 @@
     "minutes_other": "{{count}} phút",
     "seconds_one": "{{count}} giây",
     "seconds_other": "{{count}} giây"
+  },
+  "home": {
+    "running": "Server đang chạy",
+    "jobs": "Tác vụ đang chạy",
+    "cpu": "CPU của máy",
+    "memory": "RAM đã dùng",
+    "ofTotal": "trên {{total}}",
+    "diskFree": "Ổ đĩa còn trống",
+    "runningServers": "Server đang chạy",
+    "noneRunning": "Chưa có server nào đang chạy."
   }
 }

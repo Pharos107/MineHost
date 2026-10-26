@@ -37,6 +37,14 @@ pub enum ErrorCode {
     Forbidden,
     /// Tính năng không có ở phiên bản Minecraft này, ví dụ đóng băng trước 1.16.
     UnsupportedByVersion,
+    /// File văn bản hoặc bản tải lên vượt giới hạn kích thước.
+    FileTooLarge,
+    /// Không phải UTF-8 hợp lệ, hoặc có byte NUL.
+    FileNotText,
+    /// `If-Match` không khớp nội dung hiện trên đĩa.
+    FileChanged,
+    /// Tạo, tải lên hoặc đổi tên đè lên mục đã có.
+    FileExists,
     /// Hash của file backup không khớp với file mô tả.
     BackupCorrupt,
 }
@@ -63,6 +71,10 @@ impl ErrorCode {
             Self::ServerCrashed => "SERVER_CRASHED",
             Self::Forbidden => "FORBIDDEN",
             Self::UnsupportedByVersion => "UNSUPPORTED_BY_VERSION",
+            Self::FileTooLarge => "FILE_TOO_LARGE",
+            Self::FileNotText => "FILE_NOT_TEXT",
+            Self::FileChanged => "FILE_CHANGED",
+            Self::FileExists => "FILE_EXISTS",
             Self::BackupCorrupt => "BACKUP_CORRUPT",
         }
     }
@@ -98,7 +110,7 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 19] = [
+    const ALL: [ErrorCode; 23] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::InvalidInput,
@@ -117,6 +129,10 @@ mod tests {
         ErrorCode::ServerCrashed,
         ErrorCode::Forbidden,
         ErrorCode::UnsupportedByVersion,
+        ErrorCode::FileTooLarge,
+        ErrorCode::FileNotText,
+        ErrorCode::FileChanged,
+        ErrorCode::FileExists,
         ErrorCode::BackupCorrupt,
     ];
 
