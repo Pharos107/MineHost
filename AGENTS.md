@@ -8,8 +8,8 @@ Spec đầy đủ: tài liệu "MineHost v2 — Spec kiến trúc (Rust)" trên 
 
 ## Giai đoạn hiện tại: P2 — Nhiều server, backup, quản lý
 
-- Spec P2: chưa có. Việc đầu tiên của P2 là viết `docs/specs/p2-*.md` và kế hoạch PR (như P1),
-  rồi mới code.
+- [Spec P2](docs/specs/p2-nhieu-server-va-van-hanh.md) (đã duyệt) và
+  [kế hoạch PR](docs/specs/p2-ke-hoach-pr.md): 34 PR, làm theo thứ tự nhóm A → I.
 - Còn mở từ P1: lần thử tay 5 phút trên Windows mới cài
   ([kết quả thử tay](docs/specs/p1-ket-qua-thu-tay.md)). Lỗi tìm được ở đó sửa trước việc của P2.
 - P1 đã xong (v0.2.0): [spec](docs/specs/p1-mot-server-chay-duoc.md),
