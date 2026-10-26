@@ -77,7 +77,7 @@ fn status_for(code: ErrorCode) -> StatusCode {
         | ErrorCode::ServerCrashed
         | ErrorCode::UnsupportedByVersion
         | ErrorCode::LanNeedsPassword => StatusCode::CONFLICT,
-        | ErrorCode::BackupProtected => StatusCode::CONFLICT,
+        ErrorCode::BackupProtected => StatusCode::CONFLICT,
         ErrorCode::NetworkUnavailable | ErrorCode::DownloadFailed | ErrorCode::ChecksumMismatch => {
             StatusCode::BAD_GATEWAY
         }
