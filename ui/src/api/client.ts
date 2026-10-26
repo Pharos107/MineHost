@@ -79,6 +79,9 @@ export const api = {
   properties: (id: string) => request<{ properties: Property[] }>("GET", `${serverPath(id)}/properties`),
   saveProperties: (id: string, properties: Property[]) => request<void>("PUT", `${serverPath(id)}/properties`, { properties }),
   paperVersions: () => request<CatalogVersion[]>("GET", "/catalog/paper/versions"),
+  /** Job đang giữ, mới nhất trước; `serverId` có thì chỉ Job của server đó. */
+  jobs: (serverId?: string) =>
+    request<Job[]>("GET", serverId ? `/jobs?server_id=${encodeURIComponent(serverId)}` : "/jobs"),
   job: (id: number) => request<Job>("GET", `/jobs/${id}`),
   cancelJob: (id: number) => request<void>("POST", `/jobs/${id}/cancel`),
 };
