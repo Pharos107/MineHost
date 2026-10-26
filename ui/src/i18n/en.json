@@ -128,7 +128,9 @@
       "resolve_version": "Looking up version {{minecraft}}",
       "download_java": "Downloading Java {{major}}",
       "download_server": "Downloading Paper {{minecraft}}",
-      "prepare_files": "Preparing files"
+      "prepare_files": "Preparing files",
+      "save_world": "Saving the world",
+      "compress": "Compressing the backup"
     }
   },
   "server": {
@@ -277,6 +279,7 @@
     "DOWNLOAD_FAILED": "The download failed partway. Please try again.",
     "CHECKSUM_MISMATCH": "The downloaded file is damaged. Please try again.",
     "BACKUP_CORRUPT": "The backup is damaged or its checksum does not match.",
+    "BACKUP_PROTECTED": "This backup is protected. Remove the protection before deleting it.",
     "JAVA_INSTALL_FAILED": "Could not install Java. Please try again.",
     "NOT_ENOUGH_DISK": "Less than 1 GB of disk space is free. Free up some space and try again.",
     "JOB_CANCELLED": "Cancelled.",

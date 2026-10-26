@@ -27,6 +27,7 @@ pub type JobId = u64;
 #[serde(rename_all = "snake_case")]
 pub enum JobKind {
     CreateServer,
+    Backup,
 }
 
 /// Bước đang làm. UI dịch theo `kind`, ví dụ "Tải Java 21 (48/61 MB)".
@@ -34,10 +35,19 @@ pub enum JobKind {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum JobStep {
     CheckDisk,
-    ResolveVersion { minecraft: String },
-    DownloadJava { major: u16 },
-    DownloadServer { minecraft: String },
+    ResolveVersion {
+        minecraft: String,
+    },
+    DownloadJava {
+        major: u16,
+    },
+    DownloadServer {
+        minecraft: String,
+    },
     PrepareFiles,
+    /// `save-off` rồi `save-all flush` trước khi nén world đang mở.
+    SaveWorld,
+    Compress,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

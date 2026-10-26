@@ -70,7 +70,8 @@ fn status_for(code: ErrorCode) -> StatusCode {
         | ErrorCode::PortInUse
         | ErrorCode::JobCancelled
         | ErrorCode::ServerCrashed
-        | ErrorCode::UnsupportedByVersion => StatusCode::CONFLICT,
+        | ErrorCode::UnsupportedByVersion
+        | ErrorCode::BackupProtected => StatusCode::CONFLICT,
         ErrorCode::NetworkUnavailable | ErrorCode::DownloadFailed | ErrorCode::ChecksumMismatch => {
             StatusCode::BAD_GATEWAY
         }
@@ -171,5 +172,6 @@ mod tests {
             status_for(ErrorCode::BackupCorrupt),
             StatusCode::UNPROCESSABLE_ENTITY
         );
+        assert_eq!(status_for(ErrorCode::BackupProtected), StatusCode::CONFLICT);
     }
 }

@@ -3,6 +3,7 @@
 //! `mh-api` và CLI chỉ gọi vào đây, không gọi thẳng các crate tầng dưới. Đây là nơi duy nhất
 //! ghép nhiều crate lại với nhau.
 
+mod backup;
 mod create;
 mod error;
 pub mod jobs;
@@ -23,6 +24,7 @@ use mh_runtime::ProcessRuntime;
 use mh_store::ServerStore;
 use mh_supervisor::SupervisorConfig;
 
+pub use backup::{BackupKind, BackupMeta, BackupRequest, BackupStarted};
 pub use create::{CreateRequest, Created};
 pub use error::AppError;
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};
@@ -47,6 +49,8 @@ pub struct AppDeps {
     pub free_space: FreeSpaceFn,
     pub total_memory_mb: u64,
     pub supervisor: SupervisorConfig,
+    /// Hạn chờ dòng `Saved the game` sau `save-all flush`. Mặc định 60 giây.
+    pub save_flush_timeout: Duration,
 }
 
 impl std::fmt::Debug for AppDeps {
@@ -88,6 +92,7 @@ pub struct App {
     free_space: FreeSpaceFn,
     total_memory_mb: u64,
     supervisor_config: SupervisorConfig,
+    save_flush_timeout: Duration,
     shutdown: tokio::sync::Notify,
     events: tokio::sync::broadcast::Sender<AppEvent>,
 }
@@ -114,11 +119,14 @@ impl App {
             free_space,
             total_memory_mb: mh_platform::system::total_memory_bytes() / (1024 * 1024),
             supervisor: SupervisorConfig::default(),
+            save_flush_timeout: backup::DEFAULT_SAVE_FLUSH_TIMEOUT,
         };
         Self::with_deps(dirs, deps)
     }
 
     pub fn with_deps(dirs: DataDirs, deps: AppDeps) -> Result<Self, AppError> {
+        // File nén không có mô tả là backup dở (mất điện giữa chừng). Dọn trước khi nhận request.
+        backup::sweep_incomplete(&dirs.backups());
         Ok(Self {
             store: ServerStore::new(dirs.servers(), dirs.trash()),
             dirs,
@@ -132,6 +140,7 @@ impl App {
             free_space: deps.free_space,
             total_memory_mb: deps.total_memory_mb,
             supervisor_config: deps.supervisor,
+            save_flush_timeout: deps.save_flush_timeout,
             shutdown: tokio::sync::Notify::new(),
             events: tokio::sync::broadcast::channel(256).0,
         })

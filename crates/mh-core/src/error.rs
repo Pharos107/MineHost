@@ -39,6 +39,8 @@ pub enum ErrorCode {
     UnsupportedByVersion,
     /// Hash của file backup không khớp với file mô tả.
     BackupCorrupt,
+    /// Bản backup đang được bảo vệ, không xóa được.
+    BackupProtected,
 }
 
 impl ErrorCode {
@@ -64,6 +66,7 @@ impl ErrorCode {
             Self::Forbidden => "FORBIDDEN",
             Self::UnsupportedByVersion => "UNSUPPORTED_BY_VERSION",
             Self::BackupCorrupt => "BACKUP_CORRUPT",
+            Self::BackupProtected => "BACKUP_PROTECTED",
         }
     }
 }
@@ -98,7 +101,7 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 19] = [
+    const ALL: [ErrorCode; 20] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::InvalidInput,
@@ -118,6 +121,7 @@ mod tests {
         ErrorCode::Forbidden,
         ErrorCode::UnsupportedByVersion,
         ErrorCode::BackupCorrupt,
+        ErrorCode::BackupProtected,
     ];
 
     #[test]

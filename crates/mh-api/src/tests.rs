@@ -102,6 +102,7 @@ fn test_api() -> TestApi {
         free_space: Arc::new(|_| None),
         total_memory_mb: 8192,
         supervisor: mh_supervisor::SupervisorConfig::default(),
+        save_flush_timeout: Duration::from_secs(60),
     };
     let app = Arc::new(App::with_deps(dirs, deps).unwrap());
     let router = crate::router(Arc::clone(&app), PORT);

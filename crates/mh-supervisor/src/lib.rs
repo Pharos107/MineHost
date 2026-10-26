@@ -13,7 +13,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
-use mh_core::{ConsoleLine, CrashHint, ErrorCode, ServerState};
+use mh_core::{ConsoleLine, ConsoleStream, CrashHint, ErrorCode, ServerState};
 use mh_runtime::{ProcessRuntime, ProcessSpec, RuntimeError};
 use tokio::sync::{broadcast, mpsc, oneshot, watch};
 
@@ -66,6 +66,9 @@ pub enum SupervisorError {
     Launch(LaunchError),
     #[error(transparent)]
     Runtime(#[from] RuntimeError),
+    /// Đã gửi lệnh nhưng không có dòng stdout mới chứa `pattern` trong hạn chờ.
+    #[error("không thấy dòng console chứa `{pattern}` sau {timeout:?}")]
+    WaitTimeout { pattern: String, timeout: Duration },
     /// Actor đã dừng (controller đang tắt).
     #[error("supervisor đã dừng")]
     Gone,
@@ -77,7 +80,7 @@ impl SupervisorError {
             Self::Busy(_) => ErrorCode::ServerBusy,
             Self::Launch(e) => e.code,
             Self::Runtime(e) => e.code(),
-            Self::Gone => ErrorCode::Internal,
+            Self::WaitTimeout { .. } | Self::Gone => ErrorCode::Internal,
         }
     }
 }
@@ -145,7 +148,8 @@ pub(crate) enum Command {
     Stop(oneshot::Sender<Result<(), SupervisorError>>),
     Restart(oneshot::Sender<Result<(), SupervisorError>>),
     Kill(oneshot::Sender<Result<(), SupervisorError>>),
-    Send(String, oneshot::Sender<Result<(), SupervisorError>>),
+    /// Trả `seq` của dòng echo stdin, để người gọi chỉ nhận stdout tới sau lệnh này.
+    Send(String, oneshot::Sender<Result<u64, SupervisorError>>),
 }
 
 /// Điều khiển một server. Clone thoải mái; actor dừng khi mọi bản clone bị drop.
@@ -214,8 +218,39 @@ impl SupervisorHandle {
 
     /// Gửi nguyên văn một lệnh console tới stdin của server.
     pub async fn send(&self, line: impl Into<String>) -> Result<(), SupervisorError> {
+        self.send_seq(line).await.map(|_| ())
+    }
+
+    /// Gửi `line` rồi chờ một dòng stdout **mới** (tới sau lúc gửi) có chứa `pattern`.
+    ///
+    /// Đăng ký nghe console trước khi gửi: actor có thể phát dòng trả lời ngay sau khi
+    /// ghi stdin, trước khi `send` trả về cho task này.
+    pub async fn send_and_wait(
+        &self,
+        line: impl Into<String>,
+        pattern: &str,
+        timeout: Duration,
+    ) -> Result<(), SupervisorError> {
+        let mut events = self.subscribe();
+        let after_seq = self.send_seq(line).await?;
+        let wait = wait_for_stdout(&mut events, &self.console, after_seq, pattern);
+        match tokio::time::timeout(timeout, wait).await {
+            Ok(result) => result,
+            Err(_) => Err(SupervisorError::WaitTimeout {
+                pattern: pattern.to_owned(),
+                timeout,
+            }),
+        }
+    }
+
+    async fn send_seq(&self, line: impl Into<String>) -> Result<u64, SupervisorError> {
         let line = line.into();
-        self.call(|reply| Command::Send(line, reply)).await
+        let (reply, rx) = oneshot::channel();
+        self.tx
+            .send(Command::Send(line, reply))
+            .await
+            .map_err(|_| SupervisorError::Gone)?;
+        rx.await.map_err(|_| SupervisorError::Gone)?
     }
 
     pub fn status(&self) -> Status {
@@ -258,5 +293,37 @@ impl SupervisorHandle {
             .await
             .map_err(|_| SupervisorError::Gone)?;
         rx.await.map_err(|_| SupervisorError::Gone)?
+    }
+}
+
+fn is_later_stdout(line: &ConsoleLine, after_seq: u64, pattern: &str) -> bool {
+    line.seq > after_seq && line.stream == ConsoleStream::Stdout && line.text.contains(pattern)
+}
+
+/// Chỉ dòng stdout có `seq` lớn hơn echo của lệnh vừa gửi. Dòng đã có trong bộ đệm từ
+/// trước (cùng chữ, nhưng của lần save cũ) không được tính.
+async fn wait_for_stdout(
+    events: &mut broadcast::Receiver<SupervisorEvent>,
+    console: &Console,
+    after_seq: u64,
+    pattern: &str,
+) -> Result<(), SupervisorError> {
+    loop {
+        match events.recv().await {
+            Ok(SupervisorEvent::Console(line)) if is_later_stdout(&line, after_seq, pattern) => {
+                return Ok(());
+            }
+            Ok(_) => {}
+            Err(broadcast::error::RecvError::Lagged(_)) => {
+                let found = console
+                    .after(Some(after_seq))
+                    .iter()
+                    .any(|line| is_later_stdout(line, after_seq, pattern));
+                if found {
+                    return Ok(());
+                }
+            }
+            Err(broadcast::error::RecvError::Closed) => return Err(SupervisorError::Gone),
+        }
     }
 }

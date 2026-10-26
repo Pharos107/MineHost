@@ -1178,6 +1178,7 @@ dependencies = [
 name = "mh-app"
 version = "0.2.0"
 dependencies = [
+ "mh-backup",
  "mh-core",
  "mh-java",
  "mh-net",
@@ -1188,11 +1189,13 @@ dependencies = [
  "mh-supervisor",
  "serde",
  "serde_json",
+ "sha2",
  "tempfile",
  "thiserror",
  "time",
  "tokio",
  "tracing",
+ "ulid",
 ]
 
 [[package]]
