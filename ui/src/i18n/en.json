@@ -276,6 +276,7 @@
     "NETWORK_UNAVAILABLE": "Cannot reach the Internet. Check your connection and try again.",
     "DOWNLOAD_FAILED": "The download failed partway. Please try again.",
     "CHECKSUM_MISMATCH": "The downloaded file is damaged. Please try again.",
+    "BACKUP_CORRUPT": "The backup is damaged or its checksum does not match.",
     "JAVA_INSTALL_FAILED": "Could not install Java. Please try again.",
     "NOT_ENOUGH_DISK": "Less than 1 GB of disk space is free. Free up some space and try again.",
     "JOB_CANCELLED": "Cancelled.",
@@ -285,8 +286,7 @@
     "FILE_TOO_LARGE": "The file is larger than allowed.",
     "FILE_NOT_TEXT": "This file is not valid UTF-8 text.",
     "FILE_CHANGED": "The file changed since it was opened. Reload the latest version.",
-    "FILE_EXISTS": "A file or folder with that name already exists.",
-    "BACKUP_CORRUPT": "The backup is damaged or its checksum does not match."
+    "FILE_EXISTS": "A file or folder with that name already exists."
   },
   "jobsPage": {
     "description": "What MineHost is doing or just finished, such as creating a server or making a backup.",
@@ -312,5 +312,37 @@
       "failed": "Failed",
       "cancelled": "Cancelled"
     }
+  },
+  "overview": {
+    "cpu": "CPU",
+    "cpuHint": "of the whole machine",
+    "memory": "RAM",
+    "memoryOf": "of {{max}} allowed",
+    "uptime": "Uptime",
+    "disk": "Disk usage",
+    "diskPending": "Calculating…",
+    "cpuChart": "CPU over the last hour",
+    "memoryChart": "RAM over the last hour",
+    "offline": "The server is stopped. Start it to see CPU and RAM."
+  },
+  "duration": {
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "hours_one": "{{count}} hour",
+    "hours_other": "{{count}} hours",
+    "minutes_one": "{{count}} minute",
+    "minutes_other": "{{count}} minutes",
+    "seconds_one": "{{count}} second",
+    "seconds_other": "{{count}} seconds"
+  },
+  "home": {
+    "running": "Servers running",
+    "jobs": "Tasks running",
+    "cpu": "Machine CPU",
+    "memory": "RAM in use",
+    "ofTotal": "of {{total}}",
+    "diskFree": "Free disk space",
+    "runningServers": "Running servers",
+    "noneRunning": "No servers are running."
   }
 }

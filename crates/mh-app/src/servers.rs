@@ -130,6 +130,8 @@ impl App {
         }
         lock(&self.supervisors).remove(&id);
         let dest = self.store.trash(id, OffsetDateTime::now_utc())?;
+        // Server không còn trên đĩa thì biểu đồ cũng không còn.
+        self.clear_metrics(id);
         self.notify_changed(id);
         tracing::info!(server = %id, dest = %dest.display(), "đã chuyển server vào thùng rác");
         Ok(dest)
