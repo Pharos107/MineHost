@@ -5,6 +5,8 @@
 
 mod auth;
 mod create;
+#[cfg(feature = "e2e")]
+pub mod e2e;
 mod error;
 mod files;
 pub mod jobs;
@@ -114,16 +116,16 @@ impl std::fmt::Debug for App {
 impl App {
     /// Dùng nguồn thật: Mojang, Paper, Adoptium. Phải gọi trong runtime tokio.
     pub fn new(dirs: DataDirs) -> Result<Self, AppError> {
-        let free_space: FreeSpaceFn = Arc::new(mh_platform::system::free_space);
+        let (port_free, free_space, total_memory_mb) = host_deps_parts();
         let http =
             HttpClient::new(NetConfig::new(dirs.cache()))?.with_free_space(Arc::clone(&free_space));
         let http = Arc::new(http);
         let deps = AppDeps {
             catalog: Arc::new(sources::OnlineCatalog::new(Arc::clone(&http))),
             java: Arc::new(JavaManager::new(http, dirs.java())),
-            port_free: Arc::new(port_is_free),
+            port_free,
             free_space,
-            total_memory_mb: mh_platform::system::total_memory_bytes() / (1024 * 1024),
+            total_memory_mb,
             supervisor: SupervisorConfig::default(),
             metrics: MetricsConfig::default(),
         };
@@ -215,6 +217,16 @@ impl App {
 fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     // Chỉ bị poison khi một luồng panic lúc đang giữ; dữ liệu bên trong vẫn dùng được.
     mutex.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// Cổng, dung lượng ổ và RAM của máy đang chạy. Catalog và Java do caller chọn,
+/// để chế độ e2e chỉ thay hai thứ đó và vẫn dùng probe thật.
+pub(crate) fn host_deps_parts() -> (PortProbe, FreeSpaceFn, u64) {
+    (
+        Arc::new(port_is_free),
+        Arc::new(mh_platform::system::free_space),
+        mh_platform::system::total_memory_bytes() / (1024 * 1024),
+    )
 }
 
 fn port_is_free(port: u16) -> bool {

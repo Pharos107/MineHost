@@ -76,6 +76,46 @@ jobs:
       - name: build release
         run: cargo build --release --locked -p minehost
 
+  e2e:
+    name: E2E (Playwright, binary thật)
+    needs: ui
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - uses: actions/download-artifact@v4
+        with:
+          name: ui-dist
+          path: ui/dist
+      - name: Cài toolchain theo rust-toolchain.toml
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      # Chế độ e2e: catalog Paper giả và Java giả (fake-mc), không gọi mạng (crates/minehost/README.md).
+      - name: Build minehost (e2e) và fake-mc
+        run: |
+          cargo build --locked -p mh-runtime --bin fake-mc
+          cargo build --locked -p minehost --features e2e
+      - name: Cài Playwright
+        working-directory: ui
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Chạy test E2E
+        working-directory: ui
+        run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            ui/playwright-report
+            ui/test-results
+          retention-days: 7
+
   integration:
     name: Tích hợp Paper thật (${{ matrix.name }})
     if: inputs.integration

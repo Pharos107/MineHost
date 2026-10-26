@@ -74,7 +74,7 @@ pub fn launch_args(loader: LoaderKind) -> Vec<String> {
     }
 }
 
-fn unsupported(loader: LoaderKind) -> AppError {
+pub(crate) fn unsupported(loader: LoaderKind) -> AppError {
     AppError::new(
         ErrorCode::InvalidInput,
         format!("loại server {loader} chưa hỗ trợ"),
