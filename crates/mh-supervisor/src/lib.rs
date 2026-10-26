@@ -13,7 +13,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
-use mh_core::{ConsoleLine, CrashHint, ErrorCode, ServerState};
+use mh_core::{ConsoleLine, CrashHint, ErrorCode, PlayerLogEvent, ServerState};
 use mh_runtime::{ProcessRuntime, ProcessSpec, RuntimeError};
 use tokio::sync::{broadcast, mpsc, oneshot, watch};
 
@@ -117,6 +117,8 @@ impl Default for SupervisorConfig {
 pub struct Status {
     pub state: ServerState,
     pub pid: Option<u32>,
+    /// Lúc chuyển sang `Running`. `None` sau khi process thoát — dùng cho "thời gian chạy".
+    pub running_since: Option<time::OffsetDateTime>,
     /// Có khi `state` là `Crashed`.
     pub crash: Option<Arc<CrashInfo>>,
     /// Đang chờ tự khởi động lại sau crash.
@@ -138,6 +140,8 @@ pub struct CrashInfo {
 pub enum SupervisorEvent {
     Status(Status),
     Console(ConsoleLine),
+    /// Join, leave hoặc kết quả `list` đọc từ stdout (spec P2, mục 3.2).
+    Players(PlayerLogEvent),
 }
 
 pub(crate) enum Command {
@@ -173,6 +177,7 @@ pub fn spawn<L: Launcher>(
     let (status_tx, status) = watch::channel(Status {
         state: ServerState::Stopped,
         pid: None,
+        running_since: None,
         crash: None,
         restart_pending: false,
         slow_start: false,

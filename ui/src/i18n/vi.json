@@ -276,6 +276,7 @@
     "NETWORK_UNAVAILABLE": "Không kết nối được Internet. Kiểm tra mạng rồi thử lại.",
     "DOWNLOAD_FAILED": "Tải file bị lỗi giữa chừng. Hãy thử lại.",
     "CHECKSUM_MISMATCH": "File tải về bị hỏng. Hãy thử lại.",
+    "BACKUP_CORRUPT": "Bản sao lưu bị hỏng hoặc không khớp mã kiểm tra.",
     "JAVA_INSTALL_FAILED": "Không cài được Java. Hãy thử lại.",
     "NOT_ENOUGH_DISK": "Ổ đĩa còn dưới 1 GB trống. Hãy dọn bớt rồi thử lại.",
     "JOB_CANCELLED": "Đã hủy.",

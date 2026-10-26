@@ -39,6 +39,8 @@ pub async fn run(
     }
 
     let app = Arc::new(open_app(dirs)?);
+    // Task chỉ số giữ `Weak<App>` và dừng khi `App` bị hủy lúc thoát.
+    app.spawn_metrics();
     let router = mh_api::router(Arc::clone(&app), addr.port());
     let (stop_http, http_stopped) = tokio::sync::oneshot::channel::<()>();
     let server = axum::serve(listener, router).with_graceful_shutdown(async {

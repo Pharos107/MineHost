@@ -93,6 +93,21 @@ struct Harness {
 }
 
 async fn harness() -> Harness {
+    build_harness(mh_app::MetricsConfig::default(), false).await
+}
+
+async fn harness_sampling() -> Harness {
+    build_harness(
+        mh_app::MetricsConfig {
+            sample_every: Duration::from_millis(50),
+            disk_every: Duration::from_millis(50),
+        },
+        true,
+    )
+    .await
+}
+
+async fn build_harness(metrics: mh_app::MetricsConfig, sample: bool) -> Harness {
     let tmp = tempfile::tempdir().unwrap();
     let dirs = DataDirs::resolve(Some(tmp.path().to_path_buf())).unwrap();
     dirs.ensure().unwrap();
@@ -103,8 +118,12 @@ async fn harness() -> Harness {
         free_space: Arc::new(|_| None),
         total_memory_mb: 8192,
         supervisor: mh_supervisor::SupervisorConfig::default(),
+        metrics,
     };
     let app = Arc::new(App::with_deps(dirs, deps).unwrap());
+    if sample {
+        app.spawn_metrics();
+    }
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
     let router = mh_api::router(Arc::clone(&app), port);
@@ -342,6 +361,24 @@ async fn servers_topic_sends_list_then_changes() {
     read_until(&mut ws, |m| m["data"]["state"] == "stopped").await;
     h.app.trash(id, "WS").unwrap();
     read_until(&mut ws, |m| m["data"]["removed"] == true).await;
+}
+
+#[tokio::test]
+async fn metrics_topic_receives_a_sample() {
+    let h = harness_sampling().await;
+    let id = h.installed_server().await;
+    let topic = format!("server.{id}.metrics");
+    let mut ws = h.subscribe(json!({ "subscribe": [topic] })).await;
+    h.app.start(id).await.unwrap();
+    let msgs = read_until(&mut ws, |m| {
+        m["topic"] == topic && m["data"]["memory_bytes"].as_u64().is_some_and(|n| n > 0)
+    })
+    .await;
+    let data = &msgs.last().unwrap()["data"];
+    assert!(data["cpu_percent"].is_number());
+    assert!(data["players"].is_null());
+    assert!(data["at"].as_str().unwrap().contains('T'));
+    h.app.kill(id).await.unwrap();
 }
 
 #[tokio::test]

@@ -1,6 +1,8 @@
 [workspace]
 resolver = "3"
 members = ["crates/*"]
+# `fuzz/` là workspace riêng của cargo-fuzz, không kéo libFuzzer vào `cargo test`.
+exclude = ["fuzz"]
 
 [workspace.package]
 version = "0.2.0"
@@ -69,6 +71,8 @@ windows-sys = { version = "0.61.2", features = [
   "Win32_UI_WindowsAndMessaging",
 ] }
 zip = { version = "9.0.5", default-features = false, features = ["deflate-flate2"] }
+# `legacy` / `arrays` / `zdict_builder` không cần để nén và giải nén mức 3.
+zstd = { version = "0.14.3", default-features = false }
 
 [workspace.lints.rust]
 unsafe_code = "deny"
