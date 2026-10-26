@@ -308,5 +308,27 @@
       "failed": "Lỗi",
       "cancelled": "Đã hủy"
     }
+  },
+  "overview": {
+    "cpu": "CPU",
+    "cpuHint": "trên toàn máy",
+    "memory": "RAM",
+    "memoryOf": "trên {{max}} đã đặt",
+    "uptime": "Thời gian chạy",
+    "disk": "Dung lượng",
+    "diskPending": "Đang tính…",
+    "cpuChart": "CPU trong 1 giờ qua",
+    "memoryChart": "RAM trong 1 giờ qua",
+    "offline": "Server đang tắt. Bật server để xem CPU và RAM."
+  },
+  "duration": {
+    "days_one": "{{count}} ngày",
+    "days_other": "{{count}} ngày",
+    "hours_one": "{{count}} giờ",
+    "hours_other": "{{count}} giờ",
+    "minutes_one": "{{count}} phút",
+    "minutes_other": "{{count}} phút",
+    "seconds_one": "{{count}} giây",
+    "seconds_other": "{{count}} giây"
   }
 }

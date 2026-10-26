@@ -9,6 +9,7 @@ import { JobsPage } from "./pages/jobs/JobsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ServerListPage } from "./pages/ServerListPage";
 import { ConsoleRoute, GameSettingsRoute, ServerComingSoon, ServerSettingsRoute } from "./pages/server/routes";
+import { OverviewPage } from "./pages/server/overview/OverviewPage";
 import { ServerLayout } from "./pages/server/ServerLayout";
 
 /** Các trang theo spec P2, mục 2. Backend trả `index.html` cho mọi đường dẫn lạ. */
@@ -32,7 +33,7 @@ export function AppRoutes() {
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/settings" element={<ComingSoon title={t("nav.settings")} />} />
         <Route path="/servers/:id" element={<ServerLayout />}>
-          <Route index element={<ServerComingSoon />} />
+          <Route index element={<OverviewPage />} />
           <Route path="console" element={<ConsoleRoute />} />
           <Route path="files" element={<ServerComingSoon />} />
           <Route path="players" element={<ServerComingSoon />} />

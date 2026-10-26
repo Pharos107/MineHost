@@ -308,5 +308,27 @@
       "failed": "Failed",
       "cancelled": "Cancelled"
     }
+  },
+  "overview": {
+    "cpu": "CPU",
+    "cpuHint": "of the whole machine",
+    "memory": "RAM",
+    "memoryOf": "of {{max}} allowed",
+    "uptime": "Uptime",
+    "disk": "Disk usage",
+    "diskPending": "Calculating…",
+    "cpuChart": "CPU over the last hour",
+    "memoryChart": "RAM over the last hour",
+    "offline": "The server is stopped. Start it to see CPU and RAM."
+  },
+  "duration": {
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "hours_one": "{{count}} hour",
+    "hours_other": "{{count}} hours",
+    "minutes_one": "{{count}} minute",
+    "minutes_other": "{{count}} minutes",
+    "seconds_one": "{{count}} second",
+    "seconds_other": "{{count}} seconds"
   }
 }
