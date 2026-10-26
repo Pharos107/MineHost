@@ -281,7 +281,12 @@
     "JOB_CANCELLED": "Đã hủy.",
     "SERVER_CRASHED": "Server bị dừng đột ngột.",
     "FORBIDDEN": "Yêu cầu bị từ chối vì không đến từ giao diện MineHost trên máy này.",
-    "UNSUPPORTED_BY_VERSION": "Phiên bản Minecraft này không hỗ trợ thao tác này."
+    "UNSUPPORTED_BY_VERSION": "Phiên bản Minecraft này không hỗ trợ thao tác này.",
+    "AUTH_REQUIRED": "Bạn cần đăng nhập.",
+    "AUTH_INVALID": "Mật khẩu không đúng.",
+    "AUTH_RATE_LIMITED": "Nhập sai quá nhiều lần. Hãy thử lại sau {{retry_after_s}} giây.",
+    "PASSWORD_TOO_SHORT": "Mật khẩu phải có ít nhất 8 ký tự.",
+    "LAN_NEEDS_PASSWORD": "Hãy đặt mật khẩu trước khi bật truy cập từ mạng LAN."
   },
   "jobsPage": {
     "description": "Việc MineHost đang làm hoặc vừa làm xong, như tạo server hay sao lưu.",

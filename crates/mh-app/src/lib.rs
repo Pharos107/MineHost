@@ -3,6 +3,7 @@
 //! `mh-api` và CLI chỉ gọi vào đây, không gọi thẳng các crate tầng dưới. Đây là nơi duy nhất
 //! ghép nhiều crate lại với nhau.
 
+mod auth;
 mod create;
 mod error;
 pub mod jobs;
@@ -23,6 +24,7 @@ use mh_runtime::ProcessRuntime;
 use mh_store::ServerStore;
 use mh_supervisor::SupervisorConfig;
 
+pub use auth::AuthStore;
 pub use create::{CreateRequest, Created};
 pub use error::AppError;
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};
@@ -77,6 +79,7 @@ pub struct Installing {
 /// Trạng thái dùng chung của controller. Bọc trong `Arc` để chia sẻ giữa các request.
 pub struct App {
     dirs: DataDirs,
+    auth: AuthStore,
     store: ServerStore,
     catalog: Arc<dyn ServerCatalog>,
     java: Arc<dyn JavaSource>,
@@ -119,9 +122,12 @@ impl App {
     }
 
     pub fn with_deps(dirs: DataDirs, deps: AppDeps) -> Result<Self, AppError> {
+        // File hỏng thì không lên: coi là "chưa có mật khẩu" sẽ mở khóa API.
+        let auth = AuthStore::open(&dirs)?;
         Ok(Self {
             store: ServerStore::new(dirs.servers(), dirs.trash()),
             dirs,
+            auth,
             catalog: deps.catalog,
             java: deps.java,
             runtime: Arc::new(ProcessRuntime::new()?),
@@ -139,6 +145,11 @@ impl App {
 
     pub fn dirs(&self) -> &DataDirs {
         &self.dirs
+    }
+
+    /// Mật khẩu admin và cờ LAN. Route và lệnh đặt lại mật khẩu gọi qua đây.
+    pub fn auth(&self) -> &AuthStore {
+        &self.auth
     }
 
     pub fn jobs(&self) -> &JobRunner {

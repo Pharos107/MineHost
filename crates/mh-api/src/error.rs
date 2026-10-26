@@ -60,17 +60,24 @@ impl ApiError {
 ///
 /// `UNSUPPORTED_BY_VERSION` là 409: thao tác không làm được với bản Minecraft này,
 /// cùng nhóm với các từ chối vì trạng thái, không phải lỗi của controller.
+/// `AUTH_REQUIRED` và `AUTH_INVALID` là 401, `AUTH_RATE_LIMITED` là 429,
+/// `PASSWORD_TOO_SHORT` là 400, `LAN_NEEDS_PASSWORD` là 409 (spec P2, mục 4.5).
 fn status_for(code: ErrorCode) -> StatusCode {
     match code {
         ErrorCode::NotFound | ErrorCode::VersionNotFound => StatusCode::NOT_FOUND,
-        ErrorCode::InvalidInput | ErrorCode::PathOutsideRoot => StatusCode::BAD_REQUEST,
+        ErrorCode::InvalidInput | ErrorCode::PathOutsideRoot | ErrorCode::PasswordTooShort => {
+            StatusCode::BAD_REQUEST
+        }
+        ErrorCode::AuthRequired | ErrorCode::AuthInvalid => StatusCode::UNAUTHORIZED,
         ErrorCode::Forbidden => StatusCode::FORBIDDEN,
+        ErrorCode::AuthRateLimited => StatusCode::TOO_MANY_REQUESTS,
         ErrorCode::ServerBusy
         | ErrorCode::EulaNotAccepted
         | ErrorCode::PortInUse
         | ErrorCode::JobCancelled
         | ErrorCode::ServerCrashed
-        | ErrorCode::UnsupportedByVersion => StatusCode::CONFLICT,
+        | ErrorCode::UnsupportedByVersion
+        | ErrorCode::LanNeedsPassword => StatusCode::CONFLICT,
         ErrorCode::NetworkUnavailable | ErrorCode::DownloadFailed | ErrorCode::ChecksumMismatch => {
             StatusCode::BAD_GATEWAY
         }
@@ -166,6 +173,23 @@ mod tests {
         assert_eq!(
             status_for(ErrorCode::VersionNotFound),
             StatusCode::NOT_FOUND
+        );
+        assert_eq!(
+            status_for(ErrorCode::AuthRequired),
+            StatusCode::UNAUTHORIZED
+        );
+        assert_eq!(status_for(ErrorCode::AuthInvalid), StatusCode::UNAUTHORIZED);
+        assert_eq!(
+            status_for(ErrorCode::AuthRateLimited),
+            StatusCode::TOO_MANY_REQUESTS
+        );
+        assert_eq!(
+            status_for(ErrorCode::PasswordTooShort),
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            status_for(ErrorCode::LanNeedsPassword),
+            StatusCode::CONFLICT
         );
     }
 }

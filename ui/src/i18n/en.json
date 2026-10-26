@@ -281,7 +281,12 @@
     "JOB_CANCELLED": "Cancelled.",
     "SERVER_CRASHED": "The server stopped unexpectedly.",
     "FORBIDDEN": "The request was refused because it did not come from the MineHost page on this computer.",
-    "UNSUPPORTED_BY_VERSION": "This Minecraft version does not support this action."
+    "UNSUPPORTED_BY_VERSION": "This Minecraft version does not support this action.",
+    "AUTH_REQUIRED": "You need to sign in.",
+    "AUTH_INVALID": "Incorrect password.",
+    "AUTH_RATE_LIMITED": "Too many wrong passwords. Try again in {{retry_after_s}} seconds.",
+    "PASSWORD_TOO_SHORT": "Password must be at least 8 characters.",
+    "LAN_NEEDS_PASSWORD": "Set a password before turning on LAN access."
   },
   "jobsPage": {
     "description": "What MineHost is doing or just finished, such as creating a server or making a backup.",

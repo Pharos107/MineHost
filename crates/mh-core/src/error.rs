@@ -37,6 +37,16 @@ pub enum ErrorCode {
     Forbidden,
     /// Tính năng không có ở phiên bản Minecraft này, ví dụ đóng băng trước 1.16.
     UnsupportedByVersion,
+    /// Chưa đăng nhập.
+    AuthRequired,
+    /// Sai mật khẩu.
+    AuthInvalid,
+    /// Sai mật khẩu quá nhiều lần. Client nhận tham số `retry_after_s` (giây còn phải chờ).
+    AuthRateLimited,
+    /// Mật khẩu mới dưới 8 ký tự.
+    PasswordTooShort,
+    /// Bật LAN khi chưa đặt mật khẩu.
+    LanNeedsPassword,
 }
 
 impl ErrorCode {
@@ -61,6 +71,11 @@ impl ErrorCode {
             Self::ServerCrashed => "SERVER_CRASHED",
             Self::Forbidden => "FORBIDDEN",
             Self::UnsupportedByVersion => "UNSUPPORTED_BY_VERSION",
+            Self::AuthRequired => "AUTH_REQUIRED",
+            Self::AuthInvalid => "AUTH_INVALID",
+            Self::AuthRateLimited => "AUTH_RATE_LIMITED",
+            Self::PasswordTooShort => "PASSWORD_TOO_SHORT",
+            Self::LanNeedsPassword => "LAN_NEEDS_PASSWORD",
         }
     }
 }
@@ -95,7 +110,7 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 18] = [
+    const ALL: [ErrorCode; 23] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::InvalidInput,
@@ -114,6 +129,11 @@ mod tests {
         ErrorCode::ServerCrashed,
         ErrorCode::Forbidden,
         ErrorCode::UnsupportedByVersion,
+        ErrorCode::AuthRequired,
+        ErrorCode::AuthInvalid,
+        ErrorCode::AuthRateLimited,
+        ErrorCode::PasswordTooShort,
+        ErrorCode::LanNeedsPassword,
     ];
 
     #[test]
