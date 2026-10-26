@@ -1,4 +1,4 @@
-//! Job sao lưu world (spec P2, mục 5.7). Khôi phục và lịch để PR sau.
+//! Job sao lưu world (spec P2, mục 5.7). Khôi phục nằm ở `restore`; lịch để PR sau.
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -152,14 +152,24 @@ impl App {
         } else {
             false
         };
-        let result = self.write_backup(ctx, &spec, &req, &handle, paused).await;
+        // Gom lỗi vào `result`: `?` ở đây sẽ thoát trước khi kịp gửi `save-on`.
+        let result = async {
+            if paused {
+                self.wait_until_saved(ctx, &handle).await?;
+            }
+            ctx.check_cancel()?;
+            // Bước cuối: 3/3 khi server đang chạy, 2/2 khi tắt.
+            ctx.step(JobStep::Compress, steps, steps);
+            self.archive_world(ctx, &spec, &req).await
+        }
+        .await;
         if paused {
             return restore_autosave(&handle, id, result).await;
         }
         result
     }
 
-    async fn ensure_disk(&self, server_dir: &Path) -> Result<(), AppError> {
+    pub(crate) async fn ensure_disk(&self, server_dir: &Path) -> Result<(), AppError> {
         let server_dir = server_dir.to_path_buf();
         let probe = Arc::clone(&self.free_space);
         let backups = self.dirs.backups();
@@ -186,21 +196,14 @@ impl App {
         })))
     }
 
-    async fn write_backup(
+    /// Nén `server/` và ghi file mô tả. Không đặt bước Job: khôi phục gọi lại hàm này
+    /// trong cùng một Job, sau khi đã đặt bước `before_restore`.
+    pub(crate) async fn archive_world(
         &self,
         ctx: &JobContext,
         spec: &InstanceSpec,
         req: &BackupRequest,
-        handle: &SupervisorHandle,
-        paused: bool,
     ) -> Result<(), AppError> {
-        if paused {
-            self.wait_until_saved(ctx, handle).await?;
-        }
-        ctx.check_cancel()?;
-        // Bước cuối: 3/3 khi server đang chạy, 2/2 khi tắt.
-        let steps = if paused { STEPS_LIVE } else { STEPS_OFFLINE };
-        ctx.step(JobStep::Compress, steps, steps);
         let backup_id = Ulid::generate();
         let dir = backup_dir(&self.dirs, spec.id);
         std::fs::create_dir_all(&dir).map_err(|err| io_at(&dir, err))?;
@@ -237,7 +240,7 @@ impl App {
         }
     }
 
-    fn meta_path(&self, id: ServerId, backup_id: &str) -> Result<PathBuf, AppError> {
+    pub(crate) fn meta_path(&self, id: ServerId, backup_id: &str) -> Result<PathBuf, AppError> {
         let parsed = parse_backup_id(backup_id)?;
         let dir = backup_dir(&self.dirs, id);
         if !dir.is_dir() {
@@ -405,7 +408,7 @@ fn read_backup_list(dir: &Path) -> Result<Vec<BackupMeta>, AppError> {
     Ok(metas)
 }
 
-fn read_meta(path: &Path) -> Result<BackupMeta, AppError> {
+pub(crate) fn read_meta(path: &Path) -> Result<BackupMeta, AppError> {
     let text = match std::fs::read_to_string(path) {
         Ok(text) => text,
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
@@ -426,16 +429,16 @@ fn write_meta(path: &Path, meta: &BackupMeta) -> Result<(), AppError> {
     Ok(())
 }
 
-fn backup_dir(dirs: &mh_platform::DataDirs, id: ServerId) -> PathBuf {
+pub(crate) fn backup_dir(dirs: &mh_platform::DataDirs, id: ServerId) -> PathBuf {
     dirs.backups().join(id.to_string())
 }
 
-fn backup_file(dir: &Path, id: &Ulid, ext: &str) -> Result<PathBuf, AppError> {
+pub(crate) fn backup_file(dir: &Path, id: &Ulid, ext: &str) -> Result<PathBuf, AppError> {
     let root = SafeRoot::new(dir)?;
     Ok(root.join(&format!("{id}.{ext}"))?.into_path_buf())
 }
 
-fn parse_backup_id(raw: &str) -> Result<Ulid, AppError> {
+pub(crate) fn parse_backup_id(raw: &str) -> Result<Ulid, AppError> {
     let id = Ulid::from_string(raw).map_err(|_| invalid_backup_id())?;
     // Cùng quy tắc với `ServerId`: không nhận chuỗi Crockford suy ra một ULID khác.
     if !id.to_string().eq_ignore_ascii_case(raw) {
