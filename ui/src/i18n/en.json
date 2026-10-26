@@ -70,7 +70,18 @@
     "state": "Status",
     "version": "Version",
     "memory": "RAM",
-    "port": "Port"
+    "port": "Port",
+    "address": "Address",
+    "open": "Open",
+    "noMatch": "No servers in this state",
+    "filterState": "Filter by state",
+    "filters": {
+      "all": "All states",
+      "running": "Running",
+      "stopped": "Stopped",
+      "problem": "Has a problem",
+      "installing": "Installing"
+    }
   },
   "wizard": {
     "title": "Create server",

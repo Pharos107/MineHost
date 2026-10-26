@@ -70,7 +70,18 @@
     "state": "Trạng thái",
     "version": "Phiên bản",
     "memory": "RAM",
-    "port": "Cổng"
+    "port": "Cổng",
+    "address": "Địa chỉ",
+    "open": "Mở",
+    "noMatch": "Không có server nào ở trạng thái này",
+    "filterState": "Lọc theo trạng thái",
+    "filters": {
+      "all": "Mọi trạng thái",
+      "running": "Đang chạy",
+      "stopped": "Đã tắt",
+      "problem": "Có lỗi",
+      "installing": "Đang cài"
+    }
   },
   "wizard": {
     "title": "Tạo server",
