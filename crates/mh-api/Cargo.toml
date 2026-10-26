@@ -9,11 +9,15 @@ publish.workspace = true
 
 [dependencies]
 axum.workspace = true
+axum-extra.workspace = true
+base64.workspace = true
 mh-app.workspace = true
 mh-core.workspace = true
 mime_guess.workspace = true
+rand_core.workspace = true
 rust-embed.workspace = true
 serde.workspace = true
+subtle.workspace = true
 serde_json.workspace = true
 time.workspace = true
 tokio.workspace = true

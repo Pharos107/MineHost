@@ -83,7 +83,7 @@ fn forbidden(reason: &str) -> Response {
         .into_response()
 }
 
-fn is_mutating(method: &Method) -> bool {
+pub(crate) fn is_mutating(method: &Method) -> bool {
     matches!(
         *method,
         Method::POST | Method::PUT | Method::PATCH | Method::DELETE

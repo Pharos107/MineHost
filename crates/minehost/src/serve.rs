@@ -1,4 +1,5 @@
 use std::io;
+use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -39,7 +40,9 @@ pub async fn run(
     }
 
     let app = Arc::new(App::new(dirs).context("không khởi tạo được MineHost")?);
-    let router = mh_api::router(Arc::clone(&app), addr.port());
+    // `ConnectInfo` cho giới hạn đăng nhập sai theo IP (spec P2, mục 6.10).
+    let router = mh_api::router(Arc::clone(&app), addr.port())
+        .into_make_service_with_connect_info::<SocketAddr>();
     let (stop_http, http_stopped) = tokio::sync::oneshot::channel::<()>();
     let server = axum::serve(listener, router).with_graceful_shutdown(async {
         let _ = http_stopped.await;

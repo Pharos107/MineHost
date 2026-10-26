@@ -107,7 +107,9 @@ async fn harness() -> Harness {
     let app = Arc::new(App::with_deps(dirs, deps).unwrap());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
-    let router = mh_api::router(Arc::clone(&app), port);
+    // Cùng kiểu với `serve.rs`: đăng nhập đọc IP từ `ConnectInfo`.
+    let router = mh_api::router(Arc::clone(&app), port)
+        .into_make_service_with_connect_info::<std::net::SocketAddr>();
     tokio::spawn(async move { axum::serve(listener, router).await });
     Harness {
         _tmp: tmp,

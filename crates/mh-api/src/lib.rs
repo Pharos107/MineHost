@@ -1,5 +1,6 @@
 //! REST API và WebSocket của MineHost tại `/api/v1`, kèm UI tĩnh ở mọi đường dẫn còn lại.
 
+mod auth;
 mod dto;
 mod error;
 mod guard;
@@ -41,9 +42,19 @@ pub use guard::{LocalGuard, MINEHOST_HEADER};
         jobs::cancel,
         jobs::paper_versions,
         jobs::shutdown,
+        auth::session,
+        auth::login,
+        auth::logout,
+        auth::put_password,
+        auth::delete_password,
     ),
     components(schemas(
         error::ErrorBody,
+        auth::SessionDto,
+        auth::CsrfDto,
+        auth::LoginBody,
+        auth::PasswordBody,
+        auth::ClearPasswordBody,
         system::Health,
         system::SystemDto,
         system::DiskDto,
@@ -77,7 +88,9 @@ pub fn openapi() -> utoipa::openapi::OpenApi {
 
 /// `port` là cổng controller thật sự đang nghe, dùng để kiểm tra `Host` và `Origin`.
 pub fn router(app: Arc<App>, port: u16) -> Router {
-    let api = Router::new()
+    let state = auth::ApiState::new(app);
+    // Phiên bọc route API, không bọc file tĩnh: trang đăng nhập phải tải được khi chưa có cookie.
+    let api = auth::routes()
         .route("/health", get(system::health))
         .route("/system", get(system::system_info))
         .route("/servers", get(servers::list).post(servers::create))
@@ -104,8 +117,13 @@ pub fn router(app: Arc<App>, port: u16) -> Router {
         .route("/app/shutdown", post(jobs::shutdown))
         .route("/ws", get(ws::upgrade))
         .fallback(error::api_not_found)
-        .with_state(app);
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            auth::require_session,
+        ))
+        .with_state(state);
 
+    // Guard thêm sau nên chạy trước: Host/Origin của P1 vẫn có hiệu lực.
     Router::new()
         .nest("/api/v1", api)
         .fallback(ui::serve)
@@ -115,5 +133,7 @@ pub fn router(app: Arc<App>, port: u16) -> Router {
         ))
 }
 
+#[cfg(test)]
+mod auth_tests;
 #[cfg(test)]
 mod tests;
