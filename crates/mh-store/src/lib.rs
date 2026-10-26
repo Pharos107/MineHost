@@ -4,12 +4,14 @@
 //!
 //! ```text
 //! servers/<id>/instance.toml   cấu hình của MineHost
-//! servers/<id>/server/         thư mục làm việc của Java (world, server.properties, …)
+//! servers/<id>/frozen.json     tên đang bị đóng băng (Minecraft không có lệnh xem lại)
+//! servers/<id>/server/         thư mục làm việc của Java (world, whitelist.json, …)
 //! servers/<id>/logs/           log console theo ngày
 //! servers/<id>/.running        có mặt khi server đang bật; controller chết thì còn lại
 //! ```
 
 mod error;
+mod players;
 
 use std::fs;
 use std::io;
@@ -21,6 +23,9 @@ use time::OffsetDateTime;
 use time::macros::format_description;
 
 pub use error::StoreError;
+pub use players::{
+    BanEntry, JsonExtra, OpEntry, PlayerFiles, PlayerRef, UserCacheEntry, WhitelistEntry,
+};
 
 const INSTANCE_FILE: &str = "instance.toml";
 const RUNNING_MARKER: &str = ".running";
@@ -85,6 +90,11 @@ impl ServerStore {
             running_marker: root.join(RUNNING_MARKER),
             root,
         }
+    }
+
+    /// File người chơi của Minecraft trong `server/` và `frozen.json` cạnh `instance.toml`.
+    pub fn players(&self, id: ServerId) -> PlayerFiles {
+        PlayerFiles::from_root(self.paths(id).root)
     }
 
     /// Quét `servers/*/`, theo thứ tự tạo (ULID tăng dần theo thời gian).

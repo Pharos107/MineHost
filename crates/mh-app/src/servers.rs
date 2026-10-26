@@ -288,7 +288,8 @@ fn forward_status(
                 Ok(SupervisorEvent::Status(_)) | Err(RecvError::Lagged(_)) => {
                     let _ = events.send(AppEvent::ServerChanged(id));
                 }
-                Ok(SupervisorEvent::Console(_)) => {}
+                // Sự kiện người chơi chưa phát ra API. PR-17 mới có topic players.
+                Ok(SupervisorEvent::Console(_) | SupervisorEvent::Players(_)) => {}
                 Err(RecvError::Closed) => break,
             }
         }
