@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -8,13 +8,19 @@ import type { Server } from "../api/client";
 import { ServerListPage } from "./ServerListPage";
 
 function mockApi(servers: Server[]) {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (url: string) => {
-      if (url === "/api/v1/servers") return Response.json(servers);
-      return Response.json({ code: "NOT_FOUND", params: {} }, { status: 404 });
-    }),
-  );
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+    if (init?.method === "POST") return new Response(null, { status: 204 });
+    if (url === "/api/v1/servers") return Response.json(servers);
+    if (url === "/api/v1/system") return Response.json({ lan_addresses: ["192.168.1.5"] });
+    return Response.json({ code: "NOT_FOUND", params: {} }, { status: 404 });
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  // Các URL đã POST, bỏ phần đầu chung cho dễ đọc.
+  return () => fetchMock.mock.calls.filter(([, init]) => init?.method === "POST").map(([url]) => url.replace("/api/v1/servers/", ""));
+}
+
+function server(patch: Partial<Server>): Server {
+  return { id: "01JB", name: "Survival", state: "stopped", eula_accepted: true, restart_pending: false, slow_start: false, ...patch };
 }
 
 function renderPage() {
@@ -61,10 +67,35 @@ describe("ServerListPage", () => {
     ]);
     renderPage();
     const link = await screen.findByRole("link", { name: "Survival" });
-    expect(screen.getByText("Đang chạy")).toBeTruthy();
+    expect(within(screen.getByRole("table")).getByText("Đang chạy")).toBeTruthy();
     expect(screen.getByText("Paper 1.21.4")).toBeTruthy();
     expect(screen.getByText("4 GB")).toBeTruthy();
     await userEvent.click(link);
     expect(screen.getByText("chi tiết")).toBeTruthy();
+  });
+
+  it("lọc theo trạng thái; lọc ra trống vẫn đổi lại được", async () => {
+    mockApi([server({ id: "A", name: "Chạy", state: "running" }), server({ id: "B", name: "Tắt", state: "stopped" })]);
+    renderPage();
+    await screen.findByRole("link", { name: "Chạy" });
+    const select = screen.getByRole("combobox", { name: "Lọc theo trạng thái" });
+    await userEvent.selectOptions(select, "running");
+    expect(screen.queryByRole("link", { name: "Tắt" })).toBeNull();
+    await userEvent.selectOptions(select, "problem");
+    expect(screen.getByText("Không có server nào ở trạng thái này")).toBeTruthy();
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lọc theo trạng thái" }), "all");
+    expect(screen.getByRole("link", { name: "Tắt" })).toBeTruthy();
+  });
+
+  it("nút trên dòng gửi đúng thao tác; chưa đồng ý EULA thì không có nút Bật", async () => {
+    const posts = mockApi([
+      server({ id: "A", name: "Đang chạy", state: "running", port: 25565 }),
+      server({ id: "B", name: "Mới tạo", eula_accepted: false }),
+    ]);
+    renderPage();
+    expect(await screen.findByText("192.168.1.5:25565")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Tắt: Đang chạy" }));
+    expect(posts()).toEqual(["A/actions/stop"]);
+    expect(screen.queryByRole("button", { name: "Bật server: Mới tạo" })).toBeNull();
   });
 });
