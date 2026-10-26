@@ -75,7 +75,7 @@ fn status_for(code: ErrorCode) -> StatusCode {
             StatusCode::BAD_GATEWAY
         }
         ErrorCode::NotEnoughDisk => StatusCode::INSUFFICIENT_STORAGE,
-        ErrorCode::ConfigInvalid => StatusCode::UNPROCESSABLE_ENTITY,
+        ErrorCode::ConfigInvalid | ErrorCode::BackupCorrupt => StatusCode::UNPROCESSABLE_ENTITY,
         ErrorCode::FileTooLarge => StatusCode::PAYLOAD_TOO_LARGE,
         // File nhị phân không đọc được như văn bản: đúng kiểu 415, không phải 400.
         ErrorCode::FileNotText => StatusCode::UNSUPPORTED_MEDIA_TYPE,
@@ -186,5 +186,9 @@ mod tests {
             StatusCode::PRECONDITION_FAILED
         );
         assert_eq!(status_for(ErrorCode::FileExists), StatusCode::CONFLICT);
+        assert_eq!(
+            status_for(ErrorCode::BackupCorrupt),
+            StatusCode::UNPROCESSABLE_ENTITY
+        );
     }
 }

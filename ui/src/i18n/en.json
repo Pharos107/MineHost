@@ -285,6 +285,32 @@
     "FILE_TOO_LARGE": "The file is larger than allowed.",
     "FILE_NOT_TEXT": "This file is not valid UTF-8 text.",
     "FILE_CHANGED": "The file changed since it was opened. Reload the latest version.",
-    "FILE_EXISTS": "A file or folder with that name already exists."
+    "FILE_EXISTS": "A file or folder with that name already exists.",
+    "BACKUP_CORRUPT": "The backup is damaged or its checksum does not match."
+  },
+  "jobsPage": {
+    "description": "What MineHost is doing or just finished, such as creating a server or making a backup.",
+    "empty": "No tasks yet",
+    "emptyHint": "Tasks show up here when you create a server or make a backup.",
+    "filterServer": "Filter by server",
+    "allServers": "All servers",
+    "kind": "Task",
+    "server": "Server",
+    "state": "State",
+    "progress": "Progress",
+    "started": "Started",
+    "cancel": "Cancel",
+    "kinds": {
+      "create_server": "Create server",
+      "backup": "Backup",
+      "restore": "Restore",
+      "import_server": "Import server"
+    },
+    "states": {
+      "running": "Running",
+      "succeeded": "Done",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    }
   }
 }

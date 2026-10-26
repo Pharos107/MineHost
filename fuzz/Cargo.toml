@@ -1,0 +1,27 @@
+[package]
+name = "mh-backup-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+mh-backup = { path = "../crates/mh-backup" }
+tempfile = "3.27"
+tokio-util = "0.7.20"
+
+# Workspace riêng, không nằm trong members của repo. Cargo dừng tìm workspace cha tại đây.
+[workspace]
+
+[[bin]]
+name = "backup_restore"
+path = "fuzz_targets/backup_restore.rs"
+test = false
+doc = false
+bench = false
+
+[profile.release]
+debug = 1

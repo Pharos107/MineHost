@@ -45,6 +45,8 @@ pub enum ErrorCode {
     FileChanged,
     /// Tạo, tải lên hoặc đổi tên đè lên mục đã có.
     FileExists,
+    /// Hash của file backup không khớp với file mô tả.
+    BackupCorrupt,
 }
 
 impl ErrorCode {
@@ -73,6 +75,7 @@ impl ErrorCode {
             Self::FileNotText => "FILE_NOT_TEXT",
             Self::FileChanged => "FILE_CHANGED",
             Self::FileExists => "FILE_EXISTS",
+            Self::BackupCorrupt => "BACKUP_CORRUPT",
         }
     }
 }
@@ -107,7 +110,7 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 22] = [
+    const ALL: [ErrorCode; 23] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::InvalidInput,
@@ -130,6 +133,7 @@ mod tests {
         ErrorCode::FileNotText,
         ErrorCode::FileChanged,
         ErrorCode::FileExists,
+        ErrorCode::BackupCorrupt,
     ];
 
     #[test]
