@@ -88,7 +88,7 @@ async fn binary_and_oversize_text_are_rejected() {
     let spec = create(&app).await;
     let server = env.server(&spec);
     std::fs::write(server.join("bin.dat"), [0xff, 0xfe]).unwrap();
-    std::fs::write(server.join("nul.txt"), b"a\0b").unwrap();
+    std::fs::write(server.join("zero.txt"), b"a\0b").unwrap();
     std::fs::write(server.join("big.txt"), vec![b'a'; TEXT_LIMIT as usize + 1]).unwrap();
 
     assert_eq!(
@@ -96,7 +96,7 @@ async fn binary_and_oversize_text_are_rejected() {
         ErrorCode::FileNotText
     );
     assert_eq!(
-        app.read_text(spec.id, "nul.txt").await.unwrap_err().code,
+        app.read_text(spec.id, "zero.txt").await.unwrap_err().code,
         ErrorCode::FileNotText
     );
     assert_eq!(
