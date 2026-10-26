@@ -35,6 +35,8 @@ pub enum ErrorCode {
     ServerCrashed,
     /// Request không đến từ giao diện MineHost trên máy này (sai Host hoặc Origin).
     Forbidden,
+    /// Tính năng không có ở phiên bản Minecraft này, ví dụ đóng băng trước 1.16.
+    UnsupportedByVersion,
 }
 
 impl ErrorCode {
@@ -58,6 +60,7 @@ impl ErrorCode {
             Self::JobCancelled => "JOB_CANCELLED",
             Self::ServerCrashed => "SERVER_CRASHED",
             Self::Forbidden => "FORBIDDEN",
+            Self::UnsupportedByVersion => "UNSUPPORTED_BY_VERSION",
         }
     }
 }
@@ -92,7 +95,7 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 17] = [
+    const ALL: [ErrorCode; 18] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::InvalidInput,
@@ -110,6 +113,7 @@ mod tests {
         ErrorCode::JobCancelled,
         ErrorCode::ServerCrashed,
         ErrorCode::Forbidden,
+        ErrorCode::UnsupportedByVersion,
     ];
 
     #[test]

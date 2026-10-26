@@ -419,6 +419,7 @@ hoặc `version.json` trong jar; không nhận ra thì cho chọn tay. Thư mụ
 | `mh-app` | `argon2`, `rand` | Băm mật khẩu, token phiên và CSRF |
 | `mh-api` | `axum` feature `multipart`, `axum-extra` (cookie) | Tải file lên, cookie phiên |
 | `mh-providers` | `fastnbt` | Đọc điểm spawn trong `level.dat` |
+| `mh-core` | `md-5` | UUID offline của người chơi |
 | `mh-net` | `md-5` | Kiểm tra file Purpur |
 | `ui` | `skinview3d` | Skin 3D, tải lười |
 | `ui` (dev) | `@playwright/test` | Test E2E mỗi trang |

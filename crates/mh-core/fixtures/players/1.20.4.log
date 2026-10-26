@@ -1,0 +1,7 @@
+# Vanilla 1.20.4. Cùng tiền tố log4j với 1.16.5: [%d{HH:mm:ss}] [%t/%level]
+# Thứ tự: joined, left, list 0 người, list nhiều người, chat chứa "joined the game".
+[11:15:01] [Server thread/INFO]: Notch joined the game
+[11:15:02] [Server thread/INFO]: Notch left the game
+[11:15:03] [Server thread/INFO]: There are 0 of a max of 20 players online: 
+[11:15:04] [Server thread/INFO]: There are 2 of a max of 20 players online: Notch, Steve
+[11:15:05] [Server thread/INFO]: <Notch> joined the game

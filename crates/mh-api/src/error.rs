@@ -57,6 +57,9 @@ impl ApiError {
 }
 
 /// HTTP status ứng với từng mã lỗi.
+///
+/// `UNSUPPORTED_BY_VERSION` là 409: thao tác không làm được với bản Minecraft này,
+/// cùng nhóm với các từ chối vì trạng thái, không phải lỗi của controller.
 fn status_for(code: ErrorCode) -> StatusCode {
     match code {
         ErrorCode::NotFound | ErrorCode::VersionNotFound => StatusCode::NOT_FOUND,
@@ -66,7 +69,8 @@ fn status_for(code: ErrorCode) -> StatusCode {
         | ErrorCode::EulaNotAccepted
         | ErrorCode::PortInUse
         | ErrorCode::JobCancelled
-        | ErrorCode::ServerCrashed => StatusCode::CONFLICT,
+        | ErrorCode::ServerCrashed
+        | ErrorCode::UnsupportedByVersion => StatusCode::CONFLICT,
         ErrorCode::NetworkUnavailable | ErrorCode::DownloadFailed | ErrorCode::ChecksumMismatch => {
             StatusCode::BAD_GATEWAY
         }
@@ -150,6 +154,10 @@ mod tests {
     #[test]
     fn every_known_code_has_a_sensible_status() {
         assert_eq!(status_for(ErrorCode::EulaNotAccepted), StatusCode::CONFLICT);
+        assert_eq!(
+            status_for(ErrorCode::UnsupportedByVersion),
+            StatusCode::CONFLICT
+        );
         assert_eq!(status_for(ErrorCode::Forbidden), StatusCode::FORBIDDEN);
         assert_eq!(
             status_for(ErrorCode::Internal),

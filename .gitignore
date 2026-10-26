@@ -3,6 +3,8 @@
 node_modules/
 ui/dist/
 *.log
+# Fixture log người chơi của PR-14 phải vào git; `*.log` phía trên chỉ loại log chạy thật.
+!crates/mh-core/fixtures/players/*.log
 .env
 .DS_Store
 /.minehost-dev/
