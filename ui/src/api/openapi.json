@@ -75,6 +75,51 @@
         }
       }
     },
+    "/api/v1/jobs": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "server_id",
+            "in": "path",
+            "description": "ULID của server. Bỏ qua thì lấy mọi Job đang giữ.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/jobs/{id}": {
       "get": {
         "tags": [
@@ -865,7 +910,8 @@
         "required": [
           "id",
           "kind",
-          "state"
+          "state",
+          "started_at"
         ],
         "properties": {
           "error": {
@@ -878,6 +924,13 @@
                 "type": "null"
               }
             ]
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "RFC 3339, lúc Job sang trạng thái kết thúc. Không có khi còn chạy."
           },
           "id": {
             "type": "integer",
@@ -903,6 +956,10 @@
               "string",
               "null"
             ]
+          },
+          "started_at": {
+            "type": "string",
+            "description": "RFC 3339, lúc Job được tạo."
           },
           "state": {
             "$ref": "#/components/schemas/JobStateDto"
@@ -1212,8 +1269,10 @@
           "arch",
           "cpu_brand",
           "cpu_threads",
+          "cpu_percent",
           "memory_total_bytes",
           "memory_available_bytes",
+          "memory_used_bytes",
           "data_dir",
           "suggested_memory_mb",
           "lan_addresses"
@@ -1224,6 +1283,11 @@
           },
           "cpu_brand": {
             "type": "string"
+          },
+          "cpu_percent": {
+            "type": "number",
+            "format": "float",
+            "description": "CPU toàn máy, từ 0 đến 100.\n\nMỗi request làm mới một `sysinfo::System` dùng chung. Lần đo đầu chưa có mốc\nnên có thể là 0; lần sau là mức dùng kể từ lần đo trước."
           },
           "cpu_threads": {
             "type": "integer",
@@ -1242,6 +1306,15 @@
               }
             ]
           },
+          "disk_free_bytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Byte còn trống trên ổ chứa thư mục dữ liệu. Trùng `data_disk.available_bytes`.",
+            "minimum": 0
+          },
           "lan_addresses": {
             "type": "array",
             "items": {
@@ -1257,6 +1330,12 @@
           "memory_total_bytes": {
             "type": "integer",
             "format": "int64",
+            "minimum": 0
+          },
+          "memory_used_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "RAM đang dùng, byte.",
             "minimum": 0
           },
           "os": {
