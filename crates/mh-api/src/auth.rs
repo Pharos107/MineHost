@@ -13,7 +13,7 @@ use axum::extract::{ConnectInfo, FromRef, Request, State};
 use axum::http::{HeaderMap, HeaderName, HeaderValue, StatusCode, header};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{delete, get, post, put};
+use axum::routing::{get, post, put};
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
@@ -244,30 +244,29 @@ pub async fn login(
     ConnectInfo(peer): ConnectInfo<SocketAddr>,
     jar: CookieJar,
     ApiJson(body): ApiJson<LoginBody>,
-) -> Result<(CookieJar, Json<CsrfDto>), Response> {
+) -> Response {
     let ip = peer.ip();
     if let Some(wait) = state.auth.retry_after_secs(ip) {
-        return Err(rate_limited(wait));
+        return rate_limited(wait);
     }
     let password = body.password;
     let app = Arc::clone(&state.app);
     // Argon2 tốn vài chục mili giây; không giữ mutex của phiên trong lúc băm.
-    let ok = blocking(move || app.auth().verify(&password))
-        .await
-        .map_err(IntoResponse::into_response)?;
+    let ok = match blocking(move || app.auth().verify(&password)).await {
+        Ok(ok) => ok,
+        Err(err) => return err.into_response(),
+    };
     if !ok {
         state.auth.record_failure(ip);
-        return Err(invalid_password());
+        return invalid_password();
     }
     state.auth.clear_failures(ip);
-    let (token, csrf_token) = state
-        .auth
-        .open_session()
-        .map_err(IntoResponse::into_response)?;
-    Ok((
-        jar.add(session_cookie(&token)),
-        Json(CsrfDto { csrf_token }),
-    ))
+    match state.auth.open_session() {
+        Ok((token, csrf_token)) => {
+            (jar.add(session_cookie(&token)), Json(CsrfDto { csrf_token })).into_response()
+        }
+        Err(err) => err.into_response(),
+    }
 }
 
 #[utoipa::path(post, path = "/api/v1/auth/logout", tag = "auth",
