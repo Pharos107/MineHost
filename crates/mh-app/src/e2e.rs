@@ -68,6 +68,7 @@ pub fn deps(java_bin: PathBuf) -> AppDeps {
         free_space,
         total_memory_mb,
         supervisor: SupervisorConfig::default(),
+        metrics: crate::MetricsConfig::default(),
     }
 }
 
