@@ -3,6 +3,25 @@
     "tagline": "Host server Minecraft cho bạn bè, không cần biết dòng lệnh.",
     "language": "Ngôn ngữ"
   },
+  "nav": {
+    "label": "Điều hướng chính",
+    "home": "Trang chủ",
+    "servers": "Máy chủ",
+    "jobs": "Tác vụ",
+    "settings": "Cài đặt",
+    "allServers": "Tất cả máy chủ",
+    "overview": "Tổng quan",
+    "console": "Console",
+    "files": "Tệp",
+    "players": "Người chơi",
+    "backups": "Sao lưu",
+    "game": "Cài đặt game",
+    "serverSettings": "Cài đặt server"
+  },
+  "soon": {
+    "title": "Sắp có",
+    "description": "Trang này đang được làm, có trong bản MineHost tới."
+  },
   "quit": {
     "button": "Thoát",
     "title": "Thoát MineHost?",
@@ -51,8 +70,7 @@
     "state": "Trạng thái",
     "version": "Phiên bản",
     "memory": "RAM",
-    "port": "Cổng",
-    "back": "Danh sách server"
+    "port": "Cổng"
   },
   "wizard": {
     "title": "Tạo server",
@@ -111,12 +129,6 @@
     "killTitle": "Buộc dừng server?",
     "killBody": "Server bị tắt ngay mà không kịp lưu. Người chơi có thể mất những gì vừa làm trong vài phút gần nhất.",
     "copyAddress": "Chép địa chỉ",
-    "tabsLabel": "Mục của server",
-    "tabs": {
-      "console": "Console",
-      "game": "Cài đặt game",
-      "settings": "Cài đặt server"
-    },
     "crashed": "Server bị dừng đột ngột",
     "restartPending": "Server sẽ tự bật lại sau ít giây.",
     "slowStart": "Server đã bật hơn 5 phút mà chưa xong. Xem console để biết server đang làm gì.",
@@ -131,9 +143,9 @@
     }
   },
   "crashHints": {
-    "NOT_ENOUGH_MEMORY": "Server hết RAM. Hãy tăng RAM trong tab Cài đặt server.",
+    "NOT_ENOUGH_MEMORY": "Server hết RAM. Hãy tăng RAM trong mục Cài đặt server.",
     "WRONG_JAVA": "Server cần bản Java khác. Đây là lỗi của MineHost, hãy báo cho nhóm phát triển.",
-    "PORT_IN_USE": "Cổng của server đang bị chương trình khác dùng. Hãy đổi cổng trong tab Cài đặt server.",
+    "PORT_IN_USE": "Cổng của server đang bị chương trình khác dùng. Hãy đổi cổng trong mục Cài đặt server.",
     "EULA_NOT_ACCEPTED": "Bạn cần đồng ý EULA của Minecraft rồi bật lại server.",
     "GAME_ERROR": "Game hoặc một plugin bị lỗi. Xem console để biết chi tiết rồi thử khởi động lại.",
     "unknown": "Không rõ nguyên nhân. Xem console để biết chi tiết."
@@ -154,7 +166,7 @@
   "game": {
     "common": "Cài đặt thường dùng",
     "advanced": "Nâng cao",
-    "advancedHint": "Mọi khóa trong server.properties. Cổng được đổi ở tab Cài đặt server.",
+    "advancedHint": "Mọi khóa trong server.properties. Cổng được đổi ở mục Cài đặt server.",
     "key": "Khóa",
     "value": "Giá trị",
     "empty": "server.properties chưa có khóa nào. Bật server một lần để Minecraft tạo đủ.",
@@ -220,7 +232,9 @@
       "moreFor": "Thao tác khác cho {{row}}",
       "noMatch": "Không có kết quả cho “{{query}}”.",
       "count": "Hiển thị {{shown}}/{{total}}"
-    }
+    },
+    "openMenu": "Mở menu",
+    "closeMenu": "Đóng menu"
   },
   "serverState": {
     "installing": "Đang cài",

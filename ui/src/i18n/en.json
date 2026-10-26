@@ -3,6 +3,25 @@
     "tagline": "Host a Minecraft server for your friends, no command line needed.",
     "language": "Language"
   },
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "servers": "Servers",
+    "jobs": "Tasks",
+    "settings": "Settings",
+    "allServers": "All servers",
+    "overview": "Overview",
+    "console": "Console",
+    "files": "Files",
+    "players": "Players",
+    "backups": "Backups",
+    "game": "Game settings",
+    "serverSettings": "Server settings"
+  },
+  "soon": {
+    "title": "Coming soon",
+    "description": "This page is being built and will arrive in a coming MineHost release."
+  },
   "quit": {
     "button": "Quit",
     "title": "Quit MineHost?",
@@ -51,8 +70,7 @@
     "state": "Status",
     "version": "Version",
     "memory": "RAM",
-    "port": "Port",
-    "back": "All servers"
+    "port": "Port"
   },
   "wizard": {
     "title": "Create server",
@@ -111,12 +129,6 @@
     "killTitle": "Force stop the server?",
     "killBody": "The server stops immediately without saving. Players may lose what they did in the last few minutes.",
     "copyAddress": "Copy address",
-    "tabsLabel": "Server sections",
-    "tabs": {
-      "console": "Console",
-      "game": "Game settings",
-      "settings": "Server settings"
-    },
     "crashed": "The server stopped unexpectedly",
     "restartPending": "The server will start again in a few seconds.",
     "slowStart": "The server has been starting for over 5 minutes. Check the console to see what it is doing.",
@@ -131,9 +143,9 @@
     }
   },
   "crashHints": {
-    "NOT_ENOUGH_MEMORY": "The server ran out of RAM. Give it more RAM in the Server settings tab.",
+    "NOT_ENOUGH_MEMORY": "The server ran out of RAM. Give it more RAM on the Server settings page.",
     "WRONG_JAVA": "The server needs a different Java version. This is a MineHost bug, please report it.",
-    "PORT_IN_USE": "Another program is using the server's port. Change the port in the Server settings tab.",
+    "PORT_IN_USE": "Another program is using the server's port. Change the port on the Server settings page.",
     "EULA_NOT_ACCEPTED": "Accept the Minecraft EULA, then start the server again.",
     "GAME_ERROR": "The game or a plugin failed. Check the console for details, then try restarting.",
     "unknown": "The cause is unknown. Check the console for details."
@@ -154,7 +166,7 @@
   "game": {
     "common": "Common settings",
     "advanced": "Advanced",
-    "advancedHint": "Every key in server.properties. Change the port in the Server settings tab.",
+    "advancedHint": "Every key in server.properties. Change the port on the Server settings page.",
     "key": "Key",
     "value": "Value",
     "empty": "server.properties has no keys yet. Start the server once so Minecraft fills it in.",
@@ -220,7 +232,9 @@
       "moreFor": "More actions for {{row}}",
       "noMatch": "No results for “{{query}}”.",
       "count": "Showing {{shown}} of {{total}}"
-    }
+    },
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "serverState": {
     "installing": "Installing",

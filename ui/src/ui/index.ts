@@ -12,6 +12,7 @@ export { Facts, type Fact } from "./Facts";
 export { Field } from "./Field";
 export { SearchInput, Select, TextInput } from "./inputs";
 export { Menu, type MenuItem } from "./Menu";
+export { NavItem, NavSection } from "./Nav";
 export { Notice, type NoticeTone } from "./Notice";
 export { ProgressBar, Steps } from "./progress";
 export { Slider } from "./Slider";

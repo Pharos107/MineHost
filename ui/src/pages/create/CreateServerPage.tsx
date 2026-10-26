@@ -36,7 +36,7 @@ export function CreateServerPage() {
       <PageHeader
         title={t("wizard.title")}
         actions={
-          <Button variant="ghost" icon={X} onClick={() => void navigate("/")}>
+          <Button variant="ghost" icon={X} onClick={() => void navigate("/servers")}>
             {t("ui.cancel")}
           </Button>
         }

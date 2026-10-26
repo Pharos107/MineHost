@@ -1,22 +1,46 @@
+import { useTranslation } from "react-i18next";
 import { BrowserRouter, Route, Routes } from "react-router";
 
 import { useServersLive } from "./api/live";
-import { LanguageSwitch } from "./components/LanguageSwitch";
-import { QuitButton } from "./components/QuitButton";
+import { SidebarLayout, TopLayout } from "./components/AppLayout";
+import { ComingSoon } from "./components/ComingSoon";
 import { CreateServerPage } from "./pages/create/CreateServerPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ServerListPage } from "./pages/ServerListPage";
-import { ServerPage } from "./pages/server/ServerPage";
-import { AppShell } from "./ui";
+import { ConsoleRoute, GameSettingsRoute, ServerComingSoon, ServerSettingsRoute } from "./pages/server/routes";
+import { ServerLayout } from "./pages/server/ServerLayout";
 
-/** Các trang theo spec P1, mục 6. Backend trả `index.html` cho mọi đường dẫn lạ. */
+/** Các trang theo spec P2, mục 2. Backend trả `index.html` cho mọi đường dẫn lạ. */
 export function AppRoutes() {
+  const { t } = useTranslation();
+
   return (
     <Routes>
-      <Route path="/" element={<ServerListPage />} />
-      <Route path="/new" element={<CreateServerPage />} />
-      <Route path="/servers/:id" element={<ServerPage />} />
-      <Route path="*" element={<NotFoundPage />} />
+      <Route
+        path="/new"
+        element={
+          <TopLayout>
+            <CreateServerPage />
+          </TopLayout>
+        }
+      />
+      <Route element={<SidebarLayout />}>
+        {/* Trang chủ thật làm ở PR-04; tới lúc đó `/` vẫn là danh sách server. */}
+        <Route path="/" element={<ServerListPage />} />
+        <Route path="/servers" element={<ServerListPage />} />
+        <Route path="/jobs" element={<ComingSoon title={t("nav.jobs")} />} />
+        <Route path="/settings" element={<ComingSoon title={t("nav.settings")} />} />
+        <Route path="/servers/:id" element={<ServerLayout />}>
+          <Route index element={<ServerComingSoon />} />
+          <Route path="console" element={<ConsoleRoute />} />
+          <Route path="files" element={<ServerComingSoon />} />
+          <Route path="players" element={<ServerComingSoon />} />
+          <Route path="backups" element={<ServerComingSoon />} />
+          <Route path="game" element={<GameSettingsRoute />} />
+          <Route path="settings" element={<ServerSettingsRoute />} />
+        </Route>
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
     </Routes>
   );
 }
@@ -26,16 +50,7 @@ export function App() {
 
   return (
     <BrowserRouter>
-      <AppShell
-        actions={
-          <>
-            <LanguageSwitch />
-            <QuitButton />
-          </>
-        }
-      >
-        <AppRoutes />
-      </AppShell>
+      <AppRoutes />
     </BrowserRouter>
   );
 }
