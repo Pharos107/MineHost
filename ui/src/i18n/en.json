@@ -128,7 +128,9 @@
       "resolve_version": "Looking up version {{minecraft}}",
       "download_java": "Downloading Java {{major}}",
       "download_server": "Downloading Paper {{minecraft}}",
-      "prepare_files": "Preparing files"
+      "prepare_files": "Preparing files",
+      "save_world": "Saving the world",
+      "compress": "Compressing the backup"
     }
   },
   "server": {
@@ -291,7 +293,8 @@
     "FILE_TOO_LARGE": "The file is larger than allowed.",
     "FILE_NOT_TEXT": "This file is not valid UTF-8 text.",
     "FILE_CHANGED": "The file changed since it was opened. Reload the latest version.",
-    "FILE_EXISTS": "A file or folder with that name already exists."
+    "FILE_EXISTS": "A file or folder with that name already exists.",
+    "BACKUP_PROTECTED": "This backup is protected. Remove the protection before deleting it."
   },
   "jobsPage": {
     "description": "What MineHost is doing or just finished, such as creating a server or making a backup.",

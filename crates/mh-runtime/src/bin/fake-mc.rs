@@ -8,8 +8,11 @@
 //! - `--hang-on-stop`: bỏ qua lệnh `stop`, giống server bị treo khi lưu world.
 //! - `--crash-after-ms <n>`: in lỗi hết RAM rồi thoát mã 1 sau `n` mili giây.
 //! - `--slow-start-ms <n>`: chờ `n` mili giây trước khi in dòng `Done`.
+//! - `--hang-on-save-all` (hoặc `MINEHOST_FAKE_SAVE_ALL_HANG=1`): `save-all flush` không in
+//!   dòng `Saved the game`, để test thời hạn chờ khi sao lưu.
 //!
-//! Lệnh stdin: `stop` thoát, `say …` in lại nội dung; cho test người chơi: `list`,
+//! Lệnh stdin: `stop` thoát, `say …` in lại nội dung; `save-off`, `save-all flush`, `save-on`
+//! (sao lưu); cho test người chơi: `list`,
 //! `fake-join <tên>`, `fake-leave <tên>`.
 
 // Đây là chương trình dòng lệnh, in ra stdout/stderr là việc chính của nó.
@@ -28,7 +31,9 @@ fn main() {
     if !has_flag(&args, "--no-done") {
         println!("[10:00:01 INFO]: Done (0.100s)! For help, type \"help\"");
     }
-    read_commands(has_flag(&args, "--hang-on-stop"));
+    let hang_save_all = has_flag(&args, "--hang-on-save-all")
+        || std::env::var("MINEHOST_FAKE_SAVE_ALL_HANG").ok().as_deref() == Some("1");
+    read_commands(has_flag(&args, "--hang-on-stop"), hang_save_all);
 }
 
 fn print_banner() {
@@ -48,13 +53,17 @@ fn schedule_crash(after_ms: Option<u64>) {
     });
 }
 
-fn read_commands(hang_on_stop: bool) {
+fn read_commands(hang_on_stop: bool, hang_save_all: bool) {
     let mut online = Vec::new();
     for line in std::io::stdin().lock().lines() {
         let Ok(line) = line else {
             break;
         };
-        if !on_command(line.trim(), hang_on_stop, &mut online) {
+        let cmd = line.trim();
+        if save_command(cmd, hang_save_all) {
+            continue;
+        }
+        if !on_command(cmd, hang_on_stop, &mut online) {
             return;
         }
     }
@@ -127,4 +136,20 @@ fn print_online(online: &[String]) {
     let count = online.len();
     // Dấu cách sau dấu hai chấm có cả khi danh sách rỗng, đúng dòng Vanilla/Paper.
     println!("[10:00:03 INFO]: There are {count} of a max of 20 players online: {names}");
+}
+
+/// `true` khi `cmd` là lệnh lưu world. `hang` thì `save-all flush` không in dòng xong.
+fn save_command(cmd: &str, hang: bool) -> bool {
+    match cmd {
+        "save-off" => println!("[10:00:02 INFO]: Automatic saving is now disabled"),
+        "save-on" => println!("[10:00:02 INFO]: Automatic saving is now enabled"),
+        "save-all flush" => {
+            println!("[10:00:02 INFO]: Saving the game (this may take a moment!)");
+            if !hang {
+                println!("[10:00:02 INFO]: Saved the game");
+            }
+        }
+        _ => return false,
+    }
+    true
 }

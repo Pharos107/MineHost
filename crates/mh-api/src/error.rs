@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use axum::Json;
-use axum::extract::rejection::JsonRejection;
 use axum::extract::{FromRequest, FromRequestParts, Path, Request};
 use axum::http::StatusCode;
 use axum::http::request::Parts;
@@ -78,6 +77,7 @@ fn status_for(code: ErrorCode) -> StatusCode {
         | ErrorCode::ServerCrashed
         | ErrorCode::UnsupportedByVersion
         | ErrorCode::LanNeedsPassword => StatusCode::CONFLICT,
+        | ErrorCode::BackupProtected => StatusCode::CONFLICT,
         ErrorCode::NetworkUnavailable | ErrorCode::DownloadFailed | ErrorCode::ChecksumMismatch => {
             StatusCode::BAD_GATEWAY
         }
@@ -131,8 +131,11 @@ impl<S: Send + Sync, T: DeserializeOwned> FromRequest<S> for ApiJson<T> {
             Ok(Json(value)) => Ok(Self(value)),
             Err(rejection) => {
                 tracing::debug!(%rejection, "body JSON không hợp lệ");
-                let status = match rejection {
-                    JsonRejection::MissingJsonContentType(_) => StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                // 413 là giới hạn body mặc định của axum (2 MiB). Giữ mã này để khỏi
+                // lẫn với JSON sai cú pháp. Route upload nâng limit riêng.
+                let status = match rejection.status() {
+                    StatusCode::PAYLOAD_TOO_LARGE => StatusCode::PAYLOAD_TOO_LARGE,
+                    StatusCode::UNSUPPORTED_MEDIA_TYPE => StatusCode::UNSUPPORTED_MEDIA_TYPE,
                     _ => StatusCode::BAD_REQUEST,
                 };
                 Err(ApiError::new(status, ErrorCode::InvalidInput))
@@ -214,5 +217,6 @@ mod tests {
             status_for(ErrorCode::BackupCorrupt),
             StatusCode::UNPROCESSABLE_ENTITY
         );
+        assert_eq!(status_for(ErrorCode::BackupProtected), StatusCode::CONFLICT);
     }
 }

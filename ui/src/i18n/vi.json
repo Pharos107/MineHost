@@ -128,7 +128,9 @@
       "resolve_version": "Lấy thông tin phiên bản {{minecraft}}",
       "download_java": "Tải Java {{major}}",
       "download_server": "Tải Paper {{minecraft}}",
-      "prepare_files": "Chuẩn bị file"
+      "prepare_files": "Chuẩn bị file",
+      "save_world": "Lưu world",
+      "compress": "Nén bản sao lưu"
     }
   },
   "server": {
@@ -291,7 +293,8 @@
     "FILE_TOO_LARGE": "File lớn hơn mức cho phép.",
     "FILE_NOT_TEXT": "File này không phải văn bản UTF-8.",
     "FILE_CHANGED": "File đã đổi kể từ lúc mở. Hãy tải lại bản mới.",
-    "FILE_EXISTS": "Đã có file hoặc thư mục trùng tên."
+    "FILE_EXISTS": "Đã có file hoặc thư mục trùng tên.",
+    "BACKUP_PROTECTED": "Bản sao lưu này đang được bảo vệ. Hãy bỏ bảo vệ trước khi xóa."
   },
   "jobsPage": {
     "description": "Việc MineHost đang làm hoặc vừa làm xong, như tạo server hay sao lưu.",

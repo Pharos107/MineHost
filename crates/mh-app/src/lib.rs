@@ -4,6 +4,7 @@
 //! ghép nhiều crate lại với nhau.
 
 mod auth;
+mod backup;
 mod create;
 #[cfg(feature = "e2e")]
 pub mod e2e;
@@ -29,6 +30,7 @@ use mh_store::ServerStore;
 use mh_supervisor::SupervisorConfig;
 
 pub use auth::AuthStore;
+pub use backup::{BackupKind, BackupMeta, BackupRequest, BackupStarted};
 pub use create::{CreateRequest, Created};
 pub use error::AppError;
 pub use files::{FileEntry, FileKind, TEXT_LIMIT, TextFile};
@@ -55,6 +57,8 @@ pub struct AppDeps {
     pub free_space: FreeSpaceFn,
     pub total_memory_mb: u64,
     pub supervisor: SupervisorConfig,
+    /// Hạn chờ dòng `Saved the game` sau `save-all flush`. Mặc định 60 giây.
+    pub save_flush_timeout: Duration,
     pub metrics: MetricsConfig,
 }
 
@@ -99,6 +103,7 @@ pub struct App {
     free_space: FreeSpaceFn,
     total_memory_mb: u64,
     supervisor_config: SupervisorConfig,
+    save_flush_timeout: Duration,
     metrics_config: MetricsConfig,
     metrics_hub: metrics::MetricsHub,
     shutdown: tokio::sync::Notify,
@@ -127,12 +132,15 @@ impl App {
             free_space,
             total_memory_mb,
             supervisor: SupervisorConfig::default(),
+            save_flush_timeout: backup::DEFAULT_SAVE_FLUSH_TIMEOUT,
             metrics: MetricsConfig::default(),
         };
         Self::with_deps(dirs, deps)
     }
 
     pub fn with_deps(dirs: DataDirs, deps: AppDeps) -> Result<Self, AppError> {
+        // File nén không có mô tả là backup dở (mất điện giữa chừng). Dọn trước khi nhận request.
+        backup::sweep_incomplete(&dirs.backups());
         // File hỏng thì không lên: coi là "chưa có mật khẩu" sẽ mở khóa API.
         let auth = AuthStore::open(&dirs)?;
         Ok(Self {
@@ -149,6 +157,7 @@ impl App {
             free_space: deps.free_space,
             total_memory_mb: deps.total_memory_mb,
             supervisor_config: deps.supervisor,
+            save_flush_timeout: deps.save_flush_timeout,
             metrics_config: deps.metrics,
             metrics_hub: metrics::MetricsHub::new(),
             shutdown: tokio::sync::Notify::new(),

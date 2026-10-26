@@ -100,6 +100,7 @@ fn test_app() -> (tempfile::TempDir, Arc<App>) {
             sample_every: TICK,
             disk_every: TICK,
         },
+        save_flush_timeout: Duration::from_secs(60),
     };
     let app = Arc::new(App::with_deps(dirs, deps).unwrap());
     app.spawn_metrics();

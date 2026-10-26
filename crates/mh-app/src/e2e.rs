@@ -69,6 +69,7 @@ pub fn deps(java_bin: PathBuf) -> AppDeps {
         total_memory_mb,
         supervisor: SupervisorConfig::default(),
         metrics: crate::MetricsConfig::default(),
+        save_flush_timeout: crate::backup::DEFAULT_SAVE_FLUSH_TIMEOUT,
     }
 }
 
