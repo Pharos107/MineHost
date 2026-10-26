@@ -1,6 +1,7 @@
 // Bộ component dùng chung. Trang chỉ import từ đây; xem spec docs/specs/p1-ui-components.md.
 export { AppShell } from "./AppShell";
 export { Badge, StatusBadge, type BadgeTone } from "./Badge";
+export { Breadcrumb, type Crumb } from "./Breadcrumb";
 export { Button, IconButton, type ButtonSize, type ButtonVariant } from "./Button";
 export { Card, PageHeader } from "./Card";
 export { ChoiceGroup, type Choice } from "./ChoiceGroup";
@@ -11,7 +12,8 @@ export { EmptyState } from "./EmptyState";
 export { type ChartPoint } from "./chart-utils";
 export { Facts, type Fact } from "./Facts";
 export { Field } from "./Field";
-export { SearchInput, Select, TextInput } from "./inputs";
+export { FileDrop } from "./FileDrop";
+export { SearchInput, Select, TextArea, TextInput } from "./inputs";
 export { LineChart } from "./LineChart";
 export { Menu, type MenuItem } from "./Menu";
 export { NavItem, NavSection } from "./Nav";

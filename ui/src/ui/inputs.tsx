@@ -1,5 +1,5 @@
 import { ChevronDown, Search } from "lucide-react";
-import type { InputHTMLAttributes, SelectHTMLAttributes } from "react";
+import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 import { cx } from "./cx";
 import { useFieldControl } from "./Field";
@@ -65,5 +65,25 @@ export function Select({ children, ...rest }: SelectProps) {
       </select>
       <ChevronDown className={styles.chevron} size={16} aria-hidden />
     </span>
+  );
+}
+
+type TextAreaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className" | "style"> & {
+  /** `code`: font mono, không tự xuống dòng, cao gần hết màn hình — dùng cho trình sửa file. */
+  variant?: "default" | "code";
+};
+
+/** Ô nhập nhiều dòng. Đặt trong `Field` để có nhãn; đứng một mình thì phải truyền `aria-label`. */
+export function TextArea({ variant = "default", ...rest }: TextAreaProps) {
+  const field = useFieldControl();
+  return (
+    <textarea
+      id={field?.id}
+      aria-describedby={field?.describedBy}
+      aria-invalid={field?.invalid || undefined}
+      spellCheck={variant === "code" ? false : undefined}
+      {...rest}
+      className={cx(styles.control, styles.textarea, variant === "code" && styles.code)}
+    />
   );
 }
