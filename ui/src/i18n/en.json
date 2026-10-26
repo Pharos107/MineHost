@@ -161,7 +161,13 @@
     "command": "Command",
     "placeholder": "Type a command and press Enter, e.g. say hello",
     "offline": "Start the server to send commands",
-    "send": "Send"
+    "send": "Send",
+    "filter": "Filter lines",
+    "pause": "Pause",
+    "resume": "Resume",
+    "clear": "Clear screen",
+    "newLines_one": "{{count}} new line",
+    "newLines_other": "{{count}} new lines"
   },
   "game": {
     "common": "Common settings",
