@@ -102,6 +102,7 @@ fn test_api() -> TestApi {
         free_space: Arc::new(|_| None),
         total_memory_mb: 8192,
         supervisor: mh_supervisor::SupervisorConfig::default(),
+        metrics: mh_app::MetricsConfig::default(),
     };
     let app = Arc::new(App::with_deps(dirs, deps).unwrap());
     let router = crate::router(Arc::clone(&app), PORT);
@@ -476,6 +477,31 @@ async fn shutdown_route_signals_the_binary() {
     assert!(signalled.await.is_ok());
 }
 
+#[tokio::test]
+async fn metrics_route_checks_since_and_missing_server() {
+    let api = test_api();
+    let id = api.create_server("A").await;
+    let base = format!("/api/v1/servers/{id}/metrics");
+    let (status, body) = api.get(&base).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["samples"], json!([]));
+    assert!(body["disk_bytes"].is_null() && body["running_since"].is_null());
+
+    let since = format!("{base}?since=2020-01-01T00:00:00Z");
+    let (status, body) = api.get(&since).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["samples"], json!([]));
+
+    let (status, body) = api.get(&format!("{base}?since=khong-phai-ngay")).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+    assert_eq!(body["code"], "INVALID_INPUT");
+
+    let missing = "/api/v1/servers/01JB8Z6Q0K3V5T2N8XWJ4R7M9C/metrics";
+    let (status, body) = api.get(missing).await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "{body}");
+    assert_eq!(body["code"], "NOT_FOUND");
+}
+
 #[test]
 fn openapi_lists_all_routes() {
     let spec = crate::openapi();
@@ -487,6 +513,7 @@ fn openapi_lists_all_routes() {
         "/api/v1/servers/{id}/eula",
         "/api/v1/servers/{id}/actions/{action}",
         "/api/v1/servers/{id}/console",
+        "/api/v1/servers/{id}/metrics",
         "/api/v1/servers/{id}/properties",
         "/api/v1/catalog/paper/versions",
         "/api/v1/jobs",

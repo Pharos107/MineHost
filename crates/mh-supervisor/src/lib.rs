@@ -117,6 +117,8 @@ impl Default for SupervisorConfig {
 pub struct Status {
     pub state: ServerState,
     pub pid: Option<u32>,
+    /// Lúc chuyển sang `Running`. `None` sau khi process thoát — dùng cho "thời gian chạy".
+    pub running_since: Option<time::OffsetDateTime>,
     /// Có khi `state` là `Crashed`.
     pub crash: Option<Arc<CrashInfo>>,
     /// Đang chờ tự khởi động lại sau crash.
@@ -173,6 +175,7 @@ pub fn spawn<L: Launcher>(
     let (status_tx, status) = watch::channel(Status {
         state: ServerState::Stopped,
         pid: None,
+        running_since: None,
         crash: None,
         restart_pending: false,
         slow_start: false,

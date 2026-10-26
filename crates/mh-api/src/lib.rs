@@ -34,6 +34,7 @@ pub use guard::{LocalGuard, MINEHOST_HEADER};
         servers::action,
         servers::send_command,
         servers::console,
+        servers::metrics,
         servers::get_properties,
         servers::put_properties,
         jobs::list,
@@ -59,6 +60,8 @@ pub use guard::{LocalGuard, MINEHOST_HEADER};
         dto::CommandBody,
         dto::ConsoleDto,
         dto::ConsoleLineDto,
+        dto::ServerMetricsDto,
+        dto::MetricSampleDto,
         dto::StreamDto,
         dto::PropertiesDto,
         dto::PropertyDto,
@@ -93,6 +96,7 @@ pub fn router(app: Arc<App>, port: u16) -> Router {
             "/servers/{id}/console",
             get(servers::console).post(servers::send_command),
         )
+        .route("/servers/{id}/metrics", get(servers::metrics))
         .route(
             "/servers/{id}/properties",
             get(servers::get_properties).put(servers::put_properties),

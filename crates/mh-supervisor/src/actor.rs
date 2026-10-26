@@ -6,6 +6,7 @@ use std::sync::Arc;
 use mh_core::state::is_done_line;
 use mh_core::{ConsoleStream, ServerEvent, ServerState, diagnose, transition};
 use mh_runtime::{Exit, OutputLine, ProcessControl, ProcessRuntime, RunningProcess};
+use time::OffsetDateTime;
 use tokio::sync::{broadcast, mpsc, oneshot, watch};
 use tokio::time::Instant;
 
@@ -249,6 +250,7 @@ impl<L: Launcher> Actor<L> {
         self.stop_deadline = None;
         self.slow_start_at = None;
         self.status.pid = None;
+        self.status.running_since = None;
         self.status.slow_start = false;
         let Ok(next) = transition(self.status.state, ServerEvent::ProcessExited) else {
             tracing::error!(state = ?self.status.state, "process thoát ở trạng thái không ngờ tới");
@@ -322,6 +324,10 @@ impl<L: Launcher> Actor<L> {
     fn set_state(&mut self, state: ServerState) {
         if state != self.status.state {
             tracing::info!(from = ?self.status.state, to = ?state, "đổi trạng thái server");
+        }
+        // "Thời gian chạy" tính từ lúc sẵn sàng, không tính khoảng Starting.
+        if state == ServerState::Running && self.status.state != ServerState::Running {
+            self.status.running_since = Some(OffsetDateTime::now_utc());
         }
         self.status.state = state;
         self.publish();

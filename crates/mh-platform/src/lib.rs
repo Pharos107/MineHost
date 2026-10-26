@@ -5,10 +5,12 @@
 pub mod dirs;
 pub mod error;
 pub mod fs;
+pub mod process;
 pub mod safe_path;
 pub mod system;
 
 pub use dirs::DataDirs;
 pub use error::PlatformError;
+pub use process::{ProcessProbe, ProcessUsage, dir_size};
 pub use safe_path::{SafePath, SafeRoot};
 pub use system::{DiskSpace, SystemInfo};

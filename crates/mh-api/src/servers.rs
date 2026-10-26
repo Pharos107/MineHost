@@ -8,10 +8,12 @@ use axum::http::StatusCode;
 use mh_app::{App, CreateRequest, SettingsPatch};
 use mh_core::{GamePort, LoaderKind, McVersion, MemoryLimits, ServerName};
 use serde::Deserialize;
+use time::OffsetDateTime;
+use time::format_description::well_known::Rfc3339;
 
 use crate::dto::{
     CommandBody, ConsoleDto, CreateServerBody, CreatedDto, EulaBody, MemoryDto, PatchServerBody,
-    PropertiesDto, PropertyDto, ServerDto, TrashedDto,
+    PropertiesDto, PropertyDto, ServerDto, ServerMetricsDto, TrashedDto,
 };
 use crate::error::{ApiError, ApiJson, ErrorBody, IdPath};
 
@@ -194,6 +196,32 @@ pub async fn put_properties(
         .collect();
     app.write_properties(id, &entries)?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
+pub struct MetricsQuery {
+    /// RFC 3339. Chỉ lấy mẫu sau thời điểm này. Dấu `+` trong offset phải viết `%2B`.
+    pub since: Option<String>,
+}
+
+#[utoipa::path(get, path = "/api/v1/servers/{id}/metrics", tag = "servers",
+    params(("id" = String, Path), MetricsQuery),
+    responses(
+        (status = 200, body = ServerMetricsDto),
+        (status = 400, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+    ))]
+pub async fn metrics(
+    State(app): State<Arc<App>>,
+    IdPath(id): IdPath,
+    Query(query): Query<MetricsQuery>,
+) -> ApiResult<Json<ServerMetricsDto>> {
+    let since = query.since.as_deref().map(parse_since).transpose()?;
+    Ok(Json(app.metrics(id, since)?.into()))
+}
+
+fn parse_since(text: &str) -> Result<OffsetDateTime, ApiError> {
+    OffsetDateTime::parse(text, &Rfc3339).map_err(|_| ApiError::invalid("since"))
 }
 
 fn memory(m: MemoryDto) -> ApiResult<MemoryLimits> {

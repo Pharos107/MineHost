@@ -8,6 +8,7 @@ mod error;
 pub mod jobs;
 mod launcher;
 mod lifecycle;
+mod metrics;
 mod servers;
 pub mod sources;
 
@@ -26,6 +27,7 @@ use mh_supervisor::SupervisorConfig;
 pub use create::{CreateRequest, Created};
 pub use error::AppError;
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};
+pub use metrics::{MetricSample, MetricsConfig, MetricsEvent, ServerMetrics};
 pub use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
 pub use servers::{ServerView, SettingsPatch};
 pub use sources::{CatalogVersion, JavaSource, ServerCatalog};
@@ -47,6 +49,7 @@ pub struct AppDeps {
     pub free_space: FreeSpaceFn,
     pub total_memory_mb: u64,
     pub supervisor: SupervisorConfig,
+    pub metrics: MetricsConfig,
 }
 
 impl std::fmt::Debug for AppDeps {
@@ -54,6 +57,7 @@ impl std::fmt::Debug for AppDeps {
         f.debug_struct("AppDeps")
             .field("total_memory_mb", &self.total_memory_mb)
             .field("supervisor", &self.supervisor)
+            .field("metrics", &self.metrics)
             .finish_non_exhaustive()
     }
 }
@@ -88,6 +92,8 @@ pub struct App {
     free_space: FreeSpaceFn,
     total_memory_mb: u64,
     supervisor_config: SupervisorConfig,
+    metrics_config: MetricsConfig,
+    metrics_hub: metrics::MetricsHub,
     shutdown: tokio::sync::Notify,
     events: tokio::sync::broadcast::Sender<AppEvent>,
 }
@@ -114,6 +120,7 @@ impl App {
             free_space,
             total_memory_mb: mh_platform::system::total_memory_bytes() / (1024 * 1024),
             supervisor: SupervisorConfig::default(),
+            metrics: MetricsConfig::default(),
         };
         Self::with_deps(dirs, deps)
     }
@@ -132,6 +139,8 @@ impl App {
             free_space: deps.free_space,
             total_memory_mb: deps.total_memory_mb,
             supervisor_config: deps.supervisor,
+            metrics_config: deps.metrics,
+            metrics_hub: metrics::MetricsHub::new(),
             shutdown: tokio::sync::Notify::new(),
             events: tokio::sync::broadcast::channel(256).0,
         })
