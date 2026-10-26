@@ -37,6 +37,8 @@ pub enum ErrorCode {
     Forbidden,
     /// Tính năng không có ở phiên bản Minecraft này, ví dụ đóng băng trước 1.16.
     UnsupportedByVersion,
+    /// Hash của file backup không khớp với file mô tả.
+    BackupCorrupt,
 }
 
 impl ErrorCode {
@@ -61,6 +63,7 @@ impl ErrorCode {
             Self::ServerCrashed => "SERVER_CRASHED",
             Self::Forbidden => "FORBIDDEN",
             Self::UnsupportedByVersion => "UNSUPPORTED_BY_VERSION",
+            Self::BackupCorrupt => "BACKUP_CORRUPT",
         }
     }
 }
@@ -95,7 +98,7 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 18] = [
+    const ALL: [ErrorCode; 19] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::InvalidInput,
@@ -114,6 +117,7 @@ mod tests {
         ErrorCode::ServerCrashed,
         ErrorCode::Forbidden,
         ErrorCode::UnsupportedByVersion,
+        ErrorCode::BackupCorrupt,
     ];
 
     #[test]

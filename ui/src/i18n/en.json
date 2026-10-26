@@ -276,6 +276,7 @@
     "NETWORK_UNAVAILABLE": "Cannot reach the Internet. Check your connection and try again.",
     "DOWNLOAD_FAILED": "The download failed partway. Please try again.",
     "CHECKSUM_MISMATCH": "The downloaded file is damaged. Please try again.",
+    "BACKUP_CORRUPT": "The backup is damaged or its checksum does not match.",
     "JAVA_INSTALL_FAILED": "Could not install Java. Please try again.",
     "NOT_ENOUGH_DISK": "Less than 1 GB of disk space is free. Free up some space and try again.",
     "JOB_CANCELLED": "Cancelled.",
