@@ -36,6 +36,7 @@ pub use guard::{LocalGuard, MINEHOST_HEADER};
         servers::console,
         servers::get_properties,
         servers::put_properties,
+        jobs::list,
         jobs::get,
         jobs::cancel,
         jobs::paper_versions,
@@ -96,6 +97,7 @@ pub fn router(app: Arc<App>, port: u16) -> Router {
             "/servers/{id}/properties",
             get(servers::get_properties).put(servers::put_properties),
         )
+        .route("/jobs", get(jobs::list))
         .route("/jobs/{id}", get(jobs::get))
         .route("/jobs/{id}/cancel", post(jobs::cancel))
         .route("/catalog/paper/versions", get(jobs::paper_versions))

@@ -182,6 +182,11 @@ async fn system_reports_resources_and_suggestion() {
     let (status, body) = api.get("/api/v1/system").await;
     assert_eq!(status, StatusCode::OK);
     assert!(body["cpu_threads"].as_u64().unwrap() > 0);
+    let cpu = body["cpu_percent"].as_f64().unwrap();
+    assert!((0.0..=100.0).contains(&cpu), "{cpu}");
+    let used = body["memory_used_bytes"].as_u64().unwrap();
+    assert!(used <= body["memory_total_bytes"].as_u64().unwrap());
+    assert!(body.get("disk_free_bytes").is_some());
     assert_eq!(
         body["suggested_memory_mb"],
         json!({ "min": 1024, "max": 2048 })
@@ -426,17 +431,38 @@ async fn jobs_and_catalog() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(versions[0]["id"], "1.21.4");
     assert_eq!(versions[0]["release_time"], "2024-12-03T10:12:00Z");
-
+    let (status, empty) = api.get("/api/v1/jobs").await;
+    assert_eq!((status, empty), (StatusCode::OK, json!([])));
+    let (status, err) = api.get("/api/v1/jobs?server_id=not-a-ulid").await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(err["code"], "INVALID_INPUT");
     let (status, _) = api.get("/api/v1/jobs/999").await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     let (status, _) = api.post("/api/v1/jobs/999/cancel", None).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
-    let body = json!({ "name": "A", "loader": "paper", "minecraft": "1.21.4" });
-    let (_, created) = api.post("/api/v1/servers", Some(body)).await;
-    let job = created["job_id"].as_u64().unwrap();
+
+    let mk = |name: &str| json!({ "name": name, "loader": "paper", "minecraft": "1.21.4" });
+    let (_, first) = api.post("/api/v1/servers", Some(mk("A"))).await;
+    let (_, second) = api.post("/api/v1/servers", Some(mk("B"))).await;
+    let job = second["job_id"].as_u64().unwrap();
     let (status, job_dto) = api.get(&format!("/api/v1/jobs/{job}")).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(job_dto["kind"], "create_server");
+    assert!(job_dto["started_at"].as_str().unwrap().contains('T'));
+    assert!(job_dto.get("finished_at").is_some());
+
+    let (status, listed) = api.get("/api/v1/jobs").await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(listed[0]["id"], second["job_id"]);
+    assert_eq!(listed[1]["id"], first["job_id"]);
+    let id = first["server_id"].as_str().unwrap();
+    let (status, only) = api.get(&format!("/api/v1/jobs?server_id={id}")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        only.as_array()
+            .is_some_and(|rows| rows.len() == 1 && rows[0]["server_id"] == id)
+    );
+
     let (status, _) = api.post(&format!("/api/v1/jobs/{job}/cancel"), None).await;
     assert_eq!(status, StatusCode::NO_CONTENT);
 }
@@ -463,6 +489,7 @@ fn openapi_lists_all_routes() {
         "/api/v1/servers/{id}/console",
         "/api/v1/servers/{id}/properties",
         "/api/v1/catalog/paper/versions",
+        "/api/v1/jobs",
         "/api/v1/jobs/{id}",
         "/api/v1/jobs/{id}/cancel",
         "/api/v1/app/shutdown",

@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, MutexGuard, OnceLock};
 
 use serde::Serialize;
 use sysinfo::{Disks, System};
@@ -13,10 +14,16 @@ pub struct SystemInfo {
     pub arch: String,
     pub cpu_brand: String,
     pub cpu_threads: usize,
+    /// CPU toàn máy, từ 0 đến 100. Xem [`probe`]: lần đo đầu có thể là 0.
+    pub cpu_percent: f32,
     pub memory_total_bytes: u64,
     pub memory_available_bytes: u64,
+    /// RAM đang dùng, byte.
+    pub memory_used_bytes: u64,
     /// Ổ đĩa chứa thư mục dữ liệu của MineHost, nếu tìm được.
     pub data_disk: Option<DiskSpace>,
+    /// Byte còn trống trên ổ chứa thư mục dữ liệu. Trùng `data_disk.available_bytes`.
+    pub disk_free_bytes: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -27,26 +34,71 @@ pub struct DiskSpace {
 }
 
 /// Đọc thông tin máy. Hàm này chặn luồng vài mili giây, nên gọi trong `spawn_blocking`.
+///
+/// CPU lấy từ một [`System`] dùng chung, giữ sau `Mutex`, và được làm mới mỗi lần gọi.
+/// Sysinfo tính phần trăm bằng hiệu hai lần đo: lần đầu chưa có mốc nên `cpu_percent`
+/// có thể là 0; lần sau là mức dùng kể từ lần gọi trước.
 pub fn probe(data_dir: &Path) -> SystemInfo {
-    let mut sys = System::new();
+    let sample = sample_machine();
+    let data_disk = disk_for(data_dir);
+    SystemInfo {
+        os: std::env::consts::OS.to_owned(),
+        os_version: System::long_os_version(),
+        arch: std::env::consts::ARCH.to_owned(),
+        cpu_brand: sample.cpu_brand,
+        cpu_threads: sample.cpu_threads,
+        cpu_percent: sample.cpu_percent,
+        memory_total_bytes: sample.memory_total_bytes,
+        memory_available_bytes: sample.memory_available_bytes,
+        memory_used_bytes: sample.memory_used_bytes,
+        disk_free_bytes: data_disk.as_ref().map(|disk| disk.available_bytes),
+        data_disk,
+    }
+}
+
+struct MachineSample {
+    cpu_brand: String,
+    cpu_threads: usize,
+    cpu_percent: f32,
+    memory_total_bytes: u64,
+    memory_available_bytes: u64,
+    memory_used_bytes: u64,
+}
+
+fn sample_machine() -> MachineSample {
+    let mut sys = shared_machine();
     sys.refresh_memory();
     sys.refresh_cpu_all();
-
     let cpu_brand = sys
         .cpus()
         .first()
         .map(|cpu| cpu.brand().trim().to_owned())
         .unwrap_or_default();
-
-    SystemInfo {
-        os: std::env::consts::OS.to_owned(),
-        os_version: System::long_os_version(),
-        arch: std::env::consts::ARCH.to_owned(),
+    MachineSample {
         cpu_brand,
         cpu_threads: sys.cpus().len(),
+        cpu_percent: finite_percent(sys.global_cpu_usage()),
         memory_total_bytes: sys.total_memory(),
         memory_available_bytes: sys.available_memory(),
-        data_disk: disk_for(data_dir),
+        memory_used_bytes: sys.used_memory(),
+    }
+}
+
+/// Cùng một `System` cho mọi lần `probe`, vì phần trăm CPU cần hai lần làm mới.
+fn shared_machine() -> MutexGuard<'static, System> {
+    static MACHINE: OnceLock<Mutex<System>> = OnceLock::new();
+    // Poison chỉ xảy ra khi luồng giữ khóa bị panic; số đo bên trong vẫn đọc được.
+    MACHINE
+        .get_or_init(|| Mutex::new(System::new()))
+        .lock()
+        .unwrap_or_else(|poison| poison.into_inner())
+}
+
+fn finite_percent(value: f32) -> f32 {
+    if value.is_finite() {
+        value.clamp(0.0, 100.0)
+    } else {
+        0.0
     }
 }
 
@@ -109,7 +161,15 @@ mod tests {
         assert!(info.cpu_threads > 0);
         assert!(info.memory_total_bytes > 0);
         assert!(info.memory_available_bytes <= info.memory_total_bytes);
+        assert!(info.memory_used_bytes <= info.memory_total_bytes);
+        assert!((0.0..=100.0).contains(&info.cpu_percent));
+        let again = probe(&dir);
+        assert!((0.0..=100.0).contains(&again.cpu_percent));
         assert_eq!(info.os, std::env::consts::OS);
+        assert_eq!(
+            info.disk_free_bytes,
+            info.data_disk.as_ref().map(|disk| disk.available_bytes)
+        );
     }
 
     #[test]

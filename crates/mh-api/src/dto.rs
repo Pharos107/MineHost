@@ -280,6 +280,10 @@ pub struct JobDto {
     /// Có khi `state` là `failed`.
     pub error: Option<ErrorBody>,
     pub progress: Option<ProgressDto>,
+    /// RFC 3339, lúc Job được tạo.
+    pub started_at: String,
+    /// RFC 3339, lúc Job sang trạng thái kết thúc. Không có khi còn chạy.
+    pub finished_at: Option<String>,
 }
 
 impl From<JobSnapshot> for JobDto {
@@ -307,8 +311,14 @@ impl From<JobSnapshot> for JobDto {
             state,
             error,
             progress: job.progress.map(progress_dto),
+            started_at: rfc3339(job.started_at).unwrap_or_default(),
+            finished_at: job.finished_at.and_then(rfc3339),
         }
     }
+}
+
+fn rfc3339(t: time::OffsetDateTime) -> Option<String> {
+    t.format(&Rfc3339).ok()
 }
 
 fn progress_dto(p: JobProgress) -> ProgressDto {
