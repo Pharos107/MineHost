@@ -40,5 +40,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["src/test/setup.ts"],
+    // `e2e/` là test Playwright chạy với binary thật, không phải Vitest.
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 });
