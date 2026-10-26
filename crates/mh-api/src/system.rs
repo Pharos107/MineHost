@@ -26,10 +26,19 @@ pub struct SystemDto {
     pub arch: String,
     pub cpu_brand: String,
     pub cpu_threads: usize,
+    /// CPU toàn máy, từ 0 đến 100.
+    ///
+    /// Mỗi request làm mới một `sysinfo::System` dùng chung. Lần đo đầu chưa có mốc
+    /// nên có thể là 0; lần sau là mức dùng kể từ lần đo trước.
+    pub cpu_percent: f32,
     pub memory_total_bytes: u64,
     pub memory_available_bytes: u64,
+    /// RAM đang dùng, byte.
+    pub memory_used_bytes: u64,
     pub data_dir: String,
     pub data_disk: Option<DiskDto>,
+    /// Byte còn trống trên ổ chứa thư mục dữ liệu. Trùng `data_disk.available_bytes`.
+    pub disk_free_bytes: Option<u64>,
     /// RAM đề xuất cho server mới (spec P1, mục 4.3).
     pub suggested_memory_mb: MemoryDto,
     /// Địa chỉ IPv4 trong mạng LAN, để bạn bè vào chơi.
@@ -84,14 +93,17 @@ pub async fn system_info(State(app): State<Arc<App>>) -> Result<Json<SystemDto>,
         arch: info.arch,
         cpu_brand: info.cpu_brand,
         cpu_threads: info.cpu_threads,
+        cpu_percent: info.cpu_percent,
         memory_total_bytes: info.memory_total_bytes,
         memory_available_bytes: info.memory_available_bytes,
+        memory_used_bytes: info.memory_used_bytes,
         data_dir,
         data_disk: info.data_disk.map(|disk| DiskDto {
             mount_point: disk.mount_point.display().to_string(),
             total_bytes: disk.total_bytes,
             available_bytes: disk.available_bytes,
         }),
+        disk_free_bytes: info.disk_free_bytes,
         suggested_memory_mb: MemoryDto {
             min: suggested.min_mb(),
             max: suggested.max_mb(),

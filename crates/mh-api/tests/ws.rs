@@ -12,7 +12,7 @@ use mh_app::sources::{
     BoxFut, CancellationToken, CatalogVersion, Checksum, JavaRuntime, ProgressFn, ResolvedServer,
     ServerJar,
 };
-use mh_app::{App, AppDeps, AppError, CreateRequest, JavaSource, JobState, ServerCatalog};
+use mh_app::{App, AppDeps, AppError, CreateRequest, Created, JavaSource, JobState, ServerCatalog};
 use mh_core::{LoaderKind, McVersion, ServerId, ServerName};
 use mh_platform::DataDirs;
 use serde_json::{Value, json};
@@ -154,6 +154,18 @@ impl Harness {
         self.app.accept_eula(created.server_id).unwrap();
         created.server_id
     }
+
+    fn create_job(&self, name: &str) -> Created {
+        self.app
+            .create(CreateRequest {
+                name: ServerName::parse(name).unwrap(),
+                loader: LoaderKind::Paper,
+                minecraft: McVersion::parse("1.21.4").unwrap(),
+                memory_mb: None,
+                port: None,
+            })
+            .unwrap()
+    }
 }
 
 /// Đọc tin tới khi `pred` đúng; trả mọi tin đã đọc.
@@ -288,6 +300,32 @@ async fn job_topic_reports_until_finished() {
     assert_eq!(last["topic"], topic);
     assert_eq!(last["data"]["state"], "succeeded");
     assert_eq!(last["data"]["server_id"], created.server_id.to_string());
+}
+
+#[tokio::test]
+async fn jobs_topic_receives_a_new_job() {
+    let h = harness().await;
+    let mut ws = h.subscribe(json!({ "subscribe": ["jobs"] })).await;
+    // Thấy Job đầu thì feed đã đăng ký kênh; Job sau chỉ tới nếu broadcast chạy.
+    let first = h.create_job("Một");
+    read_until(&mut ws, |m| {
+        m["topic"] == "jobs" && m["data"]["id"].as_u64() == Some(first.job_id)
+    })
+    .await;
+    let second = h.create_job("Hai");
+    let msgs = read_until(&mut ws, |m| {
+        m["topic"] == "jobs" && m["data"]["id"].as_u64() == Some(second.job_id)
+    })
+    .await;
+    let hit = msgs.last().unwrap();
+    assert_eq!(hit["data"]["kind"], "create_server");
+    assert_eq!(hit["data"]["server_id"], second.server_id.to_string());
+    assert!(
+        hit["data"]["started_at"]
+            .as_str()
+            .is_some_and(|s| s.contains('T'))
+    );
+    assert!(hit["data"].get("finished_at").is_some());
 }
 
 #[tokio::test]

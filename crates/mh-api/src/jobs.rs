@@ -1,15 +1,39 @@
-//! Route `/jobs`, `/catalog` và `/app` (spec P1, mục 5.8).
+//! Route `/jobs`, `/catalog` và `/app` (spec P1 mục 5.8, danh sách Job ở P2).
 
 use std::sync::Arc;
 
 use axum::Json;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use mh_app::App;
-use mh_core::LoaderKind;
+use mh_core::{LoaderKind, ServerId};
+use serde::Deserialize;
 
 use crate::dto::{CatalogVersionDto, JobDto};
 use crate::error::{ApiError, ErrorBody};
+
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
+pub struct JobsQuery {
+    /// ULID của server. Bỏ qua thì lấy mọi Job đang giữ.
+    #[serde(default)]
+    pub server_id: Option<String>,
+}
+
+#[utoipa::path(get, path = "/api/v1/jobs", tag = "jobs", params(JobsQuery),
+    responses((status = 200, body = [JobDto]), (status = 400, body = ErrorBody)))]
+pub async fn list(
+    State(app): State<Arc<App>>,
+    Query(query): Query<JobsQuery>,
+) -> Result<Json<Vec<JobDto>>, ApiError> {
+    let server_id = server_filter(query.server_id)?;
+    let jobs = app.jobs().list(server_id);
+    Ok(Json(jobs.into_iter().map(JobDto::from).collect()))
+}
+
+fn server_filter(raw: Option<String>) -> Result<Option<ServerId>, ApiError> {
+    raw.map(|value| ServerId::parse(&value).map_err(|_| ApiError::invalid("server_id")))
+        .transpose()
+}
 
 #[utoipa::path(get, path = "/api/v1/jobs/{id}", tag = "jobs",
     params(("id" = u64, Path)),

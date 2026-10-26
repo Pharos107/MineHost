@@ -52,6 +52,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/jobs/{id}": {
         parameters: {
             query?: never;
@@ -267,12 +283,16 @@ export interface components {
         };
         JobDto: {
             error?: components["schemas"]["ErrorBody"] | null;
+            /** @description RFC 3339, lúc Job sang trạng thái kết thúc. Không có khi còn chạy. */
+            finished_at?: string | null;
             /** Format: int64 */
             id: number;
             /** @description Ví dụ `create_server`. */
             kind: string;
             progress?: components["schemas"]["ProgressDto"] | null;
             server_id?: string | null;
+            /** @description RFC 3339, lúc Job được tạo. */
+            started_at: string;
             state: components["schemas"]["JobStateDto"];
         };
         /** @enum {string} */
@@ -356,15 +376,33 @@ export interface components {
         SystemDto: {
             arch: string;
             cpu_brand: string;
+            /**
+             * Format: float
+             * @description CPU toàn máy, từ 0 đến 100.
+             *
+             *     Mỗi request làm mới một `sysinfo::System` dùng chung. Lần đo đầu chưa có mốc
+             *     nên có thể là 0; lần sau là mức dùng kể từ lần đo trước.
+             */
+            cpu_percent: number;
             cpu_threads: number;
             data_dir: string;
             data_disk?: components["schemas"]["DiskDto"] | null;
+            /**
+             * Format: int64
+             * @description Byte còn trống trên ổ chứa thư mục dữ liệu. Trùng `data_disk.available_bytes`.
+             */
+            disk_free_bytes?: number | null;
             /** @description Địa chỉ IPv4 trong mạng LAN, để bạn bè vào chơi. */
             lan_addresses: string[];
             /** Format: int64 */
             memory_available_bytes: number;
             /** Format: int64 */
             memory_total_bytes: number;
+            /**
+             * Format: int64
+             * @description RAM đang dùng, byte.
+             */
+            memory_used_bytes: number;
             os: string;
             os_version?: string | null;
             /** @description RAM đề xuất cho server mới (spec P1, mục 4.3). */
@@ -446,6 +484,36 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ULID của server. Bỏ qua thì lấy mọi Job đang giữ. */
+                server_id: string | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobDto"][];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
         };

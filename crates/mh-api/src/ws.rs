@@ -1,7 +1,8 @@
-//! WebSocket `/api/v1/ws` (spec P1, mục 5.8).
+//! WebSocket `/api/v1/ws` (spec P1 mục 5.8, topic `jobs` ở P2 mục 6.3).
 //!
-//! Client gửi `{ "subscribe": ["servers", "server.<id>.console", "job.<id>"],
+//! Client gửi `{ "subscribe": ["servers", "jobs", "server.<id>.console", "job.<id>"],
 //! "since": { "server.<id>.console": 120 } }`. Server gửi `{ "topic", "seq", "data" }`.
+//! `jobs` gửi `JobDto` mỗi khi một Job đổi trạng thái hoặc tiến độ, kể cả Job mới.
 //! Với console, `seq` là `seq` của dòng: kết nối lại với `since` thì nhận tiếp từ bộ đệm.
 //! Origin đã được `guard` kiểm tra trước khi nâng cấp kết nối.
 
@@ -23,6 +24,7 @@ use tokio::task::JoinSet;
 use crate::dto::{ConsoleLineDto, JobDto, ServerDto};
 
 const SERVERS: &str = "servers";
+const JOBS: &str = "jobs";
 
 #[derive(Debug, Default, Deserialize)]
 struct ClientMessage {
@@ -106,6 +108,9 @@ async fn feed(app: Arc<App>, topic: String, since: Option<u64>, out: Outbox) {
     if topic == SERVERS {
         return servers_feed(&app, &out).await;
     }
+    if topic == JOBS {
+        return jobs_feed(&app, &out).await;
+    }
     let parsed = topic
         .strip_prefix("server.")
         .and_then(|rest| rest.strip_suffix(".console"))
@@ -159,6 +164,49 @@ async fn servers_feed(app: &App, out: &Outbox) {
 
 fn server_data(dto: ServerDto) -> Value {
     serde_json::to_value(dto).unwrap_or_default()
+}
+
+/// Gửi các Job đang giữ lúc đăng ký, rồi mỗi lần một Job đổi.
+///
+/// Đăng ký kênh trước khi đọc danh sách để không lỡ Job tạo ở giữa. Lỡ tin
+/// (`Lagged`) thì gửi lại danh sách: bản mới nhất vẫn tới, tiến độ kẹt giữa thì mất.
+async fn jobs_feed(app: &App, out: &Outbox) {
+    let mut events = app.jobs().subscribe_all();
+    let mut seq = 0;
+    if !send_job_list(app, out, &mut seq).await {
+        return;
+    }
+    loop {
+        match events.recv().await {
+            Ok(snapshot) => {
+                seq += 1;
+                if !send_job(out, seq, snapshot).await {
+                    return;
+                }
+            }
+            Err(RecvError::Lagged(_)) => {
+                if !send_job_list(app, out, &mut seq).await {
+                    return;
+                }
+            }
+            Err(RecvError::Closed) => return,
+        }
+    }
+}
+
+async fn send_job_list(app: &App, out: &Outbox, seq: &mut u64) -> bool {
+    for snapshot in app.jobs().list(None) {
+        *seq += 1;
+        if !send_job(out, *seq, snapshot).await {
+            return false;
+        }
+    }
+    true
+}
+
+async fn send_job(out: &Outbox, seq: u64, snapshot: mh_app::jobs::JobSnapshot) -> bool {
+    let data = serde_json::to_value(JobDto::from(snapshot)).unwrap_or_default();
+    out.send(JOBS, seq, data).await
 }
 
 async fn console_feed(app: &App, topic: &str, id: ServerId, since: Option<u64>, out: &Outbox) {

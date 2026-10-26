@@ -20,7 +20,7 @@ vi.mock("../../api/ws", () => ({
   },
 }));
 
-const runningJob: Job = { id: 7, kind: "create_server", state: "running", server_id: "01JB" };
+const runningJob: Job = { id: 7, kind: "create_server", state: "running", server_id: "01JB", started_at: "2026-10-27T00:00:00Z" };
 const system = { memory_total_bytes: 16 * GB, memory_available_bytes: 10 * GB, suggested_memory_mb: { min: 1024, max: 4096 } };
 const versions = ["1.21.4", "1.21.3", "1.21.1", "1.20.6", "1.20.4", "1.19.4"].map((id) => ({ id, release_time: "" }));
 
