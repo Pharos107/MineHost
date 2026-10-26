@@ -135,6 +135,7 @@ impl Env {
                 ..SupervisorConfig::default()
             },
             save_flush_timeout: Duration::from_secs(60),
+            metrics: mh_app::MetricsConfig::default(),
         };
         Arc::new(App::with_deps(dirs, deps).unwrap())
     }

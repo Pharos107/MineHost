@@ -286,5 +286,40 @@
     "SERVER_CRASHED": "The server stopped unexpectedly.",
     "FORBIDDEN": "The request was refused because it did not come from the MineHost page on this computer.",
     "UNSUPPORTED_BY_VERSION": "This Minecraft version does not support this action."
+  },
+  "jobsPage": {
+    "description": "What MineHost is doing or just finished, such as creating a server or making a backup.",
+    "empty": "No tasks yet",
+    "emptyHint": "Tasks show up here when you create a server or make a backup.",
+    "filterServer": "Filter by server",
+    "allServers": "All servers",
+    "kind": "Task",
+    "server": "Server",
+    "state": "State",
+    "progress": "Progress",
+    "started": "Started",
+    "cancel": "Cancel",
+    "kinds": {
+      "create_server": "Create server",
+      "backup": "Backup",
+      "restore": "Restore",
+      "import_server": "Import server"
+    },
+    "states": {
+      "running": "Running",
+      "succeeded": "Done",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "home": {
+    "running": "Servers running",
+    "jobs": "Tasks running",
+    "cpu": "Machine CPU",
+    "memory": "RAM in use",
+    "ofTotal": "of {{total}}",
+    "diskFree": "Free disk space",
+    "runningServers": "Running servers",
+    "noneRunning": "No servers are running."
   }
 }

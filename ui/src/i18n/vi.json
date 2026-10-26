@@ -286,5 +286,40 @@
     "SERVER_CRASHED": "Server bị dừng đột ngột.",
     "FORBIDDEN": "Yêu cầu bị từ chối vì không đến từ giao diện MineHost trên máy này.",
     "UNSUPPORTED_BY_VERSION": "Phiên bản Minecraft này không hỗ trợ thao tác này."
+  },
+  "jobsPage": {
+    "description": "Việc MineHost đang làm hoặc vừa làm xong, như tạo server hay sao lưu.",
+    "empty": "Chưa có tác vụ nào",
+    "emptyHint": "Tạo server hoặc sao lưu thì tác vụ hiện ở đây.",
+    "filterServer": "Lọc theo server",
+    "allServers": "Mọi server",
+    "kind": "Việc",
+    "server": "Server",
+    "state": "Trạng thái",
+    "progress": "Tiến độ",
+    "started": "Bắt đầu",
+    "cancel": "Hủy",
+    "kinds": {
+      "create_server": "Tạo server",
+      "backup": "Sao lưu",
+      "restore": "Khôi phục",
+      "import_server": "Nhập server"
+    },
+    "states": {
+      "running": "Đang chạy",
+      "succeeded": "Xong",
+      "failed": "Lỗi",
+      "cancelled": "Đã hủy"
+    }
+  },
+  "home": {
+    "running": "Server đang chạy",
+    "jobs": "Tác vụ đang chạy",
+    "cpu": "CPU của máy",
+    "memory": "RAM đã dùng",
+    "ofTotal": "trên {{total}}",
+    "diskFree": "Ổ đĩa còn trống",
+    "runningServers": "Server đang chạy",
+    "noneRunning": "Chưa có server nào đang chạy."
   }
 }

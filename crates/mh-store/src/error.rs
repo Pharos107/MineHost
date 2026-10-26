@@ -30,6 +30,10 @@ pub enum StoreError {
         #[source]
         source: io::Error,
     },
+
+    /// `whitelist.json` và các file người chơi không phải JSON đúng dạng Minecraft ghi.
+    #[error("file người chơi `{path}` không hợp lệ: {detail}")]
+    InvalidPlayers { path: PathBuf, detail: String },
 }
 
 impl StoreError {
@@ -40,10 +44,18 @@ impl StoreError {
         }
     }
 
+    pub(crate) fn invalid_players(path: impl Into<PathBuf>, err: impl std::fmt::Display) -> Self {
+        Self::InvalidPlayers {
+            path: path.into(),
+            detail: err.to_string(),
+        }
+    }
+
     pub fn code(&self) -> ErrorCode {
         match self {
             Self::NotFound(_) => ErrorCode::NotFound,
-            Self::Broken { .. } => ErrorCode::ConfigInvalid,
+            // File người chơi hỏng cùng loại với instance.toml hỏng: người dùng sửa được file.
+            Self::Broken { .. } | Self::InvalidPlayers { .. } => ErrorCode::ConfigInvalid,
             Self::Serialize(e) => e.code(),
             Self::Platform(e) => e.code(),
             Self::AlreadyExists(_) | Self::Io { .. } => ErrorCode::Internal,

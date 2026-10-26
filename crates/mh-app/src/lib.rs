@@ -9,6 +9,7 @@ mod error;
 pub mod jobs;
 mod launcher;
 mod lifecycle;
+mod metrics;
 mod servers;
 pub mod sources;
 
@@ -28,6 +29,7 @@ pub use backup::{BackupKind, BackupMeta, BackupRequest, BackupStarted};
 pub use create::{CreateRequest, Created};
 pub use error::AppError;
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};
+pub use metrics::{MetricSample, MetricsConfig, MetricsEvent, ServerMetrics};
 pub use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
 pub use servers::{ServerView, SettingsPatch};
 pub use sources::{CatalogVersion, JavaSource, ServerCatalog};
@@ -51,6 +53,7 @@ pub struct AppDeps {
     pub supervisor: SupervisorConfig,
     /// Hạn chờ dòng `Saved the game` sau `save-all flush`. Mặc định 60 giây.
     pub save_flush_timeout: Duration,
+    pub metrics: MetricsConfig,
 }
 
 impl std::fmt::Debug for AppDeps {
@@ -58,6 +61,7 @@ impl std::fmt::Debug for AppDeps {
         f.debug_struct("AppDeps")
             .field("total_memory_mb", &self.total_memory_mb)
             .field("supervisor", &self.supervisor)
+            .field("metrics", &self.metrics)
             .finish_non_exhaustive()
     }
 }
@@ -93,6 +97,8 @@ pub struct App {
     total_memory_mb: u64,
     supervisor_config: SupervisorConfig,
     save_flush_timeout: Duration,
+    metrics_config: MetricsConfig,
+    metrics_hub: metrics::MetricsHub,
     shutdown: tokio::sync::Notify,
     events: tokio::sync::broadcast::Sender<AppEvent>,
 }
@@ -120,6 +126,7 @@ impl App {
             total_memory_mb: mh_platform::system::total_memory_bytes() / (1024 * 1024),
             supervisor: SupervisorConfig::default(),
             save_flush_timeout: backup::DEFAULT_SAVE_FLUSH_TIMEOUT,
+            metrics: MetricsConfig::default(),
         };
         Self::with_deps(dirs, deps)
     }
@@ -141,6 +148,8 @@ impl App {
             total_memory_mb: deps.total_memory_mb,
             supervisor_config: deps.supervisor,
             save_flush_timeout: deps.save_flush_timeout,
+            metrics_config: deps.metrics,
+            metrics_hub: metrics::MetricsHub::new(),
             shutdown: tokio::sync::Notify::new(),
             events: tokio::sync::broadcast::channel(256).0,
         })

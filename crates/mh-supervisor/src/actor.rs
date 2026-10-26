@@ -4,8 +4,9 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use mh_core::state::is_done_line;
-use mh_core::{ConsoleStream, ServerEvent, ServerState, diagnose, transition};
+use mh_core::{ConsoleStream, ServerEvent, ServerState, diagnose, parse_log_line, transition};
 use mh_runtime::{Exit, OutputLine, ProcessControl, ProcessRuntime, RunningProcess};
+use time::OffsetDateTime;
 use tokio::sync::{broadcast, mpsc, oneshot, watch};
 use tokio::time::Instant;
 
@@ -84,7 +85,7 @@ impl<L: Launcher> Actor<L> {
             match self.next(&mut rx).await {
                 Wake::Command(None) => break,
                 Wake::Command(Some(cmd)) => self.on_command(cmd).await,
-                Wake::Line(line) => self.on_line(line),
+                Wake::Line(line) => self.on_line(line).await,
                 Wake::OutputClosed => {
                     if let Some(live) = self.live.as_mut() {
                         live.output = None;
@@ -227,14 +228,41 @@ impl<L: Launcher> Actor<L> {
         echoed
     }
 
-    fn on_line(&mut self, line: OutputLine) {
+    async fn on_line(&mut self, line: OutputLine) {
         let ready = self.status.state == ServerState::Starting && is_done_line(&line.text);
-        let pushed = self.console.push(line.stream, line.text);
+        // Ghi console trước khi phát sự kiện, để người nghe đọc bộ đệm là đã có dòng đó.
+        let stream = line.stream;
+        let pushed = self.console.push(stream, line.text);
+        self.note_players(stream, &pushed.text);
         let _ = self.events.send(SupervisorEvent::Console(pushed));
         if ready && let Ok(next) = transition(self.status.state, ServerEvent::Ready) {
             self.slow_start_at = None;
             self.status.slow_start = false;
             self.set_state(next);
+            // Một lần `list` ngay khi sang Running, để danh sách online không lệch (spec 3.2).
+            self.sync_online_players().await;
+        }
+    }
+
+    /// Stderr không phải log server. Dòng không phải join/leave/`list` thì bỏ qua.
+    fn note_players(&self, stream: ConsoleStream, text: &str) {
+        if stream != ConsoleStream::Stdout {
+            return;
+        }
+        let Some(event) = parse_log_line(text) else {
+            return;
+        };
+        let _ = self.events.send(SupervisorEvent::Players(event));
+    }
+
+    async fn sync_online_players(&self) {
+        let Some(live) = self.live.as_ref() else {
+            return;
+        };
+        let control = live.control.clone();
+        // Không echo: đây là lệnh của MineHost, không phải lịch sử người dùng gõ.
+        if let Err(error) = control.send_line("list").await {
+            tracing::warn!(error = %error, "không gửi được lệnh list để đồng bộ người chơi");
         }
     }
 
@@ -244,13 +272,14 @@ impl<L: Launcher> Actor<L> {
             && let Some(output) = live.output.as_mut()
         {
             while let Ok(line) = output.try_recv() {
-                self.on_line(line);
+                self.on_line(line).await;
             }
         }
         self.console.close_log();
         self.stop_deadline = None;
         self.slow_start_at = None;
         self.status.pid = None;
+        self.status.running_since = None;
         self.status.slow_start = false;
         let Ok(next) = transition(self.status.state, ServerEvent::ProcessExited) else {
             tracing::error!(state = ?self.status.state, "process thoát ở trạng thái không ngờ tới");
@@ -324,6 +353,10 @@ impl<L: Launcher> Actor<L> {
     fn set_state(&mut self, state: ServerState) {
         if state != self.status.state {
             tracing::info!(from = ?self.status.state, to = ?state, "đổi trạng thái server");
+        }
+        // "Thời gian chạy" tính từ lúc sẵn sàng, không tính khoảng Starting.
+        if state == ServerState::Running && self.status.state != ServerState::Running {
+            self.status.running_since = Some(OffsetDateTime::now_utc());
         }
         self.status.state = state;
         self.publish();
