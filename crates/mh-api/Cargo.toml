@@ -9,6 +9,7 @@ publish.workspace = true
 
 [dependencies]
 axum.workspace = true
+futures-util.workspace = true
 mh-app.workspace = true
 mh-core.workspace = true
 mime_guess.workspace = true
@@ -17,11 +18,11 @@ serde.workspace = true
 serde_json.workspace = true
 time.workspace = true
 tokio.workspace = true
+tokio-util = { workspace = true, features = ["io"] }
 tracing.workspace = true
 utoipa.workspace = true
 
 [dev-dependencies]
-futures-util.workspace = true
 http-body-util.workspace = true
 mh-platform.workspace = true
 mh-supervisor.workspace = true

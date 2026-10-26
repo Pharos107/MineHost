@@ -497,3 +497,6 @@ fn openapi_lists_all_routes() {
         assert!(spec.paths.paths.contains_key(path), "thiếu {path}");
     }
 }
+
+#[path = "tests_files.rs"]
+mod tests_files;
