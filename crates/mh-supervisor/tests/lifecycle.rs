@@ -106,10 +106,12 @@ async fn start_reaches_running_then_stop_reaches_stopped() {
     assert!(probe.marker.load(Ordering::SeqCst));
     let running = wait_state(&sup, ServerState::Running).await;
     assert!(running.pid.is_some());
+    assert!(running.running_since.is_some());
 
     sup.stop().await.unwrap();
     let stopped = wait_state(&sup, ServerState::Stopped).await;
     assert_eq!(stopped.pid, None);
+    assert_eq!(stopped.running_since, None);
     assert!(!probe.marker.load(Ordering::SeqCst));
     let texts: Vec<String> = sup
         .console()

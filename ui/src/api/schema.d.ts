@@ -180,6 +180,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["metrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}/properties": {
         parameters: {
             query?: never;
@@ -303,6 +319,19 @@ export interface components {
             /** Format: int32 */
             min: number;
         };
+        MetricSampleDto: {
+            /** @description RFC 3339. */
+            at: string;
+            /** Format: float */
+            cpu_percent: number;
+            /** Format: int64 */
+            memory_bytes: number;
+            /**
+             * Format: int32
+             * @description `null` cho tới khi có theo dõi người chơi.
+             */
+            players?: number | null;
+        };
         PatchServerBody: {
             autostart?: boolean | null;
             memory_mb?: components["schemas"]["MemoryDto"] | null;
@@ -364,6 +393,13 @@ export interface components {
             /** @description Đã quá 5 phút mà server chưa sẵn sàng. */
             slow_start: boolean;
             state: components["schemas"]["StateDto"];
+        };
+        ServerMetricsDto: {
+            /** Format: int64 */
+            disk_bytes?: number | null;
+            /** @description RFC 3339. Có khi server đang ở trạng thái chạy. */
+            running_since?: string | null;
+            samples: components["schemas"]["MetricSampleDto"][];
         };
         /** @enum {string} */
         StateDto: "installing" | "stopped" | "starting" | "running" | "stopping" | "crashed" | "broken";
@@ -844,6 +880,45 @@ export interface operations {
                 };
             };
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    metrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description RFC 3339. Chỉ lấy mẫu sau thời điểm này. Dấu `+` trong offset phải viết `%2B`. */
+                since: string | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerMetricsDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
