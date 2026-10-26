@@ -1,12 +1,16 @@
 //! Server Minecraft giả cho test: in log giống Paper và đọc lệnh từ stdin. Không cần Java.
 //!
+//! Được gọi đúng như Java (`-Xms`, `-Xmx`, `-D…`, `-jar server.jar`, `--nogui`): những cờ đó
+//! không có ý nghĩa ở đây và bị bỏ qua. Thư mục làm việc là thư mục server, giống process thật.
+//!
 //! Cờ:
 //! - `--no-done`: không bao giờ in dòng `Done (…)!`.
 //! - `--hang-on-stop`: bỏ qua lệnh `stop`, giống server bị treo khi lưu world.
 //! - `--crash-after-ms <n>`: in lỗi hết RAM rồi thoát mã 1 sau `n` mili giây.
 //! - `--slow-start-ms <n>`: chờ `n` mili giây trước khi in dòng `Done`.
 //!
-//! Lệnh stdin cho test người chơi: `list`, `fake-join <tên>`, `fake-leave <tên>`.
+//! Lệnh stdin: `stop` thoát, `say …` in lại nội dung; cho test người chơi: `list`,
+//! `fake-join <tên>`, `fake-leave <tên>`.
 
 // Đây là chương trình dòng lệnh, in ra stdout/stderr là việc chính của nó.
 #![allow(clippy::print_stdout, clippy::print_stderr)]
