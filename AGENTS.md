@@ -97,6 +97,11 @@ cargo test --workspace
 bash scripts/check-file-size.sh
 cd ui && npm run lint && npm run typecheck && npm test
 
+# Test E2E bằng Playwright với binary thật ở chế độ e2e (catalog và Java giả, không cần mạng)
+cd ui && npm run build && cd ..
+cargo build -p mh-runtime --bin fake-mc && cargo build -p minehost --features e2e
+cd ui && npx playwright install chromium && npm run e2e
+
 # Test tích hợp với Paper thật (tải Java và Paper, vài phút; CI chạy trong job `integration`)
 cargo test -p minehost --test paper -- --ignored --test-threads=1
 ```
