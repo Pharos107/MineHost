@@ -234,8 +234,14 @@ async fn console_feed(app: &App, topic: &str, id: ServerId, since: Option<u64>, 
                     return;
                 }
             }
-            // Lỡ dòng thì vòng lặp sau đọc bù từ bộ đệm.
-            Ok(_) | Err(RecvError::Lagged(_)) => {}
+            // Status và Players không thuộc topic console (Players có topic riêng ở PR-17).
+            // Dòng console đã gửi thì bỏ. Lagged thì vòng sau đọc bù từ bộ đệm.
+            Ok(
+                SupervisorEvent::Status(_)
+                | SupervisorEvent::Console(_)
+                | SupervisorEvent::Players(_),
+            )
+            | Err(RecvError::Lagged(_)) => {}
             Err(RecvError::Closed) => return,
         }
     }

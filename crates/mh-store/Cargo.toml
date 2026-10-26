@@ -11,12 +11,12 @@ publish.workspace = true
 mh-core.workspace = true
 mh-platform.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
 time.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
-serde_json.workspace = true
 tempfile.workspace = true
 
 [lints]

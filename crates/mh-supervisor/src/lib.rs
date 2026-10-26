@@ -13,7 +13,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
-use mh_core::{ConsoleLine, CrashHint, ErrorCode, ServerState};
+use mh_core::{ConsoleLine, CrashHint, ErrorCode, PlayerLogEvent, ServerState};
 use mh_runtime::{ProcessRuntime, ProcessSpec, RuntimeError};
 use tokio::sync::{broadcast, mpsc, oneshot, watch};
 
@@ -138,6 +138,8 @@ pub struct CrashInfo {
 pub enum SupervisorEvent {
     Status(Status),
     Console(ConsoleLine),
+    /// Join, leave hoặc kết quả `list` đọc từ stdout (spec P2, mục 3.2).
+    Players(PlayerLogEvent),
 }
 
 pub(crate) enum Command {
