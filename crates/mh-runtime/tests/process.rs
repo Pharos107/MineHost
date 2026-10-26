@@ -65,6 +65,29 @@ async fn vietnamese_survives_the_pipe() {
     read_until(&mut proc, "[Server] Đã vào được server ạ").await;
 }
 
+/// Đúng dòng lệnh MineHost dùng để bật server: cờ JVM bị bỏ qua, `Done` / `list` / `stop` vẫn chạy.
+#[tokio::test]
+async fn java_flags_are_ignored_and_list_reports_nobody() {
+    let rt = ProcessRuntime::new().unwrap();
+    let mut proc = rt
+        .spawn(fake_mc(&[
+            "-Xms512M",
+            "-Xmx1024M",
+            "-Dfile.encoding=UTF-8",
+            "-jar",
+            "server.jar",
+            "--nogui",
+        ]))
+        .await
+        .unwrap();
+    read_until(&mut proc, "Done (").await;
+    proc.control.send_line("list").await.unwrap();
+    read_until(&mut proc, "There are 0 of a max of 20 players online:").await;
+    proc.control.send_line("stop").await.unwrap();
+    read_until(&mut proc, "Stopping server").await;
+    assert_eq!(exit_code(proc).await, Some(0));
+}
+
 #[tokio::test]
 async fn stderr_is_merged_and_tagged() {
     let rt = ProcessRuntime::new().unwrap();

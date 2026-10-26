@@ -1,5 +1,8 @@
 //! Server Minecraft giả cho test: in log giống Paper và đọc lệnh từ stdin. Không cần Java.
 //!
+//! Được gọi đúng như Java (`-Xms`, `-Xmx`, `-D…`, `-jar server.jar`, `--nogui`): những cờ đó
+//! không có ý nghĩa ở đây và bị bỏ qua. Thư mục làm việc là thư mục server, giống process thật.
+//!
 //! Cờ:
 //! - `--no-done`: không bao giờ in dòng `Done (…)!`.
 //! - `--hang-on-stop`: bỏ qua lệnh `stop`, giống server bị treo khi lưu world.
@@ -8,7 +11,8 @@
 //! - `--hang-on-save-all` (hoặc `MINEHOST_FAKE_SAVE_ALL_HANG=1`): `save-all flush` không in
 //!   dòng `Saved the game`, để test thời hạn chờ khi sao lưu.
 //!
-//! Lệnh stdin: `save-off`, `save-all flush`, `save-on` (sao lưu); cho test người chơi: `list`,
+//! Lệnh stdin: `stop` thoát, `say …` in lại nội dung; `save-off`, `save-all flush`, `save-on`
+//! (sao lưu); cho test người chơi: `list`,
 //! `fake-join <tên>`, `fake-leave <tên>`.
 
 // Đây là chương trình dòng lệnh, in ra stdout/stderr là việc chính của nó.

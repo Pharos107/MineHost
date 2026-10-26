@@ -285,7 +285,11 @@
     "JOB_CANCELLED": "Đã hủy.",
     "SERVER_CRASHED": "Server bị dừng đột ngột.",
     "FORBIDDEN": "Yêu cầu bị từ chối vì không đến từ giao diện MineHost trên máy này.",
-    "UNSUPPORTED_BY_VERSION": "Phiên bản Minecraft này không hỗ trợ thao tác này."
+    "UNSUPPORTED_BY_VERSION": "Phiên bản Minecraft này không hỗ trợ thao tác này.",
+    "FILE_TOO_LARGE": "File lớn hơn mức cho phép.",
+    "FILE_NOT_TEXT": "File này không phải văn bản UTF-8.",
+    "FILE_CHANGED": "File đã đổi kể từ lúc mở. Hãy tải lại bản mới.",
+    "FILE_EXISTS": "Đã có file hoặc thư mục trùng tên."
   },
   "jobsPage": {
     "description": "Việc MineHost đang làm hoặc vừa làm xong, như tạo server hay sao lưu.",
@@ -311,6 +315,28 @@
       "failed": "Lỗi",
       "cancelled": "Đã hủy"
     }
+  },
+  "overview": {
+    "cpu": "CPU",
+    "cpuHint": "trên toàn máy",
+    "memory": "RAM",
+    "memoryOf": "trên {{max}} đã đặt",
+    "uptime": "Thời gian chạy",
+    "disk": "Dung lượng",
+    "diskPending": "Đang tính…",
+    "cpuChart": "CPU trong 1 giờ qua",
+    "memoryChart": "RAM trong 1 giờ qua",
+    "offline": "Server đang tắt. Bật server để xem CPU và RAM."
+  },
+  "duration": {
+    "days_one": "{{count}} ngày",
+    "days_other": "{{count}} ngày",
+    "hours_one": "{{count}} giờ",
+    "hours_other": "{{count}} giờ",
+    "minutes_one": "{{count}} phút",
+    "minutes_other": "{{count}} phút",
+    "seconds_one": "{{count}} giây",
+    "seconds_other": "{{count}} giây"
   },
   "home": {
     "running": "Server đang chạy",
