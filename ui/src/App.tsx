@@ -5,6 +5,7 @@ import { useServersLive } from "./api/live";
 import { SidebarLayout, TopLayout } from "./components/AppLayout";
 import { ComingSoon } from "./components/ComingSoon";
 import { CreateServerPage } from "./pages/create/CreateServerPage";
+import { JobsPage } from "./pages/jobs/JobsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ServerListPage } from "./pages/ServerListPage";
 import { ConsoleRoute, GameSettingsRoute, ServerComingSoon, ServerSettingsRoute } from "./pages/server/routes";
@@ -28,7 +29,7 @@ export function AppRoutes() {
         {/* Trang chủ thật làm ở PR-04; tới lúc đó `/` vẫn là danh sách server. */}
         <Route path="/" element={<ServerListPage />} />
         <Route path="/servers" element={<ServerListPage />} />
-        <Route path="/jobs" element={<ComingSoon title={t("nav.jobs")} />} />
+        <Route path="/jobs" element={<JobsPage />} />
         <Route path="/settings" element={<ComingSoon title={t("nav.settings")} />} />
         <Route path="/servers/:id" element={<ServerLayout />}>
           <Route index element={<ServerComingSoon />} />
