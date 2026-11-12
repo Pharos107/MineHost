@@ -272,6 +272,7 @@
     "INTERNAL": "Something went wrong. See the MineHost log file for details.",
     "NETWORK": "Cannot reach MineHost. Check that MineHost is still running.",
     "NOT_FOUND": "Not found.",
+    "PLAYER_NOT_FOUND": "No Minecraft account has this name.",
     "INVALID_INPUT": "Invalid input.",
     "PATH_OUTSIDE_ROOT": "The path is outside the allowed folder.",
     "PORT_IN_USE": "Port {{port}} is used by another program.",

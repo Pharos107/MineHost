@@ -12,6 +12,7 @@
 
 mod error;
 mod players;
+mod world;
 
 use std::fs;
 use std::io;
@@ -26,6 +27,7 @@ pub use error::StoreError;
 pub use players::{
     BanEntry, JsonExtra, OpEntry, PlayerFiles, PlayerRef, UserCacheEntry, WhitelistEntry,
 };
+pub use world::world_spawn;
 
 const INSTANCE_FILE: &str = "instance.toml";
 const RUNNING_MARKER: &str = ".running";

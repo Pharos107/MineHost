@@ -13,6 +13,8 @@ pub enum ErrorCode {
     /// Lỗi không lường trước; chi tiết chỉ nằm trong log.
     Internal,
     NotFound,
+    /// Không có tài khoản Minecraft đúng tên này trên Mojang (server bật online-mode).
+    PlayerNotFound,
     InvalidInput,
     /// Đường dẫn do người dùng gửi lên trỏ ra ngoài thư mục được phép.
     PathOutsideRoot,
@@ -67,6 +69,7 @@ impl ErrorCode {
         match self {
             Self::Internal => "INTERNAL",
             Self::NotFound => "NOT_FOUND",
+            Self::PlayerNotFound => "PLAYER_NOT_FOUND",
             Self::InvalidInput => "INVALID_INPUT",
             Self::PathOutsideRoot => "PATH_OUTSIDE_ROOT",
             Self::PortInUse => "PORT_IN_USE",
@@ -128,9 +131,10 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 29] = [
+    const ALL: [ErrorCode; 30] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
+        ErrorCode::PlayerNotFound,
         ErrorCode::InvalidInput,
         ErrorCode::PathOutsideRoot,
         ErrorCode::PortInUse,

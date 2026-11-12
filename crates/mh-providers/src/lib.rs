@@ -8,5 +8,5 @@ pub mod mojang;
 pub mod paper;
 
 pub use error::ProviderError;
-pub use mojang::{Mojang, Release, ServerJar, VersionDetail};
+pub use mojang::{Mojang, Profile, Release, ServerJar, VersionDetail};
 pub use paper::{LaunchRecipe, Paper, PaperBuild};

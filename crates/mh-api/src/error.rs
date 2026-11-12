@@ -63,7 +63,9 @@ impl ApiError {
 /// `PASSWORD_TOO_SHORT` là 400, `LAN_NEEDS_PASSWORD` là 409 (spec P2, mục 4.5).
 fn status_for(code: ErrorCode) -> StatusCode {
     match code {
-        ErrorCode::NotFound | ErrorCode::VersionNotFound => StatusCode::NOT_FOUND,
+        ErrorCode::NotFound | ErrorCode::VersionNotFound | ErrorCode::PlayerNotFound => {
+            StatusCode::NOT_FOUND
+        }
         ErrorCode::InvalidInput | ErrorCode::PathOutsideRoot | ErrorCode::PasswordTooShort => {
             StatusCode::BAD_REQUEST
         }
@@ -183,6 +185,7 @@ mod tests {
             status_for(ErrorCode::VersionNotFound),
             StatusCode::NOT_FOUND
         );
+        assert_eq!(status_for(ErrorCode::PlayerNotFound), StatusCode::NOT_FOUND);
         assert_eq!(
             status_for(ErrorCode::AuthRequired),
             StatusCode::UNAUTHORIZED
