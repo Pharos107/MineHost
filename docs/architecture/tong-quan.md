@@ -81,10 +81,10 @@ hạn RAM hay CPU. Linux không dùng cgroup. Hệ quả về bảo mật: [bao-
 | Lưu trữ | File trên đĩa. Không có SQLite ([ADR 0004](../adr/0004-chua-dung-sqlite.md)) |
 | Job | Trong RAM, giữ 50 Job gần nhất; mất khi controller tắt |
 | Chỉ số | CPU, RAM, số người chơi; lấy mẫu mỗi 5 giây, giữ 1 giờ trong RAM |
-| Tệp | Dịch vụ và route đã có; giao diện đang ở PR mở |
-| Sao lưu | Nén, giải nén và Job sao lưu đã có; khôi phục, lịch, route, giao diện chưa merge |
-| Người chơi | Phân tích log, file JSON, sự kiện đã có; API và giao diện chưa có |
-| Đăng nhập, LAN | Chưa merge. Hiện chỉ lắng nghe `127.0.0.1`, không có mật khẩu |
+| Tệp | Dịch vụ, route và trang Tệp (kèm trình sửa) đã có |
+| Sao lưu | Nén, giải nén, Job sao lưu và Job khôi phục đã có; lịch, route, giao diện chưa có |
+| Người chơi | Phân tích log, file JSON, sự kiện, hồ sơ Mojang, skin, điểm spawn đã có; API và giao diện chưa có |
+| Đăng nhập, LAN | Lưu mật khẩu admin (`auth.toml`, argon2id) đã có; phiên, CSRF, listener LAN chưa merge. Hiện chỉ lắng nghe `127.0.0.1` và API chưa đòi đăng nhập |
 | Chạy như service | Chưa có (P4). Cách tạm cho Linux: [ops/linux-systemd.md](../ops/linux-systemd.md) |
 
 ## Chỗ lệch với spec gốc

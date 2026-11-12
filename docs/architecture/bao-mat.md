@@ -1,7 +1,7 @@
 # Bảo mật: mô hình mối đe dọa
 
-- Khớp code tới: 2026-11-11 (`origin/main` ở `6a03ff8`). Phần đăng nhập và LAN mô tả theo spec P2 vì
-  chưa merge.
+- Khớp code tới: 2026-11-12 (sau khi merge #44). Đã có lưu mật khẩu admin; phiên, CSRF và LAN mô tả
+  theo spec P2 vì chưa merge.
 - Lỗ hổng đã biết được đánh số theo [rà soát 2026-11-11](../ra-soat/2026-11-11-kien-truc.md).
 
 ## Cần bảo vệ gì
