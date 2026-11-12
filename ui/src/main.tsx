@@ -11,6 +11,9 @@ import "@fontsource/be-vietnam-pro/700.css";
 import { App } from "./App";
 import "./i18n";
 import "./ui/base.css";
+import { initTheme } from "./ui/theme";
+
+initTheme();
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },

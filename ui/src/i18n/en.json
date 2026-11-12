@@ -1,7 +1,9 @@
 {
   "app": {
     "tagline": "Host a Minecraft server for your friends, no command line needed.",
-    "language": "Language"
+    "language": "Language",
+    "themeToLight": "Switch to light theme",
+    "themeToDark": "Switch to dark theme"
   },
   "nav": {
     "label": "Main navigation",

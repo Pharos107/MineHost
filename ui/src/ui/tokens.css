@@ -61,9 +61,12 @@
   --mh-shadow-md: 0 8px 24px rgb(28 32 25 / 0.14);
 }
 
-/* "Đá và cỏ", bản tối: nền đá ấm (không đen tuyền), nhấn xanh cỏ, đỏ redstone cho lỗi. */
+/* "Đá và cỏ", bản tối: nền đá ấm (không đen tuyền), nhấn xanh cỏ, đỏ redstone cho lỗi.
+ * Hai khối dưới giống hệt nhau: một theo hệ điều hành (khi người dùng chưa chọn "Sáng"), một khi
+ * người dùng chọn "Tối" bằng nút đổi giao diện (`data-theme` trên thẻ html). CSS không gộp được
+ * media query với selector, nên đổi màu tối thì sửa cả hai. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
 
     --mh-bg: #1e1d1a;
@@ -89,6 +92,33 @@
 
     --mh-shadow-md: 0 12px 32px rgb(0 0 0 / 0.4);
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --mh-bg: #1e1d1a;
+  --mh-surface: #262521;
+  --mh-surface-raised: #2f2d29;
+  --mh-surface-hover: #383631;
+  --mh-input-bg: #1b1a17;
+  --mh-border: #3b3933;
+  --mh-border-strong: #5c584e;
+  --mh-text: #ece8df;
+  --mh-text-muted: #a8a294;
+
+  --mh-primary: #8cc85a;
+  --mh-primary-hover: #a4d978;
+  --mh-on-primary: #15230b;
+  --mh-focus: #a4d978;
+
+  --mh-success: #6cc27a;
+  --mh-warning: #e9a840;
+  --mh-danger: #ee6a5a;
+  --mh-on-danger: #2a0905;
+  --mh-info: #79abe0;
+
+  --mh-shadow-md: 0 12px 32px rgb(0 0 0 / 0.4);
 }
 
 /* Nền nhạt cho từng trạng thái, tự theo bảng màu đang dùng. */

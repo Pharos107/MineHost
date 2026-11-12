@@ -1,7 +1,9 @@
 {
   "app": {
     "tagline": "Host server Minecraft cho bạn bè, không cần biết dòng lệnh.",
-    "language": "Ngôn ngữ"
+    "language": "Ngôn ngữ",
+    "themeToLight": "Chuyển sang giao diện sáng",
+    "themeToDark": "Chuyển sang giao diện tối"
   },
   "nav": {
     "label": "Điều hướng chính",

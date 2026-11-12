@@ -24,11 +24,13 @@ import { AppShell, NavItem, NavSection } from "../ui";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { LogoutButton } from "./LogoutButton";
 import { QuitButton } from "./QuitButton";
+import { ThemeSwitch } from "./ThemeSwitch";
 
 function ShellControls() {
   return (
     <>
       <LanguageSwitch />
+      <ThemeSwitch />
       <LogoutButton />
       <QuitButton />
     </>
@@ -56,7 +58,18 @@ export function SidebarLayout() {
 
 /** Khung chỉ có thanh trên và nút đổi ngôn ngữ, cho trang Đăng nhập: chưa đăng nhập thì chưa thoát được. */
 export function BareLayout({ children }: { children: ReactNode }) {
-  return <AppShell actions={<LanguageSwitch />}>{children}</AppShell>;
+  return (
+    <AppShell
+      actions={
+        <>
+          <LanguageSwitch />
+          <ThemeSwitch />
+        </>
+      }
+    >
+      {children}
+    </AppShell>
+  );
 }
 
 /** Khung không có thanh bên, cho wizard tạo server. */

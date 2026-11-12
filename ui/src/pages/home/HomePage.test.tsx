@@ -56,11 +56,11 @@ afterEach(() => {
 });
 
 describe("HomePage", () => {
-  it("mỗi server một thẻ, server đang chạy lên trước; dải số liệu máy ở dưới", async () => {
+  it("dải số liệu máy ở trên; mỗi server một thẻ, server đang chạy lên trước", async () => {
     renderPage([server({ id: "B", name: "Creative", state: "stopped", port: 25566 }), server({ id: "A", name: "Survival" })]);
     expect(await screen.findByText("1 trên 2 server đang chạy.")).toBeTruthy();
-    const titles = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-    expect(titles.slice(0, 2)).toEqual(["Survival", "Creative"]);
+    const titles = screen.getAllByRole("article").map((card) => within(card).getByRole("heading", { level: 2 }).textContent);
+    expect(titles).toEqual(["Survival", "Creative"]);
     expect(screen.getByText("192.168.1.5:25565")).toBeTruthy();
     // Thẻ server đang chạy hiện ai đang online.
     expect(await screen.findByRole("group", { name: "Steve" })).toBeTruthy();

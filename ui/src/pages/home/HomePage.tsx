@@ -56,6 +56,7 @@ export function HomePage() {
         }
       />
       <Stack gap={6}>
+        <Machine servers={list} />
         {servers.isPending ? (
           <Spinner label={t("ui.loading")} />
         ) : (
@@ -65,7 +66,6 @@ export function HomePage() {
             ))}
           </ServerCardGrid>
         )}
-        <Machine servers={list} />
         <RecentActivity />
       </Stack>
     </>

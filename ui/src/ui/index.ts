@@ -33,3 +33,4 @@ export { Switch } from "./Switch";
 export { Tabs, type TabItem } from "./Tabs";
 export { filterRows } from "./table-utils";
 export { Terminal, type TerminalHandle, type TerminalTone } from "./Terminal";
+export { initTheme, useTheme, type Theme } from "./theme";
