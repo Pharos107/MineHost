@@ -205,3 +205,24 @@ fn auth_file_mode_is_600() {
     let mode = fs::metadata(&store.path).unwrap().permissions().mode() & 0o777;
     assert_eq!(mode, 0o600);
 }
+
+#[test]
+fn reset_file_unlocks_a_running_store_even_if_corrupt() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dirs = DataDirs::resolve(Some(tmp.path().to_path_buf())).unwrap();
+    let store = AuthStore::open(&dirs).unwrap();
+    store.set_password(None, PASSWORD).unwrap();
+    store.set_lan(true).unwrap();
+
+    // Process khác (lệnh `reset-password`) xóa file trong lúc store vẫn sống.
+    AuthStore::reset_file(&dirs).unwrap();
+    assert!(!store.password_set().unwrap());
+    assert!(!store.lan().unwrap());
+
+    fs::write(dirs.auth_file(), "@@@").unwrap();
+    assert!(AuthStore::open(&dirs).is_err());
+    AuthStore::reset_file(&dirs).unwrap();
+    assert!(!dirs.auth_file().exists());
+    // Không có file thì cũng không lỗi.
+    AuthStore::reset_file(&dirs).unwrap();
+}

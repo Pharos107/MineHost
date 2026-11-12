@@ -8,6 +8,9 @@
 //! - Body của request thay đổi dữ liệu phải là JSON, để form HTML của trang khác không gửi được.
 //!   Ngoại lệ duy nhất: `POST /api/v1/servers/{id}/files/upload` nhận `multipart/form-data`.
 //! - WebSocket cũng phải đúng `Origin`, vì trình duyệt không áp dụng same-origin cho WebSocket.
+//! - Từ P2: thêm `<ip-lan>:<cổng>` của các listener LAN đang mở (spec P2, mục 5.9).
+
+use std::sync::Arc;
 
 use axum::extract::{Request, State};
 use axum::http::{HeaderMap, Method, StatusCode, header};
@@ -16,53 +19,82 @@ use axum::response::{IntoResponse, Response};
 use mh_core::ErrorCode;
 
 use crate::ApiError;
+use crate::lan::LanState;
 
 pub const MINEHOST_HEADER: &str = "x-minehost";
+
+/// Đánh dấu request đi vào qua listener LAN. Middleware phiên dùng để chặn khi LAN đã tắt.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct ViaLan;
 
 #[derive(Debug, Clone)]
 pub struct LocalGuard {
     hosts: [String; 2],
     origins: [String; 2],
+    lan: Arc<LanState>,
 }
 
 impl LocalGuard {
     pub fn new(port: u16) -> Self {
+        Self::with_lan(port, LanState::new())
+    }
+
+    pub(crate) fn with_lan(port: u16, lan: Arc<LanState>) -> Self {
         Self {
             hosts: [format!("127.0.0.1:{port}"), format!("localhost:{port}")],
             origins: [
                 format!("http://127.0.0.1:{port}"),
                 format!("http://localhost:{port}"),
             ],
+            lan,
         }
     }
 
-    fn host_ok(&self, req: &Request) -> bool {
+    /// `Some(true)` khi `Host` là một listener LAN đang mở, `Some(false)` khi là localhost.
+    fn host_kind(&self, req: &Request) -> Option<bool> {
         // HTTP/2 đặt host trong `:authority` (axum đưa vào URI) thay vì header `Host`.
         let host = req
             .headers()
             .get(header::HOST)
             .and_then(|h| h.to_str().ok())
             .map(str::to_owned)
-            .or_else(|| req.uri().authority().map(|a| a.to_string()));
-        host.is_some_and(|h| self.hosts.contains(&h.to_ascii_lowercase()))
+            .or_else(|| req.uri().authority().map(|a| a.to_string()))?
+            .to_ascii_lowercase();
+        if self.hosts.contains(&host) {
+            Some(false)
+        } else {
+            self.lan.has_host(&host).then_some(true)
+        }
     }
 
     /// Có `Origin` thì phải đúng; không có thì phải có `X-MineHost: 1`.
     pub(crate) fn origin_ok(&self, headers: &HeaderMap) -> bool {
         match headers.get(header::ORIGIN).map(|o| o.to_str()) {
-            Some(Ok(origin)) => self.origins.contains(&origin.to_ascii_lowercase()),
+            Some(Ok(origin)) => self.origin_known(&origin.to_ascii_lowercase()),
             Some(Err(_)) => false,
             None => headers
                 .get(MINEHOST_HEADER)
                 .is_some_and(|v| v.as_bytes() == b"1"),
         }
     }
+
+    fn origin_known(&self, origin: &str) -> bool {
+        if self.origins.iter().any(|known| known == origin) {
+            return true;
+        }
+        origin
+            .strip_prefix("http://")
+            .is_some_and(|host| self.lan.has_host(host))
+    }
 }
 
-pub async fn check(State(guard): State<LocalGuard>, req: Request, next: Next) -> Response {
-    if !guard.host_ok(&req) {
+pub async fn check(State(guard): State<LocalGuard>, mut req: Request, next: Next) -> Response {
+    let Some(via_lan) = guard.host_kind(&req) else {
         tracing::warn!(host = ?req.headers().get(header::HOST), "chặn request có Host lạ");
         return forbidden("host");
+    };
+    if via_lan {
+        req.extensions_mut().insert(ViaLan);
     }
     let mutating = is_mutating(req.method());
     // WebSocket là GET nhưng mở kênh hai chiều (gửi được lệnh console), nên cũng phải đúng Origin.

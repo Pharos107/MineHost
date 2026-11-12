@@ -158,6 +158,13 @@ impl AuthStore {
         commit(&self.path, &mut inner, AuthRecord::default())
     }
 
+    /// Xóa `auth.toml` mà không đọc nó, để file hỏng cũng xóa được. Dùng cho
+    /// `minehost reset-password`, chạy ở process khác với controller. Controller đang chạy
+    /// thấy file biến mất ở lần đọc kế tiếp (xem mtime trong [`Self::password_set`]).
+    pub fn reset_file(dirs: &DataDirs) -> Result<(), AppError> {
+        remove_auth_file(&dirs.auth_file())
+    }
+
     fn record(&self) -> Result<AuthRecord, AppError> {
         let mut inner = lock(&self.inner);
         refresh(&self.path, &mut inner)

@@ -126,11 +126,29 @@ pub(super) async fn call(
     cookie: Option<&str>,
     csrf: Option<&str>,
 ) -> Reply {
+    call_at(router, HOST, method, uri, body, cookie, csrf).await
+}
+
+/// Như [`call`], với `Host` và `Origin` là `host`, ví dụ địa chỉ một listener LAN.
+pub(super) async fn call_at(
+    router: &axum::Router,
+    host: &str,
+    method: Method,
+    uri: &str,
+    body: Option<Value>,
+    cookie: Option<&str>,
+    csrf: Option<&str>,
+) -> Reply {
+    let origin = if host == HOST {
+        ORIGIN.to_owned()
+    } else {
+        format!("http://{host}")
+    };
     let mut builder = Request::builder()
         .method(method)
         .uri(uri)
-        .header(header::HOST, HOST)
-        .header(header::ORIGIN, ORIGIN);
+        .header(header::HOST, host)
+        .header(header::ORIGIN, origin);
     if let Some(cookie) = cookie {
         builder = builder.header(header::COOKIE, cookie);
     }

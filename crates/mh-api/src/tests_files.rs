@@ -261,7 +261,12 @@ async fn assert_download(api: &TestApi, uri: &str, encoded_name: &str, body: &[u
 async fn upload_saves_files_and_drops_part_when_too_large() {
     let api = super::test_api();
     let id = api.create_server("A").await;
-    let router = crate::router_with(std::sync::Arc::clone(&api.app), super::PORT, 8);
+    let router = crate::router_with(
+        std::sync::Arc::clone(&api.app),
+        super::PORT,
+        8,
+        crate::LanState::new(),
+    );
     let uri = format!("/api/v1/servers/{id}/files/upload?path=");
 
     let (status, names) = post_form(
