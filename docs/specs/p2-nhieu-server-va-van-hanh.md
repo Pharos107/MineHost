@@ -1,6 +1,7 @@
 # Spec P2 — Nhiều server và vận hành hằng ngày
 
-- Trạng thái: đã duyệt, chưa bắt đầu code
+- Trạng thái: đã duyệt, đang làm. Tiến độ từng PR: [kế hoạch PR](p2-ke-hoach-pr.md#tiến-độ)
+  (cập nhật 2026-11-11). Vấn đề mở sau lần rà soát: mục 12.
 - Ngày: 2026-10-26
 - Spec gốc: "MineHost v2 — Spec kiến trúc (Rust)", phần Lộ trình P2
 - Kế hoạch PR: [p2-ke-hoach-pr.md](p2-ke-hoach-pr.md)
@@ -470,3 +471,18 @@ hoặc `version.json` trong jar; không nhận ra thì cho chọn tay. Thư mụ
 4. P2 xong thì phát hành **`v0.3.0`**.
 5. Đồng ý các phần thêm: test Playwright với binary thật, chặn sửa và xóa `server.jar` khi server đang
    chạy, tải lên tối đa 512 MiB mỗi file, trình sửa file chỉ mở văn bản ≤ 1 MiB và không tô màu cú pháp.
+
+## 12. Vấn đề mở sau lần rà soát (2026-11-11)
+
+Chưa có quyết định. Chi tiết và bằng chứng nằm ở
+[rà soát kiến trúc 2026-11-11](../ra-soat/2026-11-11-kien-truc.md); mục này chỉ ghi những điểm chạm
+vào spec P2 để không bị quên trước khi phát hành `v0.3.0`.
+
+| Mục spec | Vấn đề | Cần quyết định |
+| --- | --- | --- |
+| 5.7 Khôi phục | Controller chết giữa hai lần đổi tên (`server/` → `.old-<ulid>/`, `.restore-<ulid>/` → `server/`) thì server không còn thư mục `server/` | **Đã có hướng xử lý trong PR [#47](https://github.com/Pharos107/MineHost/pull/47)**: lúc tạo `App` và khi reconcile, xóa `.restore-*`; thiếu `server/` thì trả `.old-*` mới nhất về `server/`. Khi #47 merge thì ghi bước này vào mục 5.7 và xóa dòng này |
+| 5.7 Khôi phục | Chỉ kiểm tra dung lượng trống trước khi tạo bản `before_restore`, không kiểm tra trước khi giải nén vào `.restore-<ulid>/`. Lúc đó trên đĩa có cùng lúc world cũ, bản backup mới và world giải nén, nên ổ có thể đầy giữa chừng | Kiểm tra dung lượng trống so với kích thước giải nén ước tính trước bước giải nén, thiếu thì trả `NOT_ENOUGH_DISK`. Thêm vào PR-22 (#47) hoặc một PR ngay sau |
+| 4.2 File mô tả backup | `instance.toml` không nằm trong `.tar.zst`, và `.json` không ghi RAM, cờ JVM, cổng. Khôi phục vào chính server đó thì không sao, nhưng người dùng tải backup về cất rồi cài lại máy sẽ mất cấu hình. Cũng ảnh hưởng PR-32 (nhập server) nếu sau này nhập từ file backup | Chép bản chụp `instance.toml` vào archive (khôi phục bỏ qua nó, chỉ dùng khi nhập), hay ghi các trường cấu hình vào `.json` |
+| 3.4 LAN chỉ có HTTP | Mật khẩu admin cho phép gửi lệnh console và tải plugin lên, tức là quyền chạy code trên máy host. Mật khẩu đó đi qua LAN dạng không mã hóa. Crafty Controller mặc định dùng HTTPS tự ký | Giữ như đã duyệt (chỉ cảnh báo), hay đưa TLS tự ký vào cùng PR-28 |
+| 5.7 Cảnh báo RAM | `memory_overcommit` cộng `max` (`-Xmx`) của các server. JVM còn dùng bộ nhớ ngoài heap nên con số thật cao hơn | Tính mỗi server là `max × 1,25 + 256 MB` (con số ước lượng, cần đo lại trong lần chạy 72 giờ), hoặc dùng RSS đo được với server đang chạy |
+| 1 Tiêu chí 72 giờ | Đo trên Linux, nhưng bản Linux chưa có cách chạy bền (đóng SSH là controller dừng) | Dùng unit systemd ở [ops/linux-systemd.md](../ops/linux-systemd.md) cho lần chạy dài |
