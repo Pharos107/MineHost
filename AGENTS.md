@@ -6,17 +6,24 @@ Windows và Linux, chạy server **trực tiếp bằng Java là mặc định**
 Spec đầy đủ: tài liệu "MineHost v2 — Spec kiến trúc (Rust)" trên Claude
 (https://claude.ai/artifact/Np2aG7LQ2r5SpNcuefRyEw). File này tóm những gì phải tuân theo khi code.
 
+Spec gốc đã lệch với code ở vài chỗ; danh sách chỗ lệch nằm ở
+[docs/architecture/tong-quan.md](docs/architecture/tong-quan.md). Khi hai bên khác nhau thì spec
+giai đoạn trong `docs/specs/` và ADR trong `docs/adr/` là bản đúng. Mục lục mọi tài liệu:
+[docs/README.md](docs/README.md).
+
 ## Giai đoạn hiện tại: P2 — Nhiều server, backup, quản lý
 
 - [Spec P2](docs/specs/p2-nhieu-server-va-van-hanh.md) (đã duyệt) và
-  [kế hoạch PR](docs/specs/p2-ke-hoach-pr.md): 34 PR, làm theo thứ tự nhóm A → I.
+  [kế hoạch PR](docs/specs/p2-ke-hoach-pr.md): 34 PR, làm theo thứ tự nhóm A → I. Tiến độ từng PR
+  ghi ở đầu kế hoạch PR; PR nào merge thì sửa bảng đó trong chính PR ấy.
 - Còn mở từ P1: lần thử tay 5 phút trên Windows mới cài
   ([kết quả thử tay](docs/specs/p1-ket-qua-thu-tay.md)). Lỗi tìm được ở đó sửa trước việc của P2.
 - P1 đã xong (v0.2.0): [spec](docs/specs/p1-mot-server-chay-duoc.md),
   [kế hoạch PR](docs/specs/p1-ke-hoach-pr.md). Quyết định từ P1 vẫn giữ: chưa dùng SQLite; chỉ dùng
   Java do MineHost tải; icon khay chỉ có trên Windows; xóa server là chuyển vào `trash/`.
 
-Chỉ làm việc thuộc giai đoạn hiện tại. Ý tưởng ngoài phạm vi ghi vào backlog, không code.
+Chỉ làm việc thuộc giai đoạn hiện tại. Ý tưởng ngoài phạm vi ghi vào
+[docs/backlog.md](docs/backlog.md), không code.
 
 | Giai đoạn | Nội dung | Xong khi |
 | --- | --- | --- |
@@ -40,8 +47,8 @@ Phụ thuộc chỉ đi từ trên xuống. Không thêm cạnh phụ thuộc n�
 | `mh-backup` | Snapshot, nén, khôi phục | `mh-core`, `mh-platform` |
 | `mh-providers` | Mojang, Paper, Fabric, Forge, NeoForge, Modrinth, CurseForge | `mh-net`, `mh-core`, `mh-platform` |
 | `mh-java` | Chọn và tải JRE | `mh-net`, `mh-core`, `mh-platform` |
-| `mh-runtime` | Chạy process/container. **Không biết gì về provider** | `mh-core`, `mh-platform` |
-| `mh-store` | `instance.toml`, SQLite | `mh-core`, `mh-platform` |
+| `mh-runtime` | Chạy process (container từ P4). **Không biết gì về provider** | `mh-core`, `mh-platform` |
+| `mh-store` | `instance.toml`, file người chơi của Minecraft (SQLite chưa dùng, ADR 0004) | `mh-core`, `mh-platform` |
 | `mh-net` | HTTP chung, retry, cache, kiểm tra hash | `mh-core` |
 | `mh-platform` | Thư mục theo OS, `SafePath`, ghi nguyên tử, thông tin máy | `mh-core` |
 | `mh-core` | Kiểu domain, mã lỗi. **Không I/O, không async, không phụ thuộc crate nội bộ** | — |
@@ -112,5 +119,10 @@ Khi phát triển UI: chạy controller như trên, rồi `cd ui && npm run dev`
 
 - Mỗi tính năng có spec ngắn trong `docs/specs/` trước khi code: vấn đề, hành vi, tiêu chí chấp nhận, không làm.
 - Mỗi PR một việc, khoảng 400 dòng trở xuống (không tính code sinh tự động). CI xanh mới merge.
+  CI hiện **chỉ chạy tay** (`workflow_dispatch`): trước khi merge phải tự chạy workflow CI trên nhánh
+  của PR và chờ xanh. Lớp test nào chạy khi nào: [docs/ops/kiem-thu-va-ci.md](docs/ops/kiem-thu-va-ci.md).
 - Commit theo Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`).
-- Quyết định kiến trúc quan trọng ghi thành ADR trong `docs/adr/`.
+- Quyết định kiến trúc quan trọng ghi thành ADR trong `docs/adr/` và thêm một dòng vào
+  [mục lục ADR](docs/adr/README.md).
+- Mỗi sự thật chỉ viết ở một nơi; tài liệu khác dẫn link tới đó. PR đổi hành vi thì sửa luôn tài liệu
+  mô tả hành vi ấy.

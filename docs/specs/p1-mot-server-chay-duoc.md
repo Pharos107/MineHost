@@ -243,6 +243,9 @@ Test bằng fixture JSON ghi từ API thật vào `crates/mh-providers/fixtures/
   qua `SafeRoot` (chặn zip-slip), bỏ thư mục gốc `jdk-21.0.x-jre/`, chạy thử `java -version`,
   rồi `rename` thành `java/<major>/`. Lỗi giữa chừng thì xóa thư mục tạm.
 - Hai server cùng cần Java 21 thì chỉ tải một lần (khóa theo `major` bằng `tokio::sync::Mutex`).
+- **Lỗi đã biết (2026-11-11):** Minecraft 1.17 và 1.17.1 cần Java 16, nhưng Adoptium không phát hành
+  JRE cho Java 16 (chỉ có JDK), nên API trên trả danh sách rỗng và Job tạo server dừng ở
+  `JAVA_INSTALL_FAILED`. Chưa sửa; xem [rà soát 2026-11-11](../ra-soat/2026-11-11-kien-truc.md), mục B1.
 
 ### 5.5 `mh-runtime` (chỉ `ProcessRuntime`)
 

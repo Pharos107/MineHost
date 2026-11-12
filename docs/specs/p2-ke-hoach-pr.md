@@ -7,6 +7,39 @@ có test, CI xanh mới merge.
 Thứ tự theo yêu cầu "giao diện trước": làm khung thanh bên trước, rồi lần lượt từng trang kèm backend
 của nó. Phần còn lại của spec gốc (nhóm H) làm sau cùng.
 
+## Tiến độ
+
+Cập nhật 2026-11-11, theo `origin/main` ở commit `6a03ff8` và danh sách PR trên GitHub. PR nào merge
+thì sửa dòng của nó ở đây trong chính PR ấy.
+
+| PR kế hoạch | Việc | Trạng thái | PR GitHub |
+| --- | --- | --- | --- |
+| 01 | Thanh bên và router | Đã merge | [#27](https://github.com/Pharos107/MineHost/pull/27) |
+| 02 | Playwright với binary thật | Đã merge | [#39](https://github.com/Pharos107/MineHost/pull/39) |
+| 03 | API Job và thông tin máy | Đã merge | [#32](https://github.com/Pharos107/MineHost/pull/32) |
+| 04 | Trang chủ | Đã merge | [#38](https://github.com/Pharos107/MineHost/pull/38) |
+| 05 | Trang Máy chủ, trang Tác vụ | Đã merge | [#29](https://github.com/Pharos107/MineHost/pull/29), [#33](https://github.com/Pharos107/MineHost/pull/33) |
+| 06, 07 | Chỉ số server, REST và WebSocket | Đã merge (gộp một PR) | [#37](https://github.com/Pharos107/MineHost/pull/37) |
+| 08 | Trang Tổng quan | Đã merge | [#31](https://github.com/Pharos107/MineHost/pull/31), [#40](https://github.com/Pharos107/MineHost/pull/40) |
+| 09 | Console: lọc, tạm dừng, xóa | Đã merge | [#28](https://github.com/Pharos107/MineHost/pull/28) |
+| 10 | Dịch vụ tệp | Đã merge | [#35](https://github.com/Pharos107/MineHost/pull/35) |
+| 11 | Route tệp, tải lên, tải xuống | Đã merge | [#42](https://github.com/Pharos107/MineHost/pull/42) |
+| 12, 13 | Trang Tệp, sửa tệp | Đang mở (gộp một PR) | [#46](https://github.com/Pharos107/MineHost/pull/46) |
+| 14 | Phân tích log và lệnh người chơi | Đã merge | [#30](https://github.com/Pharos107/MineHost/pull/30) |
+| 15 | File người chơi, sự kiện người chơi | Đã merge | [#36](https://github.com/Pharos107/MineHost/pull/36) |
+| 16 | Hồ sơ Mojang, skin, điểm spawn | Đang mở | [#45](https://github.com/Pharos107/MineHost/pull/45) |
+| 17, 18, 19 | API và giao diện người chơi | Chưa bắt đầu | |
+| 20 | Nén và giải nén tar.zst | Đã merge | [#34](https://github.com/Pharos107/MineHost/pull/34) |
+| 21 | Job sao lưu | Đã merge | [#43](https://github.com/Pharos107/MineHost/pull/43) |
+| 22 | Job khôi phục | Đang mở | [#47](https://github.com/Pharos107/MineHost/pull/47) |
+| 23, 24, 25 | Lịch sao lưu, route, trang Sao lưu | Chưa bắt đầu | |
+| 26 | Mật khẩu admin (kèm ADR 0003) | Đang mở | [#44](https://github.com/Pharos107/MineHost/pull/44) |
+| 27 | Phiên đăng nhập và CSRF | Có nhánh `feat/api-auth` ở máy phát triển, chưa mở PR | |
+| 28, 29 | Listener LAN, trang Đăng nhập và Cài đặt | Chưa bắt đầu | |
+| 30, 31, 32 | Vanilla và Purpur, lịch khởi động lại, nhập server | Chưa bắt đầu | |
+| 33 | Fuzz `SafeRoot` và workflow hằng tuần | Một phần: có target `backup_restore` (từ [#34](https://github.com/Pharos107/MineHost/pull/34)); chưa có target `SafeRoot::join` và `fuzz.yml` | |
+| 34 | Chạy dài 72 giờ, phát hành `v0.3.0` | Chưa bắt đầu | |
+
 ## Thứ tự và phụ thuộc
 
 ```mermaid
