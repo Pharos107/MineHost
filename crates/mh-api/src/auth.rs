@@ -115,7 +115,9 @@ impl AuthGate {
         let token = random_token()?;
         let csrf = random_token()?;
         let now = SystemTime::now();
-        let expires_at = now.checked_add(SESSION_TTL).unwrap_or(SystemTime::UNIX_EPOCH);
+        let expires_at = now
+            .checked_add(SESSION_TTL)
+            .unwrap_or(SystemTime::UNIX_EPOCH);
         let mut sessions = lock(&self.sessions);
         // Phiên hết hạn chỉ bị xóa khi được dùng lại; dọn ở đây để bảng không phình qua nhiều tháng.
         sessions.retain(|_, session| session.expires_at > now);
