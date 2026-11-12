@@ -12,6 +12,7 @@ import { ServerListPage } from "./pages/ServerListPage";
 import { ConsoleRoute, GameSettingsRoute, ServerComingSoon, ServerSettingsRoute } from "./pages/server/routes";
 import { FileEditorPage } from "./pages/server/files/FileEditorPage";
 import { FilesPage } from "./pages/server/files/FilesPage";
+import { BackupsPage } from "./pages/server/backups/BackupsPage";
 import { OverviewPage } from "./pages/server/overview/OverviewPage";
 import { ServerLayout } from "./pages/server/ServerLayout";
 import { SettingsPage } from "./pages/settings/SettingsPage";
@@ -47,7 +48,7 @@ export function AppRoutes() {
           <Route path="files" element={<FilesPage />} />
           <Route path="files/edit" element={<FileEditorPage />} />
           <Route path="players" element={<ServerComingSoon />} />
-          <Route path="backups" element={<ServerComingSoon />} />
+          <Route path="backups" element={<BackupsPage />} />
           <Route path="game" element={<GameSettingsRoute />} />
           <Route path="settings" element={<ServerSettingsRoute />} />
         </Route>

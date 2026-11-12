@@ -55,6 +55,9 @@ Bạn bè không vào được:
 - **Thoát hẳn**: bấm **Thoát** trên thanh trên của giao diện, hoặc chuột phải icon ở khay → Thoát.
   MineHost gửi lệnh `stop` cho từng server để lưu world rồi mới tắt.
 - **Xóa server** chuyển thư mục server vào `trash/`; muốn lấy lại thì chép ngược vào `servers/`.
+- **Sao lưu** (mục **Sao lưu** của từng server): bấm **Sao lưu** bất cứ lúc nào, kể cả khi server đang
+  chạy, hoặc đặt lịch tự động. Khôi phục thì MineHost tắt server, sao lưu hiện trạng trước rồi mới thay
+  world. Bản sao lưu nằm trong `backups/`, cùng ổ với server: chép sang ổ khác nếu muốn an toàn hơn.
 - **Mật khẩu admin** (trang **Cài đặt**): chưa đặt thì ai mở được trình duyệt trên máy này đều dùng
   được MineHost. Đặt rồi thì mở MineHost, kể cả trên máy này, đều phải đăng nhập. Quên mật khẩu: chạy
   `minehost reset-password` trên máy đang chạy MineHost, hoặc chuột phải icon ở khay → **Đặt lại mật

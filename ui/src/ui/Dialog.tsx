@@ -83,6 +83,8 @@ interface ConfirmDialogProps {
   tone?: "primary" | "danger";
   /** Bắt gõ lại đúng chuỗi này (ví dụ tên server) mới cho xác nhận. */
   requireText?: string;
+  /** Bắt tích ô có nhãn này (ví dụ "Tôi hiểu") mới cho xác nhận. */
+  requireAck?: string;
   loading?: boolean;
 }
 
@@ -95,10 +97,11 @@ export function ConfirmDialog({ open, onCancel, title, ...rest }: ConfirmDialogP
   );
 }
 
-function ConfirmForm({ onCancel, onConfirm, children, confirmLabel, tone = "danger", requireText, loading }: Omit<ConfirmDialogProps, "open" | "title">) {
+function ConfirmForm({ onCancel, onConfirm, children, confirmLabel, tone = "danger", requireText, requireAck, loading }: Omit<ConfirmDialogProps, "open" | "title">) {
   const { t } = useTranslation();
   const [typed, setTyped] = useState("");
-  const allowed = requireText === undefined || typed === requireText;
+  const [acked, setAcked] = useState(false);
+  const allowed = (requireText === undefined || typed === requireText) && (requireAck === undefined || acked);
 
   return (
     <form
@@ -119,6 +122,12 @@ function ConfirmForm({ onCancel, onConfirm, children, confirmLabel, tone = "dang
               data-autofocus
             />
           </Field>
+        )}
+        {requireAck !== undefined && (
+          <label className={styles.ack}>
+            <input type="checkbox" checked={acked} onChange={(e) => setAcked(e.target.checked)} />
+            {requireAck}
+          </label>
         )}
       </DialogBody>
       <DialogFooter>

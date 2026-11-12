@@ -20,6 +20,10 @@ const ZSTD_LEVEL: i32 = 3;
 /// `logs/`, còn `logs-extra/` và `plugins/logs/` thì không (không so chuỗi con).
 pub const DEFAULT_EXCLUDE: &[&str] = &["logs/", "crash-reports/", "cache/"];
 
+/// Tên file bỏ qua ở mọi thư mục. Java giữ khóa trên `session.lock` của từng world khi server chạy;
+/// trên Windows đọc file đó lúc sao lưu server đang chạy là lỗi. Minecraft tự tạo lại file khi bật.
+const SKIP_FILE_NAMES: &[&str] = &["session.lock"];
+
 struct Item {
     rel: PathBuf,
     mode: u32,
@@ -282,6 +286,13 @@ fn parse_rules(exclude: &[&str]) -> Vec<Vec<String>> {
 }
 
 fn is_excluded(rel: &Path, rules: &[Vec<String>]) -> bool {
+    if rel
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| SKIP_FILE_NAMES.contains(&name))
+    {
+        return true;
+    }
     let comps = path_parts(rel);
     rules.iter().any(|rule| {
         comps.len() >= rule.len() && comps.iter().zip(rule).all(|(got, want)| got == want)

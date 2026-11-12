@@ -34,7 +34,7 @@ thì sửa dòng của nó ở đây trong chính PR ấy.
 | 22 | Job khôi phục | Đã merge | [#47](https://github.com/Pharos107/MineHost/pull/47) |
 | 23 | Lịch sao lưu và giữ lại | Đã merge | [#57](https://github.com/Pharos107/MineHost/pull/57) |
 | 24 | Route sao lưu | Đã merge | [#58](https://github.com/Pharos107/MineHost/pull/58) |
-| 25 | Trang Sao lưu | Chưa bắt đầu | |
+| 25 | Trang Sao lưu | Đã merge | [#59](https://github.com/Pharos107/MineHost/pull/59) |
 | 26 | Mật khẩu admin (kèm ADR 0003) | Đã merge | [#44](https://github.com/Pharos107/MineHost/pull/44) |
 | 27 | Phiên đăng nhập và CSRF | Đã merge | [#50](https://github.com/Pharos107/MineHost/pull/50) |
 | 28 | Listener LAN, `/settings/access`, đặt lại mật khẩu | Đã merge | [#51](https://github.com/Pharos107/MineHost/pull/51) |
