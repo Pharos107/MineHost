@@ -124,8 +124,7 @@ impl Mojang {
             Err(NetError::Status { status: 404, .. }) => return Err(ProviderError::NoSkin),
             Err(err) => return Err(err.into()),
         };
-        let skin_url = skin_url_from_profile(&body)?;
-        ensure_skin_origin(&skin_url, &self.skin_origin)?;
+        let skin_url = ensure_skin_origin(&skin_url_from_profile(&body)?, &self.skin_origin)?;
         let png = match self.http.get_bytes(&skin_url, SKIN_MAX).await {
             Ok(png) => png,
             Err(NetError::Status { status: 404, .. }) => return Err(ProviderError::NoSkin),
@@ -178,30 +177,34 @@ fn skin_url_from_profile(body: &[u8]) -> Result<String, ProviderError> {
         .ok_or(ProviderError::NoSkin)
 }
 
-/// So scheme, host và cổng. Không dùng `contains`: `textures.minecraft.net.evil.com` phải bị từ chối.
-fn ensure_skin_origin(skin_url: &str, allowed: &str) -> Result<(), ProviderError> {
-    if same_origin(skin_url, allowed) {
-        Ok(())
-    } else {
-        Err(ProviderError::invalid(
-            SOURCE,
-            format!("url skin không thuộc {SKIN_ORIGIN}"),
-        ))
-    }
+/// URL ảnh được phép tải, hoặc lỗi. So scheme, host và cổng; không dùng `contains`, vì
+/// `textures.minecraft.net.evil.com` phải bị từ chối.
+///
+/// Mojang ghi URL skin bằng `http://`, nên `http` đúng host (cổng mặc định) được nâng lên
+/// `https` của origin cho phép rồi mới tải.
+fn ensure_skin_origin(skin_url: &str, allowed: &str) -> Result<String, ProviderError> {
+    allowed_skin_url(skin_url, allowed).ok_or_else(|| {
+        ProviderError::invalid(SOURCE, format!("url skin không thuộc {SKIN_ORIGIN}"))
+    })
 }
 
-fn same_origin(candidate: &str, allowed: &str) -> bool {
-    let Ok(url) = Url::parse(candidate) else {
-        return false;
-    };
-    let Ok(allowed) = Url::parse(allowed) else {
-        return false;
-    };
-    url.username().is_empty()
-        && url.password().is_none()
-        && url.scheme() == allowed.scheme()
-        && url.host_str() == allowed.host_str()
-        && url.port_or_known_default() == allowed.port_or_known_default()
+fn allowed_skin_url(candidate: &str, allowed: &str) -> Option<String> {
+    let mut url = Url::parse(candidate).ok()?;
+    let allowed = Url::parse(allowed).ok()?;
+    if !url.username().is_empty() || url.password().is_some() {
+        return None;
+    }
+    if url.host_str() != allowed.host_str() {
+        return None;
+    }
+    let upgrade = url.scheme() == "http" && allowed.scheme() == "https";
+    if upgrade && url.port_or_known_default() == Some(80) {
+        url.set_scheme("https").ok()?;
+        url.set_port(None).ok()?;
+    }
+    let same = url.scheme() == allowed.scheme()
+        && url.port_or_known_default() == allowed.port_or_known_default();
+    same.then(|| url.to_string())
 }
 
 fn stale_or(path: &Path, err: NetError) -> Result<Vec<u8>, ProviderError> {
@@ -299,8 +302,28 @@ fn dashed_uuid(raw: &str) -> Result<String, ProviderError> {
 
 #[cfg(test)]
 mod tests {
-    use super::same_origin;
+    use super::allowed_skin_url;
     use crate::mojang::SKIN_ORIGIN;
+
+    fn same_origin(candidate: &str, allowed: &str) -> bool {
+        allowed_skin_url(candidate, allowed).is_some()
+    }
+
+    #[test]
+    fn mojang_http_skin_url_is_upgraded_to_https() {
+        // URL thật trong `textures` của sessionserver dùng `http://`.
+        assert_eq!(
+            allowed_skin_url("http://textures.minecraft.net/texture/abc", SKIN_ORIGIN).as_deref(),
+            Some("https://textures.minecraft.net/texture/abc")
+        );
+        assert_eq!(
+            allowed_skin_url(
+                "http://textures.minecraft.net:8080/texture/abc",
+                SKIN_ORIGIN
+            ),
+            None
+        );
+    }
 
     #[test]
     fn skin_url_matches_scheme_and_host_exactly() {
@@ -318,7 +341,7 @@ mod tests {
             allowed
         ));
         assert!(!same_origin(
-            "http://textures.minecraft.net/texture/abc",
+            "ftp://textures.minecraft.net/texture/abc",
             allowed
         ));
         assert!(!same_origin(
