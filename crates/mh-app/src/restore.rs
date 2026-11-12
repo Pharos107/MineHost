@@ -38,6 +38,20 @@ impl App {
         Ok(RestoreStarted { job_id })
     }
 
+    /// Mở file `.tar.zst` để tải xuống. Tên gợi ý cho trình duyệt là `<id backup>.tar.zst`.
+    pub async fn open_backup(
+        &self,
+        id: ServerId,
+        backup_id: &str,
+    ) -> Result<(String, tokio::fs::File), AppError> {
+        self.store.load(id)?;
+        let (meta, archive) = self.load_archive(id, backup_id)?;
+        let file = tokio::fs::File::open(&archive)
+            .await
+            .map_err(|err| io_at(&archive, err))?;
+        Ok((format!("{}.tar.zst", meta.id), file))
+    }
+
     fn load_archive(
         &self,
         id: ServerId,

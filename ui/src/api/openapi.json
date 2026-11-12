@@ -718,6 +718,297 @@
         }
       }
     },
+    "/api/v1/servers/{id}/backups": {
+      "get": {
+        "tags": [
+          "backups"
+        ],
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mới nhất trước",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BackupDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "operationId": "create",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBackupBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Job sao lưu đã chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStartedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/backups/{bid}": {
+      "delete": {
+        "tags": [
+          "backups"
+        ],
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Đã xóa"
+          },
+          "409": {
+            "description": "Bản đang được bảo vệ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "backups"
+        ],
+        "operationId": "patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchBackupBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/backups/{bid}/download": {
+      "get": {
+        "tags": [
+          "backups"
+        ],
+        "operationId": "download",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File .tar.zst"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/backups/{bid}/restore": {
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "operationId": "restore",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Job khôi phục đã chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStartedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thiếu xác nhận",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}/console": {
       "get": {
         "tags": [
@@ -1546,6 +1837,91 @@
           }
         }
       },
+      "BackupDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "created_at",
+          "size",
+          "minecraft",
+          "loader",
+          "protected"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "description": "RFC 3339."
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "description": "`manual`, `scheduled` hoặc `before_restore`."
+          },
+          "loader": {
+            "type": "string"
+          },
+          "minecraft": {
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "protected": {
+            "type": "boolean"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Kích thước file `.tar.zst`, byte.",
+            "minimum": 0
+          }
+        }
+      },
+      "BackupSettingsBody": {
+        "type": "object",
+        "properties": {
+          "keep": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "schedule": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "BackupSettingsDto": {
+        "type": "object",
+        "description": "Sao lưu tự động của một server (spec P2, mục 4.1).",
+        "required": [
+          "schedule",
+          "keep"
+        ],
+        "properties": {
+          "keep": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số bản tự động giữ lại, 1..100.",
+            "minimum": 0
+          },
+          "schedule": {
+            "type": "string",
+            "description": "`off`, `every_<n>h` (n từ 1 tới 168) hoặc `daily@HH:MM`."
+          }
+        }
+      },
       "CatalogVersionDto": {
         "type": "object",
         "required": [
@@ -1653,6 +2029,24 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "CreateBackupBody": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "protected": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Bản được bảo vệ không bị tự xóa và không xóa được cho tới khi bỏ bảo vệ."
           }
         }
       },
@@ -1971,6 +2365,19 @@
           }
         }
       },
+      "JobStartedDto": {
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "properties": {
+          "job_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
       "JobStateDto": {
         "type": "string",
         "enum": [
@@ -2070,6 +2477,24 @@
           }
         }
       },
+      "PatchBackupBody": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Chuỗi rỗng là xóa ghi chú."
+          },
+          "protected": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
       "PatchServerBody": {
         "type": "object",
         "properties": {
@@ -2077,6 +2502,17 @@
             "type": [
               "boolean",
               "null"
+            ]
+          },
+          "backup": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/BackupSettingsBody",
+                "description": "Lịch sao lưu tự động; trường nào thiếu thì giữ nguyên."
+              },
+              {
+                "type": "null"
+              }
             ]
           },
           "memory_mb": {
@@ -2206,6 +2642,18 @@
           }
         }
       },
+      "RestoreBody": {
+        "type": "object",
+        "required": [
+          "confirm"
+        ],
+        "properties": {
+          "confirm": {
+            "type": "boolean",
+            "description": "Phải là `true`: người dùng đã tích \"Tôi hiểu\" trong hộp thoại."
+          }
+        }
+      },
       "ServerDto": {
         "type": "object",
         "description": "Một server trong danh sách. Server đang cài hoặc bị hỏng chỉ có một phần thông tin.",
@@ -2221,6 +2669,16 @@
             "type": [
               "boolean",
               "null"
+            ]
+          },
+          "backup": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/BackupSettingsDto"
+              },
+              {
+                "type": "null"
+              }
             ]
           },
           "broken": {

@@ -262,7 +262,7 @@ impl FileEntryDto {
     }
 }
 
-async fn download_response(name: String, file: tokio::fs::File) -> ApiResult<Response> {
+pub(crate) async fn download_response(name: String, file: tokio::fs::File) -> ApiResult<Response> {
     let length = file.metadata().await.ok().map(|meta| meta.len());
     let mut response = Response::new(Body::from_stream(ReaderStream::new(file)));
     let headers = response.headers_mut();

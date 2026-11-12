@@ -244,6 +244,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/backups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put?: never;
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/backups/{bid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        patch: operations["patch"];
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/backups/{bid}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["download"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/backups/{bid}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}/console": {
         parameters: {
             query?: never;
@@ -453,6 +517,37 @@ export interface components {
              */
             lan_urls: string[];
         };
+        BackupDto: {
+            /** @description RFC 3339. */
+            created_at: string;
+            id: string;
+            /** @description `manual`, `scheduled` hoặc `before_restore`. */
+            kind: string;
+            loader: string;
+            minecraft: string;
+            note?: string | null;
+            protected: boolean;
+            /**
+             * Format: int64
+             * @description Kích thước file `.tar.zst`, byte.
+             */
+            size: number;
+        };
+        BackupSettingsBody: {
+            /** Format: int32 */
+            keep?: number | null;
+            schedule?: string | null;
+        };
+        /** @description Sao lưu tự động của một server (spec P2, mục 4.1). */
+        BackupSettingsDto: {
+            /**
+             * Format: int32
+             * @description Số bản tự động giữ lại, 1..100.
+             */
+            keep: number;
+            /** @description `off`, `every_<n>h` (n từ 1 tới 168) hoặc `daily@HH:MM`. */
+            schedule: string;
+        };
         CatalogVersionDto: {
             id: string;
             /**
@@ -484,6 +579,11 @@ export interface components {
             /** @description Ví dụ `NOT_ENOUGH_MEMORY`; không có nếu không đoán được nguyên nhân. */
             hint?: string | null;
             last_lines: string[];
+        };
+        CreateBackupBody: {
+            note?: string | null;
+            /** @description Bản được bảo vệ không bị tự xóa và không xóa được cho tới khi bỏ bảo vệ. */
+            protected?: boolean | null;
         };
         CreateServerBody: {
             /** @description P1 chỉ có `paper`. */
@@ -571,6 +671,10 @@ export interface components {
             started_at: string;
             state: components["schemas"]["JobStateDto"];
         };
+        JobStartedDto: {
+            /** Format: int64 */
+            job_id: number;
+        };
         /** @enum {string} */
         JobStateDto: "running" | "succeeded" | "failed" | "cancelled";
         LoginBody: {
@@ -602,8 +706,14 @@ export interface components {
             current?: string | null;
             new: string;
         };
+        PatchBackupBody: {
+            /** @description Chuỗi rỗng là xóa ghi chú. */
+            note?: string | null;
+            protected?: boolean | null;
+        };
         PatchServerBody: {
             autostart?: boolean | null;
+            backup?: components["schemas"]["BackupSettingsBody"] | null;
             memory_mb?: components["schemas"]["MemoryDto"] | null;
             name?: string | null;
             /** Format: int32 */
@@ -636,9 +746,14 @@ export interface components {
             from: string;
             to: string;
         };
+        RestoreBody: {
+            /** @description Phải là `true`: người dùng đã tích "Tôi hiểu" trong hộp thoại. */
+            confirm: boolean;
+        };
         /** @description Một server trong danh sách. Server đang cài hoặc bị hỏng chỉ có một phần thông tin. */
         ServerDto: {
             autostart?: boolean | null;
+            backup?: components["schemas"]["BackupSettingsDto"] | null;
             /** @description Lý do server hỏng, ví dụ `{ "kind": "newer_schema", "found": 2 }`. */
             broken?: Record<string, never> | null;
             /** Format: int32 */
@@ -1330,6 +1445,207 @@ export interface operations {
                 content?: never;
             };
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mới nhất trước */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupDto"][];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBackupBody"];
+            };
+        };
+        responses: {
+            /** @description Job sao lưu đã chạy */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStartedDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                bid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã xóa */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bản đang được bảo vệ */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                bid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchBackupBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                bid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File .tar.zst */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                bid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestoreBody"];
+            };
+        };
+        responses: {
+            /** @description Job khôi phục đã chạy */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStartedDto"];
+                };
+            };
+            /** @description Thiếu xác nhận */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
