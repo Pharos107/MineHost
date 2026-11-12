@@ -7,6 +7,8 @@ export type SystemInfo = components["schemas"]["SystemDto"];
 export type ServerState = components["schemas"]["StateDto"];
 export type Server = components["schemas"]["ServerDto"];
 export type Job = components["schemas"]["JobDto"];
+export type MetricSample = components["schemas"]["MetricSampleDto"];
+export type ServerMetrics = components["schemas"]["ServerMetricsDto"];
 export type JobProgress = components["schemas"]["ProgressDto"];
 export type CatalogVersion = components["schemas"]["CatalogVersionDto"];
 export type CreateServer = components["schemas"]["CreateServerBody"];
@@ -32,8 +34,13 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", path: string, body?: unknown): Promise<T> {
-  const headers: Record<string, string> = { Accept: "application/json" };
+export async function request<T>(
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+  path: string,
+  body?: unknown,
+  extraHeaders: Record<string, string> = {},
+): Promise<T> {
+  const headers: Record<string, string> = { Accept: "application/json", ...extraHeaders };
   if (body !== undefined) headers["Content-Type"] = "application/json";
   // Controller bắt request thay đổi dữ liệu phải có Origin của nó hoặc header này.
   if (method !== "GET") headers["X-MineHost"] = "1";
@@ -58,7 +65,7 @@ async function request<T>(method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", p
   return (text === "" ? undefined : JSON.parse(text)) as T;
 }
 
-function serverPath(id: string): string {
+export function serverPath(id: string): string {
   return `/servers/${encodeURIComponent(id)}`;
 }
 
@@ -76,6 +83,9 @@ export const api = {
   updateServer: (id: string, patch: ServerPatch) => request<Server>("PATCH", serverPath(id), patch),
   trashServer: (id: string, confirmName: string) =>
     request<Trashed>("DELETE", `${serverPath(id)}?confirm_name=${encodeURIComponent(confirmName)}`),
+  /** Chỉ số 1 giờ gần nhất; `since` (RFC 3339) có thì chỉ lấy mẫu sau thời điểm đó. */
+  metrics: (id: string, since?: string) =>
+    request<ServerMetrics>("GET", `${serverPath(id)}/metrics${since ? `?since=${encodeURIComponent(since)}` : ""}`),
   properties: (id: string) => request<{ properties: Property[] }>("GET", `${serverPath(id)}/properties`),
   saveProperties: (id: string, properties: Property[]) => request<void>("PUT", `${serverPath(id)}/properties`, { properties }),
   paperVersions: () => request<CatalogVersion[]>("GET", "/catalog/paper/versions"),

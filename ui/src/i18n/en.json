@@ -128,7 +128,13 @@
       "resolve_version": "Looking up version {{minecraft}}",
       "download_java": "Downloading Java {{major}}",
       "download_server": "Downloading Paper {{minecraft}}",
-      "prepare_files": "Preparing files"
+      "prepare_files": "Preparing files",
+      "save_world": "Saving the world",
+      "compress": "Compressing the backup",
+      "stop_server": "Stopping the server",
+      "before_restore": "Backing up the current world",
+      "unpack": "Unpacking the backup",
+      "swap": "Replacing the world"
     }
   },
   "server": {
@@ -266,6 +272,7 @@
     "INTERNAL": "Something went wrong. See the MineHost log file for details.",
     "NETWORK": "Cannot reach MineHost. Check that MineHost is still running.",
     "NOT_FOUND": "Not found.",
+    "PLAYER_NOT_FOUND": "No Minecraft account has this name.",
     "INVALID_INPUT": "Invalid input.",
     "PATH_OUTSIDE_ROOT": "The path is outside the allowed folder.",
     "PORT_IN_USE": "Port {{port}} is used by another program.",
@@ -286,7 +293,13 @@
     "AUTH_INVALID": "Incorrect password.",
     "AUTH_RATE_LIMITED": "Too many wrong passwords. Try again in {{retry_after_s}} seconds.",
     "PASSWORD_TOO_SHORT": "Password must be at least 8 characters.",
-    "LAN_NEEDS_PASSWORD": "Set a password before turning on LAN access."
+    "LAN_NEEDS_PASSWORD": "Set a password before turning on LAN access.",
+    "BACKUP_CORRUPT": "The backup is damaged or its checksum does not match.",
+    "FILE_TOO_LARGE": "The file is larger than allowed.",
+    "FILE_NOT_TEXT": "This file is not valid UTF-8 text.",
+    "FILE_CHANGED": "The file changed since it was opened. Reload the latest version.",
+    "FILE_EXISTS": "A file or folder with that name already exists.",
+    "BACKUP_PROTECTED": "This backup is protected. Remove the protection before deleting it."
   },
   "jobsPage": {
     "description": "What MineHost is doing or just finished, such as creating a server or making a backup.",
@@ -312,5 +325,77 @@
       "failed": "Failed",
       "cancelled": "Cancelled"
     }
+  },
+  "overview": {
+    "cpu": "CPU",
+    "cpuHint": "of the whole machine",
+    "memory": "RAM",
+    "memoryOf": "of {{max}} allowed",
+    "uptime": "Uptime",
+    "disk": "Disk usage",
+    "diskPending": "Calculating…",
+    "cpuChart": "CPU over the last hour",
+    "memoryChart": "RAM over the last hour",
+    "offline": "The server is stopped. Start it to see CPU and RAM."
+  },
+  "duration": {
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "hours_one": "{{count}} hour",
+    "hours_other": "{{count}} hours",
+    "minutes_one": "{{count}} minute",
+    "minutes_other": "{{count}} minutes",
+    "seconds_one": "{{count}} second",
+    "seconds_other": "{{count}} seconds"
+  },
+  "home": {
+    "running": "Servers running",
+    "jobs": "Tasks running",
+    "cpu": "Machine CPU",
+    "memory": "RAM in use",
+    "ofTotal": "of {{total}}",
+    "diskFree": "Free disk space",
+    "runningServers": "Running servers",
+    "noneRunning": "No servers are running."
+  },
+  "files": {
+    "path": "Path",
+    "root": "Server folder",
+    "table": "Files in folder",
+    "name": "Name",
+    "size": "Size",
+    "modified": "Modified",
+    "empty": "This folder is empty",
+    "newFile": "New file",
+    "newDir": "New folder",
+    "fileName": "File name",
+    "dirName": "Folder name",
+    "create": "Create",
+    "rename": "Rename",
+    "download": "Download",
+    "delete": "Delete",
+    "badName": "The name cannot contain / or \\",
+    "dialog": {
+      "file": "Create a new file",
+      "dir": "Create a new folder",
+      "rename": "Rename"
+    },
+    "deleteTitle": "Delete {{name}}?",
+    "deleteBody": "It is moved to MineHost's trash, so you can get it back later.",
+    "trashed": "Moved to trash",
+    "upload": "Upload files",
+    "uploadHint": "or drop files here, up to 512 MiB each",
+    "uploading": "Uploading {{names}}",
+    "uploaded_one": "Uploaded {{count}} file.",
+    "uploaded_other": "Uploaded {{count}} files.",
+    "back": "Back to folder",
+    "editorLabel": "Contents of {{path}}",
+    "save": "Save",
+    "saved": "Saved.",
+    "unsaved": "You have unsaved changes.",
+    "changedTitle": "The file changed somewhere else",
+    "changedBody": "Someone (or the server) edited this file after you opened it. Reloading discards your changes; copy them first if you need them.",
+    "reloadLatest": "Reload latest",
+    "copyMine": "Copy my changes"
   }
 }

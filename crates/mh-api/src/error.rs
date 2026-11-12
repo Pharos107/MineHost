@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use axum::Json;
-use axum::extract::rejection::JsonRejection;
 use axum::extract::{FromRequest, FromRequestParts, Path, Request};
 use axum::http::StatusCode;
 use axum::http::request::Parts;
@@ -64,7 +63,9 @@ impl ApiError {
 /// `PASSWORD_TOO_SHORT` là 400, `LAN_NEEDS_PASSWORD` là 409 (spec P2, mục 4.5).
 fn status_for(code: ErrorCode) -> StatusCode {
     match code {
-        ErrorCode::NotFound | ErrorCode::VersionNotFound => StatusCode::NOT_FOUND,
+        ErrorCode::NotFound | ErrorCode::VersionNotFound | ErrorCode::PlayerNotFound => {
+            StatusCode::NOT_FOUND
+        }
         ErrorCode::InvalidInput | ErrorCode::PathOutsideRoot | ErrorCode::PasswordTooShort => {
             StatusCode::BAD_REQUEST
         }
@@ -77,12 +78,19 @@ fn status_for(code: ErrorCode) -> StatusCode {
         | ErrorCode::JobCancelled
         | ErrorCode::ServerCrashed
         | ErrorCode::UnsupportedByVersion
-        | ErrorCode::LanNeedsPassword => StatusCode::CONFLICT,
+        | ErrorCode::LanNeedsPassword
+        | ErrorCode::BackupProtected => StatusCode::CONFLICT,
         ErrorCode::NetworkUnavailable | ErrorCode::DownloadFailed | ErrorCode::ChecksumMismatch => {
             StatusCode::BAD_GATEWAY
         }
         ErrorCode::NotEnoughDisk => StatusCode::INSUFFICIENT_STORAGE,
-        ErrorCode::ConfigInvalid => StatusCode::UNPROCESSABLE_ENTITY,
+        ErrorCode::ConfigInvalid | ErrorCode::BackupCorrupt => StatusCode::UNPROCESSABLE_ENTITY,
+        ErrorCode::FileTooLarge => StatusCode::PAYLOAD_TOO_LARGE,
+        // File nhị phân không đọc được như văn bản: đúng kiểu 415, không phải 400.
+        ErrorCode::FileNotText => StatusCode::UNSUPPORTED_MEDIA_TYPE,
+        // `If-Match` lệch là precondition HTTP (RFC 9110). 409 dành cho tên đã có.
+        ErrorCode::FileChanged => StatusCode::PRECONDITION_FAILED,
+        ErrorCode::FileExists => StatusCode::CONFLICT,
         _ => StatusCode::INTERNAL_SERVER_ERROR,
     }
 }
@@ -125,8 +133,11 @@ impl<S: Send + Sync, T: DeserializeOwned> FromRequest<S> for ApiJson<T> {
             Ok(Json(value)) => Ok(Self(value)),
             Err(rejection) => {
                 tracing::debug!(%rejection, "body JSON không hợp lệ");
-                let status = match rejection {
-                    JsonRejection::MissingJsonContentType(_) => StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                // 413 là giới hạn body mặc định của axum (2 MiB). Giữ mã này để khỏi
+                // lẫn với JSON sai cú pháp. Route upload nâng limit riêng.
+                let status = match rejection.status() {
+                    StatusCode::PAYLOAD_TOO_LARGE => StatusCode::PAYLOAD_TOO_LARGE,
+                    StatusCode::UNSUPPORTED_MEDIA_TYPE => StatusCode::UNSUPPORTED_MEDIA_TYPE,
                     _ => StatusCode::BAD_REQUEST,
                 };
                 Err(ApiError::new(status, ErrorCode::InvalidInput))
@@ -174,6 +185,7 @@ mod tests {
             status_for(ErrorCode::VersionNotFound),
             StatusCode::NOT_FOUND
         );
+        assert_eq!(status_for(ErrorCode::PlayerNotFound), StatusCode::NOT_FOUND);
         assert_eq!(
             status_for(ErrorCode::AuthRequired),
             StatusCode::UNAUTHORIZED
@@ -191,5 +203,23 @@ mod tests {
             status_for(ErrorCode::LanNeedsPassword),
             StatusCode::CONFLICT
         );
+        assert_eq!(
+            status_for(ErrorCode::FileTooLarge),
+            StatusCode::PAYLOAD_TOO_LARGE
+        );
+        assert_eq!(
+            status_for(ErrorCode::FileNotText),
+            StatusCode::UNSUPPORTED_MEDIA_TYPE
+        );
+        assert_eq!(
+            status_for(ErrorCode::FileChanged),
+            StatusCode::PRECONDITION_FAILED
+        );
+        assert_eq!(status_for(ErrorCode::FileExists), StatusCode::CONFLICT);
+        assert_eq!(
+            status_for(ErrorCode::BackupCorrupt),
+            StatusCode::UNPROCESSABLE_ENTITY
+        );
+        assert_eq!(status_for(ErrorCode::BackupProtected), StatusCode::CONFLICT);
     }
 }

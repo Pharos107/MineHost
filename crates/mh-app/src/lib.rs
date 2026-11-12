@@ -4,11 +4,17 @@
 //! ghép nhiều crate lại với nhau.
 
 mod auth;
+mod backup;
 mod create;
+#[cfg(feature = "e2e")]
+pub mod e2e;
 mod error;
+mod files;
 pub mod jobs;
 mod launcher;
 mod lifecycle;
+mod metrics;
+mod restore;
 mod servers;
 pub mod sources;
 
@@ -25,10 +31,14 @@ use mh_store::ServerStore;
 use mh_supervisor::SupervisorConfig;
 
 pub use auth::AuthStore;
+pub use backup::{BackupKind, BackupMeta, BackupRequest, BackupStarted};
 pub use create::{CreateRequest, Created};
 pub use error::AppError;
+pub use files::{FileEntry, FileKind, TEXT_LIMIT, TextFile};
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};
+pub use metrics::{MetricSample, MetricsConfig, MetricsEvent, ServerMetrics};
 pub use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
+pub use restore::RestoreStarted;
 pub use servers::{ServerView, SettingsPatch};
 pub use sources::{CatalogVersion, JavaSource, ServerCatalog};
 
@@ -49,6 +59,9 @@ pub struct AppDeps {
     pub free_space: FreeSpaceFn,
     pub total_memory_mb: u64,
     pub supervisor: SupervisorConfig,
+    /// Hạn chờ dòng `Saved the game` sau `save-all flush`. Mặc định 60 giây.
+    pub save_flush_timeout: Duration,
+    pub metrics: MetricsConfig,
 }
 
 impl std::fmt::Debug for AppDeps {
@@ -56,6 +69,7 @@ impl std::fmt::Debug for AppDeps {
         f.debug_struct("AppDeps")
             .field("total_memory_mb", &self.total_memory_mb)
             .field("supervisor", &self.supervisor)
+            .field("metrics", &self.metrics)
             .finish_non_exhaustive()
     }
 }
@@ -91,6 +105,9 @@ pub struct App {
     free_space: FreeSpaceFn,
     total_memory_mb: u64,
     supervisor_config: SupervisorConfig,
+    save_flush_timeout: Duration,
+    metrics_config: MetricsConfig,
+    metrics_hub: metrics::MetricsHub,
     shutdown: tokio::sync::Notify,
     events: tokio::sync::broadcast::Sender<AppEvent>,
 }
@@ -106,22 +123,27 @@ impl std::fmt::Debug for App {
 impl App {
     /// Dùng nguồn thật: Mojang, Paper, Adoptium. Phải gọi trong runtime tokio.
     pub fn new(dirs: DataDirs) -> Result<Self, AppError> {
-        let free_space: FreeSpaceFn = Arc::new(mh_platform::system::free_space);
+        let (port_free, free_space, total_memory_mb) = host_deps_parts();
         let http =
             HttpClient::new(NetConfig::new(dirs.cache()))?.with_free_space(Arc::clone(&free_space));
         let http = Arc::new(http);
         let deps = AppDeps {
             catalog: Arc::new(sources::OnlineCatalog::new(Arc::clone(&http))),
             java: Arc::new(JavaManager::new(http, dirs.java())),
-            port_free: Arc::new(port_is_free),
+            port_free,
             free_space,
-            total_memory_mb: mh_platform::system::total_memory_bytes() / (1024 * 1024),
+            total_memory_mb,
             supervisor: SupervisorConfig::default(),
+            save_flush_timeout: backup::DEFAULT_SAVE_FLUSH_TIMEOUT,
+            metrics: MetricsConfig::default(),
         };
         Self::with_deps(dirs, deps)
     }
 
     pub fn with_deps(dirs: DataDirs, deps: AppDeps) -> Result<Self, AppError> {
+        // File nén không có mô tả, hoặc thư mục đổi tên dở, là việc mất điện giữa chừng.
+        backup::sweep_incomplete(&dirs.backups());
+        restore::sweep_interrupted(&dirs.servers());
         // File hỏng thì không lên: coi là "chưa có mật khẩu" sẽ mở khóa API.
         let auth = AuthStore::open(&dirs)?;
         Ok(Self {
@@ -138,6 +160,9 @@ impl App {
             free_space: deps.free_space,
             total_memory_mb: deps.total_memory_mb,
             supervisor_config: deps.supervisor,
+            save_flush_timeout: deps.save_flush_timeout,
+            metrics_config: deps.metrics,
+            metrics_hub: metrics::MetricsHub::new(),
             shutdown: tokio::sync::Notify::new(),
             events: tokio::sync::broadcast::channel(256).0,
         })
@@ -195,8 +220,8 @@ impl App {
         self.shutdown.notified().await;
     }
 
-    /// Thời gian chờ một server dừng khi thoát MineHost: hạn `stop` cộng thêm một chút.
-    fn shutdown_timeout(&self) -> Duration {
+    /// Thời gian chờ một server dừng khi thoát MineHost hoặc khôi phục: hạn `stop` cộng thêm một chút.
+    pub(crate) fn shutdown_timeout(&self) -> Duration {
         self.supervisor_config.stop_timeout + Duration::from_secs(10)
     }
 }
@@ -204,6 +229,16 @@ impl App {
 fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     // Chỉ bị poison khi một luồng panic lúc đang giữ; dữ liệu bên trong vẫn dùng được.
     mutex.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// Cổng, dung lượng ổ và RAM của máy đang chạy. Catalog và Java do caller chọn,
+/// để chế độ e2e chỉ thay hai thứ đó và vẫn dùng probe thật.
+pub(crate) fn host_deps_parts() -> (PortProbe, FreeSpaceFn, u64) {
+    (
+        Arc::new(port_is_free),
+        Arc::new(mh_platform::system::free_space),
+        mh_platform::system::total_memory_bytes() / (1024 * 1024),
+    )
 }
 
 fn port_is_free(port: u16) -> bool {

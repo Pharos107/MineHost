@@ -56,16 +56,30 @@ pub struct Controller {
 
 impl Controller {
     pub fn start(dir: &DataDir) -> Self {
+        Self::spawn(dir, &[])
+    }
+
+    /// Giống [`Self::start`], thêm biến môi trường. Dùng cho `MINEHOST_E2E_JAVA`.
+    pub fn start_with_env(dir: &DataDir, extra: &[(&str, &Path)]) -> Self {
+        Self::spawn(dir, extra)
+    }
+
+    fn spawn(dir: &DataDir, extra: &[(&str, &Path)]) -> Self {
         // `runtime.json` còn lại sau khi test kill controller; xóa để không đọc nhầm địa chỉ cũ.
         let _ = std::fs::remove_file(dir.path().join("runtime.json"));
-        let child = Command::new(env!("CARGO_BIN_EXE_minehost"))
-            .arg("--data-dir")
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_minehost"));
+        cmd.arg("--data-dir")
             .arg(dir.path())
             .args(["--no-browser", "--no-tray"])
             .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()
-            .unwrap();
+            .stderr(Stdio::null());
+        // Bản `--features e2e` đổi sang nguồn giả khi biến này có mặt. Test Paper thật
+        // phải bỏ nó, kẻo kế thừa từ shell của người chạy.
+        cmd.env_remove("MINEHOST_E2E_JAVA");
+        for (key, value) in extra {
+            cmd.env(key, value);
+        }
+        let child = cmd.spawn().unwrap();
         let mut controller = Self {
             child: Some(child),
             url: String::new(),

@@ -1,7 +1,7 @@
 //! Kiểu dữ liệu của API. Tách khỏi kiểu bên trong để thay đổi ở tầng dưới không vô tình đổi API.
 
 use mh_app::jobs::{JobProgress, JobSnapshot, JobState};
-use mh_app::{CatalogVersion, ServerView};
+use mh_app::{CatalogVersion, MetricSample, ServerMetrics, ServerView};
 use mh_core::{ConsoleLine, ConsoleStream, ServerState};
 use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
@@ -328,5 +328,46 @@ fn progress_dto(p: JobProgress) -> ProgressDto {
         step_count: p.step_count,
         bytes_done: p.bytes_done,
         bytes_total: p.bytes_total,
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MetricSampleDto {
+    /// RFC 3339.
+    pub at: String,
+    pub cpu_percent: f32,
+    pub memory_bytes: u64,
+    /// `null` cho tới khi có theo dõi người chơi.
+    pub players: Option<u32>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ServerMetricsDto {
+    pub samples: Vec<MetricSampleDto>,
+    pub disk_bytes: Option<u64>,
+    /// RFC 3339. Có khi server đang ở trạng thái chạy.
+    pub running_since: Option<String>,
+}
+
+impl From<MetricSample> for MetricSampleDto {
+    fn from(sample: MetricSample) -> Self {
+        Self {
+            at: sample.at.format(&Rfc3339).unwrap_or_default(),
+            cpu_percent: sample.cpu_percent,
+            memory_bytes: sample.memory_bytes,
+            players: sample.players,
+        }
+    }
+}
+
+impl From<ServerMetrics> for ServerMetricsDto {
+    fn from(metrics: ServerMetrics) -> Self {
+        Self {
+            samples: metrics.samples.into_iter().map(Into::into).collect(),
+            disk_bytes: metrics.disk_bytes,
+            running_since: metrics
+                .running_since
+                .and_then(|at| at.format(&Rfc3339).ok()),
+        }
     }
 }

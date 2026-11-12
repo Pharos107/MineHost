@@ -13,6 +13,8 @@ pub enum ErrorCode {
     /// Lỗi không lường trước; chi tiết chỉ nằm trong log.
     Internal,
     NotFound,
+    /// Không có tài khoản Minecraft đúng tên này trên Mojang (server bật online-mode).
+    PlayerNotFound,
     InvalidInput,
     /// Đường dẫn do người dùng gửi lên trỏ ra ngoài thư mục được phép.
     PathOutsideRoot,
@@ -47,6 +49,18 @@ pub enum ErrorCode {
     PasswordTooShort,
     /// Bật LAN khi chưa đặt mật khẩu.
     LanNeedsPassword,
+    /// File văn bản hoặc bản tải lên vượt giới hạn kích thước.
+    FileTooLarge,
+    /// Không phải UTF-8 hợp lệ, hoặc có byte NUL.
+    FileNotText,
+    /// `If-Match` không khớp nội dung hiện trên đĩa.
+    FileChanged,
+    /// Tạo, tải lên hoặc đổi tên đè lên mục đã có.
+    FileExists,
+    /// Hash của file backup không khớp với file mô tả.
+    BackupCorrupt,
+    /// Bản backup đang được bảo vệ, không xóa được.
+    BackupProtected,
 }
 
 impl ErrorCode {
@@ -55,6 +69,7 @@ impl ErrorCode {
         match self {
             Self::Internal => "INTERNAL",
             Self::NotFound => "NOT_FOUND",
+            Self::PlayerNotFound => "PLAYER_NOT_FOUND",
             Self::InvalidInput => "INVALID_INPUT",
             Self::PathOutsideRoot => "PATH_OUTSIDE_ROOT",
             Self::PortInUse => "PORT_IN_USE",
@@ -76,6 +91,12 @@ impl ErrorCode {
             Self::AuthRateLimited => "AUTH_RATE_LIMITED",
             Self::PasswordTooShort => "PASSWORD_TOO_SHORT",
             Self::LanNeedsPassword => "LAN_NEEDS_PASSWORD",
+            Self::FileTooLarge => "FILE_TOO_LARGE",
+            Self::FileNotText => "FILE_NOT_TEXT",
+            Self::FileChanged => "FILE_CHANGED",
+            Self::FileExists => "FILE_EXISTS",
+            Self::BackupCorrupt => "BACKUP_CORRUPT",
+            Self::BackupProtected => "BACKUP_PROTECTED",
         }
     }
 }
@@ -110,9 +131,10 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 23] = [
+    const ALL: [ErrorCode; 30] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
+        ErrorCode::PlayerNotFound,
         ErrorCode::InvalidInput,
         ErrorCode::PathOutsideRoot,
         ErrorCode::PortInUse,
@@ -134,6 +156,12 @@ mod tests {
         ErrorCode::AuthRateLimited,
         ErrorCode::PasswordTooShort,
         ErrorCode::LanNeedsPassword,
+        ErrorCode::FileTooLarge,
+        ErrorCode::FileNotText,
+        ErrorCode::FileChanged,
+        ErrorCode::FileExists,
+        ErrorCode::BackupCorrupt,
+        ErrorCode::BackupProtected,
     ];
 
     #[test]

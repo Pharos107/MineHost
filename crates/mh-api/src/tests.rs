@@ -15,6 +15,9 @@ use mh_platform::DataDirs;
 use serde_json::{Value, json};
 use tower::ServiceExt;
 
+// Job, catalog, thoát và chỉ số tách sang file riêng để mỗi file dưới 500 dòng.
+mod jobs_metrics;
+
 const PORT: u16 = 7878;
 const HOST: &str = "127.0.0.1:7878";
 const ORIGIN: &str = "http://127.0.0.1:7878";
@@ -102,6 +105,8 @@ fn test_api() -> TestApi {
         free_space: Arc::new(|_| None),
         total_memory_mb: 8192,
         supervisor: mh_supervisor::SupervisorConfig::default(),
+        save_flush_timeout: Duration::from_secs(60),
+        metrics: mh_app::MetricsConfig::default(),
     };
     let app = Arc::new(App::with_deps(dirs, deps).unwrap());
     let router = crate::router(Arc::clone(&app), PORT);
@@ -424,58 +429,6 @@ async fn delete_needs_matching_name() {
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
-#[tokio::test]
-async fn jobs_and_catalog() {
-    let api = test_api();
-    let (status, versions) = api.get("/api/v1/catalog/paper/versions").await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(versions[0]["id"], "1.21.4");
-    assert_eq!(versions[0]["release_time"], "2024-12-03T10:12:00Z");
-    let (status, empty) = api.get("/api/v1/jobs").await;
-    assert_eq!((status, empty), (StatusCode::OK, json!([])));
-    let (status, err) = api.get("/api/v1/jobs?server_id=not-a-ulid").await;
-    assert_eq!(status, StatusCode::BAD_REQUEST);
-    assert_eq!(err["code"], "INVALID_INPUT");
-    let (status, _) = api.get("/api/v1/jobs/999").await;
-    assert_eq!(status, StatusCode::NOT_FOUND);
-    let (status, _) = api.post("/api/v1/jobs/999/cancel", None).await;
-    assert_eq!(status, StatusCode::NOT_FOUND);
-
-    let mk = |name: &str| json!({ "name": name, "loader": "paper", "minecraft": "1.21.4" });
-    let (_, first) = api.post("/api/v1/servers", Some(mk("A"))).await;
-    let (_, second) = api.post("/api/v1/servers", Some(mk("B"))).await;
-    let job = second["job_id"].as_u64().unwrap();
-    let (status, job_dto) = api.get(&format!("/api/v1/jobs/{job}")).await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(job_dto["kind"], "create_server");
-    assert!(job_dto["started_at"].as_str().unwrap().contains('T'));
-    assert!(job_dto.get("finished_at").is_some());
-
-    let (status, listed) = api.get("/api/v1/jobs").await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(listed[0]["id"], second["job_id"]);
-    assert_eq!(listed[1]["id"], first["job_id"]);
-    let id = first["server_id"].as_str().unwrap();
-    let (status, only) = api.get(&format!("/api/v1/jobs?server_id={id}")).await;
-    assert_eq!(status, StatusCode::OK);
-    assert!(
-        only.as_array()
-            .is_some_and(|rows| rows.len() == 1 && rows[0]["server_id"] == id)
-    );
-
-    let (status, _) = api.post(&format!("/api/v1/jobs/{job}/cancel"), None).await;
-    assert_eq!(status, StatusCode::NO_CONTENT);
-}
-
-#[tokio::test]
-async fn shutdown_route_signals_the_binary() {
-    let api = test_api();
-    let (status, _) = api.post("/api/v1/app/shutdown", None).await;
-    assert_eq!(status, StatusCode::ACCEPTED);
-    let signalled = tokio::time::timeout(Duration::from_secs(1), api.app.shutdown_requested());
-    assert!(signalled.await.is_ok());
-}
-
 #[test]
 fn openapi_lists_all_routes() {
     let spec = crate::openapi();
@@ -487,6 +440,7 @@ fn openapi_lists_all_routes() {
         "/api/v1/servers/{id}/eula",
         "/api/v1/servers/{id}/actions/{action}",
         "/api/v1/servers/{id}/console",
+        "/api/v1/servers/{id}/metrics",
         "/api/v1/servers/{id}/properties",
         "/api/v1/catalog/paper/versions",
         "/api/v1/jobs",
@@ -497,3 +451,6 @@ fn openapi_lists_all_routes() {
         assert!(spec.paths.paths.contains_key(path), "thiếu {path}");
     }
 }
+
+#[path = "tests_files.rs"]
+mod tests_files;

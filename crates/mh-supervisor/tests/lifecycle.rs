@@ -9,9 +9,12 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::Duration;
 
-use mh_core::{ConsoleStream, CrashHint, ErrorCode, ServerState};
+use mh_core::{ConsoleStream, CrashHint, ErrorCode, PlayerLogEvent, PlayerName, ServerState};
 use mh_runtime::{ProcessRuntime, ProcessSpec};
-use mh_supervisor::{LaunchError, Launcher, Status, SupervisorConfig, SupervisorHandle};
+use mh_supervisor::{
+    LaunchError, Launcher, Status, SupervisorConfig, SupervisorEvent, SupervisorHandle,
+};
+use tokio::sync::broadcast;
 
 const WAIT: Duration = Duration::from_secs(10);
 
@@ -103,10 +106,12 @@ async fn start_reaches_running_then_stop_reaches_stopped() {
     assert!(probe.marker.load(Ordering::SeqCst));
     let running = wait_state(&sup, ServerState::Running).await;
     assert!(running.pid.is_some());
+    assert!(running.running_since.is_some());
 
     sup.stop().await.unwrap();
     let stopped = wait_state(&sup, ServerState::Stopped).await;
     assert_eq!(stopped.pid, None);
+    assert_eq!(stopped.running_since, None);
     assert!(!probe.marker.load(Ordering::SeqCst));
     let texts: Vec<String> = sup
         .console()
@@ -275,6 +280,57 @@ async fn slow_start_warns_but_keeps_starting() {
 }
 
 #[tokio::test]
+async fn running_sends_list_and_join_is_a_player_event() {
+    let (sup, _) = supervisor(Setup::default());
+    let mut events = sup.subscribe();
+    sup.start().await.unwrap();
+    wait_state(&sup, ServerState::Running).await;
+
+    let listed = next_players(&mut events).await;
+    assert_eq!(
+        listed,
+        PlayerLogEvent::List {
+            online: 0,
+            max: 20,
+            names: vec![],
+        }
+    );
+    let console = sup.console().after(None);
+    assert!(
+        console.iter().any(|line| {
+            line.stream == ConsoleStream::Stdout && line.text.contains("players online:")
+        }),
+        "server phải trả lời lệnh list"
+    );
+    assert!(
+        !console
+            .iter()
+            .any(|line| line.stream == ConsoleStream::Stdin && line.text == "list"),
+        "lệnh list tự gửi không vào lịch sử lệnh"
+    );
+
+    sup.send("fake-join Steve").await.unwrap();
+    let joined = next_players(&mut events).await;
+    assert_eq!(
+        joined,
+        PlayerLogEvent::Joined(PlayerName::parse("Steve").unwrap())
+    );
+    sup.kill().await.unwrap();
+}
+
+async fn next_players(events: &mut broadcast::Receiver<SupervisorEvent>) -> PlayerLogEvent {
+    tokio::time::timeout(WAIT, async {
+        loop {
+            if let Ok(SupervisorEvent::Players(event)) = events.recv().await {
+                return event;
+            }
+        }
+    })
+    .await
+    .unwrap()
+}
+
+#[tokio::test]
 async fn restart_runs_the_server_again() {
     let (sup, probe) = supervisor(Setup::default());
     sup.start().await.unwrap();
@@ -324,4 +380,46 @@ async fn writes_console_log_file() {
     let text = std::fs::read_to_string(file.path()).unwrap();
     assert!(text.contains("Xin chào thế giới"), "{text}");
     assert!(text.contains("> stop"), "{text}");
+}
+
+#[tokio::test]
+async fn send_and_wait_matches_only_a_new_stdout_line() {
+    let (sup, _) = supervisor(Setup::default());
+    sup.start().await.unwrap();
+    wait_state(&sup, ServerState::Running).await;
+
+    sup.send_and_wait("save-all flush", "Saved the game", Duration::from_secs(2))
+        .await
+        .unwrap();
+
+    // Dòng "Starting minecraft" đã có từ lúc bật, không được tính là câu trả lời mới.
+    let err = sup
+        .send_and_wait("say ping", "Starting minecraft", Duration::from_millis(200))
+        .await
+        .unwrap_err();
+    let text = err.to_string();
+    assert!(text.contains("Starting minecraft"), "{text}");
+    sup.kill().await.unwrap();
+}
+
+#[tokio::test]
+async fn send_and_wait_times_out_when_save_all_never_answers() {
+    let (sup, _) = supervisor(Setup {
+        args: &["--hang-on-save-all"],
+        ..Setup::default()
+    });
+    sup.start().await.unwrap();
+    wait_state(&sup, ServerState::Running).await;
+    let err = sup
+        .send_and_wait(
+            "save-all flush",
+            "Saved the game",
+            Duration::from_millis(200),
+        )
+        .await
+        .unwrap_err();
+    let text = err.to_string();
+    assert!(text.contains("Saved the game"), "{text}");
+    assert!(text.contains("200ms"), "{text}");
+    sup.kill().await.unwrap();
 }

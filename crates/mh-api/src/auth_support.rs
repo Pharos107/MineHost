@@ -88,6 +88,7 @@ pub(super) fn api() -> Api {
         free_space: Arc::new(|_| None),
         total_memory_mb: 8192,
         supervisor: mh_supervisor::SupervisorConfig::default(),
+        metrics: mh_app::MetricsConfig::default(),
     };
     let app = Arc::new(App::with_deps(dirs, deps).unwrap());
     let router = crate::router(Arc::clone(&app), 7878);
@@ -168,6 +169,8 @@ fn cookie_header(raw: &str) -> String {
     let attrs = attrs.to_ascii_lowercase();
     assert!(attrs.contains("httponly"), "{raw}");
     assert!(attrs.contains("samesite=strict"), "{raw}");
+    // 30 ngày: cookie phải sống qua lần đóng trình duyệt, cùng hạn với phiên ở server.
+    assert!(attrs.contains("max-age=2592000"), "{raw}");
     assert!(
         attrs.split(';').any(|part| part.trim() == "path=/"),
         "{raw}"

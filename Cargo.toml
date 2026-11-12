@@ -1,6 +1,8 @@
 [workspace]
 resolver = "3"
 members = ["crates/*"]
+# `fuzz/` là workspace riêng của cargo-fuzz, không kéo libFuzzer vào `cargo test`.
+exclude = ["fuzz"]
 
 [workspace.package]
 version = "0.2.0"
@@ -26,11 +28,12 @@ mh-api = { path = "crates/mh-api" }
 # Thư viện bên ngoài.
 anyhow = "1.0.104"
 argon2 = { version = "0.5.3", features = ["std"] }
-axum = { version = "0.8.9", features = ["ws"] }
+axum = { version = "0.8.9", features = ["ws", "multipart"] }
 axum-extra = { version = "0.12.6", features = ["cookie"] }
 base64 = "0.22.1"
 clap = { version = "4.6.7", features = ["derive", "env"] }
 directories = "6.0.0"
+fastnbt = "2.6.3"
 flate2 = "1.1.10"
 futures-util = { version = "0.3.34", default-features = false, features = ["sink"] }
 http-body-util = "0.1.5"
@@ -63,6 +66,7 @@ tracing-appender = "0.2.5"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 tray-icon = { version = "0.26.1", default-features = false }
 ulid = "3.0.0"
+url = "2.5.8"
 utoipa = "6.0.0"
 wiremock = "0.6.5"
 windows-sys = { version = "0.61.2", features = [
@@ -74,6 +78,8 @@ windows-sys = { version = "0.61.2", features = [
   "Win32_UI_WindowsAndMessaging",
 ] }
 zip = { version = "9.0.5", default-features = false, features = ["deflate-flate2"] }
+# `legacy` / `arrays` / `zdict_builder` không cần để nén và giải nén mức 3.
+zstd = { version = "0.14.3", default-features = false }
 
 [workspace.lints.rust]
 unsafe_code = "deny"

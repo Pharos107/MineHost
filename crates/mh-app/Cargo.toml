@@ -9,6 +9,7 @@ publish.workspace = true
 
 [dependencies]
 argon2.workspace = true
+mh-backup.workspace = true
 mh-core.workspace = true
 mh-java.workspace = true
 mh-net.workspace = true
@@ -19,13 +20,20 @@ mh-store.workspace = true
 mh-supervisor.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 thiserror.workspace = true
 time.workspace = true
 tokio.workspace = true
 toml.workspace = true
 tracing.workspace = true
+ulid.workspace = true
+
+[features]
+# Catalog Paper và Java giả. Tắt ở bản phát hành; `minehost` bật khi build test giao diện.
+e2e = []
 
 [dev-dependencies]
+sha2.workspace = true
 tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 

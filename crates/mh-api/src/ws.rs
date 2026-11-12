@@ -1,9 +1,11 @@
 //! WebSocket `/api/v1/ws` (spec P1 mục 5.8, topic `jobs` ở P2 mục 6.3).
 //!
-//! Client gửi `{ "subscribe": ["servers", "jobs", "server.<id>.console", "job.<id>"],
+//! Client gửi `{ "subscribe": ["servers", "jobs", "server.<id>.console", "server.<id>.metrics",
+//! "job.<id>"],
 //! "since": { "server.<id>.console": 120 } }`. Server gửi `{ "topic", "seq", "data" }`.
 //! `jobs` gửi `JobDto` mỗi khi một Job đổi trạng thái hoặc tiến độ, kể cả Job mới.
 //! Với console, `seq` là `seq` của dòng: kết nối lại với `since` thì nhận tiếp từ bộ đệm.
+//! `server.<id>.metrics` gửi từng mẫu mới; `since` không áp dụng cho topic này.
 //! Origin đã được `guard` kiểm tra trước khi nâng cấp kết nối.
 
 use std::collections::{HashMap, HashSet};
@@ -13,7 +15,7 @@ use axum::extract::State;
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::response::Response;
 use mh_app::jobs::JobState;
-use mh_app::{App, AppEvent, SupervisorEvent};
+use mh_app::{App, AppEvent, MetricsEvent, SupervisorEvent};
 use mh_core::{ErrorCode, ServerId};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -21,7 +23,7 @@ use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 
-use crate::dto::{ConsoleLineDto, JobDto, ServerDto};
+use crate::dto::{ConsoleLineDto, JobDto, MetricSampleDto, ServerDto};
 
 const SERVERS: &str = "servers";
 const JOBS: &str = "jobs";
@@ -111,17 +113,59 @@ async fn feed(app: Arc<App>, topic: String, since: Option<u64>, out: Outbox) {
     if topic == JOBS {
         return jobs_feed(&app, &out).await;
     }
-    let parsed = topic
-        .strip_prefix("server.")
-        .and_then(|rest| rest.strip_suffix(".console"))
-        .and_then(|id| ServerId::parse(id).ok());
-    if let Some(id) = parsed {
-        return console_feed(&app, &topic, id, since, &out).await;
+    if let Some((id, kind)) = server_topic(&topic) {
+        return server_feed(&app, &topic, id, kind, since, &out).await;
     }
     if let Some(id) = topic.strip_prefix("job.").and_then(|id| id.parse().ok()) {
         return job_feed(&app, &topic, id, &out).await;
     }
     let _ = out.error(&topic, ErrorCode::InvalidInput).await;
+}
+
+/// `server.<id>.console` hoặc `server.<id>.metrics`. Id không phải ULID thì `None`.
+fn server_topic(topic: &str) -> Option<(ServerId, &str)> {
+    let rest = topic.strip_prefix("server.")?;
+    let (id, kind) = rest.rsplit_once('.')?;
+    ServerId::parse(id).ok().map(|id| (id, kind))
+}
+
+async fn server_feed(
+    app: &App,
+    topic: &str,
+    id: ServerId,
+    kind: &str,
+    since: Option<u64>,
+    out: &Outbox,
+) {
+    match kind {
+        "console" => console_feed(app, topic, id, since, out).await,
+        "metrics" => metrics_feed(app, topic, id, out).await,
+        _ => {
+            let _ = out.error(topic, ErrorCode::InvalidInput).await;
+        }
+    }
+}
+
+async fn metrics_feed(app: &App, topic: &str, id: ServerId, out: &Outbox) {
+    if let Err(err) = app.metrics(id, None) {
+        let _ = out.error(topic, err.code).await;
+        return;
+    }
+    // Đăng ký sau khi biết server tồn tại. Mẫu cũ lấy bằng REST; ở đây chỉ mẫu mới.
+    let mut events = app.subscribe_metrics();
+    let mut seq = 0u64;
+    loop {
+        let sample = match events.recv().await {
+            Ok(MetricsEvent { id: got, sample }) if got == id => sample,
+            Ok(_) | Err(RecvError::Lagged(_)) => continue,
+            Err(RecvError::Closed) => return,
+        };
+        seq += 1;
+        let data = serde_json::to_value(MetricSampleDto::from(sample)).unwrap_or_default();
+        if !out.send(topic, seq, data).await {
+            return;
+        }
+    }
 }
 
 /// Gửi toàn bộ danh sách lúc đăng ký, sau đó mỗi lần một server đổi thì gửi lại server đó.
@@ -234,8 +278,14 @@ async fn console_feed(app: &App, topic: &str, id: ServerId, since: Option<u64>, 
                     return;
                 }
             }
-            // Lỡ dòng thì vòng lặp sau đọc bù từ bộ đệm.
-            Ok(_) | Err(RecvError::Lagged(_)) => {}
+            // Status và Players không thuộc topic console (Players có topic riêng ở PR-17).
+            // Dòng console đã gửi thì bỏ. Lagged thì vòng sau đọc bù từ bộ đệm.
+            Ok(
+                SupervisorEvent::Status(_)
+                | SupervisorEvent::Console(_)
+                | SupervisorEvent::Players(_),
+            )
+            | Err(RecvError::Lagged(_)) => {}
             Err(RecvError::Closed) => return,
         }
     }

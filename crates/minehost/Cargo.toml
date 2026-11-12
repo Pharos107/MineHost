@@ -6,10 +6,25 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
+# Có thêm binary `e2e-fake-mc` (feature e2e) nên `cargo run -p minehost` cần biết chạy cái nào.
+default-run = "minehost"
 
 [[bin]]
 name = "minehost"
 path = "src/main.rs"
+
+# Cùng mã nguồn với `fake-mc` của mh-runtime. Chỉ có khi build `--features e2e`,
+# để test tích hợp lấy đường dẫn qua `CARGO_BIN_EXE_e2e-fake-mc`.
+[[bin]]
+name = "e2e-fake-mc"
+path = "../mh-runtime/src/bin/fake-mc.rs"
+required-features = ["e2e"]
+test = false
+doc = false
+
+[features]
+# Catalog và Java giả cho Playwright. Tắt ở bản phát hành.
+e2e = ["mh-app/e2e"]
 
 [dependencies]
 anyhow.workspace = true

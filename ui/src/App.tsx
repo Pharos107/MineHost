@@ -5,10 +5,14 @@ import { useServersLive } from "./api/live";
 import { SidebarLayout, TopLayout } from "./components/AppLayout";
 import { ComingSoon } from "./components/ComingSoon";
 import { CreateServerPage } from "./pages/create/CreateServerPage";
+import { HomePage } from "./pages/home/HomePage";
 import { JobsPage } from "./pages/jobs/JobsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ServerListPage } from "./pages/ServerListPage";
 import { ConsoleRoute, GameSettingsRoute, ServerComingSoon, ServerSettingsRoute } from "./pages/server/routes";
+import { FileEditorPage } from "./pages/server/files/FileEditorPage";
+import { FilesPage } from "./pages/server/files/FilesPage";
+import { OverviewPage } from "./pages/server/overview/OverviewPage";
 import { ServerLayout } from "./pages/server/ServerLayout";
 
 /** Các trang theo spec P2, mục 2. Backend trả `index.html` cho mọi đường dẫn lạ. */
@@ -26,15 +30,15 @@ export function AppRoutes() {
         }
       />
       <Route element={<SidebarLayout />}>
-        {/* Trang chủ thật làm ở PR-04; tới lúc đó `/` vẫn là danh sách server. */}
-        <Route path="/" element={<ServerListPage />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/servers" element={<ServerListPage />} />
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/settings" element={<ComingSoon title={t("nav.settings")} />} />
         <Route path="/servers/:id" element={<ServerLayout />}>
-          <Route index element={<ServerComingSoon />} />
+          <Route index element={<OverviewPage />} />
           <Route path="console" element={<ConsoleRoute />} />
-          <Route path="files" element={<ServerComingSoon />} />
+          <Route path="files" element={<FilesPage />} />
+          <Route path="files/edit" element={<FileEditorPage />} />
           <Route path="players" element={<ServerComingSoon />} />
           <Route path="backups" element={<ServerComingSoon />} />
           <Route path="game" element={<GameSettingsRoute />} />

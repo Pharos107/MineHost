@@ -29,7 +29,8 @@ use crate::guard;
 
 pub(crate) const SESSION_COOKIE: &str = "mh_session";
 const CSRF_HEADER: HeaderName = HeaderName::from_static("x-csrf-token");
-const SESSION_TTL: Duration = Duration::from_secs(30 * 24 * 60 * 60);
+const SESSION_DAYS: u64 = 30;
+const SESSION_TTL: Duration = Duration::from_secs(SESSION_DAYS * 24 * 60 * 60);
 const MAX_FAILURES: u32 = 5;
 const FIRST_LOCK_SECS: u64 = 60;
 const MAX_LOCK_SECS: u64 = 15 * 60;
@@ -113,10 +114,12 @@ impl AuthGate {
     fn open_session(&self) -> Result<(String, String), ApiError> {
         let token = random_token()?;
         let csrf = random_token()?;
-        let expires_at = SystemTime::now()
-            .checked_add(SESSION_TTL)
-            .unwrap_or(SystemTime::UNIX_EPOCH);
-        lock(&self.sessions).insert(
+        let now = SystemTime::now();
+        let expires_at = now.checked_add(SESSION_TTL).unwrap_or(SystemTime::UNIX_EPOCH);
+        let mut sessions = lock(&self.sessions);
+        // Phiên hết hạn chỉ bị xóa khi được dùng lại; dọn ở đây để bảng không phình qua nhiều tháng.
+        sessions.retain(|_, session| session.expires_at > now);
+        sessions.insert(
             token.clone(),
             Session {
                 csrf: csrf.clone(),
@@ -370,6 +373,8 @@ fn session_cookie(token: &str) -> Cookie<'static> {
         .http_only(true)
         .same_site(SameSite::Strict)
         .path("/")
+        // Không có `Max-Age` thì trình duyệt bỏ cookie khi đóng cửa sổ, sớm hơn hạn 30 ngày ở server.
+        .max_age(time::Duration::days(SESSION_DAYS as i64))
         .build()
 }
 
@@ -423,4 +428,21 @@ fn secs_until(until: SystemTime, now: SystemTime) -> Option<u64> {
 fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
     // Chỉ bị poison khi một luồng panic lúc đang giữ; dữ liệu bên trong vẫn dùng được.
     mutex.lock().unwrap_or_else(|err| err.into_inner())
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn login_drops_expired_sessions() {
+        let gate = AuthGate::default();
+        let (old, _) = gate.open_session().unwrap();
+        lock(&gate.sessions).get_mut(&old).unwrap().expires_at = SystemTime::UNIX_EPOCH;
+        let (fresh, csrf) = gate.open_session().unwrap();
+        let sessions = lock(&gate.sessions);
+        assert!(!sessions.contains_key(&old));
+        assert_eq!(sessions.get(&fresh).map(|s| s.csrf.clone()), Some(csrf));
+    }
 }

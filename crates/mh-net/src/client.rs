@@ -55,6 +55,8 @@ type MemoryCache = HashMap<String, (Instant, Arc<[u8]>)>;
 
 pub struct HttpClient {
     pub(crate) http: reqwest::Client,
+    /// Không theo redirect. Ảnh skin chỉ được tải từ đúng host đã kiểm tra trước đó.
+    direct: reqwest::Client,
     pub(crate) config: NetConfig,
     memory: Mutex<MemoryCache>,
     pub(crate) free_space: Option<FreeSpaceFn>,
@@ -73,21 +75,22 @@ impl HttpClient {
         // reqwest được build không kèm crypto provider (aws-lc vướng giấy phép OpenSSL), nên cài
         // ring làm mặc định cho cả process. Gọi lại khi đã cài thì trả lỗi, bỏ qua được.
         let _ = rustls::crypto::ring::default_provider().install_default();
-        let http = reqwest::Client::builder()
-            .user_agent(USER_AGENT)
-            .connect_timeout(config.connect_timeout)
-            .read_timeout(config.read_timeout)
-            .build()
-            .map_err(|e| NetError::Unavailable {
-                url: String::new(),
-                reason: e.to_string(),
-            })?;
+        // Mặc định của reqwest là theo tối đa 10 redirect. Client kia không theo,
+        // để URL skin đã kiểm tra host không bị chuyển sang host khác.
+        let http = build_client(&config, reqwest::redirect::Policy::limited(10))?;
+        let direct = build_client(&config, reqwest::redirect::Policy::none())?;
         Ok(Self {
             http,
+            direct,
             config,
             memory: Mutex::new(HashMap::new()),
             free_space: None,
         })
+    }
+
+    /// Thư mục `cache/` truyền vào [`NetConfig`].
+    pub fn cache_dir(&self) -> &Path {
+        &self.config.cache_dir
     }
 
     /// Bật kiểm tra ổ đĩa trống trước khi tải.
@@ -149,11 +152,33 @@ impl HttpClient {
         decode(url, &body, checksum).map(|value| Fetched { value, stale: true })
     }
 
+    /// GET thân response, không theo redirect. Thân rỗng (HTTP 204) là `Ok` với vec rỗng.
+    ///
+    /// Dừng khi thân dài hơn `max_bytes`, không giữ phần vượt quá.
+    pub async fn get_bytes(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, NetError> {
+        let mut resp = self.send_with(&self.direct, url).await?;
+        if resp
+            .content_length()
+            .is_some_and(|len| len > max_bytes as u64)
+        {
+            return Err(body_too_large(url, max_bytes));
+        }
+        read_capped(url, &mut resp, max_bytes).await
+    }
+
     /// GET có retry khi timeout, lỗi kết nối, 5xx hoặc 429. Chỉ trả response 2xx.
     pub(crate) async fn send(&self, url: &str) -> Result<reqwest::Response, NetError> {
+        self.send_with(&self.http, url).await
+    }
+
+    async fn send_with(
+        &self,
+        http: &reqwest::Client,
+        url: &str,
+    ) -> Result<reqwest::Response, NetError> {
         let mut attempt = 0;
         loop {
-            let err = match self.http.get(url).send().await {
+            let err = match http.get(url).send().await {
                 Ok(resp) if resp.status().is_success() => return Ok(resp),
                 Ok(resp) if !is_retryable(resp.status()) => {
                     return Err(NetError::Status {
@@ -228,6 +253,44 @@ fn decode<T: DeserializeOwned>(
             reason: e.to_string(),
         }
     })
+}
+
+fn build_client(
+    config: &NetConfig,
+    redirect: reqwest::redirect::Policy,
+) -> Result<reqwest::Client, NetError> {
+    reqwest::Client::builder()
+        .user_agent(USER_AGENT)
+        .connect_timeout(config.connect_timeout)
+        .read_timeout(config.read_timeout)
+        .redirect(redirect)
+        .build()
+        .map_err(|err| NetError::Unavailable {
+            url: String::new(),
+            reason: err.to_string(),
+        })
+}
+
+async fn read_capped(
+    url: &str,
+    resp: &mut reqwest::Response,
+    max_bytes: usize,
+) -> Result<Vec<u8>, NetError> {
+    let mut body = Vec::new();
+    while let Some(chunk) = resp.chunk().await.map_err(|err| unavailable(url, &err))? {
+        if body.len().saturating_add(chunk.len()) > max_bytes {
+            return Err(body_too_large(url, max_bytes));
+        }
+        body.extend_from_slice(&chunk);
+    }
+    Ok(body)
+}
+
+fn body_too_large(url: &str, max_bytes: usize) -> NetError {
+    NetError::Download {
+        url: url.to_owned(),
+        reason: format!("dài hơn {max_bytes} byte"),
+    }
 }
 
 fn is_retryable(status: reqwest::StatusCode) -> bool {

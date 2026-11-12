@@ -180,6 +180,119 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put?: never;
+        post?: never;
+        delete: operations["delete_file"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/files/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["read"];
+        put: operations["write"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/files/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["download"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/files/mkdir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["mkdir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/files/rename": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rename_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/files/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description multipart/form-data, một hoặc nhiều phần tên `file`, mỗi file tối đa 512 MiB. */
+        post: operations["upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["metrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}/properties": {
         parameters: {
             query?: never;
@@ -273,10 +386,23 @@ export interface components {
             /** @description Tham số để ghép vào bản dịch, ví dụ `{ "port": 25565 }`. */
             params: Record<string, never>;
         };
+        EtagDto: {
+            etag: string;
+        };
         EulaBody: {
             /** @description Phải là `true`: người dùng bấm "Tôi đồng ý". */
             accept: boolean;
         };
+        FileEntryDto: {
+            kind: components["schemas"]["FileKindDto"];
+            /** @description RFC 3339. */
+            modified?: string | null;
+            name: string;
+            /** Format: int64 */
+            size?: number | null;
+        };
+        /** @enum {string} */
+        FileKindDto: "file" | "dir";
         Health: {
             status: string;
             version: string;
@@ -302,6 +428,22 @@ export interface components {
             max: number;
             /** Format: int32 */
             min: number;
+        };
+        MetricSampleDto: {
+            /** @description RFC 3339. */
+            at: string;
+            /** Format: float */
+            cpu_percent: number;
+            /** Format: int64 */
+            memory_bytes: number;
+            /**
+             * Format: int32
+             * @description `null` cho tới khi có theo dõi người chơi.
+             */
+            players?: number | null;
+        };
+        MkdirBody: {
+            path: string;
         };
         PatchServerBody: {
             autostart?: boolean | null;
@@ -330,6 +472,10 @@ export interface components {
         PropertyDto: {
             key: string;
             value: string;
+        };
+        RenameBody: {
+            from: string;
+            to: string;
         };
         /** @description Một server trong danh sách. Server đang cài hoặc bị hỏng chỉ có một phần thông tin. */
         ServerDto: {
@@ -364,6 +510,13 @@ export interface components {
             /** @description Đã quá 5 phút mà server chưa sẵn sàng. */
             slow_start: boolean;
             state: components["schemas"]["StateDto"];
+        };
+        ServerMetricsDto: {
+            /** Format: int64 */
+            disk_bytes?: number | null;
+            /** @description RFC 3339. Có khi server đang ở trạng thái chạy. */
+            running_since?: string | null;
+            samples: components["schemas"]["MetricSampleDto"][];
         };
         /** @enum {string} */
         StateDto: "installing" | "stopped" | "starting" | "running" | "stopping" | "crashed" | "broken";
@@ -408,6 +561,15 @@ export interface components {
             /** @description RAM đề xuất cho server mới (spec P1, mục 4.3). */
             suggested_memory_mb: components["schemas"]["MemoryDto"];
             version: string;
+        };
+        TextBody: {
+            text: string;
+        };
+        TextFileDto: {
+            etag: string;
+            /** Format: int64 */
+            size: number;
+            text: string;
         };
         TrashedDto: {
             /** @description Thư mục trong thùng rác, để người dùng tự lấy lại. */
@@ -844,6 +1006,326 @@ export interface operations {
                 };
             };
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Đường dẫn tương đối trong thư mục server. Rỗng là gốc. */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileEntryDto"][];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    delete_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Đường dẫn tương đối trong thư mục server. Rỗng là gốc. */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashedDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Đường dẫn tương đối trong thư mục server. Rỗng là gốc. */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TextFileDto"];
+                };
+            };
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    write: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description ETag hiện tại. Thiếu khi tạo file mới. */
+                "If-Match"?: string | null;
+            };
+            path: {
+                id: string;
+                /** @description Đường dẫn tương đối trong thư mục server. Rỗng là gốc. */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EtagDto"];
+                };
+            };
+            /** @description If-Match không khớp */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Đường dẫn tương đối trong thư mục server. Rỗng là gốc. */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Nội dung file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mkdir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MkdirBody"];
+            };
+        };
+        responses: {
+            /** @description Đã tạo */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    rename_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameBody"];
+            };
+        };
+        responses: {
+            /** @description Đã đổi tên */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Đường dẫn tương đối trong thư mục server. Rỗng là gốc. */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    metrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description RFC 3339. Chỉ lấy mẫu sau thời điểm này. Dấu `+` trong offset phải viết `%2B`. */
+                since: string | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerMetricsDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
