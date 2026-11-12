@@ -189,11 +189,10 @@ async fn running_server_is_sampled_until_it_stops() {
     app.start(id).await.unwrap();
     wait_state(&app, id, ServerState::Running).await;
     let full = wait_samples(&app, id).await;
-    assert!(
-        full.samples.iter().all(|sample| {
-            sample.players.is_none() && (0.0..=100.0).contains(&sample.cpu_percent)
-        })
-    );
+    assert!(full.samples.iter().all(|sample| {
+        // Chưa ai vào nên số người online là 0.
+        sample.players == Some(0) && (0.0..=100.0).contains(&sample.cpu_percent)
+    }));
 
     let first = full.samples[0].at;
     let filtered = app.metrics(id, Some(first)).unwrap();

@@ -19,7 +19,7 @@ use crate::{App, AppError, lock};
 /// 1 giờ nếu lấy mẫu mỗi 5 giây.
 const SAMPLE_CAP: usize = 720;
 
-/// Một điểm trên biểu đồ. `players` để `None` cho tới PR theo dõi người chơi.
+/// Một điểm trên biểu đồ. `players` là số người online theo log lúc lấy mẫu.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MetricSample {
     pub at: OffsetDateTime,
@@ -189,7 +189,7 @@ impl App {
         let at = OffsetDateTime::now_utc();
         let batch: Vec<_> = usages
             .into_iter()
-            .map(|(id, usage)| (id, sample_from(at, usage)))
+            .map(|(id, usage)| (id, sample_from(at, usage, self.online_count(id))))
             .collect();
         self.metrics_hub.push_all(&batch);
         if let Some(disks) = &disks {
@@ -201,12 +201,12 @@ impl App {
     }
 }
 
-fn sample_from(at: OffsetDateTime, usage: ProcessUsage) -> MetricSample {
+fn sample_from(at: OffsetDateTime, usage: ProcessUsage, players: u32) -> MetricSample {
     MetricSample {
         at,
         cpu_percent: usage.cpu_percent,
         memory_bytes: usage.rss_bytes,
-        players: None,
+        players: Some(players),
     }
 }
 

@@ -10,6 +10,7 @@ mod guard;
 mod import;
 mod jobs;
 mod lan;
+mod players;
 mod servers;
 mod system;
 mod ui;
@@ -51,6 +52,9 @@ pub use lan::{LanState, lan_listener};
         backups::delete,
         backups::download,
         backups::restore,
+        players::list,
+        players::action,
+        players::skin,
         servers::get_properties,
         servers::put_properties,
         jobs::list,
@@ -99,6 +103,11 @@ pub use lan::{LanState, lan_listener};
         backups::PatchBackupBody,
         backups::RestoreBody,
         backups::JobStartedDto,
+        players::PlayerDto,
+        players::PlayersDto,
+        players::PlayerActionKind,
+        players::PlayerActionBody,
+        players::PlayerActionDto,
         import::InspectBody,
         import::DetectedDto,
         import::ImportBody,
@@ -201,6 +210,12 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
             "/servers/{id}/properties",
             get(servers::get_properties).put(servers::put_properties),
         )
+        .route("/servers/{id}/players", get(players::list))
+        .route(
+            "/servers/{id}/players/{name}/actions",
+            post(players::action),
+        )
+        .route("/players/{uuid}/skin", get(players::skin))
         .route("/jobs", get(jobs::list))
         .route(
             "/servers/{id}/files",

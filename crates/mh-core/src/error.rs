@@ -22,6 +22,8 @@ pub enum ErrorCode {
     ConfigInvalid,
     /// Thao tác không hợp lệ với trạng thái hiện tại của server.
     ServerBusy,
+    /// Thao tác cần server đang chạy: đuổi, đóng băng, dịch chuyển, nhắn tin.
+    ServerNotRunning,
     EulaNotAccepted,
     /// Phiên bản không có trên Mojang hoặc Paper.
     VersionNotFound,
@@ -100,6 +102,7 @@ impl ErrorCode {
             Self::BackupCorrupt => "BACKUP_CORRUPT",
             Self::BackupProtected => "BACKUP_PROTECTED",
             Self::ModsNotSupported => "MODS_NOT_SUPPORTED",
+            Self::ServerNotRunning => "SERVER_NOT_RUNNING",
         }
     }
 }
@@ -134,7 +137,7 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 31] = [
+    const ALL: [ErrorCode; 32] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::PlayerNotFound,
@@ -166,6 +169,7 @@ mod tests {
         ErrorCode::BackupCorrupt,
         ErrorCode::BackupProtected,
         ErrorCode::ModsNotSupported,
+        ErrorCode::ServerNotRunning,
     ];
 
     #[test]

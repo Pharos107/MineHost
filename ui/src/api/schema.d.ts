@@ -164,6 +164,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/players/{uuid}/skin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["skin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers": {
         parameters: {
             query?: never;
@@ -453,6 +469,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/players": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/players/{name}/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["action"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}/properties": {
         parameters: {
             query?: never;
@@ -721,6 +769,44 @@ export interface components {
             /** @description Giờ khởi động lại hằng ngày, `HH:MM`, tối đa 4 mốc. `[]` là tắt lịch. */
             restart_at?: string[] | null;
             restart_on_crash?: boolean | null;
+        };
+        PlayerActionBody: {
+            action: components["schemas"]["PlayerActionKind"];
+            /** @description `kick`, `ban`: tối đa 200 ký tự, có thể bỏ trống. */
+            reason?: string | null;
+            /** @description `teleport_to_player`: tên người chơi đích. */
+            target?: string | null;
+            /** @description `message`, `title`: tối đa 256 ký tự. */
+            text?: string | null;
+        };
+        PlayerActionDto: {
+            /** @description `sent`: đã gửi lệnh console. `saved`: server tắt, MineHost đã sửa file. */
+            done: string;
+        };
+        /** @enum {string} */
+        PlayerActionKind: "whitelist_add" | "whitelist_remove" | "op" | "deop" | "kick" | "ban" | "pardon" | "freeze" | "unfreeze" | "teleport_to_player" | "teleport_to_spawn" | "message" | "title";
+        PlayerDto: {
+            ban_reason?: string | null;
+            banned: boolean;
+            frozen: boolean;
+            /** @description RFC 3339. Có khi người này đã từng vào server. */
+            last_seen?: string | null;
+            name: string;
+            online: boolean;
+            op: boolean;
+            /** @description Có gạch ngang. `None` khi server online-mode và người này chưa vào lần nào. */
+            uuid?: string | null;
+            whitelisted: boolean;
+        };
+        PlayersDto: {
+            /** Format: int32 */
+            max_players: number;
+            online_mode: boolean;
+            /** @description Đang online trước, rồi người vào gần nhất. */
+            players: components["schemas"]["PlayerDto"][];
+            /** @description `false` thì chỉ whitelist, op, cấm, bỏ cấm làm được (MineHost sửa file). */
+            running: boolean;
+            whitelist_enabled: boolean;
         };
         ProgressDto: {
             /** Format: int64 */
@@ -1191,6 +1277,46 @@ export interface operations {
                 content?: never;
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    skin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ảnh PNG */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": unknown;
+                };
+            };
+            /** @description Tài khoản không có skin riêng */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Không tải được và chưa có trong cache */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2062,6 +2188,87 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayersDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    action: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlayerActionBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayerActionDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Không có server, hoặc không có tài khoản Minecraft tên này */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Thao tác cần server đang chạy, hoặc bản Minecraft không hỗ trợ */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

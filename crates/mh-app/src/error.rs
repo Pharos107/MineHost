@@ -1,5 +1,5 @@
 use mh_backup::BackupError;
-use mh_core::{ErrorCode, InvalidValue};
+use mh_core::{ErrorCode, InvalidValue, PlayerCommandError};
 use mh_java::JavaError;
 use mh_net::NetError;
 use mh_platform::PlatformError;
@@ -59,6 +59,7 @@ from_coded!(
     InvalidValue,
     RuntimeError,
     BackupError,
+    PlayerCommandError,
 );
 
 impl From<SupervisorError> for AppError {

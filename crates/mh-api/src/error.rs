@@ -80,7 +80,8 @@ fn status_for(code: ErrorCode) -> StatusCode {
         | ErrorCode::UnsupportedByVersion
         | ErrorCode::LanNeedsPassword
         | ErrorCode::BackupProtected
-        | ErrorCode::ModsNotSupported => StatusCode::CONFLICT,
+        | ErrorCode::ModsNotSupported
+        | ErrorCode::ServerNotRunning => StatusCode::CONFLICT,
         ErrorCode::NetworkUnavailable | ErrorCode::DownloadFailed | ErrorCode::ChecksumMismatch => {
             StatusCode::BAD_GATEWAY
         }
