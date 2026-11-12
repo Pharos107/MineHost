@@ -1,8 +1,9 @@
-import { Blocks, Menu as MenuIcon, X } from "lucide-react";
+import { Menu as MenuIcon, X } from "lucide-react";
 import { useEffect, useId, useState, type MouseEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import styles from "./AppShell.module.css";
+import { BlockBanner } from "./BlockBanner";
 import { IconButton } from "./Button";
 import { cx } from "./cx";
 
@@ -45,7 +46,7 @@ export function AppShell({ variant = "top", actions, nav, navLabel, footer, chil
 function Brand() {
   return (
     <span className={styles.brand}>
-      <Blocks size={22} aria-hidden />
+      <BlockBanner seed="MineHost" variant="logo" />
       MineHost
     </span>
   );

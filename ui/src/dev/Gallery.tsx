@@ -8,7 +8,9 @@ import { LanguageSwitch } from "../components/LanguageSwitch";
 import {
   AppShell,
   Avatar,
+  AvatarStack,
   Badge,
+  BlockBanner,
   Button,
   Card,
   EmptyState,
@@ -16,8 +18,12 @@ import {
   IconButton,
   Notice,
   PageHeader,
+  SegmentedControl,
+  ServerCard,
+  ServerCardGrid,
   Spinner,
   Stack,
+  StatStrip,
   StatusBadge,
 } from "../ui";
 import { NavSectionDemo } from "./GalleryNav";
@@ -39,6 +45,7 @@ export function Gallery() {
       <Stack gap={6}>
         <ButtonSection />
         <BadgeSection />
+        <ServerCardSection />
         <NoticeSection />
         <CardSection />
         <TableSection />
@@ -103,6 +110,9 @@ function BadgeSection() {
         <Avatar name="Steve" size="sm" />
         <Avatar name="Alex" />
         <Avatar name="Notch" size="lg" />
+        <AvatarStack players={["Steve", "Alex", "Notch", "jeb_", "Dinnerbone", "Grumm"].map((name) => ({ name }))} max={4} />
+        <BlockBanner seed="server-a" variant="mark" />
+        <BlockBanner seed="MineHost" variant="logo" />
       </Stack>
     </Card>
   );
@@ -140,3 +150,43 @@ function CardSection() {
     </Card>
   );
 }
+
+/** Thẻ server, dải số liệu và nút chọn cách xem: dùng ở Trang chủ và trang Máy chủ. */
+function ServerCardSection() {
+  const [view, setView] = useState<"cards" | "table">("cards");
+  return (
+    <Card title="ServerCard / StatStrip / SegmentedControl">
+      <SegmentedControl
+        label="Cách xem"
+        value={view}
+        onChange={setView}
+        options={[
+          { value: "cards", label: "Thẻ" },
+          { value: "table", label: "Bảng" },
+        ]}
+      />
+      <ServerCardGrid>
+        {["01M78CC3A32WT5PN76T9ZRHJAV", "01M78HY3PB5KA84SXN2QPFF0WJ", "01J0000000000000000000000A"].map((seed, i) => (
+          <ServerCard
+            key={seed}
+            seed={seed}
+            title={["Sinh tồn", "Sáng tạo", "Nether"][i]}
+            status={<StatusBadge state={i === 0 ? "running" : "stopped"} />}
+            meta="Paper 1.21.4, tối đa 4 GB RAM"
+            actions={<Button size="sm">Bật server</Button>}
+          >
+            <Facts items={[{ label: "Địa chỉ vào", value: "192.168.1.5:25565" }]} />
+          </ServerCard>
+        ))}
+      </ServerCardGrid>
+      <StatStrip
+        label="Máy này"
+        items={[
+          { icon: Server, label: "CPU", value: "12 %" },
+          { icon: Server, label: "RAM", value: "16 GB / 31 GB" },
+        ]}
+      />
+    </Card>
+  );
+}
+

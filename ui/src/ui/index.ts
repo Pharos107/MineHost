@@ -1,7 +1,9 @@
 // Bộ component dùng chung. Trang chỉ import từ đây; xem spec docs/specs/p1-ui-components.md.
 export { AppShell } from "./AppShell";
 export { Avatar } from "./Avatar";
+export { AvatarStack, type StackedPlayer } from "./AvatarStack";
 export { Badge, StatusBadge, type BadgeTone } from "./Badge";
+export { BlockBanner } from "./BlockBanner";
 export { Breadcrumb, type Crumb } from "./Breadcrumb";
 export { Button, IconButton, type ButtonSize, type ButtonVariant } from "./Button";
 export { Card, PageHeader } from "./Card";
@@ -20,10 +22,14 @@ export { Menu, type MenuItem } from "./Menu";
 export { NavItem, NavSection } from "./Nav";
 export { Notice, type NoticeTone } from "./Notice";
 export { ProgressBar, Steps } from "./progress";
+export { SegmentedControl, type Segment } from "./SegmentedControl";
+export { ServerCard, ServerCardGrid } from "./ServerCard";
 export { Slider } from "./Slider";
 export { Spinner } from "./Spinner";
 export { Stack, type Space } from "./Stack";
 export { StatGrid, StatTile } from "./StatTile";
+export { StatStrip, type StripItem } from "./StatStrip";
 export { Switch } from "./Switch";
 export { Tabs, type TabItem } from "./Tabs";
+export { filterRows } from "./table-utils";
 export { Terminal, type TerminalHandle, type TerminalTone } from "./Terminal";

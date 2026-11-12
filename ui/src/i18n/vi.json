@@ -47,7 +47,8 @@
     "freeOfTotal": "còn trống {{free}} / {{total}}",
     "unknown": "Không xác định",
     "dataDir": "Thư mục dữ liệu",
-    "version": "Phiên bản MineHost"
+    "version": "Phiên bản MineHost",
+    "description": "Máy đang chạy MineHost và nơi lưu dữ liệu."
   },
   "notFound": {
     "title": "Không có trang này.",
@@ -79,7 +80,10 @@
       "stopped": "Đã tắt",
       "problem": "Có lỗi",
       "installing": "Đang cài"
-    }
+    },
+    "view": "Cách xem",
+    "viewCards": "Thẻ",
+    "viewTable": "Bảng"
   },
   "wizard": {
     "title": "Tạo server",
@@ -280,7 +284,8 @@
       "count": "Hiển thị {{shown}}/{{total}}"
     },
     "openMenu": "Mở menu",
-    "closeMenu": "Đóng menu"
+    "closeMenu": "Đóng menu",
+    "morePlayers": "và {{count}} người nữa"
   },
   "serverState": {
     "installing": "Đang cài",
@@ -374,14 +379,16 @@
     "seconds_other": "{{count}} giây"
   },
   "home": {
-    "running": "Server đang chạy",
     "jobs": "Tác vụ đang chạy",
-    "cpu": "CPU của máy",
-    "memory": "RAM đã dùng",
-    "ofTotal": "trên {{total}}",
-    "diskFree": "Ổ đĩa còn trống",
-    "runningServers": "Server đang chạy",
-    "noneRunning": "Chưa có server nào đang chạy."
+    "cpu": "CPU",
+    "memory": "RAM",
+    "diskFree": "Ổ đĩa trống",
+    "summary": "{{running}} trên {{total}} server đang chạy.",
+    "summaryNone": "Chưa server nào chạy. Bật một server để bạn bè vào chơi.",
+    "machine": "Máy này",
+    "usedOfTotal": "{{used}} / {{total}}",
+    "recent": "Hoạt động gần đây",
+    "allJobs": "Xem mọi tác vụ"
   },
   "files": {
     "path": "Đường dẫn",
@@ -452,7 +459,9 @@
     "lanNeedsPassword": "Hãy đặt mật khẩu ở mục Bảo mật trước khi bật.",
     "lanWarning": "Giao diện qua mạng LAN dùng HTTP, không mã hóa: người dùng chung mạng có thể đọc được mật khẩu khi bạn đăng nhập. Chỉ bật trên mạng nhà bạn tin tưởng, không bật ở Wi-Fi công cộng.",
     "lanNoAddress": "Chưa mở được địa chỉ LAN nào. Máy có thể chưa nối mạng LAN, hoặc cổng đang bị chương trình khác dùng.",
-    "lanUrl": "Địa chỉ trong mạng LAN"
+    "lanUrl": "Địa chỉ trong mạng LAN",
+    "lanDescription": "Cho điện thoại, máy tính khác trong nhà mở MineHost qua mạng LAN.",
+    "description": "Mật khẩu, truy cập từ máy khác trong nhà, và thông tin máy đang chạy MineHost."
   },
   "backups": {
     "now": "Sao lưu ngay",
@@ -579,5 +588,16 @@
       "message": "Nhắn tin",
       "title": "Hiện giữa màn hình"
     }
+  },
+  "tile": {
+    "meta": "{{version}}, tối đa {{memory}} RAM",
+    "address": "Địa chỉ vào",
+    "copyAddress": "Chép địa chỉ",
+    "playing": "Đang chơi",
+    "offline": "Server đang tắt",
+    "nobody": "Chưa ai online (tối đa {{max}})",
+    "count": "{{count}} / {{max}}",
+    "starting": "Chờ server bật xong",
+    "openConsole": "Mở console"
   }
 }

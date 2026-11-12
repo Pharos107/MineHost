@@ -1,0 +1,29 @@
+.stack {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Viền cùng màu nền thẻ tách các đầu chồng lên nhau. */
+.item,
+.more {
+  display: inline-flex;
+  border: 2px solid var(--mh-surface);
+  border-radius: var(--mh-radius-sm);
+}
+
+.item + .item,
+.item + .more {
+  margin-left: -6px;
+}
+
+.more {
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 var(--mh-space-1);
+  background: var(--mh-surface-raised);
+  color: var(--mh-text-muted);
+  font-size: var(--mh-text-sm);
+  font-weight: 600;
+}

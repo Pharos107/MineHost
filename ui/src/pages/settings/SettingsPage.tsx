@@ -15,7 +15,7 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader title={t("nav.settings")} />
+      <PageHeader title={t("nav.settings")} description={t("appSettings.description")} />
       {session.isPending && <Spinner label={t("appSettings.loading")} />}
       {session.isError && <Notice tone="danger">{errorMessage(t, session.error)}</Notice>}
       {session.data && (

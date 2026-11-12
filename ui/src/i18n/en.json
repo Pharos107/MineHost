@@ -47,7 +47,8 @@
     "freeOfTotal": "{{free}} free of {{total}}",
     "unknown": "Unknown",
     "dataDir": "Data folder",
-    "version": "MineHost version"
+    "version": "MineHost version",
+    "description": "The computer running MineHost and where data is stored."
   },
   "notFound": {
     "title": "This page does not exist.",
@@ -79,7 +80,10 @@
       "stopped": "Stopped",
       "problem": "Has a problem",
       "installing": "Installing"
-    }
+    },
+    "view": "View",
+    "viewCards": "Cards",
+    "viewTable": "Table"
   },
   "wizard": {
     "title": "Create server",
@@ -280,7 +284,8 @@
       "count": "Showing {{shown}} of {{total}}"
     },
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "morePlayers": "and {{count}} more"
   },
   "serverState": {
     "installing": "Installing",
@@ -374,14 +379,16 @@
     "seconds_other": "{{count}} seconds"
   },
   "home": {
-    "running": "Servers running",
-    "jobs": "Tasks running",
-    "cpu": "Machine CPU",
-    "memory": "RAM in use",
-    "ofTotal": "of {{total}}",
-    "diskFree": "Free disk space",
-    "runningServers": "Running servers",
-    "noneRunning": "No servers are running."
+    "jobs": "Running tasks",
+    "cpu": "CPU",
+    "memory": "RAM",
+    "diskFree": "Free disk",
+    "summary": "{{running}} of {{total}} servers running.",
+    "summaryNone": "No server is running. Start one so your friends can join.",
+    "machine": "This computer",
+    "usedOfTotal": "{{used}} / {{total}}",
+    "recent": "Recent activity",
+    "allJobs": "See all tasks"
   },
   "files": {
     "path": "Path",
@@ -452,7 +459,9 @@
     "lanNeedsPassword": "Set a password under Security before turning this on.",
     "lanWarning": "The LAN interface uses HTTP without encryption: people on the same network could read your password when you sign in. Only turn this on at home on a network you trust, never on public Wi-Fi.",
     "lanNoAddress": "No LAN address could be opened yet. The computer may not be on a LAN, or another program is using the port.",
-    "lanUrl": "LAN address"
+    "lanUrl": "LAN address",
+    "lanDescription": "Let phones and other computers at home open MineHost over the LAN.",
+    "description": "Password, access from other devices at home, and details of the computer running MineHost."
   },
   "backups": {
     "now": "Back up now",
@@ -579,5 +588,16 @@
       "message": "Send message",
       "title": "Show on screen"
     }
+  },
+  "tile": {
+    "meta": "{{version}}, up to {{memory}} RAM",
+    "address": "Join address",
+    "copyAddress": "Copy address",
+    "playing": "Playing",
+    "offline": "Server is stopped",
+    "nobody": "Nobody online (up to {{max}})",
+    "count": "{{count}} / {{max}}",
+    "starting": "Waiting for the server to start",
+    "openConsole": "Open console"
   }
 }

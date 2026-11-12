@@ -5,13 +5,15 @@
 :root {
   color-scheme: light;
 
-  --mh-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Be Vietnam Pro vẽ riêng cho tiếng Việt: dấu thanh không đè lên nhau ở cỡ nhỏ. */
+  --mh-font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --mh-font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   --mh-text-sm: 0.8125rem;
   --mh-text-md: 0.9375rem;
   --mh-text-lg: 1.125rem;
-  --mh-text-xl: 1.5rem;
+  --mh-text-xl: 1.375rem;
+  --mh-text-2xl: 1.75rem;
 
   --mh-space-1: 4px;
   --mh-space-2: 8px;
@@ -23,7 +25,7 @@
 
   --mh-radius-sm: 4px;
   --mh-radius-md: 6px;
-  --mh-radius-lg: 10px;
+  --mh-radius-lg: 12px;
   --mh-radius-full: 999px;
 
   --mh-control-height: 36px;
@@ -34,57 +36,58 @@
   --mh-z-menu: 20;
   --mh-z-header: 10;
 
-  --mh-bg: #f4f6f9;
-  --mh-surface: #ffffff;
-  --mh-surface-raised: #eef2f6;
-  --mh-surface-hover: #e3e9f0;
+  /* Bảng màu "Đá và cỏ", bản sáng: nền xám đá, nhấn xanh cỏ đậm cho đủ tương phản. */
+  --mh-bg: #eceee8;
+  --mh-surface: #fbfbf8;
+  --mh-surface-raised: #e4e7de;
+  --mh-surface-hover: #d9ddd1;
   --mh-input-bg: #ffffff;
-  --mh-border: #d3dbe5;
-  --mh-border-strong: #a9b6c6;
-  --mh-text: #0f1b2a;
-  --mh-text-muted: #52627a;
+  --mh-border: #cfd3c6;
+  --mh-border-strong: #9ca291;
+  --mh-text: #1c2019;
+  --mh-text-muted: #596052;
 
-  --mh-primary: #0f766e;
-  --mh-primary-hover: #0d625b;
+  --mh-primary: #3d7d22;
+  --mh-primary-hover: #33691c;
   --mh-on-primary: #ffffff;
-  --mh-focus: #0d9488;
+  --mh-focus: #4d9a2c;
 
-  --mh-success: #15803d;
-  --mh-warning: #b45309;
-  --mh-danger: #be123c;
+  --mh-success: #2e8540;
+  --mh-warning: #a3620f;
+  --mh-danger: #c0392b;
   --mh-on-danger: #ffffff;
-  --mh-info: #1d4ed8;
+  --mh-info: #2f67a6;
 
-  --mh-shadow-md: 0 8px 24px rgb(15 27 42 / 0.12);
+  --mh-shadow-md: 0 8px 24px rgb(28 32 25 / 0.14);
 }
 
-/* Bảng màu "Midnight Aurora" của dự án cũ: nền xanh đêm, nhấn teal. */
+/* "Đá và cỏ", bản tối: nền đá ấm (không đen tuyền), nhấn xanh cỏ, đỏ redstone cho lỗi. */
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
 
-    --mh-bg: #07101b;
-    --mh-surface: #0b1522;
-    --mh-surface-raised: #101c2a;
-    --mh-surface-hover: #17293d;
-    --mh-input-bg: #08121e;
-    --mh-border: #243448;
-    --mh-border-strong: #3a5068;
-    --mh-text: #e8f0f7;
-    --mh-text-muted: #9aaabd;
+    --mh-bg: #1e1d1a;
+    --mh-surface: #262521;
+    --mh-surface-raised: #2f2d29;
+    --mh-surface-hover: #383631;
+    --mh-input-bg: #1b1a17;
+    --mh-border: #3b3933;
+    --mh-border-strong: #5c584e;
+    --mh-text: #ece8df;
+    --mh-text-muted: #a8a294;
 
-    --mh-primary: #2dd4bf;
-    --mh-primary-hover: #5eead4;
-    --mh-on-primary: #042f2b;
-    --mh-focus: #2dd4bf;
+    --mh-primary: #8cc85a;
+    --mh-primary-hover: #a4d978;
+    --mh-on-primary: #15230b;
+    --mh-focus: #a4d978;
 
-    --mh-success: #34d399;
-    --mh-warning: #fbbf24;
-    --mh-danger: #fb7185;
-    --mh-on-danger: #3b0712;
-    --mh-info: #60a5fa;
+    --mh-success: #6cc27a;
+    --mh-warning: #e9a840;
+    --mh-danger: #ee6a5a;
+    --mh-on-danger: #2a0905;
+    --mh-info: #79abe0;
 
-    --mh-shadow-md: 0 12px 32px rgb(0 0 0 / 0.45);
+    --mh-shadow-md: 0 12px 32px rgb(0 0 0 / 0.4);
   }
 }
 

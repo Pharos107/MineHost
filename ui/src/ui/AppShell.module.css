@@ -26,10 +26,11 @@
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--mh-space-2);
-  color: var(--mh-primary);
+  gap: var(--mh-space-3);
+  color: var(--mh-text);
   font-size: var(--mh-text-lg);
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .actions {

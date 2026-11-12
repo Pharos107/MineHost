@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { KeyRound, Trash2 } from "lucide-react";
+import { KeyRound, LockKeyhole, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -37,7 +37,7 @@ export function SecurityCard({ session }: { session: Session }) {
         if (passwordReady(form, hasPassword)) save.mutate();
       }}
     >
-      <Card title={t("appSettings.security")} description={t(hasPassword ? "appSettings.securityOn" : "appSettings.securityOff")}>
+      <Card title={t("appSettings.security")} description={t(hasPassword ? "appSettings.securityOn" : "appSettings.securityOff")} icon={LockKeyhole} layout="split">
         <Stack gap={4}>
           {hasPassword && (
             <Field label={t("appSettings.current")}>
