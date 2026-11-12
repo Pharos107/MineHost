@@ -608,6 +608,8 @@ export interface components {
             name?: string | null;
             /** Format: int32 */
             port?: number | null;
+            /** @description Giờ khởi động lại hằng ngày, `HH:MM`, tối đa 4 mốc. `[]` là tắt lịch. */
+            restart_at?: string[] | null;
             restart_on_crash?: boolean | null;
         };
         ProgressDto: {
@@ -661,6 +663,8 @@ export interface components {
             pid?: number | null;
             /** Format: int32 */
             port?: number | null;
+            /** @description Giờ khởi động lại hằng ngày (giờ máy), dạng `HH:MM`, đã sắp xếp. */
+            restart_at?: string[] | null;
             restart_on_crash?: boolean | null;
             /** @description Đang chờ tự khởi động lại sau crash. */
             restart_pending: boolean;

@@ -246,7 +246,15 @@
     "restartOnCrashHint": "Tries up to 3 times within 10 minutes.",
     "save": "Save",
     "undo": "Undo",
-    "saved": "Saved."
+    "saved": "Saved.",
+    "restartAt": "Daily restart",
+    "restartAtHint": "In the clock of the computer running MineHost, up to 4 times. Players are warned 5 minutes, 1 minute and 10 seconds before. Skipped while the server is stopped.",
+    "restartAtNone": "No time set.",
+    "restartAtAdd": "Add time",
+    "restartAtRemove": "Remove {{time}}",
+    "restartAtTime": "Restart time {{n}}",
+    "restartAtInvalid": "Pick both hour and minute for every time.",
+    "restartAtDuplicate": "Two times are the same."
   },
   "delete": {
     "title": "Delete server",

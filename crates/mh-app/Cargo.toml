@@ -9,6 +9,7 @@ publish.workspace = true
 
 [dependencies]
 argon2.workspace = true
+jiff.workspace = true
 mh-backup.workspace = true
 mh-core.workspace = true
 mh-java.workspace = true

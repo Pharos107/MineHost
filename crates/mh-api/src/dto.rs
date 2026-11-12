@@ -63,6 +63,8 @@ pub struct ServerDto {
     pub memory_mb: Option<MemoryDto>,
     pub autostart: Option<bool>,
     pub restart_on_crash: Option<bool>,
+    /// Giờ khởi động lại hằng ngày (giờ máy), dạng `HH:MM`, đã sắp xếp.
+    pub restart_at: Option<Vec<String>>,
     pub eula_accepted: bool,
     /// RFC 3339.
     pub created_at: Option<String>,
@@ -93,6 +95,7 @@ impl From<ServerView> for ServerDto {
             memory_mb: None,
             autostart: None,
             restart_on_crash: None,
+            restart_at: None,
             eula_accepted: false,
             created_at: None,
             job_id: None,
@@ -123,6 +126,13 @@ impl From<ServerView> for ServerDto {
             });
             dto.autostart = Some(spec.policy.autostart);
             dto.restart_on_crash = Some(spec.policy.restart_on_crash);
+            dto.restart_at = Some(
+                spec.policy
+                    .restart_at
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect(),
+            );
             dto.eula_accepted = spec.eula_accepted();
             dto.created_at = spec.created_at.format(&Rfc3339).ok();
         }
@@ -166,6 +176,8 @@ pub struct PatchServerBody {
     pub port: Option<u16>,
     pub autostart: Option<bool>,
     pub restart_on_crash: Option<bool>,
+    /// Giờ khởi động lại hằng ngày, `HH:MM`, tối đa 4 mốc. `[]` là tắt lịch.
+    pub restart_at: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
