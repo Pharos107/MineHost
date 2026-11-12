@@ -190,6 +190,7 @@ lan = false
 | `AUTH_RATE_LIMITED` | Sai quá nhiều lần, kèm `retry_after_s` |
 | `PASSWORD_TOO_SHORT` | Mật khẩu mới dưới 8 ký tự |
 | `LAN_NEEDS_PASSWORD` | Bật LAN khi chưa đặt mật khẩu |
+| `MODS_NOT_SUPPORTED` | Nhập thư mục server có `mods/` (mod có từ P3) |
 
 ## 5. Thiết kế từng crate
 
@@ -288,7 +289,8 @@ REST mới (mọi thao tác dài trả `202` kèm `job_id`):
 | PATCH / DELETE | `/servers/{id}/backups/{bid}` | Sửa ghi chú, bảo vệ · xóa |
 | GET | `/servers/{id}/backups/{bid}/download` | Tải file `.tar.zst` |
 | POST | `/servers/{id}/backups/{bid}/restore` | `{ "confirm": true }` → Job |
-| POST | `/servers/import` | `{ path, name }` → Job (mục 6.11) |
+| POST | `/servers/import/inspect` | `{ path }` → `{ loader, minecraft, jar, has_mods }`, xem trước, không chép |
+| POST | `/servers/import` | `{ path, name, loader?, minecraft? }` → Job (mục 6.11); `loader`, `minecraft` chỉ gửi khi chọn tay |
 | GET | `/auth/session` | `{ password_set, logged_in, csrf_token? }`, không cần đăng nhập |
 | POST | `/auth/login` · `/auth/logout` | `{ password }` |
 | PUT / DELETE | `/auth/password` | `{ current?, new }` · `{ current }` (xóa mật khẩu thì tắt LAN) |
@@ -400,7 +402,9 @@ Cài đặt game thêm mô tả ngắn cho từng khóa phổ biến của `serv
 Trong wizard tạo server, bước 1 thêm lựa chọn "Nhập thư mục có sẵn": người dùng dán đường dẫn thư mục
 trên máy. MineHost nhận loại server từ jar (Paper, Purpur, Vanilla) và phiên bản từ `version_history.json`
 hoặc `version.json` trong jar; không nhận ra thì cho chọn tay. Thư mục được **chép** vào
-`servers/<id>/server/`, bản gốc giữ nguyên. Server có mod (`mods/`) thì báo "Chưa hỗ trợ, có ở P3".
+`servers/<id>/server/`, bản gốc giữ nguyên; symlink bị bỏ qua. Server có mod (`mods/`) thì báo
+`MODS_NOT_SUPPORTED`. Giữ cổng trong `server.properties` nếu còn trống. EULA vẫn phải bấm đồng ý lại
+trong MineHost dù thư mục đã có `eula=true`.
 
 ### 6.12 Component mới
 
