@@ -88,6 +88,7 @@ pub(super) fn api() -> Api {
         free_space: Arc::new(|_| None),
         total_memory_mb: 8192,
         supervisor: mh_supervisor::SupervisorConfig::default(),
+        save_flush_timeout: std::time::Duration::from_secs(60),
         metrics: mh_app::MetricsConfig::default(),
     };
     let app = Arc::new(App::with_deps(dirs, deps).unwrap());
