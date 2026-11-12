@@ -1300,6 +1300,80 @@
         }
       }
     },
+    "/api/v1/settings/access": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "get_access",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "put_access",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Bật LAN khi chưa có mật khẩu",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/system": {
       "get": {
         "tags": [
@@ -1333,6 +1407,37 @@
   },
   "components": {
     "schemas": {
+      "AccessBody": {
+        "type": "object",
+        "required": [
+          "lan"
+        ],
+        "properties": {
+          "lan": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AccessDto": {
+        "type": "object",
+        "required": [
+          "lan",
+          "lan_urls"
+        ],
+        "properties": {
+          "lan": {
+            "type": "boolean",
+            "description": "Cờ trong `auth.toml`. Luôn `false` khi chưa đặt mật khẩu."
+          },
+          "lan_urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Địa chỉ mở được từ máy khác, ví dụ `http://192.168.1.5:7878`. Rỗng khi LAN tắt hoặc\nchưa mở được listener nào (máy không có mạng LAN, cổng bị chiếm)."
+          }
+        }
+      },
       "CatalogVersionDto": {
         "type": "object",
         "required": [
