@@ -47,11 +47,13 @@ test("đặt mật khẩu, đăng nhập lại và bật LAN", async ({ page }) 
   await expect(page.getByRole("button", { name: "Đăng xuất" })).toBeVisible();
 
   const lan = page.getByRole("switch", { name: /Cho máy khác trong mạng LAN/ });
-  await lan.check();
+  // Ô checkbox thật bị ẩn sau phần vẽ công tắc; bấm vào nhãn như người dùng.
+  const lanLabel = page.getByText("Cho máy khác trong mạng LAN mở MineHost", { exact: true });
+  await lanLabel.click();
   await expect(lan).toBeChecked();
   // Máy CI có địa chỉ LAN; controller mở listener trên đó cùng cổng với 127.0.0.1.
   await expect(page.getByText(/^http:\/\/\d+\.\d+\.\d+\.\d+:\d+$/).first()).toBeVisible();
-  await lan.uncheck();
+  await lanLabel.click();
   await expect(lan).not.toBeChecked();
 });
 
