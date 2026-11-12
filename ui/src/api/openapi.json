@@ -1923,6 +1923,16 @@
             "format": "int32",
             "minimum": 0
           },
+          "restart_at": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Giờ khởi động lại hằng ngày, `HH:MM`, tối đa 4 mốc. `[]` là tắt lịch."
+          },
           "restart_on_crash": {
             "type": [
               "boolean",
@@ -2131,6 +2141,16 @@
             ],
             "format": "int32",
             "minimum": 0
+          },
+          "restart_at": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Giờ khởi động lại hằng ngày (giờ máy), dạng `HH:MM`, đã sắp xếp."
           },
           "restart_on_crash": {
             "type": [

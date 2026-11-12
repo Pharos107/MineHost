@@ -227,7 +227,15 @@
     "restartOnCrashHint": "Thử bật lại tối đa 3 lần trong 10 phút.",
     "save": "Lưu",
     "undo": "Hoàn tác",
-    "saved": "Đã lưu."
+    "saved": "Đã lưu.",
+    "restartAt": "Khởi động lại hằng ngày",
+    "restartAtHint": "Theo giờ của máy chạy MineHost, tối đa 4 mốc. Người chơi được báo trước 5 phút, 1 phút và 10 giây. Server đang tắt thì bỏ qua.",
+    "restartAtNone": "Chưa đặt giờ nào.",
+    "restartAtAdd": "Thêm giờ",
+    "restartAtRemove": "Bỏ giờ {{time}}",
+    "restartAtTime": "Giờ khởi động lại {{n}}",
+    "restartAtInvalid": "Hãy chọn đủ giờ và phút cho mọi mốc.",
+    "restartAtDuplicate": "Hai mốc trùng giờ."
   },
   "delete": {
     "title": "Xóa server",

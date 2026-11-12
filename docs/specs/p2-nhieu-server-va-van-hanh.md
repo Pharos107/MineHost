@@ -257,7 +257,8 @@ Không thêm cạnh phụ thuộc mới giữa các crate: mọi phần ghép n�
 - **Lịch backup:** một task kiểm tra mỗi phút. Server không chạy kể từ bản backup trước thì bỏ qua.
   Lần kiểm tra đầu sau khi controller khởi động chờ 5 phút, để không backup ngay lúc mọi server đang bật.
 - **Lịch khởi động lại:** tới giờ thì gửi `say` báo trước 5 phút, 1 phút, 10 giây, rồi `restart`.
-  Server đang tắt thì bỏ qua.
+  Server đang tắt thì bỏ qua. Kiểm tra mỗi giây theo giờ máy; controller bật khi chỉ còn ít phút thì
+  chỉ gửi lời báo đang tới hạn.
 - **Chỉ số:** mỗi 5 giây lấy CPU, RAM của process Java và số người online; mỗi 5 phút tính lại dung lượng
   thư mục server. Vòng đệm 720 mẫu mỗi server, chỉ khi server có process.
 - **Cảnh báo RAM:** tổng `max` RAM của các server đang chạy cộng server sắp bật vượt RAM máy trừ 2 GB thì
@@ -420,6 +421,7 @@ hoặc `version.json` trong jar; không nhận ra thì cho chọn tay. Thư mụ
 | --- | --- | --- |
 | `mh-backup` | `tar`, `zstd` | Nén và giải nén backup |
 | `mh-app` | `argon2`, `rand` | Băm mật khẩu, token phiên và CSRF |
+| `mh-app` | `jiff` | Giờ máy theo múi giờ cho lịch khởi động lại; `time` không đọc được múi giờ an toàn khi process có nhiều luồng |
 | `mh-api` | `axum` feature `multipart`, `axum-extra` (cookie) | Tải file lên, cookie phiên |
 | `mh-providers` | `fastnbt` | Đọc điểm spawn trong `level.dat` |
 | `mh-core` | `md-5` | UUID offline của người chơi |
