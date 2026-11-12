@@ -208,7 +208,10 @@ mod tests {
     async fn wait_until(what: &str, mut done: impl FnMut() -> bool) {
         let start = Instant::now();
         while !done() {
-            assert!(start.elapsed() < Duration::from_secs(10), "chờ quá lâu: {what}");
+            assert!(
+                start.elapsed() < Duration::from_secs(10),
+                "chờ quá lâu: {what}"
+            );
             tokio::time::sleep(Duration::from_millis(50)).await;
         }
     }
@@ -237,7 +240,10 @@ mod tests {
         );
 
         tokio::time::sleep(Duration::from_millis(200)).await;
-        assert!(get_session(addr).await.is_err(), "LAN tắt thì không có listener");
+        assert!(
+            get_session(addr).await.is_err(),
+            "LAN tắt thì không có listener"
+        );
 
         app.auth().set_password(None, "correct-horse").unwrap();
         app.auth().set_lan(true).unwrap();
@@ -250,7 +256,10 @@ mod tests {
         wait_until("đóng listener", || lan.open_addrs().is_empty()).await;
         let start = Instant::now();
         while get_session(addr).await.is_ok() {
-            assert!(start.elapsed() < Duration::from_secs(10), "listener LAN không đóng");
+            assert!(
+                start.elapsed() < Duration::from_secs(10),
+                "listener LAN không đóng"
+            );
             tokio::time::sleep(Duration::from_millis(50)).await;
         }
         manager.stop().await;

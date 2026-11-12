@@ -36,7 +36,10 @@ fn wait_for_url(data_dir: &Path) -> String {
         {
             return url.to_owned();
         }
-        assert!(start.elapsed() < Duration::from_secs(60), "không có runtime.json");
+        assert!(
+            start.elapsed() < Duration::from_secs(60),
+            "không có runtime.json"
+        );
         std::thread::sleep(Duration::from_millis(100));
     }
 }
@@ -73,7 +76,12 @@ fn reset_password_while_running_unlocks_next_request() {
     let mut controller = KillOnDrop(minehost(dir).spawn().unwrap());
     let url = wait_for_url(dir);
 
-    let (status, _) = request(&url, "PUT", "/api/v1/auth/password", r#"{"new":"correct-horse"}"#);
+    let (status, _) = request(
+        &url,
+        "PUT",
+        "/api/v1/auth/password",
+        r#"{"new":"correct-horse"}"#,
+    );
     assert!(status.starts_with("HTTP/1.1 204"), "{status}");
     let (status, body) = request(&url, "GET", "/api/v1/servers", "");
     assert!(status.starts_with("HTTP/1.1 401"), "{status} {body}");
@@ -95,7 +103,10 @@ fn reset_password_while_running_unlocks_next_request() {
     assert!(status.starts_with("HTTP/1.1 202"), "{status}");
     let start = Instant::now();
     while controller.0.try_wait().unwrap().is_none() {
-        assert!(start.elapsed() < Duration::from_secs(30), "controller không tắt");
+        assert!(
+            start.elapsed() < Duration::from_secs(30),
+            "controller không tắt"
+        );
         std::thread::sleep(Duration::from_millis(100));
     }
 }

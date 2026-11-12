@@ -1,17 +1,13 @@
 //! `/settings/access` và request đi qua listener LAN (spec P2, mục 5.8, 5.9).
 #![allow(clippy::unwrap_used, clippy::panic)]
 
-#[path = "auth_support.rs"]
-#[allow(dead_code)]
-mod support;
-
 use std::sync::Arc;
 
 use axum::http::{Method, StatusCode};
 use serde_json::json;
 
 use crate::LanState;
-use support::{PASSWORD, api, call, call_at, login};
+use crate::auth_tests::support::{PASSWORD, api, call, call_at, login};
 
 const LAN_HOST: &str = "10.1.2.3:7878";
 
@@ -38,7 +34,15 @@ async fn lan_needs_password_and_lists_open_urls() {
     let router = crate::router_with_lan(Arc::clone(&api.app), 7878, Arc::clone(&lan));
 
     let body = Some(json!({ "lan": true }));
-    let reply = call(&router, Method::PUT, "/api/v1/settings/access", body, None, None).await;
+    let reply = call(
+        &router,
+        Method::PUT,
+        "/api/v1/settings/access",
+        body,
+        None,
+        None,
+    )
+    .await;
     assert_eq!(reply.status, StatusCode::CONFLICT);
     assert_eq!(reply.json()["code"], "LAN_NEEDS_PASSWORD");
 
@@ -82,17 +86,44 @@ async fn lan_host_is_accepted_only_while_listener_is_open() {
     api.app.auth().set_password(None, PASSWORD).unwrap();
     api.app.auth().set_lan(true).unwrap();
 
-    let reply = call_at(&router, LAN_HOST, Method::GET, "/api/v1/auth/session", None, None, None).await;
+    let reply = call_at(
+        &router,
+        LAN_HOST,
+        Method::GET,
+        "/api/v1/auth/session",
+        None,
+        None,
+        None,
+    )
+    .await;
     assert_eq!(reply.status, StatusCode::FORBIDDEN);
     assert_eq!(reply.json()["params"]["reason"], "host");
 
     lan.set_open(vec![LAN_HOST.parse().unwrap()]);
     let body = Some(json!({ "password": PASSWORD }));
-    let reply = call_at(&router, LAN_HOST, Method::POST, "/api/v1/auth/login", body, None, None).await;
+    let reply = call_at(
+        &router,
+        LAN_HOST,
+        Method::POST,
+        "/api/v1/auth/login",
+        body,
+        None,
+        None,
+    )
+    .await;
     assert_eq!(reply.status, StatusCode::OK, "{}", reply.json());
 
     // Listener khác cổng hoặc khác IP vẫn bị chặn.
-    let reply = call_at(&router, "10.1.2.3:7879", Method::GET, "/api/v1/auth/session", None, None, None).await;
+    let reply = call_at(
+        &router,
+        "10.1.2.3:7879",
+        Method::GET,
+        "/api/v1/auth/session",
+        None,
+        None,
+        None,
+    )
+    .await;
     assert_eq!(reply.status, StatusCode::FORBIDDEN);
 }
 
