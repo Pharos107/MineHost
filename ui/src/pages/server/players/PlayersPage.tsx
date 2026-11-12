@@ -1,12 +1,14 @@
-import { Users } from "lucide-react";
-import type { ReactNode } from "react";
+import { UserRound, Users } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorMessage } from "../../../api/client";
 import { playersApi, type Player } from "../../../api/players";
-import { Avatar, Badge, Card, DataTable, EmptyState, Notice, Stack, type Column } from "../../../ui";
+import { Avatar, Card, DataTable, EmptyState, Notice, Stack, type Column, type RowAction } from "../../../ui";
 import { useServer } from "../ServerLayout";
 import { AddPlayerCard } from "./AddPlayerCard";
+import { PlayerBadges } from "./PlayerBadges";
+import { PlayerDialog } from "./PlayerDialog";
 import { usePlayers } from "./usePlayers";
 
 /** Trang Người chơi (spec P2, mục 6.7): thêm theo tên, bảng Đang online và Đã từng vào. */
@@ -18,6 +20,8 @@ export function PlayersPage() {
   const online = data?.players.filter((p) => p.online) ?? [];
   const others = data?.players.filter((p) => !p.online) ?? [];
   const loading = query.isPending;
+  const [picked, setPicked] = useState<Player | null>(null);
+  const opened = picked && current(picked, data?.players ?? []);
 
   return (
     <Stack gap={5}>
@@ -28,7 +32,7 @@ export function PlayersPage() {
       ) : (
         <>
           <Card title={data ? t("players.onlineCount", { count: online.length, max: data.max_players }) : t("players.online")}>
-            <PlayerTable label={t("players.online")} rows={online} loading={loading} empty={<p>{t("players.noneOnline")}</p>} />
+            <PlayerTable label={t("players.online")} rows={online} loading={loading} onOpen={setPicked} empty={<p>{t("players.noneOnline")}</p>} />
           </Card>
           <Card title={t("players.known")}>
             <PlayerTable
@@ -36,13 +40,27 @@ export function PlayersPage() {
               rows={others}
               loading={loading}
               withLastSeen
+              onOpen={setPicked}
               empty={<EmptyState icon={Users} title={t("players.noneKnown")} description={t("players.noneKnownHint")} />}
             />
           </Card>
         </>
       )}
+      {data && opened && (
+        <PlayerDialog serverId={server.id} player={opened} players={data.players} running={data.running} onClose={() => setPicked(null)} />
+      )}
     </Stack>
   );
+}
+
+/**
+ * Bản mới nhất của người đang mở, để huy hiệu đổi ngay khi dữ liệu mới tới qua WebSocket. Người đó
+ * không còn trong file nào (ví dụ vừa bỏ cấm người chưa vào bao giờ) thì vẫn giữ hộp thoại, không còn
+ * trạng thái nào.
+ */
+function current(picked: Player, players: Player[]): Player {
+  const fresh = players.find((p) => p.name.toLowerCase() === picked.name.toLowerCase());
+  return fresh ?? { ...picked, online: false, whitelisted: false, op: false, banned: false, ban_reason: null, frozen: false };
 }
 
 interface PlayerTableProps {
@@ -50,11 +68,14 @@ interface PlayerTableProps {
   rows: Player[];
   loading: boolean;
   withLastSeen?: boolean;
+  onOpen: (player: Player) => void;
   empty: ReactNode;
 }
 
-function PlayerTable({ label, rows, loading, withLastSeen = false, empty }: PlayerTableProps) {
+function PlayerTable({ label, rows, loading, withLastSeen = false, onOpen, empty }: PlayerTableProps) {
+  const { t } = useTranslation();
   const columns = useColumns(withLastSeen);
+  const actions: RowAction<Player>[] = [{ label: t("players.details"), icon: UserRound, onSelect: onOpen }];
   return (
     <DataTable
       label={label}
@@ -63,6 +84,8 @@ function PlayerTable({ label, rows, loading, withLastSeen = false, empty }: Play
       rowKey={(p) => p.name.toLowerCase()}
       rowLabel={(p) => p.name}
       searchText={(p) => p.name}
+      actions={actions}
+      inlineActions={1}
       loading={loading}
       empty={empty}
     />
@@ -96,17 +119,4 @@ function useColumns(withLastSeen: boolean): Column<Player>[] {
     });
   }
   return columns;
-}
-
-/** Huy hiệu op / whitelist / bị cấm / đóng băng. Không có gì thì để trống. */
-export function PlayerBadges({ player }: { player: Player }) {
-  const { t } = useTranslation();
-  return (
-    <Stack direction="row" gap={1} wrap>
-      {player.op && <Badge tone="primary">{t("players.badge.op")}</Badge>}
-      {player.whitelisted && <Badge tone="success">{t("players.badge.whitelisted")}</Badge>}
-      {player.banned && <Badge tone="danger">{t("players.badge.banned")}</Badge>}
-      {player.frozen && <Badge tone="info">{t("players.badge.frozen")}</Badge>}
-    </Stack>
-  );
 }
