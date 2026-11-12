@@ -129,7 +129,7 @@
       "check_disk": "Checking disk space",
       "resolve_version": "Looking up version {{minecraft}}",
       "download_java": "Downloading Java {{major}}",
-      "download_server": "Downloading Paper {{minecraft}}",
+      "download_server": "Downloading server {{minecraft}}",
       "prepare_files": "Preparing files",
       "save_world": "Saving the world",
       "compress": "Compressing the backup",
