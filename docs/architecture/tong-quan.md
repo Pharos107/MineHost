@@ -16,7 +16,7 @@ flowchart TD
     API --> APP[mh-app: use case, Job, bus sự kiện]
     APP --> SUP[mh-supervisor: một actor mỗi server]
     APP --> STORE[mh-store: instance.toml, file người chơi]
-    APP --> PROV[mh-providers: Mojang, Paper]
+    APP --> PROV[mh-providers: Mojang, Paper, Purpur]
     APP --> JAVA[mh-java: Temurin JRE]
     APP --> BAK[mh-backup: tar.zst]
     SUP --> RT[mh-runtime: process con]
@@ -30,7 +30,8 @@ nhiều crate; `mh-core` không I/O.
 
 ## Luồng chính
 
-**Tạo server** (Job `create` trong `mh-app`): kiểm tra ổ đĩa → lấy phiên bản từ Mojang và Paper →
+**Tạo server** (Job `create` trong `mh-app`): kiểm tra ổ đĩa → lấy phiên bản từ Mojang và nguồn của loại
+server (Paper, Purpur; Vanilla dùng jar của Mojang) →
 `mh-java` tải Temurin JRE đúng major mà Mojang yêu cầu → tải `server.jar` có kiểm tra hash → ghi
 `server.properties` và `instance.toml`. Lỗi hoặc hủy thì xóa thư mục tạo dở.
 
@@ -75,7 +76,7 @@ hạn RAM hay CPU. Linux không dùng cgroup. Hệ quả về bảo mật: [bao-
 
 | Phần | Trạng thái |
 | --- | --- |
-| Loại server | Paper. Vanilla và Purpur: PR-30 của P2. Mod loader: P3 |
+| Loại server | Paper, Purpur (kiểm tra md5), Vanilla (jar của Mojang). Mod loader: P3 |
 | Runtime | Chỉ process con. Docker: P4 |
 | Java | Temurin JRE do MineHost tải, chọn major theo Mojang. Không dùng Java có sẵn trên máy |
 | Lưu trữ | File trên đĩa. Không có SQLite ([ADR 0004](../adr/0004-chua-dung-sqlite.md)) |
@@ -84,7 +85,7 @@ hạn RAM hay CPU. Linux không dùng cgroup. Hệ quả về bảo mật: [bao-
 | Tệp | Dịch vụ, route và trang Tệp (kèm trình sửa) đã có |
 | Sao lưu | Nén, giải nén, Job sao lưu và Job khôi phục đã có; lịch, route, giao diện chưa có |
 | Người chơi | Phân tích log, file JSON, sự kiện, hồ sơ Mojang, skin, điểm spawn đã có; API và giao diện chưa có |
-| Đăng nhập, LAN | Mật khẩu admin (`auth.toml`, argon2id), phiên, CSRF, giới hạn đăng nhập sai, listener LAN theo cờ `lan`, `minehost reset-password` đã có; chưa có trang Đăng nhập và Cài đặt (PR-29) |
+| Đăng nhập, LAN | Mật khẩu admin (`auth.toml`, argon2id), phiên, CSRF, giới hạn đăng nhập sai, listener LAN theo cờ `lan`, `minehost reset-password`, trang Đăng nhập và Cài đặt đã có |
 | Chạy như service | Chưa có (P4). Cách tạm cho Linux: [ops/linux-systemd.md](../ops/linux-systemd.md) |
 
 ## Chỗ lệch với spec gốc

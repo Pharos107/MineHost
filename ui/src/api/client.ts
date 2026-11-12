@@ -15,6 +15,8 @@ export type CreateServer = components["schemas"]["CreateServerBody"];
 export type Created = components["schemas"]["CreatedDto"];
 export type ConsoleLine = components["schemas"]["ConsoleLineDto"];
 export type ServerAction = "start" | "stop" | "restart" | "kill";
+/** Loại server tạo được (spec P2, mục 5.4). */
+export type Loader = "paper" | "vanilla" | "purpur";
 export type Property = components["schemas"]["PropertyDto"];
 export type ServerPatch = components["schemas"]["PatchServerBody"];
 export type Trashed = components["schemas"]["TrashedDto"];
@@ -34,6 +36,30 @@ export class ApiError extends Error {
   }
 }
 
+// Token CSRF của phiên hiện tại (spec P2, mục 8). Lấy từ `/auth/session` hoặc `/auth/login`,
+// chỉ giữ trong bộ nhớ; tải lại trang thì đọc lại từ `/auth/session`.
+let csrfToken: string | null = null;
+
+export function setCsrfToken(token: string | null) {
+  csrfToken = token;
+}
+
+/** Header cho request thay đổi dữ liệu. `files.ts` dùng cho upload bằng XHR. */
+export function mutationHeaders(): Record<string, string> {
+  // Controller bắt request thay đổi dữ liệu phải có Origin của nó hoặc `X-MineHost`.
+  const headers: Record<string, string> = { "X-MineHost": "1" };
+  if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+  return headers;
+}
+
+const authListeners = new Set<() => void>();
+
+/** Gọi `listener` mỗi khi API trả `AUTH_REQUIRED` (phiên hết hạn, mật khẩu vừa đổi). */
+export function onAuthRequired(listener: () => void): () => void {
+  authListeners.add(listener);
+  return () => authListeners.delete(listener);
+}
+
 export async function request<T>(
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   path: string,
@@ -42,8 +68,7 @@ export async function request<T>(
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json", ...extraHeaders };
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  // Controller bắt request thay đổi dữ liệu phải có Origin của nó hoặc header này.
-  if (method !== "GET") headers["X-MineHost"] = "1";
+  if (method !== "GET") Object.assign(headers, mutationHeaders());
 
   let response: Response;
   try {
@@ -58,7 +83,9 @@ export async function request<T>(
 
   if (!response.ok) {
     const error = (await response.json().catch(() => null)) as ErrorBody | null;
-    throw new ApiError(error?.code ?? "INTERNAL", error?.params ?? {}, response.status);
+    const code = error?.code ?? "INTERNAL";
+    if (code === "AUTH_REQUIRED") authListeners.forEach((listener) => listener());
+    throw new ApiError(code, error?.params ?? {}, response.status);
   }
   // 202/204 của thao tác không trả dữ liệu thì thân rỗng.
   const text = await response.text();
@@ -88,7 +115,8 @@ export const api = {
     request<ServerMetrics>("GET", `${serverPath(id)}/metrics${since ? `?since=${encodeURIComponent(since)}` : ""}`),
   properties: (id: string) => request<{ properties: Property[] }>("GET", `${serverPath(id)}/properties`),
   saveProperties: (id: string, properties: Property[]) => request<void>("PUT", `${serverPath(id)}/properties`, { properties }),
-  paperVersions: () => request<CatalogVersion[]>("GET", "/catalog/paper/versions"),
+  /** Bản cài được của một loại server, mới nhất trước. */
+  catalogVersions: (loader: Loader) => request<CatalogVersion[]>("GET", `/catalog/${loader}/versions`),
   /** Job đang giữ, mới nhất trước; `serverId` có thì chỉ Job của server đó. */
   jobs: (serverId?: string) =>
     request<Job[]>("GET", serverId ? `/jobs?server_id=${encodeURIComponent(serverId)}` : "/jobs"),

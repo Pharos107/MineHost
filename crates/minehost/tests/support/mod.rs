@@ -116,9 +116,14 @@ impl Controller {
 
     /// Tạo server Paper RAM nhỏ (CI chạy tới 3 server cùng lúc) và chờ Job cài xong.
     pub fn create_server(&self, name: &str) -> String {
+        self.create_server_of(name, "paper")
+    }
+
+    /// Như [`Self::create_server`] với loại server khác: `vanilla`, `purpur`.
+    pub fn create_server_of(&self, name: &str, loader: &str) -> String {
         let created = self.post(
             "/servers",
-            json!({ "name": name, "loader": "paper", "minecraft": MINECRAFT,
+            json!({ "name": name, "loader": loader, "minecraft": MINECRAFT,
                     "memory_mb": { "min": 512, "max": 1024 } }),
         );
         let job = created["job_id"].as_u64().unwrap();

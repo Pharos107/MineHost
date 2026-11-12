@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use md5::Md5;
 use sha1::Sha1;
 use sha2::{Digest, Sha256};
 use tokio::io::AsyncWriteExt;
@@ -14,11 +15,18 @@ pub const MIN_FREE_BYTES: u64 = 1024 * 1024 * 1024;
 /// Hash mà file tải về phải khớp. Chuỗi hex đã kiểm tra, nên dùng làm tên file cache an toàn.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Checksum {
+    /// Chỉ Purpur dùng (spec P2, mục 5.4). md5 không chống được người cố ý sửa file, nhưng file
+    /// tải qua HTTPS từ chính API của Purpur, nên ở đây chỉ để bắt file hỏng khi tải.
+    Md5(String),
     Sha1(String),
     Sha256(String),
 }
 
 impl Checksum {
+    pub fn md5(hex: &str) -> Option<Self> {
+        valid_hex(hex, 32).map(Self::Md5)
+    }
+
     pub fn sha1(hex: &str) -> Option<Self> {
         valid_hex(hex, 40).map(Self::Sha1)
     }
@@ -29,6 +37,7 @@ impl Checksum {
 
     fn algo(&self) -> &'static str {
         match self {
+            Self::Md5(_) => "md5",
             Self::Sha1(_) => "sha1",
             Self::Sha256(_) => "sha256",
         }
@@ -36,7 +45,7 @@ impl Checksum {
 
     pub fn hex(&self) -> &str {
         match self {
-            Self::Sha1(h) | Self::Sha256(h) => h,
+            Self::Md5(h) | Self::Sha1(h) | Self::Sha256(h) => h,
         }
     }
 }
@@ -57,6 +66,7 @@ pub struct Download<'a> {
 }
 
 enum Hasher {
+    Md5(Md5),
     Sha1(Sha1),
     Sha256(Sha256),
 }
@@ -64,6 +74,7 @@ enum Hasher {
 impl Hasher {
     fn new(checksum: &Checksum) -> Self {
         match checksum {
+            Checksum::Md5(_) => Self::Md5(Md5::new()),
             Checksum::Sha1(_) => Self::Sha1(Sha1::new()),
             Checksum::Sha256(_) => Self::Sha256(Sha256::new()),
         }
@@ -71,6 +82,7 @@ impl Hasher {
 
     fn update(&mut self, data: &[u8]) {
         match self {
+            Self::Md5(h) => h.update(data),
             Self::Sha1(h) => h.update(data),
             Self::Sha256(h) => h.update(data),
         }
@@ -78,6 +90,7 @@ impl Hasher {
 
     fn finish(self) -> String {
         match self {
+            Self::Md5(h) => hex(&h.finalize()),
             Self::Sha1(h) => hex(&h.finalize()),
             Self::Sha256(h) => hex(&h.finalize()),
         }

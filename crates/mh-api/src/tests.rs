@@ -442,7 +442,7 @@ fn openapi_lists_all_routes() {
         "/api/v1/servers/{id}/console",
         "/api/v1/servers/{id}/metrics",
         "/api/v1/servers/{id}/properties",
-        "/api/v1/catalog/paper/versions",
+        "/api/v1/catalog/{loader}/versions",
         "/api/v1/jobs",
         "/api/v1/jobs/{id}",
         "/api/v1/jobs/{id}/cancel",
@@ -454,6 +454,9 @@ fn openapi_lists_all_routes() {
 
 #[path = "tests_files.rs"]
 mod tests_files;
+
+#[path = "tests_catalog.rs"]
+mod tests_catalog;
 
 #[path = "tests_restart.rs"]
 mod tests_restart;

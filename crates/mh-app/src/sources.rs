@@ -8,7 +8,7 @@ use std::sync::Arc;
 use mh_core::{ErrorCode, LoaderKind, McVersion};
 use mh_java::JavaManager;
 use mh_net::{Download, HttpClient};
-use mh_providers::{Mojang, Paper};
+use mh_providers::{Mojang, Paper, Purpur, Release};
 use time::OffsetDateTime;
 
 use crate::AppError;
@@ -68,7 +68,10 @@ pub trait JavaSource: Send + Sync + 'static {
 /// Tham số chạy sau `-jar` theo loại server.
 pub fn launch_args(loader: LoaderKind) -> Vec<String> {
     match loader {
-        LoaderKind::Paper => Paper::recipe().args,
+        // Purpur là bản sửa của Paper nên nhận cùng tham số.
+        LoaderKind::Paper | LoaderKind::Purpur => Paper::recipe().args,
+        // Jar của Mojang nhận `nogui` không có gạch ngang, đúng từ các bản rất cũ.
+        LoaderKind::Vanilla => vec!["nogui".to_owned()],
         // `LoaderKind` là `non_exhaustive`; loại mới phải tự khai báo cách chạy ở đây.
         _ => Vec::new(),
     }
@@ -81,12 +84,13 @@ pub(crate) fn unsupported(loader: LoaderKind) -> AppError {
     )
 }
 
-/// Mojang cho biết bản Java cần dùng, Paper cho jar.
+/// Mojang cho biết bản Java cần dùng (và jar Vanilla); Paper, Purpur cho jar của chúng.
 #[derive(Debug)]
 pub struct OnlineCatalog {
     http: Arc<HttpClient>,
     mojang: Mojang,
     paper: Paper,
+    purpur: Purpur,
 }
 
 impl OnlineCatalog {
@@ -94,20 +98,70 @@ impl OnlineCatalog {
         Self {
             mojang: Mojang::new(Arc::clone(&http)),
             paper: Paper::new(Arc::clone(&http)),
+            purpur: Purpur::new(Arc::clone(&http)),
             http,
         }
+    }
+}
+
+impl OnlineCatalog {
+    async fn releases_for(&self, loader: LoaderKind) -> Result<Vec<Release>, AppError> {
+        let releases = self.mojang.releases().await?;
+        Ok(match loader {
+            LoaderKind::Paper => self.paper.versions(&releases).await?,
+            LoaderKind::Purpur => self.purpur.versions(&releases).await?,
+            LoaderKind::Vanilla => releases,
+            _ => return Err(unsupported(loader)),
+        })
+    }
+
+    /// Bản Java lấy từ Mojang, jar từ nguồn của loại server. Hai request chạy song song.
+    async fn resolve_jar(
+        &self,
+        loader: LoaderKind,
+        minecraft: &McVersion,
+    ) -> Result<ResolvedServer, AppError> {
+        let detail = self.mojang.version_detail(minecraft);
+        let (java_major, build, jar) = match loader {
+            LoaderKind::Paper => {
+                let (detail, build) =
+                    tokio::join!(detail, self.paper.latest_stable_build(minecraft));
+                let build = build?;
+                (detail?.java_major, Some(build.build), build.jar)
+            }
+            LoaderKind::Purpur => {
+                let (detail, build) = tokio::join!(detail, self.purpur.latest_build(minecraft));
+                let build = build?;
+                (detail?.java_major, Some(build.build), build.jar)
+            }
+            LoaderKind::Vanilla => {
+                let detail = detail.await?;
+                // Vài bản rất cũ không có jar server.
+                let jar = detail.server.ok_or_else(|| {
+                    AppError::new(
+                        ErrorCode::VersionNotFound,
+                        format!("{minecraft} không có jar server"),
+                    )
+                })?;
+                (detail.java_major, None, jar)
+            }
+            _ => return Err(unsupported(loader)),
+        };
+        Ok(ResolvedServer {
+            minecraft: minecraft.clone(),
+            build,
+            java_major,
+            jar,
+        })
     }
 }
 
 impl ServerCatalog for OnlineCatalog {
     fn versions(&self, loader: LoaderKind) -> BoxFut<'_, Result<Vec<CatalogVersion>, AppError>> {
         Box::pin(async move {
-            if loader != LoaderKind::Paper {
-                return Err(unsupported(loader));
-            }
-            let releases = self.mojang.releases().await?;
-            let versions = self.paper.versions(&releases).await?;
-            Ok(versions
+            Ok(self
+                .releases_for(loader)
+                .await?
                 .into_iter()
                 .map(|r| CatalogVersion {
                     id: r.id,
@@ -122,22 +176,7 @@ impl ServerCatalog for OnlineCatalog {
         loader: LoaderKind,
         minecraft: &'a McVersion,
     ) -> BoxFut<'a, Result<ResolvedServer, AppError>> {
-        Box::pin(async move {
-            if loader != LoaderKind::Paper {
-                return Err(unsupported(loader));
-            }
-            let (detail, build) = tokio::join!(
-                self.mojang.version_detail(minecraft),
-                self.paper.latest_stable_build(minecraft)
-            );
-            let (detail, build) = (detail?, build?);
-            Ok(ResolvedServer {
-                minecraft: minecraft.clone(),
-                build: Some(build.build),
-                java_major: detail.java_major,
-                jar: build.jar,
-            })
-        })
+        Box::pin(self.resolve_jar(loader, minecraft))
     }
 
     fn download<'a>(
@@ -152,7 +191,8 @@ impl ServerCatalog for OnlineCatalog {
                 url: &jar.url,
                 checksum: &jar.checksum,
                 dest,
-                size: Some(jar.size),
+                // Purpur không ghi kích thước (0): để `Content-Length` cho biết.
+                size: (jar.size > 0).then_some(jar.size),
             };
             self.http.download(req, progress, cancel).await?;
             Ok(())

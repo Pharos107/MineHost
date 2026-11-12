@@ -58,7 +58,9 @@
     "home": "Về danh sách server"
   },
   "loaders": {
-    "paper": "Paper"
+    "paper": "Paper",
+    "vanilla": "Vanilla",
+    "purpur": "Purpur"
   },
   "servers": {
     "heading": "Server của bạn",
@@ -92,9 +94,8 @@
     },
     "loader": "Chọn loại server",
     "paperDescription": "Nhanh, hỗ trợ plugin.",
-    "vanillaDescription": "Bản gốc của Mojang.",
+    "vanillaDescription": "Bản gốc của Mojang, không có plugin.",
     "recommended": "Khuyên dùng",
-    "soon": "Sắp có",
     "version": "Phiên bản Minecraft",
     "versionHint": "Bạn bè cần dùng đúng phiên bản này để vào chơi.",
     "latest": "{{version}} (mới nhất)",
@@ -118,7 +119,8 @@
     "creatingTitle": "Đang tạo server",
     "creatingDescription": "Lần đầu có thể mất vài phút vì MineHost cần tải Java.",
     "failedTitle": "Không tạo được server",
-    "cancelledTitle": "Đã hủy tạo server."
+    "cancelledTitle": "Đã hủy tạo server.",
+    "purpurDescription": "Dựa trên Paper, hỗ trợ plugin và có thêm nhiều tùy chỉnh gameplay."
   },
   "jobs": {
     "starting": "Đang bắt đầu…",
@@ -127,7 +129,7 @@
       "check_disk": "Kiểm tra ổ đĩa",
       "resolve_version": "Lấy thông tin phiên bản {{minecraft}}",
       "download_java": "Tải Java {{major}}",
-      "download_server": "Tải Paper {{minecraft}}",
+      "download_server": "Tải server {{minecraft}}",
       "prepare_files": "Chuẩn bị file",
       "save_world": "Lưu world",
       "compress": "Nén bản sao lưu",
@@ -405,5 +407,36 @@
     "changedBody": "Có người (hoặc server) đã sửa file này sau khi bạn mở. Tải lại bản mới sẽ bỏ thay đổi của bạn; hãy chép thay đổi của bạn trước nếu cần.",
     "reloadLatest": "Tải lại bản mới",
     "copyMine": "Chép thay đổi của tôi"
+  },
+  "auth": {
+    "checking": "Đang kiểm tra đăng nhập…",
+    "title": "Đăng nhập",
+    "description": "MineHost trên máy này đã đặt mật khẩu admin.",
+    "password": "Mật khẩu",
+    "submit": "Đăng nhập",
+    "locked": "Nhập sai quá nhiều lần. Thử lại sau {{seconds}} giây.",
+    "forgot": "Quên mật khẩu? Trên máy chạy MineHost, chạy lệnh minehost reset-password, hoặc chuột phải icon MineHost ở khay → Đặt lại mật khẩu (Windows).",
+    "logout": "Đăng xuất"
+  },
+  "appSettings": {
+    "loading": "Đang tải…",
+    "security": "Bảo mật",
+    "securityOff": "Chưa đặt mật khẩu: ai mở được trình duyệt trên máy này đều dùng được MineHost.",
+    "securityOn": "Đã đặt mật khẩu. Mở MineHost, kể cả trên máy này, đều phải đăng nhập.",
+    "current": "Mật khẩu hiện tại",
+    "new": "Mật khẩu mới",
+    "newHint": "Ít nhất 8 ký tự. Đặt hoặc đổi xong, bạn sẽ phải đăng nhập lại.",
+    "confirm": "Nhập lại mật khẩu mới",
+    "mismatch": "Hai mật khẩu không khớp.",
+    "set": "Đặt mật khẩu",
+    "change": "Đổi mật khẩu",
+    "remove": "Xóa mật khẩu",
+    "lan": "Truy cập từ mạng LAN",
+    "lanSwitch": "Cho máy khác trong mạng LAN mở MineHost",
+    "lanHint": "Máy khác cùng Wi-Fi hoặc mạng nhà mở được giao diện này sau khi đăng nhập.",
+    "lanNeedsPassword": "Hãy đặt mật khẩu ở mục Bảo mật trước khi bật.",
+    "lanWarning": "Giao diện qua mạng LAN dùng HTTP, không mã hóa: người dùng chung mạng có thể đọc được mật khẩu khi bạn đăng nhập. Chỉ bật trên mạng nhà bạn tin tưởng, không bật ở Wi-Fi công cộng.",
+    "lanNoAddress": "Chưa mở được địa chỉ LAN nào. Máy có thể chưa nối mạng LAN, hoặc cổng đang bị chương trình khác dùng.",
+    "lanUrl": "Địa chỉ trong mạng LAN"
   }
 }

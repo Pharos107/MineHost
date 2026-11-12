@@ -71,12 +71,14 @@ impl From<McVersion> for String {
     }
 }
 
-/// Loại server. P1 chỉ có Paper; các loại khác thêm dần từ P2, P3.
+/// Loại server. P1 có Paper; P2 thêm Vanilla và Purpur (spec P2, mục 5.4); mod loader từ P3.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 #[non_exhaustive]
 pub enum LoaderKind {
     Paper,
+    Vanilla,
+    Purpur,
 }
 
 impl LoaderKind {
@@ -84,12 +86,16 @@ impl LoaderKind {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Paper => "paper",
+            Self::Vanilla => "vanilla",
+            Self::Purpur => "purpur",
         }
     }
 
     pub fn parse(s: &str) -> Result<Self, InvalidValue> {
         match s {
             "paper" => Ok(Self::Paper),
+            "vanilla" => Ok(Self::Vanilla),
+            "purpur" => Ok(Self::Purpur),
             _ => Err(InvalidValue::new("LoaderKind", "loại server chưa hỗ trợ")),
         }
     }
@@ -151,11 +157,17 @@ mod tests {
 
     #[test]
     fn loader_kind_matches_serde_name() {
-        let kind = LoaderKind::parse("paper").unwrap();
-        assert_eq!(serde_json::to_string(&kind).unwrap(), "\"paper\"");
-        assert_eq!(kind.as_str(), "paper");
+        for name in ["paper", "vanilla", "purpur"] {
+            let kind = LoaderKind::parse(name).unwrap();
+            assert_eq!(serde_json::to_string(&kind).unwrap(), format!("\"{name}\""));
+            assert_eq!(kind.as_str(), name);
+            assert_eq!(
+                serde_json::from_str::<LoaderKind>(&format!("\"{name}\"")).unwrap(),
+                kind
+            );
+        }
         assert!(LoaderKind::parse("Paper").is_err());
         assert!(LoaderKind::parse("forge").is_err());
-        assert!(serde_json::from_str::<LoaderKind>("\"vanilla\"").is_err());
+        assert!(serde_json::from_str::<LoaderKind>("\"fabric\"").is_err());
     }
 }

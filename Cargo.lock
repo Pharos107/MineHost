@@ -1411,6 +1411,7 @@ dependencies = [
 name = "mh-net"
 version = "0.2.0"
 dependencies = [
+ "md-5",
  "mh-core",
  "reqwest",
  "rustls",

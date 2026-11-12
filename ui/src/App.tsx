@@ -1,10 +1,10 @@
-import { useTranslation } from "react-i18next";
 import { BrowserRouter, Route, Routes } from "react-router";
 
 import { useServersLive } from "./api/live";
-import { SidebarLayout, TopLayout } from "./components/AppLayout";
-import { ComingSoon } from "./components/ComingSoon";
+import { BareLayout, SidebarLayout, TopLayout } from "./components/AppLayout";
+import { AuthGate } from "./components/AuthGate";
 import { CreateServerPage } from "./pages/create/CreateServerPage";
+import { LoginPage } from "./pages/auth/LoginPage";
 import { HomePage } from "./pages/home/HomePage";
 import { JobsPage } from "./pages/jobs/JobsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -14,13 +14,20 @@ import { FileEditorPage } from "./pages/server/files/FileEditorPage";
 import { FilesPage } from "./pages/server/files/FilesPage";
 import { OverviewPage } from "./pages/server/overview/OverviewPage";
 import { ServerLayout } from "./pages/server/ServerLayout";
+import { SettingsPage } from "./pages/settings/SettingsPage";
 
 /** Các trang theo spec P2, mục 2. Backend trả `index.html` cho mọi đường dẫn lạ. */
 export function AppRoutes() {
-  const { t } = useTranslation();
-
   return (
     <Routes>
+      <Route
+        path="/login"
+        element={
+          <BareLayout>
+            <LoginPage />
+          </BareLayout>
+        }
+      />
       <Route
         path="/new"
         element={
@@ -33,7 +40,7 @@ export function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/servers" element={<ServerListPage />} />
         <Route path="/jobs" element={<JobsPage />} />
-        <Route path="/settings" element={<ComingSoon title={t("nav.settings")} />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="/servers/:id" element={<ServerLayout />}>
           <Route index element={<OverviewPage />} />
           <Route path="console" element={<ConsoleRoute />} />
@@ -55,7 +62,9 @@ export function App() {
 
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <AuthGate>
+        <AppRoutes />
+      </AuthGate>
     </BrowserRouter>
   );
 }
