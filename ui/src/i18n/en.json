@@ -417,5 +417,36 @@
     "changedBody": "Someone (or the server) edited this file after you opened it. Reloading discards your changes; copy them first if you need them.",
     "reloadLatest": "Reload latest",
     "copyMine": "Copy my changes"
+  },
+  "auth": {
+    "checking": "Checking sign-in…",
+    "title": "Sign in",
+    "description": "An admin password is set for MineHost on this computer.",
+    "password": "Password",
+    "submit": "Sign in",
+    "locked": "Too many wrong attempts. Try again in {{seconds}} seconds.",
+    "forgot": "Forgot the password? On the computer running MineHost, run minehost reset-password, or right-click the MineHost tray icon → Reset password (Windows).",
+    "logout": "Sign out"
+  },
+  "appSettings": {
+    "loading": "Loading…",
+    "security": "Security",
+    "securityOff": "No password set: anyone who can open a browser on this computer can use MineHost.",
+    "securityOn": "A password is set. Opening MineHost, even on this computer, requires signing in.",
+    "current": "Current password",
+    "new": "New password",
+    "newHint": "At least 8 characters. After setting or changing it you will need to sign in again.",
+    "confirm": "Repeat new password",
+    "mismatch": "The passwords do not match.",
+    "set": "Set password",
+    "change": "Change password",
+    "remove": "Remove password",
+    "lan": "Access from the LAN",
+    "lanSwitch": "Let other computers on the LAN open MineHost",
+    "lanHint": "Other computers on the same Wi-Fi or home network can open this interface after signing in.",
+    "lanNeedsPassword": "Set a password under Security before turning this on.",
+    "lanWarning": "The LAN interface uses HTTP without encryption: people on the same network could read your password when you sign in. Only turn this on at home on a network you trust, never on public Wi-Fi.",
+    "lanNoAddress": "No LAN address could be opened yet. The computer may not be on a LAN, or another program is using the port.",
+    "lanUrl": "LAN address"
   }
 }
