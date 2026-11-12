@@ -29,7 +29,7 @@ thì sửa dòng của nó ở đây trong chính PR ấy.
 | 15 | File người chơi, sự kiện người chơi | Đã merge | [#36](https://github.com/Pharos107/MineHost/pull/36) |
 | 16 | Hồ sơ Mojang, skin, điểm spawn | Đã merge | [#45](https://github.com/Pharos107/MineHost/pull/45) |
 | 17 | Route và topic người chơi | Đang làm | |
-| 18 | Trang Người chơi | Chưa bắt đầu | |
+| 18 | Trang Người chơi | Đang làm | |
 | 19 | Chi tiết người chơi, skin 3D | Chưa bắt đầu | |
 | 20 | Nén và giải nén tar.zst | Đã merge | [#34](https://github.com/Pharos107/MineHost/pull/34) |
 | 21 | Job sao lưu | Đã merge | [#43](https://github.com/Pharos107/MineHost/pull/43) |

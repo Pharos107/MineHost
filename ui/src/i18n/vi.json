@@ -18,10 +18,6 @@
     "game": "Cài đặt game",
     "serverSettings": "Cài đặt server"
   },
-  "soon": {
-    "title": "Sắp có",
-    "description": "Trang này đang được làm, có trong bản MineHost tới."
-  },
   "quit": {
     "button": "Thoát",
     "title": "Thoát MineHost?",
@@ -507,5 +503,41 @@
     "understand": "Tôi hiểu",
     "deleteTitle": "Xóa bản sao lưu",
     "deleteBody": "Xóa hẳn bản lúc {{time}}. Không lấy lại được."
+  },
+  "players": {
+    "add": "Thêm người chơi",
+    "addHint": "Thêm vào whitelist hoặc cấm theo tên, kể cả người chưa vào server bao giờ.",
+    "addHintWhitelistOff": "Thêm vào whitelist hoặc cấm theo tên. Whitelist đang tắt nên ai cũng vào được; bật trong Cài đặt game.",
+    "name": "Tên người chơi",
+    "nameHint": "Tên trong Minecraft, 3 tới 16 ký tự.",
+    "nameInvalid": "Tên chỉ gồm chữ không dấu, số và dấu gạch dưới, dài 3 tới 16 ký tự.",
+    "whitelistAdd": "Thêm vào whitelist",
+    "ban": "Cấm",
+    "added": {
+      "whitelist": {
+        "sent": "Đã gửi lệnh thêm {{name}} vào whitelist. Kết quả hiện trong Console.",
+        "saved": "Đã thêm {{name}} vào whitelist."
+      },
+      "ban": {
+        "sent": "Đã gửi lệnh cấm {{name}}. Kết quả hiện trong Console.",
+        "saved": "Đã cấm {{name}}."
+      }
+    },
+    "stoppedHint": "Server đang tắt: vẫn sửa được whitelist, op và danh sách cấm. Đuổi, đóng băng, dịch chuyển cần server đang chạy.",
+    "online": "Đang online",
+    "onlineCount": "Đang online ({{count}}/{{max}})",
+    "noneOnline": "Chưa có ai online.",
+    "known": "Đã từng vào",
+    "noneKnown": "Chưa có người chơi nào",
+    "noneKnownHint": "Người đã vào server, có trong whitelist, là op hoặc bị cấm sẽ hiện ở đây.",
+    "status": "Trạng thái",
+    "lastSeen": "Lần cuối vào",
+    "neverJoined": "Chưa vào",
+    "badge": {
+      "op": "Op",
+      "whitelisted": "Whitelist",
+      "banned": "Bị cấm",
+      "frozen": "Đóng băng"
+    }
   }
 }

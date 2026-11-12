@@ -7,6 +7,7 @@ import type { ServerState } from "../api/client";
 import { LanguageSwitch } from "../components/LanguageSwitch";
 import {
   AppShell,
+  Avatar,
   Badge,
   Button,
   Card,
@@ -87,7 +88,7 @@ function ButtonSection() {
 
 function BadgeSection() {
   return (
-    <Card title="Badge / StatusBadge">
+    <Card title="Badge / StatusBadge / Avatar">
       <Stack direction="row" gap={2} wrap>
         {STATES.map((state) => (
           <StatusBadge key={state} state={state} />
@@ -97,6 +98,11 @@ function BadgeSection() {
         <Badge>Paper</Badge>
         <Badge tone="primary">1.21.4</Badge>
         <Badge tone="warning">Bản thử nghiệm</Badge>
+      </Stack>
+      <Stack direction="row" gap={2} align="center">
+        <Avatar name="Steve" size="sm" />
+        <Avatar name="Alex" />
+        <Avatar name="Notch" size="lg" />
       </Stack>
     </Card>
   );

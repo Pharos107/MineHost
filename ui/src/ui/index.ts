@@ -1,5 +1,6 @@
 // Bộ component dùng chung. Trang chỉ import từ đây; xem spec docs/specs/p1-ui-components.md.
 export { AppShell } from "./AppShell";
+export { Avatar } from "./Avatar";
 export { Badge, StatusBadge, type BadgeTone } from "./Badge";
 export { Breadcrumb, type Crumb } from "./Breadcrumb";
 export { Button, IconButton, type ButtonSize, type ButtonVariant } from "./Button";

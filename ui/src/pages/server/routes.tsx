@@ -1,4 +1,3 @@
-import { ComingSoon } from "../../components/ComingSoon";
 import { ConsoleTab } from "./ConsoleTab";
 import { GameSettingsTab } from "./GameSettingsTab";
 import { useServer } from "./ServerLayout";
@@ -16,9 +15,4 @@ export function GameSettingsRoute() {
 
 export function ServerSettingsRoute() {
   return <ServerSettingsTab server={useServer()} />;
-}
-
-/** Tổng quan, Tệp, Người chơi, Sao lưu làm ở các PR sau của P2. */
-export function ServerComingSoon() {
-  return <ComingSoon />;
 }
