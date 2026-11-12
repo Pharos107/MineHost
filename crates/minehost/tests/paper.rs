@@ -172,6 +172,47 @@ fn restore_brings_back_placed_block() {
     assert!(status.success(), "{status}");
 }
 
+/// Spec P2, mục 9: whitelist và op ghi lúc server tắt (UUID tra từ Mojang), bật lên vẫn còn.
+#[test]
+#[ignore = "tải Java và Paper thật, hỏi Mojang; chạy trong job integration của CI"]
+fn whitelist_written_while_stopped_survives_start() {
+    let dir = DataDir::prepare();
+    let controller = Controller::start(&dir);
+    let id = controller.create_server("Whitelist");
+    for action in ["whitelist_add", "op"] {
+        let done = controller.post(
+            &format!("/servers/{id}/players/notch/actions"),
+            json!({ "action": action }),
+        );
+        assert_eq!(done["done"], "saved", "{done}");
+    }
+
+    controller.start_server(&id);
+    controller.post(
+        &format!("/servers/{id}/console"),
+        json!({ "command": "whitelist list" }),
+    );
+    let line = controller.wait_console(&id, "whitelisted player");
+    assert!(line.contains("Notch"), "{line}");
+    let players = controller.get(&format!("/servers/{id}/players"));
+    let notch = players["players"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["name"] == "Notch")
+        .unwrap();
+    assert_eq!(notch["uuid"], "069a79f4-44e9-4726-a5be-fca90e38aaf5");
+    assert_eq!(
+        (notch["whitelisted"].as_bool(), notch["op"].as_bool()),
+        (Some(true), Some(true))
+    );
+
+    controller.post(&format!("/servers/{id}/actions/stop"), json!({}));
+    controller.wait_state(&id, "stopped", Duration::from_secs(90));
+    let status = controller.shutdown(Duration::from_secs(30));
+    assert!(status.success(), "{status}");
+}
+
 fn wait_job(controller: &Controller, started: &serde_json::Value) {
     let job = started["job_id"].as_u64().unwrap();
     let done = wait_until("Job xong", Duration::from_secs(300), || {
