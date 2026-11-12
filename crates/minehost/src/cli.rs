@@ -30,4 +30,6 @@ pub enum Command {
     Openapi,
     /// In các thư mục dữ liệu đang dùng.
     Paths,
+    /// Xóa mật khẩu admin và tắt truy cập LAN. Chạy được cả khi MineHost đang chạy.
+    ResetPassword,
 }

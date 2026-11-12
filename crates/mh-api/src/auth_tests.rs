@@ -2,7 +2,7 @@
 #![allow(clippy::unwrap_used, clippy::panic)]
 
 #[path = "auth_support.rs"]
-mod support;
+pub(crate) mod support;
 
 use std::net::SocketAddr;
 

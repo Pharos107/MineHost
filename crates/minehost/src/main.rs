@@ -6,6 +6,7 @@
 mod cli;
 mod config;
 mod instance;
+mod lan;
 mod logging;
 mod serve;
 #[cfg(windows)]
@@ -43,6 +44,15 @@ fn main() -> anyhow::Result<()> {
             writeln!(out, "config:  {}", dirs.config_file().display())?;
             writeln!(out, "logs:    {}", dirs.logs().display())?;
             writeln!(out, "servers: {}", dirs.servers().display())?;
+            Ok(())
+        }
+        Command::ResetPassword => {
+            // Không cần khóa instance: controller đang chạy thấy file biến mất ở lần đọc sau.
+            mh_app::AuthStore::reset_file(&dirs).context("không xóa được mật khẩu")?;
+            writeln!(
+                std::io::stdout().lock(),
+                "Đã xóa mật khẩu admin và tắt truy cập LAN. Mở MineHost trên máy này để đặt mật khẩu mới."
+            )?;
             Ok(())
         }
     }
