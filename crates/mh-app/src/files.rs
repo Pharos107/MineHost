@@ -52,6 +52,17 @@ impl App {
         blocking(move || disk::read_text_sync(&disk::open_root(&store, id)?, &path)).await
     }
 
+    /// Mở một file để route tải xuống stream. Thư mục bị từ chối, không đọc sẵn vào RAM.
+    pub async fn open_download(
+        &self,
+        id: ServerId,
+        path: &str,
+    ) -> Result<(String, tokio::fs::File), AppError> {
+        let (store, path) = (self.store.clone(), path.to_owned());
+        let (name, file) = blocking(move || disk::open_download_sync(&store, id, &path)).await?;
+        Ok((name, tokio::fs::File::from_std(file)))
+    }
+
     pub async fn write_text(
         &self,
         id: ServerId,

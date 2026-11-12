@@ -16,6 +16,8 @@ impl App {
     /// Các server bật song song, nên dù nhiều server phải chờ cổng thì tổng thời gian chờ vẫn
     /// không quá `PORT_RELEASE_WAIT`.
     pub async fn reconcile(&self) -> Result<usize, AppError> {
+        // Controller gọi reconcile lúc khởi động. Dọn lại phòng file dở xuất hiện sau `with_deps`.
+        crate::backup::sweep_incomplete(&self.dirs.backups());
         let deadline = Instant::now() + PORT_RELEASE_WAIT;
         let mut tasks = JoinSet::new();
         for listed in self.store.list()? {

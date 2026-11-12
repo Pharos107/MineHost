@@ -58,6 +58,28 @@ pub(super) fn read_text_sync(root: &SafeRoot, user_path: &str) -> Result<TextFil
     })
 }
 
+pub(super) fn open_download_sync(
+    store: &ServerStore,
+    id: ServerId,
+    user_path: &str,
+) -> Result<(String, File), AppError> {
+    let root = open_root(store, id)?;
+    let path = joined_file(&root, user_path)?;
+    match node_at(path.as_path())? {
+        Node::File => {}
+        Node::Dir => return Err(invalid("không tải thư mục")),
+        Node::Missing => return Err(AppError::not_found(user_path)),
+    }
+    let name = path
+        .as_path()
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| invalid("tên file không hợp lệ"))?
+        .to_owned();
+    let file = File::open(path.as_path()).map_err(|err| io_err(path.as_path(), err))?;
+    Ok((name, file))
+}
+
 pub(super) fn write_text_sync(
     root: &SafeRoot,
     user_path: &str,

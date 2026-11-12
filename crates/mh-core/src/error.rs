@@ -49,6 +49,8 @@ pub enum ErrorCode {
     FileExists,
     /// Hash của file backup không khớp với file mô tả.
     BackupCorrupt,
+    /// Bản backup đang được bảo vệ, không xóa được.
+    BackupProtected,
 }
 
 impl ErrorCode {
@@ -79,6 +81,7 @@ impl ErrorCode {
             Self::FileChanged => "FILE_CHANGED",
             Self::FileExists => "FILE_EXISTS",
             Self::BackupCorrupt => "BACKUP_CORRUPT",
+            Self::BackupProtected => "BACKUP_PROTECTED",
         }
     }
 }
@@ -113,7 +116,7 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 24] = [
+    const ALL: [ErrorCode; 25] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::PlayerNotFound,
@@ -138,6 +141,7 @@ mod tests {
         ErrorCode::FileChanged,
         ErrorCode::FileExists,
         ErrorCode::BackupCorrupt,
+        ErrorCode::BackupProtected,
     ];
 
     #[test]

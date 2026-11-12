@@ -1,3 +1,4 @@
+use mh_backup::BackupError;
 use mh_core::{ErrorCode, InvalidValue};
 use mh_java::JavaError;
 use mh_net::NetError;
@@ -57,6 +58,7 @@ from_coded!(
     PlatformError,
     InvalidValue,
     RuntimeError,
+    BackupError,
 );
 
 impl From<SupervisorError> for AppError {

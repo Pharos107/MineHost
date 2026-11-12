@@ -128,7 +128,9 @@
       "resolve_version": "Lấy thông tin phiên bản {{minecraft}}",
       "download_java": "Tải Java {{major}}",
       "download_server": "Tải Paper {{minecraft}}",
-      "prepare_files": "Chuẩn bị file"
+      "prepare_files": "Chuẩn bị file",
+      "save_world": "Lưu world",
+      "compress": "Nén bản sao lưu"
     }
   },
   "server": {
@@ -278,6 +280,7 @@
     "DOWNLOAD_FAILED": "Tải file bị lỗi giữa chừng. Hãy thử lại.",
     "CHECKSUM_MISMATCH": "File tải về bị hỏng. Hãy thử lại.",
     "BACKUP_CORRUPT": "Bản sao lưu bị hỏng hoặc không khớp mã kiểm tra.",
+    "BACKUP_PROTECTED": "Bản sao lưu này đang được bảo vệ. Hãy bỏ bảo vệ trước khi xóa.",
     "JAVA_INSTALL_FAILED": "Không cài được Java. Hãy thử lại.",
     "NOT_ENOUGH_DISK": "Ổ đĩa còn dưới 1 GB trống. Hãy dọn bớt rồi thử lại.",
     "JOB_CANCELLED": "Đã hủy.",

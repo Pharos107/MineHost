@@ -105,6 +105,7 @@ fn test_api() -> TestApi {
         free_space: Arc::new(|_| None),
         total_memory_mb: 8192,
         supervisor: mh_supervisor::SupervisorConfig::default(),
+        save_flush_timeout: Duration::from_secs(60),
         metrics: mh_app::MetricsConfig::default(),
     };
     let app = Arc::new(App::with_deps(dirs, deps).unwrap());
@@ -450,3 +451,6 @@ fn openapi_lists_all_routes() {
         assert!(spec.paths.paths.contains_key(path), "thiếu {path}");
     }
 }
+
+#[path = "tests_files.rs"]
+mod tests_files;
