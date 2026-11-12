@@ -117,7 +117,11 @@ fn inspect_jar(path: &Path, name: &str) -> (Option<LoaderKind>, Option<McVersion
     let Ok(mut zip) = zip::ZipArchive::new(file) else {
         return (None, None);
     };
-    let names: Vec<String> = zip.file_names().map(str::to_owned).collect();
+    let names: Vec<String> = zip
+        .file_names()
+        .filter_map(Result::ok)
+        .map(|name| name.into_owned())
+        .collect();
     let has = |prefix: &str| names.iter().any(|n| n.starts_with(prefix));
     let loader = if has("io/papermc/paperclip/") {
         if name.to_ascii_lowercase().contains("purpur") {

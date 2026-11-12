@@ -35,21 +35,25 @@ function isLoader(value: string): value is Loader {
   return (LOADERS as readonly string[]).includes(value);
 }
 
-export function LoaderStep({ value, onChange }: { value: Loader; onChange: (value: Loader) => void }) {
+/** Bước 1: loại server cần tải, hoặc `import` để nhập thư mục có sẵn (spec P2, mục 6.11). */
+export function LoaderStep({ value, onChange }: { value: Loader | "import"; onChange: (value: Loader | "import") => void }) {
   const { t } = useTranslation();
   return (
     <ChoiceGroup
       label={t("wizard.loader")}
       value={value}
       onChange={(next) => {
-        if (isLoader(next)) onChange(next);
+        if (isLoader(next) || next === "import") onChange(next);
       }}
-      options={LOADERS.map((loader) => ({
-        value: loader,
-        label: t(`loaders.${loader}`),
-        description: t(`wizard.${loader}Description`),
-        badge: loader === "paper" ? <Badge tone="primary">{t("wizard.recommended")}</Badge> : undefined,
-      }))}
+      options={[
+        ...LOADERS.map((loader) => ({
+          value: loader,
+          label: t(`loaders.${loader}`),
+          description: t(`wizard.${loader}Description`),
+          badge: loader === "paper" ? <Badge tone="primary">{t("wizard.recommended")}</Badge> : undefined,
+        })),
+        { value: "import", label: t("wizard.importLabel"), description: t("wizard.importDescription") },
+      ]}
     />
   );
 }

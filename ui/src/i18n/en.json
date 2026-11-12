@@ -90,7 +90,9 @@
     "steps": {
       "loader": "Server type",
       "version": "Version",
-      "settings": "Name and RAM"
+      "settings": "Name and RAM",
+      "folder": "Folder",
+      "importName": "Name"
     },
     "loader": "Choose a server type",
     "paperDescription": "Fast, supports plugins.",
@@ -120,7 +122,21 @@
     "creatingDescription": "The first time can take a few minutes because MineHost needs to download Java.",
     "failedTitle": "Could not create the server",
     "cancelledTitle": "Server creation was cancelled.",
-    "purpurDescription": "Based on Paper: supports plugins and adds many gameplay options."
+    "purpurDescription": "Based on Paper: supports plugins and adds many gameplay options.",
+    "importLabel": "Import an existing folder",
+    "importDescription": "Already have a Paper, Purpur or Vanilla server on this computer: MineHost copies it in and manages it.",
+    "importTitle": "Import an existing server",
+    "importPath": "Server folder",
+    "importPathHint": "Full path on this computer, for example C:\\Users\\you\\Desktop\\server or /home/you/server. The original folder is left as is.",
+    "importInspect": "Check folder",
+    "importUnknown": "Not recognized",
+    "importJar": "Jar file",
+    "importNoJar": "No .jar file found in this folder.",
+    "importPickLoader": "Choose the server type",
+    "importPickVersion": "Minecraft version",
+    "importPickVersionHint": "For example 1.21.4.",
+    "importNote": "MineHost copies the folder into its own data folder; the original stays as is. You will be asked to accept the EULA before the first start.",
+    "importSubmit": "Import server"
   },
   "jobs": {
     "starting": "Starting…",
@@ -136,7 +152,8 @@
       "stop_server": "Stopping the server",
       "before_restore": "Backing up the current world",
       "unpack": "Unpacking the backup",
-      "swap": "Replacing the world"
+      "swap": "Replacing the world",
+      "copy_files": "Copying server folder"
     }
   },
   "server": {
@@ -301,7 +318,8 @@
     "FILE_NOT_TEXT": "This file is not valid UTF-8 text.",
     "FILE_CHANGED": "The file changed since it was opened. Reload the latest version.",
     "FILE_EXISTS": "A file or folder with that name already exists.",
-    "BACKUP_PROTECTED": "This backup is protected. Remove the protection before deleting it."
+    "BACKUP_PROTECTED": "This backup is protected. Remove the protection before deleting it.",
+    "MODS_NOT_SUPPORTED": "This server has mods (a mods folder). Mods are not supported yet; they come in a later version."
   },
   "jobsPage": {
     "description": "What MineHost is doing or just finished, such as creating a server or making a backup.",

@@ -7,6 +7,7 @@ import { useNavigate } from "react-router";
 import { api, errorMessage, type CreateServer } from "../../api/client";
 import { Button, Card, Notice, PageHeader, Stack, Steps } from "../../ui";
 import { nameError, portError, toRequest, type WizardForm } from "./form";
+import { ImportWizard } from "./ImportWizard";
 import { JobProgressView } from "./JobProgressView";
 import { LoaderStep, SettingsStep, VersionStep } from "./steps";
 
@@ -18,6 +19,8 @@ export function CreateServerPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
+  // "Nhập thư mục có sẵn" ở bước 1 chuyển sang luồng riêng từ bước 2.
+  const [importing, setImporting] = useState(false);
   const [form, setForm] = useState<WizardForm>(() => ({ loader: "paper", version: "", name: t("wizard.defaultName"), memoryMb: null, port: "" }));
   const versions = useQuery({ queryKey: ["catalog", form.loader], queryFn: () => api.catalogVersions(form.loader), staleTime: 5 * 60_000 });
   const create = useMutation({ mutationFn: (body: CreateServer) => api.createServer(body) });
@@ -27,6 +30,7 @@ export function CreateServerPage() {
   const submit = () => create.mutate(toRequest(form, version));
   const canContinue = [true, version !== "", !nameError(form.name) && !portError(form.port)][step];
 
+  if (importing && step > 0) return <ImportWizard onBack={() => setStep(0)} />;
   if (create.data) {
     return <JobProgressView created={create.data} onRetry={submit} onBack={() => create.reset()} />;
   }
@@ -53,7 +57,15 @@ export function CreateServerPage() {
         >
           <Stack gap={5}>
             {/* Mỗi loại có danh sách phiên bản riêng: đổi loại thì chọn lại bản mới nhất của loại đó. */}
-            {step === 0 && <LoaderStep value={form.loader} onChange={(loader) => update({ loader, version: "" })} />}
+            {step === 0 && (
+              <LoaderStep
+                value={importing ? "import" : form.loader}
+                onChange={(choice) => {
+                  setImporting(choice === "import");
+                  if (choice !== "import") update({ loader: choice, version: "" });
+                }}
+              />
+            )}
             {step === 1 && <VersionStep versions={versions} value={version} onChange={(v) => update({ version: v })} />}
             {step === 2 && <SettingsStep form={form} update={update} />}
             {create.isError && <Notice tone="danger">{errorMessage(t, create.error)}</Notice>}
