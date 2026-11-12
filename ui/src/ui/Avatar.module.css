@@ -30,17 +30,20 @@
   font-size: var(--mh-text-lg);
 }
 
-/* Skin rộng 64 điểm ảnh, mặt rộng 8: phóng skin lên 8 lần cỡ ô rồi dời tới ô mặt (8, 8) và ô mũ (40, 8). */
+/* Skin rộng 64 điểm ảnh, mặt rộng 8: phóng skin lên 8 lần cỡ ô rồi dời tới ô mặt (8, 8). */
 .face {
   position: absolute;
   inset: 0;
-  background-image: var(--skin), var(--skin);
+  background-image: var(--skin);
   background-repeat: no-repeat;
   background-size: calc(var(--size) * 8) auto;
-  background-position:
-    calc(var(--size) * -5) calc(var(--size) * -1),
-    calc(var(--size) * -1) calc(var(--size) * -1);
+  background-position: calc(var(--size) * -1) calc(var(--size) * -1);
   image-rendering: pixelated;
+}
+
+/* Lớp mũ ở ô (40, 8), vẽ đè lên mặt. */
+.hat {
+  background-position: calc(var(--size) * -5) calc(var(--size) * -1);
 }
 
 /* Ảnh thử để biết skin tải được chưa; không chiếm chỗ, không hiện. */
