@@ -225,7 +225,7 @@ fn refresh_running(app: &App, schedules: &mut [ServerSchedule]) {
 }
 
 /// Giây Unix và giây kể từ nửa đêm theo múi giờ của máy. Không đọc được múi giờ thì dùng UTC.
-fn local_now() -> (i64, u32) {
+pub(crate) fn local_now() -> (i64, u32) {
     let now = jiff::Zoned::now();
     let time = now.time();
     let of_day = u32::from(time.hour().unsigned_abs()) * 3600

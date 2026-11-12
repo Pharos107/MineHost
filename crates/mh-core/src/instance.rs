@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use toml::Table;
 
+use crate::backup_schedule::{BackupSchedule, DEFAULT_KEEP};
 use crate::error::{ErrorCode, InvalidValue};
 use crate::ids::{GamePort, ServerId, ServerName};
 use crate::memory::MemoryLimits;
@@ -32,6 +33,9 @@ pub struct InstanceSpec {
     pub network: NetworkSection,
     #[serde(default)]
     pub policy: PolicySection,
+    /// Sao lưu tự động (spec P2, mục 4.1). Không ghi khi để mặc định, để file P1 không đổi.
+    #[serde(default, skip_serializing_if = "BackupSection::is_default")]
+    pub backup: BackupSection,
     #[serde(default, skip_serializing_if = "EulaSection::is_empty")]
     pub eula: EulaSection,
     #[serde(flatten)]
@@ -95,6 +99,42 @@ impl Default for PolicySection {
             restart_at: Vec::new(),
             extra: Table::new(),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BackupSection {
+    #[serde(default)]
+    pub schedule: BackupSchedule,
+    /// Số bản `scheduled` giữ lại, 1..=100. Bản tạo tay và bản được bảo vệ không tính.
+    #[serde(default = "default_keep", deserialize_with = "keep_in_range")]
+    pub keep: u16,
+    #[serde(flatten)]
+    pub extra: Table,
+}
+
+const fn default_keep() -> u16 {
+    DEFAULT_KEEP
+}
+
+fn keep_in_range<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<u16, D::Error> {
+    let keep = u16::deserialize(deserializer)?;
+    crate::backup_schedule::check_keep(keep).map_err(serde::de::Error::custom)
+}
+
+impl Default for BackupSection {
+    fn default() -> Self {
+        Self {
+            schedule: BackupSchedule::Off,
+            keep: DEFAULT_KEEP,
+            extra: Table::new(),
+        }
+    }
+}
+
+impl BackupSection {
+    fn is_default(&self) -> bool {
+        *self == Self::default()
     }
 }
 
@@ -172,6 +212,7 @@ impl InstanceSpec {
                 extra: Table::new(),
             },
             policy: PolicySection::default(),
+            backup: BackupSection::default(),
             eula: EulaSection::default(),
             extra: Table::new(),
         }

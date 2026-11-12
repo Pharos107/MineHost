@@ -32,7 +32,8 @@ thì sửa dòng của nó ở đây trong chính PR ấy.
 | 20 | Nén và giải nén tar.zst | Đã merge | [#34](https://github.com/Pharos107/MineHost/pull/34) |
 | 21 | Job sao lưu | Đã merge | [#43](https://github.com/Pharos107/MineHost/pull/43) |
 | 22 | Job khôi phục | Đã merge | [#47](https://github.com/Pharos107/MineHost/pull/47) |
-| 23, 24, 25 | Lịch sao lưu, route, trang Sao lưu | Chưa bắt đầu | |
+| 23 | Lịch sao lưu và giữ lại | Đã merge | [#57](https://github.com/Pharos107/MineHost/pull/57) |
+| 24, 25 | Route sao lưu, trang Sao lưu | Chưa bắt đầu | |
 | 26 | Mật khẩu admin (kèm ADR 0003) | Đã merge | [#44](https://github.com/Pharos107/MineHost/pull/44) |
 | 27 | Phiên đăng nhập và CSRF | Đã merge | [#50](https://github.com/Pharos107/MineHost/pull/50) |
 | 28 | Listener LAN, `/settings/access`, đặt lại mật khẩu | Đã merge | [#51](https://github.com/Pharos107/MineHost/pull/51) |

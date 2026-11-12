@@ -163,8 +163,14 @@ impl App {
             self.archive_world(ctx, &spec, &req).await
         }
         .await;
-        if paused {
-            return restore_autosave(&handle, id, result).await;
+        let result = if paused {
+            restore_autosave(&handle, id, result).await
+        } else {
+            result
+        };
+        // Bản tự động vượt số giữ lại bị xóa, bản tạo tay và bản được bảo vệ không tính (mục 4.2).
+        if result.is_ok() && req.kind == BackupKind::Scheduled {
+            self.prune_kind(id, BackupKind::Scheduled, usize::from(spec.backup.keep));
         }
         result
     }

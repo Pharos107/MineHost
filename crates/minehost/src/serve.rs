@@ -44,6 +44,7 @@ pub async fn run(
     // Task chỉ số giữ `Weak<App>` và dừng khi `App` bị hủy lúc thoát.
     app.spawn_metrics();
     app.spawn_restart_schedule();
+    app.spawn_backup_schedule();
     let lan = mh_api::LanState::new();
     let router = mh_api::router_with_lan(Arc::clone(&app), addr.port(), Arc::clone(&lan));
     let lan_manager = start_lan(addr, &app, &router, lan);
