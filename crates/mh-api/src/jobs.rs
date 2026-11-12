@@ -59,15 +59,19 @@ pub async fn cancel(
     Ok(StatusCode::NO_CONTENT)
 }
 
-#[utoipa::path(get, path = "/api/v1/catalog/paper/versions", tag = "catalog",
+#[utoipa::path(get, path = "/api/v1/catalog/{loader}/versions", tag = "catalog",
+    params(("loader" = String, Path, description = "`paper`, `vanilla` hoặc `purpur`")),
     responses(
-        (status = 200, description = "Bản release Paper có build STABLE, mới nhất trước", body = [CatalogVersionDto]),
+        (status = 200, description = "Bản release cài được, mới nhất trước. Paper chỉ tính bản có build STABLE", body = [CatalogVersionDto]),
+        (status = 400, description = "Loại server chưa hỗ trợ", body = ErrorBody),
         (status = 502, body = ErrorBody)
     ))]
-pub async fn paper_versions(
+pub async fn catalog_versions(
     State(app): State<Arc<App>>,
+    Path(loader): Path<String>,
 ) -> Result<Json<Vec<CatalogVersionDto>>, ApiError> {
-    let versions = app.catalog_versions(LoaderKind::Paper).await?;
+    let loader = LoaderKind::parse(&loader).map_err(|_| ApiError::invalid("loader"))?;
+    let versions = app.catalog_versions(loader).await?;
     Ok(Json(versions.into_iter().map(Into::into).collect()))
 }
 
