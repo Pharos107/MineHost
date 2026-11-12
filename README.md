@@ -64,7 +64,11 @@ Bạn bè không vào được:
 | Linux | `~/.local/share/minehost` |
 
 Bên trong: `servers/` (mỗi server một thư mục, world nằm trong `server/world`), `java/`, `logs/`,
-`trash/`, `config.toml`. Dùng thư mục khác bằng `minehost --data-dir <thư mục>`.
+`cache/`, `backups/`, `trash/`, `config.toml`. Dùng thư mục khác bằng `minehost --data-dir <thư mục>`.
+Từng file và thư mục dùng để làm gì: [docs/architecture/du-lieu.md](docs/architecture/du-lieu.md).
+
+Chạy trên VPS Linux: `./minehost` dừng khi bạn đóng phiên SSH, kéo theo mọi server. Muốn chạy bền
+thì dùng unit systemd trong [docs/ops/linux-systemd.md](docs/ops/linux-systemd.md).
 
 ## Chạy từ mã nguồn
 
@@ -75,4 +79,5 @@ cd ui && npm ci && npm run build && cd ..
 cargo run -p minehost -- --data-dir .minehost-dev
 ```
 
-Quy tắc đóng góp, kiến trúc và lộ trình: xem [AGENTS.md](AGENTS.md).
+Quy tắc đóng góp và lộ trình: [AGENTS.md](AGENTS.md). Tài liệu kỹ thuật (kiến trúc, bảo mật, dữ
+liệu, vận hành): [docs/README.md](docs/README.md).
