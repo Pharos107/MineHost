@@ -1,7 +1,7 @@
 # Spec P2 — Nhiều server và vận hành hằng ngày
 
 - Trạng thái: đã duyệt, đang làm. Tiến độ từng PR: [kế hoạch PR](p2-ke-hoach-pr.md#tiến-độ)
-  (cập nhật 2026-11-11). Vấn đề mở sau lần rà soát: mục 12.
+  (cập nhật 2026-11-12). Vấn đề mở sau lần rà soát: mục 12.
 - Ngày: 2026-10-26
 - Spec gốc: "MineHost v2 — Spec kiến trúc (Rust)", phần Lộ trình P2
 - Kế hoạch PR: [p2-ke-hoach-pr.md](p2-ke-hoach-pr.md)
@@ -252,6 +252,8 @@ Không thêm cạnh phụ thuộc mới giữa các crate: mọi phần ghép n�
   Tạo backup `before_restore` của hiện trạng → giải nén vào `servers/<id>/.restore-<ulid>/` → đổi tên
   `server/` thành `.old-<ulid>/` → đổi `.restore-<ulid>/` thành `server/` → xóa `.old-<ulid>/`.
   Lỗi trước bước đổi tên thì xóa thư mục tạm, `server/` giữ nguyên. Không tự bật lại server.
+  Controller chết giữa hai lần đổi tên: lúc khởi động và khi reconcile, xóa mọi `.restore-*`; nếu
+  thiếu `server/` thì đổi `.old-*` mới nhất về `server/`, rồi xóa các `.old-*` còn lại.
 - **Lịch backup:** một task kiểm tra mỗi phút. Server không chạy kể từ bản backup trước thì bỏ qua.
   Lần kiểm tra đầu sau khi controller khởi động chờ 5 phút, để không backup ngay lúc mọi server đang bật.
 - **Lịch khởi động lại:** tới giờ thì gửi `say` báo trước 5 phút, 1 phút, 10 giây, rồi `restart`.
@@ -480,7 +482,6 @@ vào spec P2 để không bị quên trước khi phát hành `v0.3.0`.
 
 | Mục spec | Vấn đề | Cần quyết định |
 | --- | --- | --- |
-| 5.7 Khôi phục | Controller chết giữa hai lần đổi tên (`server/` → `.old-<ulid>/`, `.restore-<ulid>/` → `server/`) thì server không còn thư mục `server/` | **Đã có hướng xử lý trong PR [#47](https://github.com/Pharos107/MineHost/pull/47)**: lúc tạo `App` và khi reconcile, xóa `.restore-*`; thiếu `server/` thì trả `.old-*` mới nhất về `server/`. Khi #47 merge thì ghi bước này vào mục 5.7 và xóa dòng này |
 | 5.7 Khôi phục | Chỉ kiểm tra dung lượng trống trước khi tạo bản `before_restore`, không kiểm tra trước khi giải nén vào `.restore-<ulid>/`. Lúc đó trên đĩa có cùng lúc world cũ, bản backup mới và world giải nén, nên ổ có thể đầy giữa chừng | Kiểm tra dung lượng trống so với kích thước giải nén ước tính trước bước giải nén, thiếu thì trả `NOT_ENOUGH_DISK`. Thêm vào PR-22 (#47) hoặc một PR ngay sau |
 | 4.2 File mô tả backup | `instance.toml` không nằm trong `.tar.zst`, và `.json` không ghi RAM, cờ JVM, cổng. Khôi phục vào chính server đó thì không sao, nhưng người dùng tải backup về cất rồi cài lại máy sẽ mất cấu hình. Cũng ảnh hưởng PR-32 (nhập server) nếu sau này nhập từ file backup | Chép bản chụp `instance.toml` vào archive (khôi phục bỏ qua nó, chỉ dùng khi nhập), hay ghi các trường cấu hình vào `.json` |
 | 3.4 LAN chỉ có HTTP | Mật khẩu admin cho phép gửi lệnh console và tải plugin lên, tức là quyền chạy code trên máy host. Mật khẩu đó đi qua LAN dạng không mã hóa. Crafty Controller mặc định dùng HTTPS tự ký | Giữ như đã duyệt (chỉ cảnh báo), hay đưa TLS tự ký vào cùng PR-28 |

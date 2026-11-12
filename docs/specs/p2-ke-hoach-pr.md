@@ -9,7 +9,7 @@ của nó. Phần còn lại của spec gốc (nhóm H) làm sau cùng.
 
 ## Tiến độ
 
-Cập nhật 2026-11-11, theo `origin/main` ở commit `6a03ff8` và danh sách PR trên GitHub. PR nào merge
+Cập nhật 2026-11-12, sau khi merge #44–#48. PR nào merge
 thì sửa dòng của nó ở đây trong chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -24,16 +24,16 @@ thì sửa dòng của nó ở đây trong chính PR ấy.
 | 09 | Console: lọc, tạm dừng, xóa | Đã merge | [#28](https://github.com/Pharos107/MineHost/pull/28) |
 | 10 | Dịch vụ tệp | Đã merge | [#35](https://github.com/Pharos107/MineHost/pull/35) |
 | 11 | Route tệp, tải lên, tải xuống | Đã merge | [#42](https://github.com/Pharos107/MineHost/pull/42) |
-| 12, 13 | Trang Tệp, sửa tệp | Đang mở (gộp một PR) | [#46](https://github.com/Pharos107/MineHost/pull/46) |
+| 12, 13 | Trang Tệp, sửa tệp | Đã merge (gộp một PR) | [#46](https://github.com/Pharos107/MineHost/pull/46) |
 | 14 | Phân tích log và lệnh người chơi | Đã merge | [#30](https://github.com/Pharos107/MineHost/pull/30) |
 | 15 | File người chơi, sự kiện người chơi | Đã merge | [#36](https://github.com/Pharos107/MineHost/pull/36) |
-| 16 | Hồ sơ Mojang, skin, điểm spawn | Đang mở | [#45](https://github.com/Pharos107/MineHost/pull/45) |
+| 16 | Hồ sơ Mojang, skin, điểm spawn | Đã merge | [#45](https://github.com/Pharos107/MineHost/pull/45) |
 | 17, 18, 19 | API và giao diện người chơi | Chưa bắt đầu | |
 | 20 | Nén và giải nén tar.zst | Đã merge | [#34](https://github.com/Pharos107/MineHost/pull/34) |
 | 21 | Job sao lưu | Đã merge | [#43](https://github.com/Pharos107/MineHost/pull/43) |
-| 22 | Job khôi phục | Đang mở | [#47](https://github.com/Pharos107/MineHost/pull/47) |
+| 22 | Job khôi phục | Đã merge | [#47](https://github.com/Pharos107/MineHost/pull/47) |
 | 23, 24, 25 | Lịch sao lưu, route, trang Sao lưu | Chưa bắt đầu | |
-| 26 | Mật khẩu admin (kèm ADR 0003) | Đang mở | [#44](https://github.com/Pharos107/MineHost/pull/44) |
+| 26 | Mật khẩu admin (kèm ADR 0003) | Đã merge | [#44](https://github.com/Pharos107/MineHost/pull/44) |
 | 27 | Phiên đăng nhập và CSRF | Có nhánh `feat/api-auth` ở máy phát triển, chưa mở PR | |
 | 28, 29 | Listener LAN, trang Đăng nhập và Cài đặt | Chưa bắt đầu | |
 | 30, 31, 32 | Vanilla và Purpur, lịch khởi động lại, nhập server | Chưa bắt đầu | |

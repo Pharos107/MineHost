@@ -7,7 +7,7 @@ dung; đổi ý thì viết ADR mới và ghi "thay bởi" ở ADR cũ.
 | --- | --- | --- | --- |
 | [0001](0001-server-dung-theo-controller.md) | Server dừng theo controller | Đã chốt | 2026-10-23 |
 | [0002](0002-unsafe-trong-binary-cho-khay.md) | Cho phép `unsafe` trong binary cho khay và console | Đã chốt | 2026-10-24 |
-| 0003 | Đã đặt mật khẩu thì mở từ chính máy này cũng phải đăng nhập | Nằm trong PR [#44](https://github.com/Pharos107/MineHost/pull/44), chưa merge | 2026-10-26 |
+| [0003](0003-bat-dang-nhap-ca-tren-may-nay.md) | Đã đặt mật khẩu thì mở từ chính máy này cũng phải đăng nhập | Đã chốt | 2026-10-27 |
 | [0004](0004-chua-dung-sqlite.md) | Chưa dùng SQLite; đĩa là nơi lưu duy nhất | Đã chốt (ghi lại từ spec P1, P2) | 2026-10-23 |
 | [0005](0005-dieu-khien-qua-console-khong-rcon.md) | Điều khiển server qua console, không dùng RCON | Đã chốt (ghi lại từ spec P2) | 2026-10-26 |
 
