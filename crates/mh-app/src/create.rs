@@ -55,21 +55,13 @@ impl App {
             },
         );
         let app = Arc::clone(self);
-        let job_id = self.jobs.spawn(JobKind::CreateServer, Some(id), move |ctx| async move {
-            let result = app.install(&ctx, id, &req, memory, port).await;
-            if result.is_err()
-                && let Err(e) = app.store.remove_unfinished(id)
-            {
-                tracing::error!(server = %id, error = %e, "không dọn được thư mục server cài dở");
-            }
-            lock(&app.installing).remove(&id);
-            if result.is_ok() {
-                app.supervisor(id);
-                tracing::info!(server = %id, "đã tạo server");
-            }
-            app.notify_changed(id);
-            result
-        });
+        let job_id = self
+            .jobs
+            .spawn(JobKind::CreateServer, Some(id), move |ctx| async move {
+                let result = app.install(&ctx, id, &req, memory, port).await;
+                app.finish_install(id, result.is_ok(), "đã tạo server");
+                result
+            });
         if let Some(entry) = lock(&self.installing).get_mut(&id) {
             entry.job_id = Some(job_id);
         }
@@ -138,14 +130,34 @@ impl App {
         Ok(())
     }
 
+    /// Job tạo hoặc nhập xong: lỗi thì xóa thư mục làm dở; xong thì tạo supervisor.
+    pub(crate) fn finish_install(&self, id: ServerId, ok: bool, done: &str) {
+        if !ok && let Err(e) = self.store.remove_unfinished(id) {
+            tracing::error!(server = %id, error = %e, "không dọn được thư mục server cài dở");
+        }
+        lock(&self.installing).remove(&id);
+        if ok {
+            self.supervisor(id);
+            tracing::info!(server = %id, "{done}");
+        }
+        self.notify_changed(id);
+    }
+
     fn check_disk(&self) -> Result<(), AppError> {
+        self.check_disk_for(0)
+    }
+
+    /// Ổ dữ liệu phải còn ít nhất `needed` byte cộng phần chừa lại tối thiểu.
+    pub(crate) fn check_disk_for(&self, needed: u64) -> Result<(), AppError> {
         let free = (self.free_space)(self.dirs.root());
         match free {
-            Some(free) if free < mh_net::MIN_FREE_BYTES => Err(AppError::new(
-                ErrorCode::NotEnoughDisk,
-                format!("ổ đĩa chỉ còn {free} byte"),
-            )
-            .with_params(serde_json::json!({ "available_bytes": free }))),
+            Some(free) if free < mh_net::MIN_FREE_BYTES.saturating_add(needed) => {
+                Err(AppError::new(
+                    ErrorCode::NotEnoughDisk,
+                    format!("ổ đĩa chỉ còn {free} byte"),
+                )
+                .with_params(serde_json::json!({ "available_bytes": free })))
+            }
             _ => Ok(()),
         }
     }
