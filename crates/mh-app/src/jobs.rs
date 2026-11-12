@@ -28,6 +28,7 @@ pub type JobId = u64;
 pub enum JobKind {
     CreateServer,
     Backup,
+    Restore,
 }
 
 /// Bước đang làm. UI dịch theo `kind`, ví dụ "Tải Java 21 (48/61 MB)".
@@ -48,6 +49,12 @@ pub enum JobStep {
     /// `save-off` rồi `save-all flush` trước khi nén world đang mở.
     SaveWorld,
     Compress,
+    /// Tắt hẳn server trước khi thay world. Không cắt ngang khi Job bị hủy.
+    StopServer,
+    /// Sao lưu hiện trạng. Server đã tắt nên không gửi lệnh save.
+    BeforeRestore,
+    Unpack,
+    Swap,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

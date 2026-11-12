@@ -50,6 +50,11 @@ impl DataDirs {
         self.root.join("config.toml")
     }
 
+    /// Hash mật khẩu admin và cờ LAN (spec P2, mục 4.3).
+    pub fn auth_file(&self) -> PathBuf {
+        self.root.join("auth.toml")
+    }
+
     pub fn logs(&self) -> PathBuf {
         self.root.join("logs")
     }
@@ -102,6 +107,7 @@ mod tests {
             assert!(dir.is_dir(), "thiếu thư mục {}", dir.display());
         }
         assert_eq!(dirs.config_file(), dirs.root().join("config.toml"));
+        assert_eq!(dirs.auth_file(), dirs.root().join("auth.toml"));
     }
 
     #[test]

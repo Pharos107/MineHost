@@ -130,7 +130,11 @@
       "download_server": "Tải Paper {{minecraft}}",
       "prepare_files": "Chuẩn bị file",
       "save_world": "Lưu world",
-      "compress": "Nén bản sao lưu"
+      "compress": "Nén bản sao lưu",
+      "stop_server": "Tắt server",
+      "before_restore": "Sao lưu hiện trạng",
+      "unpack": "Giải nén bản sao lưu",
+      "swap": "Thay world"
     }
   },
   "server": {
@@ -279,18 +283,23 @@
     "NETWORK_UNAVAILABLE": "Không kết nối được Internet. Kiểm tra mạng rồi thử lại.",
     "DOWNLOAD_FAILED": "Tải file bị lỗi giữa chừng. Hãy thử lại.",
     "CHECKSUM_MISMATCH": "File tải về bị hỏng. Hãy thử lại.",
-    "BACKUP_CORRUPT": "Bản sao lưu bị hỏng hoặc không khớp mã kiểm tra.",
-    "BACKUP_PROTECTED": "Bản sao lưu này đang được bảo vệ. Hãy bỏ bảo vệ trước khi xóa.",
     "JAVA_INSTALL_FAILED": "Không cài được Java. Hãy thử lại.",
     "NOT_ENOUGH_DISK": "Ổ đĩa còn dưới 1 GB trống. Hãy dọn bớt rồi thử lại.",
     "JOB_CANCELLED": "Đã hủy.",
     "SERVER_CRASHED": "Server bị dừng đột ngột.",
     "FORBIDDEN": "Yêu cầu bị từ chối vì không đến từ giao diện MineHost trên máy này.",
     "UNSUPPORTED_BY_VERSION": "Phiên bản Minecraft này không hỗ trợ thao tác này.",
+    "AUTH_REQUIRED": "Bạn cần đăng nhập.",
+    "AUTH_INVALID": "Mật khẩu không đúng.",
+    "AUTH_RATE_LIMITED": "Nhập sai quá nhiều lần. Hãy thử lại sau {{retry_after_s}} giây.",
+    "PASSWORD_TOO_SHORT": "Mật khẩu phải có ít nhất 8 ký tự.",
+    "LAN_NEEDS_PASSWORD": "Hãy đặt mật khẩu trước khi bật truy cập từ mạng LAN.",
+    "BACKUP_CORRUPT": "Bản sao lưu bị hỏng hoặc không khớp mã kiểm tra.",
     "FILE_TOO_LARGE": "File lớn hơn mức cho phép.",
     "FILE_NOT_TEXT": "File này không phải văn bản UTF-8.",
     "FILE_CHANGED": "File đã đổi kể từ lúc mở. Hãy tải lại bản mới.",
-    "FILE_EXISTS": "Đã có file hoặc thư mục trùng tên."
+    "FILE_EXISTS": "Đã có file hoặc thư mục trùng tên.",
+    "BACKUP_PROTECTED": "Bản sao lưu này đang được bảo vệ. Hãy bỏ bảo vệ trước khi xóa."
   },
   "jobsPage": {
     "description": "Việc MineHost đang làm hoặc vừa làm xong, như tạo server hay sao lưu.",

@@ -39,6 +39,16 @@ pub enum ErrorCode {
     Forbidden,
     /// Tính năng không có ở phiên bản Minecraft này, ví dụ đóng băng trước 1.16.
     UnsupportedByVersion,
+    /// Chưa đăng nhập.
+    AuthRequired,
+    /// Sai mật khẩu.
+    AuthInvalid,
+    /// Sai mật khẩu quá nhiều lần. Client nhận tham số `retry_after_s` (giây còn phải chờ).
+    AuthRateLimited,
+    /// Mật khẩu mới dưới 8 ký tự.
+    PasswordTooShort,
+    /// Bật LAN khi chưa đặt mật khẩu.
+    LanNeedsPassword,
     /// File văn bản hoặc bản tải lên vượt giới hạn kích thước.
     FileTooLarge,
     /// Không phải UTF-8 hợp lệ, hoặc có byte NUL.
@@ -76,6 +86,11 @@ impl ErrorCode {
             Self::ServerCrashed => "SERVER_CRASHED",
             Self::Forbidden => "FORBIDDEN",
             Self::UnsupportedByVersion => "UNSUPPORTED_BY_VERSION",
+            Self::AuthRequired => "AUTH_REQUIRED",
+            Self::AuthInvalid => "AUTH_INVALID",
+            Self::AuthRateLimited => "AUTH_RATE_LIMITED",
+            Self::PasswordTooShort => "PASSWORD_TOO_SHORT",
+            Self::LanNeedsPassword => "LAN_NEEDS_PASSWORD",
             Self::FileTooLarge => "FILE_TOO_LARGE",
             Self::FileNotText => "FILE_NOT_TEXT",
             Self::FileChanged => "FILE_CHANGED",
@@ -116,7 +131,7 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 25] = [
+    const ALL: [ErrorCode; 30] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::PlayerNotFound,
@@ -136,6 +151,11 @@ mod tests {
         ErrorCode::ServerCrashed,
         ErrorCode::Forbidden,
         ErrorCode::UnsupportedByVersion,
+        ErrorCode::AuthRequired,
+        ErrorCode::AuthInvalid,
+        ErrorCode::AuthRateLimited,
+        ErrorCode::PasswordTooShort,
+        ErrorCode::LanNeedsPassword,
         ErrorCode::FileTooLarge,
         ErrorCode::FileNotText,
         ErrorCode::FileChanged,
