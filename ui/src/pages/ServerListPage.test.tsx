@@ -40,6 +40,7 @@ function renderPage() {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  localStorage.clear();
 });
 
 describe("ServerListPage", () => {
@@ -66,11 +67,16 @@ describe("ServerListPage", () => {
       },
     ]);
     renderPage();
-    const link = await screen.findByRole("link", { name: "Survival" });
-    expect(within(screen.getByRole("table")).getByText("Đang chạy")).toBeTruthy();
-    expect(screen.getByText("Paper 1.21.4")).toBeTruthy();
+    // Mặc định là thẻ.
+    const card = (await screen.findByRole("link", { name: "Survival" })).closest("article")!;
+    expect(within(card).getByText("Đang chạy")).toBeTruthy();
+    expect(within(card).getByText("Paper 1.21.4, tối đa 4 GB RAM")).toBeTruthy();
+    // Bảng: lựa chọn được nhớ cho lần mở sau.
+    await userEvent.click(screen.getByRole("radio", { name: "Bảng" }));
+    expect(within(screen.getByRole("table")).getByText("Paper 1.21.4")).toBeTruthy();
     expect(screen.getByText("4 GB")).toBeTruthy();
-    await userEvent.click(link);
+    expect(localStorage.getItem("minehost.servers.view")).toBe("table");
+    await userEvent.click(screen.getByRole("link", { name: "Survival" }));
     expect(screen.getByText("chi tiết")).toBeTruthy();
   });
 
@@ -92,6 +98,7 @@ describe("ServerListPage", () => {
       server({ id: "A", name: "Đang chạy", state: "running", port: 25565 }),
       server({ id: "B", name: "Mới tạo", eula_accepted: false }),
     ]);
+    localStorage.setItem("minehost.servers.view", "table");
     renderPage();
     expect(await screen.findByText("192.168.1.5:25565")).toBeTruthy();
     await userEvent.click(screen.getByRole("button", { name: "Tắt: Đang chạy" }));

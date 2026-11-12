@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Wifi } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { ACCESS_KEY, authApi, type Session } from "../../api/auth";
@@ -18,7 +19,7 @@ export function LanCard({ session }: { session: Session }) {
   const urls = on ? (access.data?.lan_urls ?? []) : [];
 
   return (
-    <Card title={t("appSettings.lan")}>
+    <Card title={t("appSettings.lan")} description={t("appSettings.lanDescription")} icon={Wifi} layout="split">
       <Stack gap={4}>
         <Notice tone="warning">{t("appSettings.lanWarning")}</Notice>
         {access.isPending ? (

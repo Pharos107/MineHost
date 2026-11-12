@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { RotateCw } from "lucide-react";
+import { Cpu, RotateCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { api, errorMessage } from "../api/client";
@@ -38,7 +38,7 @@ export function SystemCard() {
   const disk = info.data_disk;
 
   return (
-    <Card title={t("system.heading")}>
+    <Card title={t("system.heading")} description={t("system.description")} icon={Cpu} layout="split">
       <Facts
         items={[
           { label: t("system.os"), value: `${info.os_version ?? info.os} (${info.arch})` },

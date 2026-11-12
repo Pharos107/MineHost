@@ -20,10 +20,10 @@ khoảng cách; mọi giá trị đó là token trong `ui/src/ui/tokens.css`.
 - Màu theo vai trò, không theo tên màu: `--mh-bg`, `--mh-surface`, `--mh-surface-raised`, `--mh-border`,
   `--mh-text`, `--mh-text-muted`, `--mh-primary`, `--mh-on-primary`, `--mh-success`, `--mh-warning`,
   `--mh-danger`, `--mh-info` và bản nền nhạt `--mh-*-soft` cho từng trạng thái.
-- Theo chế độ sáng/tối của hệ điều hành. Bản tối lấy bảng màu "Midnight Aurora" của dự án cũ
-  (nền xanh đêm, nhấn teal); bản sáng là bản tương ứng đủ tương phản.
-- Khoảng cách `--mh-space-1..8` (bội số 4px), bo góc `--mh-radius-sm|md|lg`, chữ `--mh-font-sans|mono`
-  (font của hệ điều hành, không tải font ngoài vì MineHost chạy được khi không có mạng).
+- Theo chế độ sáng/tối của hệ điều hành. Từ P2 dùng bảng màu "Đá và cỏ" (nền đá ấm, nhấn xanh cỏ;
+  xem [p2-lam-moi-giao-dien.md](p2-lam-moi-giao-dien.md)); bản sáng là bản tương ứng đủ tương phản.
+- Khoảng cách `--mh-space-1..8` (bội số 4px), bo góc `--mh-radius-sm|md|lg`, chữ `--mh-font-sans|mono`.
+  Chữ chính là Be Vietnam Pro, đóng gói cùng bản build (MineHost chạy được khi không có mạng).
 
 ### Component
 

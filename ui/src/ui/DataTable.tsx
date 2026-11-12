@@ -19,6 +19,8 @@ export interface Column<T> {
   align?: "start" | "center" | "end";
   /** Độ rộng theo token; bỏ trống thì cột tự giãn. */
   width?: "xs" | "sm" | "md" | "lg";
+  /** Giữ nội dung trên một dòng (tên ngắn như tên server), để cột không bị bóp thành nhiều dòng. */
+  nowrap?: boolean;
 }
 
 export interface RowAction<T> {
@@ -140,7 +142,7 @@ function BodyRow<T>({ row, columns, actions, rowLabel, inlineActions = 2 }: Data
   return (
     <tr>
       {columns.map((column) => (
-        <td key={column.id} data-label={column.header} className={styles[column.align ?? "start"]}>
+        <td key={column.id} data-label={column.header} className={cx(styles[column.align ?? "start"], column.nowrap && styles.nowrap)}>
           {column.cell(row)}
         </td>
       ))}

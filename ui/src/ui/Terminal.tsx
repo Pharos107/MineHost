@@ -1,6 +1,7 @@
 import type { ITheme, Terminal as XTerm } from "@xterm/xterm";
 import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
 
+import { subscribeTheme } from "./theme";
 import styles from "./Terminal.module.css";
 
 export type TerminalTone = "normal" | "muted" | "primary" | "danger";
@@ -97,12 +98,10 @@ export function Terminal({ label, ref, maxLines = 5000 }: TerminalProps) {
 
       const resize = new ResizeObserver(() => fit.fit());
       resize.observe(element);
-      // Đổi chế độ sáng/tối của hệ điều hành khi đang mở trang thì đổi màu theo.
-      const scheme = window.matchMedia("(prefers-color-scheme: dark)");
-      const retheme = () => (xterm.options.theme = themeFrom(element));
-      scheme.addEventListener("change", retheme);
+      // Đổi sáng/tối (nút trên thanh bên hoặc hệ điều hành) khi đang mở trang thì đổi màu theo.
+      const unsubscribe = subscribeTheme(() => (xterm.options.theme = themeFrom(element)));
       cleanup = () => {
-        scheme.removeEventListener("change", retheme);
+        unsubscribe();
         resize.disconnect();
         xterm.dispose();
         term.current = null;

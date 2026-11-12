@@ -74,6 +74,10 @@
   width: 3rem;
 }
 
+.nowrap {
+  white-space: nowrap;
+}
+
 .sm {
   width: 6rem;
 }

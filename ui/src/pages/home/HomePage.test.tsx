@@ -11,6 +11,14 @@ vi.mock("../../api/ws", () => ({ live: { subscribe: () => () => {} } }));
 
 const GB = 1024 ** 3;
 
+const players = {
+  running: true,
+  online_mode: true,
+  whitelist_enabled: false,
+  max_players: 20,
+  players: [{ name: "Steve", uuid: null, online: true, last_seen: null, whitelisted: false, op: false, banned: false, ban_reason: null, frozen: false }],
+};
+
 function server(patch: Partial<Server>): Server {
   return { id: "A", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, port: 25565, ...patch };
 }
@@ -30,6 +38,7 @@ function renderPage(servers: Server[], jobs: Job[] = []) {
       if (url === "/api/v1/servers") return Response.json(servers);
       if (url === "/api/v1/jobs") return Response.json(jobs);
       if (url === "/api/v1/system") return Response.json(system);
+      if (url === "/api/v1/servers/A/players") return Response.json(players);
       return Response.json({ code: "NOT_FOUND", params: {} }, { status: 404 });
     }),
   );
@@ -47,21 +56,29 @@ afterEach(() => {
 });
 
 describe("HomePage", () => {
-  it("thẻ số và danh sách chỉ gồm server đang chạy", async () => {
-    renderPage([server({ id: "A", name: "Survival" }), server({ id: "B", name: "Creative", state: "stopped" })]);
-    expect(await screen.findByText("23,6")).toBeTruthy();
-    expect(screen.getByText("/ 2")).toBeTruthy();
-    expect(screen.getByText("12 GB")).toBeTruthy();
-    expect(screen.getByText("trên 32 GB")).toBeTruthy();
-    const table = await screen.findByRole("table", { name: "Server đang chạy" });
-    expect(within(table).getByRole("link", { name: "Survival" })).toBeTruthy();
-    expect(within(table).queryByRole("link", { name: "Creative" })).toBeNull();
-    expect(within(table).getByText("192.168.1.5:25565")).toBeTruthy();
+  it("dải số liệu máy ở trên; mỗi server một thẻ, server đang chạy lên trước", async () => {
+    renderPage([server({ id: "B", name: "Creative", state: "stopped", port: 25566 }), server({ id: "A", name: "Survival" })]);
+    expect(await screen.findByText("1 trên 2 server đang chạy.")).toBeTruthy();
+    const titles = screen.getAllByRole("article").map((card) => within(card).getByRole("heading", { level: 2 }).textContent);
+    expect(titles).toEqual(["Survival", "Creative"]);
+    expect(screen.getByText("192.168.1.5:25565")).toBeTruthy();
+    // Thẻ server đang chạy hiện ai đang online.
+    expect(await screen.findByRole("group", { name: "Steve" })).toBeTruthy();
+    expect(screen.getByText("1 / 20")).toBeTruthy();
+    const machine = screen.getByRole("region", { name: "Máy này" });
+    expect(await within(machine).findByText("23,6 %")).toBeTruthy();
+    expect(within(machine).getByText("12 GB / 32 GB")).toBeTruthy();
   });
 
   it("không server nào chạy thì ghi rõ", async () => {
     renderPage([server({ state: "stopped" })]);
-    expect(await screen.findByText("Chưa có server nào đang chạy.")).toBeTruthy();
+    expect(await screen.findByText(/Chưa server nào chạy/)).toBeTruthy();
+  });
+
+  it("có tác vụ thì hiện mục Hoạt động gần đây", async () => {
+    renderPage([server({ state: "stopped" })], [{ id: 7, kind: "backup", state: "succeeded", started_at: "2026-11-12T10:00:00Z", server_id: "A" }]);
+    const table = await screen.findByRole("table", { name: "Hoạt động gần đây" });
+    expect(within(table).getByText("Sao lưu")).toBeTruthy();
   });
 
   it("chưa có server thì có nút tạo server đầu tiên", async () => {

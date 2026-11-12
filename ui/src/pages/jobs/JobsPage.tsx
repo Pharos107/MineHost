@@ -36,7 +36,7 @@ export function JobsPage() {
   const jobs = useJobsLive();
   const [serverFilter, setServerFilter] = useState("");
   const cancel = useMutation({ mutationFn: (id: number) => api.cancelJob(id) });
-  const columns = useColumns();
+  const columns = useJobColumns();
   const rows = (jobs.data ?? []).filter((job) => serverFilter === "" || job.server_id === serverFilter);
   const actions: RowAction<Job>[] = [
     { label: t("jobsPage.cancel"), icon: X, tone: "danger", onSelect: (job) => cancel.mutate(job.id), hidden: (job) => job.state !== "running" },
@@ -90,7 +90,8 @@ function ServerSelect({ value, onChange }: { value: string; onChange: (value: st
   );
 }
 
-function useColumns(): Column<Job>[] {
+/** Cột của bảng Job; Trang chủ dùng lại cho mục "Hoạt động gần đây". */
+export function useJobColumns(): Column<Job>[] {
   const { t, i18n } = useTranslation();
   const servers = useQuery({ queryKey: SERVERS_KEY, queryFn: api.servers });
   const nameOf = (id: string) => {

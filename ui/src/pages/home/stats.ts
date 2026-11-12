@@ -25,3 +25,9 @@ export function homeStats(servers: Server[], jobs: Job[], system: SystemInfo | u
     diskFree: system?.disk_free_bytes ?? null,
   };
 }
+
+/** Server có process lên trước (người dùng mở Trang chủ để xem cái đang chạy), rồi theo tên. */
+export function sortForHome(servers: Server[]): Server[] {
+  const live = (s: Server) => (WITH_PROCESS.includes(s.state) ? 0 : 1);
+  return [...servers].sort((a, b) => live(a) - live(b) || (a.name ?? a.id).localeCompare(b.name ?? b.id));
+}
