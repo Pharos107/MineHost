@@ -5,6 +5,7 @@
 
 mod auth;
 mod backup;
+mod backup_schedule;
 mod create;
 #[cfg(feature = "e2e")]
 pub mod e2e;
@@ -34,6 +35,7 @@ use mh_supervisor::SupervisorConfig;
 
 pub use auth::AuthStore;
 pub use backup::{BackupKind, BackupMeta, BackupRequest, BackupStarted};
+pub use backup_schedule::{BackupCandidate, BackupPlanner};
 pub use create::{CreateRequest, Created};
 pub use error::AppError;
 pub use files::{FileEntry, FileKind, TEXT_LIMIT, TextFile};

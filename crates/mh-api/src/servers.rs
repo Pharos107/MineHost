@@ -72,6 +72,9 @@ pub async fn patch(
         autostart: body.autostart,
         restart_on_crash: body.restart_on_crash,
         restart_at: body.restart_at.as_deref().map(restart_times).transpose()?,
+        // API cho lịch sao lưu thêm ở PR-24.
+        backup_schedule: None,
+        backup_keep: None,
     };
     app.update_settings(id, patch)?;
     Ok(Json(app.get(id)?.into()))

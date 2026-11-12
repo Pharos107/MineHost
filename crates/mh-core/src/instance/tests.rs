@@ -218,3 +218,19 @@ fn restart_at_round_trips_and_is_omitted_when_empty() {
     );
     assert!(InstanceSpec::from_toml(&bad).is_err());
 }
+
+#[test]
+fn backup_section_round_trips_and_is_omitted_by_default() {
+    let text = format!("{SPEC_EXAMPLE}\n[backup]\nschedule = \"every_6h\"\nkeep = 5\n");
+    let spec = InstanceSpec::from_toml(&text).unwrap();
+    assert_eq!(spec.backup.schedule.to_string(), "every_6h");
+    assert_eq!(spec.backup.keep, 5);
+    let written = spec.to_toml().unwrap();
+    assert!(written.contains("schedule = \"every_6h\""), "{written}");
+
+    assert!(!sample().to_toml().unwrap().contains("[backup]"));
+    let bad = format!("{SPEC_EXAMPLE}\n[backup]\nkeep = 0\n");
+    assert!(InstanceSpec::from_toml(&bad).is_err());
+    let bad = format!("{SPEC_EXAMPLE}\n[backup]\nschedule = \"every_0h\"\n");
+    assert!(InstanceSpec::from_toml(&bad).is_err());
+}

@@ -5,6 +5,7 @@
 //!
 //! Mọi kiểu domain chỉ tạo được qua hàm `parse`/`new` có kiểm tra, kể cả khi đọc bằng serde.
 
+pub mod backup_schedule;
 pub mod console;
 pub mod crash;
 pub mod error;
@@ -17,6 +18,7 @@ pub mod schedule;
 pub mod state;
 pub mod version;
 
+pub use backup_schedule::{BackupSchedule, check_keep, next_run};
 pub use console::{ConsoleLine, ConsoleStream};
 pub use crash::{CrashHint, diagnose};
 pub use error::{ErrorCode, InvalidValue};

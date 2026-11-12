@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use mh_core::{
-    DailyTime, ErrorCode, GamePort, InstanceSpec, MemoryLimits, ServerId, ServerName, ServerState,
-    normalize_restart_times,
+    BackupSchedule, DailyTime, ErrorCode, GamePort, InstanceSpec, MemoryLimits, ServerId,
+    ServerName, ServerState, check_keep, normalize_restart_times,
 };
 use mh_store::BrokenReason;
 use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
@@ -35,6 +35,10 @@ pub struct SettingsPatch {
     pub restart_on_crash: Option<bool>,
     /// Giờ khởi động lại hằng ngày; danh sách rỗng là tắt lịch.
     pub restart_at: Option<Vec<DailyTime>>,
+    /// Lịch sao lưu tự động.
+    pub backup_schedule: Option<BackupSchedule>,
+    /// Số bản tự động giữ lại, 1..=100.
+    pub backup_keep: Option<u16>,
 }
 
 impl App {
@@ -92,6 +96,12 @@ impl App {
         }
         if let Some(times) = patch.restart_at {
             spec.policy.restart_at = normalize_restart_times(&times)?;
+        }
+        if let Some(schedule) = patch.backup_schedule {
+            spec.backup.schedule = schedule;
+        }
+        if let Some(keep) = patch.backup_keep {
+            spec.backup.keep = check_keep(keep)?;
         }
         self.store.save(&spec)?;
         self.notify_changed(id);
