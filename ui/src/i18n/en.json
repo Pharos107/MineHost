@@ -58,7 +58,9 @@
     "home": "Back to servers"
   },
   "loaders": {
-    "paper": "Paper"
+    "paper": "Paper",
+    "vanilla": "Vanilla",
+    "purpur": "Purpur"
   },
   "servers": {
     "heading": "Your servers",
@@ -92,9 +94,8 @@
     },
     "loader": "Choose a server type",
     "paperDescription": "Fast, supports plugins.",
-    "vanillaDescription": "The original server from Mojang.",
+    "vanillaDescription": "The original server from Mojang, no plugins.",
     "recommended": "Recommended",
-    "soon": "Coming soon",
     "version": "Minecraft version",
     "versionHint": "Your friends need this exact version to join.",
     "latest": "{{version}} (latest)",
@@ -118,7 +119,8 @@
     "creatingTitle": "Creating server",
     "creatingDescription": "The first time can take a few minutes because MineHost needs to download Java.",
     "failedTitle": "Could not create the server",
-    "cancelledTitle": "Server creation was cancelled."
+    "cancelledTitle": "Server creation was cancelled.",
+    "purpurDescription": "Based on Paper: supports plugins and adds many gameplay options."
   },
   "jobs": {
     "starting": "Starting…",

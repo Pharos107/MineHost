@@ -36,7 +36,8 @@ thì sửa dòng của nó ở đây trong chính PR ấy.
 | 26 | Mật khẩu admin (kèm ADR 0003) | Đã merge | [#44](https://github.com/Pharos107/MineHost/pull/44) |
 | 27 | Phiên đăng nhập và CSRF | Đã merge | [#50](https://github.com/Pharos107/MineHost/pull/50) |
 | 28, 29 | Listener LAN, trang Đăng nhập và Cài đặt | Chưa bắt đầu | |
-| 30, 31, 32 | Vanilla và Purpur, lịch khởi động lại, nhập server | Chưa bắt đầu | |
+| 30 | Vanilla và Purpur | Đã merge | [#53](https://github.com/Pharos107/MineHost/pull/53) |
+| 31, 32 | Lịch khởi động lại, nhập server | Chưa bắt đầu | |
 | 33 | Fuzz `SafeRoot` và workflow hằng tuần | Một phần: có target `backup_restore` (từ [#34](https://github.com/Pharos107/MineHost/pull/34)); chưa có target `SafeRoot::join` và `fuzz.yml` | |
 | 34 | Chạy dài 72 giờ, phát hành `v0.3.0` | Chưa bắt đầu | |
 

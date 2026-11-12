@@ -201,15 +201,26 @@
         }
       }
     },
-    "/api/v1/catalog/paper/versions": {
+    "/api/v1/catalog/{loader}/versions": {
       "get": {
         "tags": [
           "catalog"
         ],
-        "operationId": "paper_versions",
+        "operationId": "catalog_versions",
+        "parameters": [
+          {
+            "name": "loader",
+            "in": "path",
+            "description": "`paper`, `vanilla` hoặc `purpur`",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Bản release Paper có build STABLE, mới nhất trước",
+            "description": "Bản release cài được, mới nhất trước. Paper chỉ tính bản có build STABLE",
             "content": {
               "application/json": {
                 "schema": {
@@ -217,6 +228,16 @@
                   "items": {
                     "$ref": "#/components/schemas/CatalogVersionDto"
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Loại server chưa hỗ trợ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }

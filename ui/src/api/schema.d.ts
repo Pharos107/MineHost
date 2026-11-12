@@ -84,14 +84,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalog/paper/versions": {
+    "/api/v1/catalog/{loader}/versions": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["paper_versions"];
+        get: operations["catalog_versions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -854,22 +854,34 @@ export interface operations {
             };
         };
     };
-    paper_versions: {
+    catalog_versions: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                /** @description `paper`, `vanilla` hoặc `purpur` */
+                loader: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Bản release Paper có build STABLE, mới nhất trước */
+            /** @description Bản release cài được, mới nhất trước. Paper chỉ tính bản có build STABLE */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["CatalogVersionDto"][];
+                };
+            };
+            /** @description Loại server chưa hỗ trợ */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
             502: {
