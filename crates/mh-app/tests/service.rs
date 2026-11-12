@@ -467,4 +467,15 @@ async fn real_app_builds_without_network() {
     let app = App::new(dirs).unwrap();
     assert!(app.list().unwrap().is_empty());
     assert!(app.suggested_memory().max_mb() >= 1024);
+    assert!(!app.auth().password_set().unwrap());
+}
+
+#[tokio::test]
+async fn corrupt_auth_toml_blocks_startup() {
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::write(tmp.path().join("auth.toml"), b"password_hash = \"nope\"\n").unwrap();
+    let dirs = DataDirs::resolve(Some(tmp.path().to_path_buf())).unwrap();
+    dirs.ensure().unwrap();
+    let err = App::new(dirs).unwrap_err();
+    assert_eq!(err.code, ErrorCode::ConfigInvalid);
 }
