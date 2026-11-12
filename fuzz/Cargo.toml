@@ -1,5 +1,5 @@
 [package]
-name = "mh-backup-fuzz"
+name = "minehost-fuzz"
 version = "0.0.0"
 publish = false
 edition = "2021"
@@ -10,6 +10,7 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 mh-backup = { path = "../crates/mh-backup" }
+mh-platform = { path = "../crates/mh-platform" }
 tempfile = "3.27"
 tokio-util = "0.7.20"
 
@@ -19,6 +20,13 @@ tokio-util = "0.7.20"
 [[bin]]
 name = "backup_restore"
 path = "fuzz_targets/backup_restore.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "safe_root_join"
+path = "fuzz_targets/safe_root_join.rs"
 test = false
 doc = false
 bench = false

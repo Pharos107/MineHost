@@ -1,0 +1,48 @@
+name: Fuzz
+
+# Spec P2, mục 9: fuzz `SafeRoot::join` và bộ giải nén backup mỗi tuần, mỗi target 15 phút.
+# libFuzzer chỉ chạy trên Linux và cần Rust nightly. Chạy tay được ở tab Actions → Fuzz.
+on:
+  schedule:
+    # 03:00 sáng Chủ nhật giờ Việt Nam.
+    - cron: "0 20 * * 6"
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: "Thời gian chạy mỗi target (giây)"
+        type: number
+        default: 900
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    name: Fuzz (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [safe_root_join, backup_restore]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cài Rust nightly và cargo-fuzz
+        run: |
+          rustup toolchain install nightly --profile minimal
+          cargo +nightly install cargo-fuzz --locked
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fuzz
+      - name: Chạy ${{ matrix.target }}
+        working-directory: fuzz
+        env:
+          SECONDS_PER_TARGET: ${{ inputs.seconds || 900 }}
+        run: cargo +nightly fuzz run ${{ matrix.target }} -- -max_total_time="$SECONDS_PER_TARGET"
+      # Có lỗi thì giữ lại input làm hỏng để chạy lại trên máy: `cargo fuzz run <target> <file>`.
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-${{ matrix.target }}-artifacts
+          path: fuzz/artifacts/${{ matrix.target }}
+          retention-days: 30

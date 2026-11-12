@@ -43,7 +43,7 @@ Bỏ test tích hợp Paper thật (nhanh hơn vài phút mỗi OS) bằng `-f i
 | Giao diện | `ui/src` | Vitest, Testing Library | Không |
 | E2E | `ui/e2e` | Playwright, binary thật ở chế độ e2e ([README của binary](../../crates/minehost/README.md)) | Không |
 | Tích hợp | `crates/minehost/tests/paper.rs` | Paper và Java thật; test đánh dấu `#[ignore]` | Có |
-| Fuzz | `fuzz/` | `cargo-fuzz`, một target `backup_restore` ([README](../../fuzz/README.md)) | Không |
+| Fuzz | `fuzz/` | `cargo-fuzz`, target `safe_root_join` và `backup_restore`; workflow `fuzz.yml` chạy mỗi Chủ nhật, mỗi target 15 phút ([README](../../fuzz/README.md)) | Không |
 
 Quy tắc: test thường không được gọi mạng thật. Test gọi mạng phải đánh dấu `#[ignore]`.
 
@@ -52,7 +52,6 @@ Quy tắc: test thường không được gọi mạng thật. Test gọi mạng
 | Spec viết | Thực tế | Việc cần làm |
 | --- | --- | --- |
 | CI xanh mới được merge | CI chạy tay; không có bảo vệ nhánh nào bắt buộc | Thêm `pull_request` và `push: { branches: [main] }` vào `ci.yml`; bật bảo vệ nhánh `main` |
-| Fuzz hằng tuần cho `SafeRoot::join` và bộ giải nén (spec P2 mục 9) | Chỉ có target giải nén, chạy tay. Chưa có target `SafeRoot::join`, chưa có `fuzz.yml` | PR-33 của P2 |
 | Test API thật hằng đêm (spec gốc) | Không có | Workflow `schedule` gọi các test `#[ignore]` của provider |
 | Tích hợp Paper thật mỗi PR (bộ rút gọn) và hằng đêm (đầy đủ) | Một bộ, chạy khi bấm tay | Chạy theo lịch nếu không muốn chạy mỗi PR |
 | Tích hợp trên Linux arm64 | Chỉ Windows x64 và Linux x64 | Xét khi có người dùng arm64 báo lỗi |
