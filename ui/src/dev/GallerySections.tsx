@@ -48,6 +48,9 @@ export function FormSection() {
       <Field label="Tên server" hint="1–64 ký tự." error={name.trim() === "" ? "Tên không được để trống." : undefined}>
         <TextInput value={name} onChange={(e) => setName(e.target.value)} maxLength={64} />
       </Field>
+      <Field label="Mật khẩu" hint='type="password": trang Đăng nhập và Cài đặt.'>
+        <TextInput type="password" autoComplete="off" defaultValue="" />
+      </Field>
       <Field label="Phiên bản">
         <Select defaultValue="1.21.4">
           <option value="1.21.4">1.21.4</option>

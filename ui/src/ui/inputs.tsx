@@ -6,7 +6,7 @@ import { useFieldControl } from "./Field";
 import styles from "./Field.module.css";
 
 type TextInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className" | "style" | "type"> & {
-  type?: "text" | "number" | "search";
+  type?: "text" | "number" | "search" | "password";
 };
 
 /** Ô nhập chữ. Đặt trong `Field` để có nhãn; đứng một mình thì phải truyền `aria-label`. */
