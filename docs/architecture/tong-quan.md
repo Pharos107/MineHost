@@ -84,7 +84,7 @@ hạn RAM hay CPU. Linux không dùng cgroup. Hệ quả về bảo mật: [bao-
 | Tệp | Dịch vụ, route và trang Tệp (kèm trình sửa) đã có |
 | Sao lưu | Nén, giải nén, Job sao lưu và Job khôi phục đã có; lịch, route, giao diện chưa có |
 | Người chơi | Phân tích log, file JSON, sự kiện, hồ sơ Mojang, skin, điểm spawn đã có; API và giao diện chưa có |
-| Đăng nhập, LAN | Mật khẩu admin (`auth.toml`, argon2id), phiên, CSRF, giới hạn đăng nhập sai, listener LAN theo cờ `lan`, `minehost reset-password` đã có; chưa có trang Đăng nhập và Cài đặt (PR-29) |
+| Đăng nhập, LAN | Mật khẩu admin (`auth.toml`, argon2id), phiên, CSRF, giới hạn đăng nhập sai, listener LAN theo cờ `lan`, `minehost reset-password`, trang Đăng nhập và Cài đặt đã có |
 | Chạy như service | Chưa có (P4). Cách tạm cho Linux: [ops/linux-systemd.md](../ops/linux-systemd.md) |
 
 ## Chỗ lệch với spec gốc

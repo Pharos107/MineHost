@@ -55,6 +55,13 @@ Bạn bè không vào được:
 - **Thoát hẳn**: bấm **Thoát** trên thanh trên của giao diện, hoặc chuột phải icon ở khay → Thoát.
   MineHost gửi lệnh `stop` cho từng server để lưu world rồi mới tắt.
 - **Xóa server** chuyển thư mục server vào `trash/`; muốn lấy lại thì chép ngược vào `servers/`.
+- **Mật khẩu admin** (trang **Cài đặt**): chưa đặt thì ai mở được trình duyệt trên máy này đều dùng
+  được MineHost. Đặt rồi thì mở MineHost, kể cả trên máy này, đều phải đăng nhập. Quên mật khẩu: chạy
+  `minehost reset-password` trên máy đang chạy MineHost, hoặc chuột phải icon ở khay → **Đặt lại mật
+  khẩu** rồi bấm lần nữa trong 10 giây (Windows).
+- **Mở giao diện từ máy khác trong LAN** (trang **Cài đặt**, cần đặt mật khẩu trước): bật công tắc
+  rồi mở địa chỉ hiện ra, ví dụ `http://192.168.1.5:7878`, trên máy kia. Giao diện qua LAN dùng HTTP
+  không mã hóa, nên chỉ bật trên mạng nhà bạn tin tưởng.
 
 ## Dữ liệu
 
