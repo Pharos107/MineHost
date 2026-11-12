@@ -11,6 +11,7 @@ use tokio::net::TcpListener;
 
 use crate::config::Config;
 use crate::instance::InstanceLock;
+use crate::lan::LanManager;
 
 /// Gọi một lần khi controller đã mở cổng và tạo xong `App`; khay dùng để biết url và gọi Thoát.
 pub type ReadyHook = Box<dyn FnOnce(&Arc<App>, &str) + Send>;
@@ -42,9 +43,11 @@ pub async fn run(
     let app = Arc::new(open_app(dirs)?);
     // Task chỉ số giữ `Weak<App>` và dừng khi `App` bị hủy lúc thoát.
     app.spawn_metrics();
+    let lan = mh_api::LanState::new();
+    let router = mh_api::router_with_lan(Arc::clone(&app), addr.port(), Arc::clone(&lan));
+    let lan_manager = start_lan(addr, &app, &router, lan);
     // `ConnectInfo` cho giới hạn đăng nhập sai theo IP (spec P2, mục 6.10).
-    let router = mh_api::router(Arc::clone(&app), addr.port())
-        .into_make_service_with_connect_info::<SocketAddr>();
+    let router = router.into_make_service_with_connect_info::<SocketAddr>();
     let (stop_http, http_stopped) = tokio::sync::oneshot::channel::<()>();
     let server = axum::serve(listener, router).with_graceful_shutdown(async {
         let _ = http_stopped.await;
@@ -66,6 +69,9 @@ pub async fn run(
     // Web vẫn chạy trong lúc tắt server, để giao diện thấy từng server dừng.
     app.shutdown_all(|done, total| tracing::info!(done, total, "đang tắt các server"))
         .await;
+    if let Some(manager) = lan_manager {
+        manager.stop().await;
+    }
     let _ = stop_http.send(());
     match tokio::time::timeout(HTTP_DRAIN, server).await {
         Ok(Ok(Ok(()))) => {}
@@ -75,6 +81,27 @@ pub async fn run(
     }
     tracing::info!("MineHost đã tắt");
     Ok(())
+}
+
+/// LAN chỉ có nghĩa khi controller nghe trên `127.0.0.1`. Người dùng tự đổi `listen` sang
+/// địa chỉ khác thì cổng đó đã mở theo ý họ; mở thêm listener cùng cổng sẽ đụng nhau.
+fn start_lan(
+    addr: SocketAddr,
+    app: &Arc<App>,
+    router: &axum::Router,
+    lan: Arc<mh_api::LanState>,
+) -> Option<LanManager> {
+    if !addr.ip().is_loopback() {
+        tracing::warn!(%addr, "`listen` không phải 127.0.0.1, bỏ qua công tắc LAN");
+        return None;
+    }
+    Some(LanManager::spawn(
+        Arc::clone(app),
+        router.clone(),
+        lan,
+        addr.port(),
+        Arc::new(mh_platform::system::lan_ipv4),
+    ))
 }
 
 fn open_app(dirs: DataDirs) -> anyhow::Result<App> {

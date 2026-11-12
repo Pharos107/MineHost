@@ -9,7 +9,7 @@ của nó. Phần còn lại của spec gốc (nhóm H) làm sau cùng.
 
 ## Tiến độ
 
-Cập nhật 2026-11-12, sau khi merge #50. PR nào merge
+Cập nhật 2026-11-12, sau khi merge #51. PR nào merge
 thì sửa dòng của nó ở đây trong chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -35,7 +35,8 @@ thì sửa dòng của nó ở đây trong chính PR ấy.
 | 23, 24, 25 | Lịch sao lưu, route, trang Sao lưu | Chưa bắt đầu | |
 | 26 | Mật khẩu admin (kèm ADR 0003) | Đã merge | [#44](https://github.com/Pharos107/MineHost/pull/44) |
 | 27 | Phiên đăng nhập và CSRF | Đã merge | [#50](https://github.com/Pharos107/MineHost/pull/50) |
-| 28, 29 | Listener LAN, trang Đăng nhập và Cài đặt | Chưa bắt đầu | |
+| 28 | Listener LAN, `/settings/access`, đặt lại mật khẩu | Đã merge | [#51](https://github.com/Pharos107/MineHost/pull/51) |
+| 29 | Trang Đăng nhập và Cài đặt | Chưa bắt đầu | |
 | 30, 31, 32 | Vanilla và Purpur, lịch khởi động lại, nhập server | Chưa bắt đầu | |
 | 33 | Fuzz `SafeRoot` và workflow hằng tuần | Một phần: có target `backup_restore` (từ [#34](https://github.com/Pharos107/MineHost/pull/34)); chưa có target `SafeRoot::join` và `fuzz.yml` | |
 | 34 | Chạy dài 72 giờ, phát hành `v0.3.0` | Chưa bắt đầu | |

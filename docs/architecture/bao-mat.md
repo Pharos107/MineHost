@@ -1,7 +1,6 @@
 # Bảo mật: mô hình mối đe dọa
 
-- Khớp code tới: 2026-11-12 (sau khi merge #50). Đã có mật khẩu admin, phiên, CSRF; LAN mô tả theo
-  spec P2 vì chưa merge.
+- Khớp code tới: 2026-11-12 (sau khi merge #51).
 - Lỗ hổng đã biết được đánh số theo [rà soát 2026-11-11](../ra-soat/2026-11-11-kien-truc.md).
 
 ## Cần bảo vệ gì
@@ -38,9 +37,9 @@
 | Phụ thuộc có lỗ hổng hoặc giấy phép lạ | `cargo-deny` trong CI | `deny.toml` |
 | Lỗi bộ nhớ | `unsafe` bị cấm ngoài ba module nhỏ; cấm `unwrap`, `expect`, `panic!` | `Cargo.toml`, ADR 0002 |
 | Ghi đè `server.jar` khi server đang chạy | Chặn sửa và xóa | `mh-app/src/files.rs` |
-
-Sẽ có khi nhóm G của P2 merge: mật khẩu băm `argon2id`, cookie phiên `HttpOnly` và `SameSite=Strict`,
-`X-CSRF-Token`, giới hạn đăng nhập sai theo IP ([spec P2 mục 8](../specs/p2-nhieu-server-va-van-hanh.md#8-bảo-mật)).
+| Đoán mật khẩu admin | Băm `argon2id`; sai 5 lần theo IP thì khóa 1 phút, gấp đôi mỗi lần, tối đa 15 phút | `mh-app/src/auth/`, `mh-api/src/auth.rs` |
+| Trang lạ dùng phiên đã đăng nhập | Cookie `HttpOnly`, `SameSite=Strict`; request thay đổi dữ liệu phải có `X-CSRF-Token` khớp phiên | `mh-api/src/auth.rs` |
+| Máy trong LAN vào khi LAN đã tắt hoặc vừa xóa mật khẩu | Request đi vào listener LAN được đánh dấu theo kết nối, không theo header `Host`; mỗi request đọc lại cờ `lan`, tắt là bị 403 dù listener chưa kịp đóng | `mh-api/src/lan.rs`, `minehost/src/lan.rs` |
 
 ## Quyền admin nghĩa là gì
 

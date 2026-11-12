@@ -20,10 +20,10 @@ use tower::ServiceExt;
 
 use crate::auth::SESSION_COOKIE;
 
-pub(super) const HOST: &str = "127.0.0.1:7878";
-pub(super) const ORIGIN: &str = "http://127.0.0.1:7878";
-pub(super) const PASSWORD: &str = "correct-horse";
-pub(super) const NEXT: &str = "battery-staple";
+pub(crate) const HOST: &str = "127.0.0.1:7878";
+pub(crate) const ORIGIN: &str = "http://127.0.0.1:7878";
+pub(crate) const PASSWORD: &str = "correct-horse";
+pub(crate) const NEXT: &str = "battery-staple";
 
 struct UnusedCatalog;
 
@@ -71,13 +71,13 @@ impl JavaSource for UnusedJava {
     }
 }
 
-pub(super) struct Api {
+pub(crate) struct Api {
     _tmp: tempfile::TempDir,
-    pub(super) app: Arc<App>,
-    pub(super) router: axum::Router,
+    pub(crate) app: Arc<App>,
+    pub(crate) router: axum::Router,
 }
 
-pub(super) fn api() -> Api {
+pub(crate) fn api() -> Api {
     let tmp = tempfile::tempdir().unwrap();
     let dirs = DataDirs::resolve(Some(tmp.path().to_path_buf())).unwrap();
     dirs.ensure().unwrap();
@@ -100,25 +100,25 @@ pub(super) fn api() -> Api {
     }
 }
 
-pub(super) struct Reply {
-    pub(super) status: StatusCode,
-    pub(super) headers: axum::http::HeaderMap,
+pub(crate) struct Reply {
+    pub(crate) status: StatusCode,
+    pub(crate) headers: axum::http::HeaderMap,
     bytes: Vec<u8>,
 }
 
 impl Reply {
-    pub(super) fn json(&self) -> Value {
+    pub(crate) fn json(&self) -> Value {
         serde_json::from_slice(&self.bytes).unwrap_or(Value::Null)
     }
 
-    pub(super) fn set_cookie(&self) -> Option<&str> {
+    pub(crate) fn set_cookie(&self) -> Option<&str> {
         self.headers
             .get(header::SET_COOKIE)
             .and_then(|value| value.to_str().ok())
     }
 }
 
-pub(super) async fn call(
+pub(crate) async fn call(
     router: &axum::Router,
     method: Method,
     uri: &str,
@@ -126,11 +126,29 @@ pub(super) async fn call(
     cookie: Option<&str>,
     csrf: Option<&str>,
 ) -> Reply {
+    call_at(router, HOST, method, uri, body, cookie, csrf).await
+}
+
+/// Như [`call`], với `Host` và `Origin` là `host`, ví dụ địa chỉ một listener LAN.
+pub(crate) async fn call_at(
+    router: &axum::Router,
+    host: &str,
+    method: Method,
+    uri: &str,
+    body: Option<Value>,
+    cookie: Option<&str>,
+    csrf: Option<&str>,
+) -> Reply {
+    let origin = if host == HOST {
+        ORIGIN.to_owned()
+    } else {
+        format!("http://{host}")
+    };
     let mut builder = Request::builder()
         .method(method)
         .uri(uri)
-        .header(header::HOST, HOST)
-        .header(header::ORIGIN, ORIGIN);
+        .header(header::HOST, host)
+        .header(header::ORIGIN, origin);
     if let Some(cookie) = cookie {
         builder = builder.header(header::COOKIE, cookie);
     }
@@ -187,7 +205,7 @@ fn cookie_header(raw: &str) -> String {
     format!("{SESSION_COOKIE}={value}")
 }
 
-pub(super) async fn login(router: &axum::Router, password: &str) -> (String, String) {
+pub(crate) async fn login(router: &axum::Router, password: &str) -> (String, String) {
     let reply = call(
         router,
         Method::POST,

@@ -87,6 +87,13 @@ impl AuthStore {
         Ok(hash.is_some_and(|phc| password_matches(password, &phc)))
     }
 
+    /// `(password_set, lan)` từ cùng một lần đọc file. Middleware dùng hàm này thay cho hai lần
+    /// gọi riêng, để `reset-password` chen giữa không làm hai giá trị lệch nhau.
+    pub fn snapshot(&self) -> Result<(bool, bool), AppError> {
+        let record = self.record()?;
+        Ok((record.password_hash.is_some(), record.lan))
+    }
+
     /// `true` chỉ khi file ghi `lan = true` và có hash. Thiếu hash thì `false`.
     pub fn lan(&self) -> Result<bool, AppError> {
         Ok(self.record()?.lan)
@@ -156,6 +163,13 @@ impl AuthStore {
     pub fn reset(&self) -> Result<(), AppError> {
         let mut inner = lock(&self.inner);
         commit(&self.path, &mut inner, AuthRecord::default())
+    }
+
+    /// Xóa `auth.toml` mà không đọc nó, để file hỏng cũng xóa được. Dùng cho
+    /// `minehost reset-password`, chạy ở process khác với controller. Controller đang chạy
+    /// thấy file biến mất ở lần đọc kế tiếp (xem mtime trong [`Self::password_set`]).
+    pub fn reset_file(dirs: &DataDirs) -> Result<(), AppError> {
+        remove_auth_file(&dirs.auth_file())
     }
 
     fn record(&self) -> Result<AuthRecord, AppError> {

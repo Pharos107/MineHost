@@ -1,11 +1,13 @@
 //! REST API và WebSocket của MineHost tại `/api/v1`, kèm UI tĩnh ở mọi đường dẫn còn lại.
 
+mod access;
 mod auth;
 mod dto;
 mod error;
 mod files;
 mod guard;
 mod jobs;
+mod lan;
 mod servers;
 mod system;
 mod ui;
@@ -21,6 +23,7 @@ use utoipa::OpenApi;
 
 pub use error::ApiError;
 pub use guard::{LocalGuard, MINEHOST_HEADER};
+pub use lan::{LanState, lan_listener};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -50,6 +53,8 @@ pub use guard::{LocalGuard, MINEHOST_HEADER};
         auth::logout,
         auth::put_password,
         auth::delete_password,
+        access::get_access,
+        access::put_access,
         files::list,
         files::delete_file,
         files::read,
@@ -66,6 +71,8 @@ pub use guard::{LocalGuard, MINEHOST_HEADER};
         auth::LoginBody,
         auth::PasswordBody,
         auth::ClearPasswordBody,
+        access::AccessDto,
+        access::AccessBody,
         system::Health,
         system::SystemDto,
         system::DiskDto,
@@ -108,20 +115,29 @@ pub fn openapi() -> utoipa::openapi::OpenApi {
 
 /// `port` là cổng controller thật sự đang nghe, dùng để kiểm tra `Host` và `Origin`.
 pub fn router(app: Arc<App>, port: u16) -> Router {
-    router_with(app, port, files::UPLOAD_MAX_BYTES)
+    router_with_lan(app, port, LanState::new())
+}
+
+/// Như [`router`], kèm danh sách listener LAN mà binary cập nhật. Binary phục vụ cùng một
+/// router (bản clone) trên `127.0.0.1` và trên từng địa chỉ LAN, nên phiên đăng nhập dùng chung.
+pub fn router_with_lan(app: Arc<App>, port: u16, lan: Arc<LanState>) -> Router {
+    router_with(app, port, files::UPLOAD_MAX_BYTES, lan)
 }
 
 /// Như [`router`], nhưng test được đặt giới hạn từng file upload nhỏ hơn 512 MiB.
-pub(crate) fn router_with(app: Arc<App>, port: u16, upload_max_bytes: u64) -> Router {
-    let api = api_routes(auth::ApiState::new(app), upload_max_bytes);
+pub(crate) fn router_with(
+    app: Arc<App>,
+    port: u16,
+    upload_max_bytes: u64,
+    lan: Arc<LanState>,
+) -> Router {
+    let guard = LocalGuard::with_lan(port, Arc::clone(&lan));
+    let api = api_routes(auth::ApiState::new(app, lan), upload_max_bytes);
     // Guard thêm sau nên chạy trước: Host/Origin của P1 vẫn có hiệu lực.
     Router::new()
         .nest("/api/v1", api)
         .fallback(ui::serve)
-        .layer(axum::middleware::from_fn_with_state(
-            LocalGuard::new(port),
-            guard::check,
-        ))
+        .layer(axum::middleware::from_fn_with_state(guard, guard::check))
 }
 
 /// Phiên bọc route API, không bọc file tĩnh: trang đăng nhập phải tải được khi chưa có cookie.
@@ -175,6 +191,10 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         .route("/jobs/{id}/cancel", post(jobs::cancel))
         .route("/catalog/paper/versions", get(jobs::paper_versions))
         .route("/app/shutdown", post(jobs::shutdown))
+        .route(
+            "/settings/access",
+            get(access::get_access).put(access::put_access),
+        )
         .route("/ws", get(ws::upgrade))
         .fallback(error::api_not_found)
         .layer(axum::middleware::from_fn_with_state(
@@ -184,6 +204,8 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         .with_state(state)
 }
 
+#[cfg(test)]
+mod access_tests;
 #[cfg(test)]
 mod auth_tests;
 #[cfg(test)]
