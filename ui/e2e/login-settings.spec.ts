@@ -9,7 +9,7 @@ async function removePassword(page: Page) {
   await page.waitForLoadState("networkidle");
   if (page.url().includes("/login")) await login(page);
   await expect(page).toHaveURL(/\/settings$/);
-  const current = page.getByLabel("Mật khẩu hiện tại");
+  const current = page.getByLabel("Mật khẩu hiện tại", { exact: true });
   if (!(await current.isVisible())) return;
   await current.fill(PASSWORD);
   await page.getByRole("button", { name: "Xóa mật khẩu" }).click();
@@ -31,8 +31,8 @@ test("đặt mật khẩu, đăng nhập lại và bật LAN", async ({ page }) 
   await expect(page.getByText(/Chưa đặt mật khẩu/)).toBeVisible();
   await expect(page.getByRole("switch", { name: /Cho máy khác trong mạng LAN/ })).toBeDisabled();
 
-  await page.getByLabel("Mật khẩu mới").fill(PASSWORD);
-  await page.getByLabel("Nhập lại mật khẩu mới").fill(PASSWORD);
+  await page.getByLabel("Mật khẩu mới", { exact: true }).fill(PASSWORD);
+  await page.getByLabel("Nhập lại mật khẩu mới", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "Đặt mật khẩu" }).click();
 
   await expect(page).toHaveURL(/\/login\?next=%2Fsettings$/);
@@ -57,8 +57,8 @@ test("đặt mật khẩu, đăng nhập lại và bật LAN", async ({ page }) 
 
 test("đăng xuất thì phải đăng nhập lại", async ({ page }) => {
   await page.goto("/settings");
-  await page.getByLabel("Mật khẩu mới").fill(PASSWORD);
-  await page.getByLabel("Nhập lại mật khẩu mới").fill(PASSWORD);
+  await page.getByLabel("Mật khẩu mới", { exact: true }).fill(PASSWORD);
+  await page.getByLabel("Nhập lại mật khẩu mới", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "Đặt mật khẩu" }).click();
   await page.getByLabel("Mật khẩu", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "Đăng nhập" }).click();
