@@ -46,7 +46,7 @@ pub use lan::{LanState, lan_listener};
         jobs::list,
         jobs::get,
         jobs::cancel,
-        jobs::paper_versions,
+        jobs::catalog_versions,
         jobs::shutdown,
         auth::session,
         auth::login,
@@ -189,7 +189,7 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         )
         .route("/jobs/{id}", get(jobs::get))
         .route("/jobs/{id}/cancel", post(jobs::cancel))
-        .route("/catalog/paper/versions", get(jobs::paper_versions))
+        .route("/catalog/{loader}/versions", get(jobs::catalog_versions))
         .route("/app/shutdown", post(jobs::shutdown))
         .route(
             "/settings/access",

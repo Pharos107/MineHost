@@ -4,7 +4,7 @@ import { ChevronDown, ChevronRight, RotateCw } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { api, errorMessage, type CatalogVersion } from "../../api/client";
+import { api, errorMessage, type CatalogVersion, type Loader } from "../../api/client";
 import { formatBytes, formatMemoryMb } from "../../format";
 import { exceedsAvailable, MEMORY_STEP_MB, memoryRange } from "../../memory";
 import { Badge, Button, ChoiceGroup, Field, Notice, Select, Slider, Spinner, Switch, TextInput } from "../../ui";
@@ -29,22 +29,27 @@ function LoadError({ error, retry }: { error: unknown; retry: () => void }) {
   );
 }
 
-export function LoaderStep({ value, onChange }: { value: string; onChange: (value: "paper") => void }) {
+const LOADERS: readonly Loader[] = ["paper", "purpur", "vanilla"];
+
+function isLoader(value: string): value is Loader {
+  return (LOADERS as readonly string[]).includes(value);
+}
+
+export function LoaderStep({ value, onChange }: { value: Loader; onChange: (value: Loader) => void }) {
   const { t } = useTranslation();
   return (
     <ChoiceGroup
       label={t("wizard.loader")}
       value={value}
-      onChange={() => onChange("paper")}
-      options={[
-        {
-          value: "paper",
-          label: t("loaders.paper"),
-          description: t("wizard.paperDescription"),
-          badge: <Badge tone="primary">{t("wizard.recommended")}</Badge>,
-        },
-        { value: "vanilla", label: "Vanilla", description: t("wizard.vanillaDescription"), badge: <Badge>{t("wizard.soon")}</Badge>, disabled: true },
-      ]}
+      onChange={(next) => {
+        if (isLoader(next)) onChange(next);
+      }}
+      options={LOADERS.map((loader) => ({
+        value: loader,
+        label: t(`loaders.${loader}`),
+        description: t(`wizard.${loader}Description`),
+        badge: loader === "paper" ? <Badge tone="primary">{t("wizard.recommended")}</Badge> : undefined,
+      }))}
     />
   );
 }

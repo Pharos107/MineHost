@@ -6,6 +6,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use md5::Md5;
 use mh_core::ErrorCode;
 use mh_net::{CancellationToken, Checksum, Download, HttpClient, NetConfig, USER_AGENT};
 use sha2::{Digest, Sha256};
@@ -20,12 +21,12 @@ fn client(cache: &tempfile::TempDir) -> HttpClient {
     HttpClient::new(config).unwrap()
 }
 
+fn hex_of(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
 fn sha256_of(data: &[u8]) -> Checksum {
-    let hex: String = Sha256::digest(data)
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect();
-    Checksum::sha256(&hex).unwrap()
+    Checksum::sha256(&hex_of(&Sha256::digest(data))).unwrap()
 }
 
 async fn mock(server: &MockServer, route: &str, status: u16, body: &str, times: Option<u64>) {
@@ -282,8 +283,42 @@ async fn refuses_when_disk_is_almost_full() {
     assert_eq!(err.code(), ErrorCode::NotEnoughDisk);
 }
 
+/// Purpur chỉ cho md5 (spec P2, mục 5.4): khớp thì nhận, sai thì `CHECKSUM_MISMATCH` như sha.
+#[tokio::test]
+async fn md5_download_is_verified() {
+    let fx = file_server(5000, 2).await;
+    let good = Checksum::md5(&hex_of(&Md5::digest(&fx.body))).unwrap();
+    let bad = Checksum::md5(&hex_of(&Md5::digest(b"other"))).unwrap();
+
+    let dest = fx.dest("purpur.jar");
+    let req = Download {
+        url: &fx.url(),
+        checksum: &bad,
+        dest: &dest,
+        size: None,
+    };
+    let err = client(&fx.tmp)
+        .download(req, |_, _| {}, &CancellationToken::new())
+        .await
+        .unwrap_err();
+    assert_eq!(err.code(), ErrorCode::ChecksumMismatch);
+    assert!(!dest.exists());
+
+    let req = Download {
+        checksum: &good,
+        ..req
+    };
+    client(&fx.tmp)
+        .download(req, |_, _| {}, &CancellationToken::new())
+        .await
+        .unwrap();
+    assert_eq!(std::fs::read(&dest).unwrap(), fx.body);
+}
+
 #[test]
 fn checksum_requires_hex_of_right_length() {
+    assert!(Checksum::md5(&"a".repeat(32)).is_some());
+    assert!(Checksum::md5(&"a".repeat(40)).is_none());
     assert!(Checksum::sha1(&"a".repeat(40)).is_some());
     assert!(Checksum::sha1(&"a".repeat(64)).is_none());
     assert!(Checksum::sha256(&"../".repeat(21)).is_none());

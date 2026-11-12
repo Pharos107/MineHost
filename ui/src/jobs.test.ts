@@ -15,7 +15,7 @@ describe("jobStepLabel", () => {
 
   it("ghép tham số của bước và số đã tải", () => {
     expect(label(progress({ kind: "download_java", major: 21 }, 3, 48 * MB, 61 * MB))).toBe("Tải Java 21 (48/61 MB)");
-    expect(label(progress({ kind: "download_server", minecraft: "1.21.4" }, 4))).toBe("Tải Paper 1.21.4");
+    expect(label(progress({ kind: "download_server", minecraft: "1.21.4" }, 4))).toBe("Tải server 1.21.4");
     expect(label(progress({ kind: "prepare_files" }, 5))).toBe("Chuẩn bị file");
   });
 

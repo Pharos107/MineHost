@@ -1,8 +1,8 @@
-import type { CreateServer } from "../../api/client";
+import type { CreateServer, Loader } from "../../api/client";
 import { memoryFor } from "../../memory";
 
 export interface WizardForm {
-  loader: "paper";
+  loader: Loader;
   /** Rỗng: chưa chọn, dùng bản mới nhất. */
   version: string;
   name: string;

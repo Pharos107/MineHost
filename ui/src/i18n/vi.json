@@ -58,7 +58,9 @@
     "home": "Về danh sách server"
   },
   "loaders": {
-    "paper": "Paper"
+    "paper": "Paper",
+    "vanilla": "Vanilla",
+    "purpur": "Purpur"
   },
   "servers": {
     "heading": "Server của bạn",
@@ -92,9 +94,8 @@
     },
     "loader": "Chọn loại server",
     "paperDescription": "Nhanh, hỗ trợ plugin.",
-    "vanillaDescription": "Bản gốc của Mojang.",
+    "vanillaDescription": "Bản gốc của Mojang, không có plugin.",
     "recommended": "Khuyên dùng",
-    "soon": "Sắp có",
     "version": "Phiên bản Minecraft",
     "versionHint": "Bạn bè cần dùng đúng phiên bản này để vào chơi.",
     "latest": "{{version}} (mới nhất)",
@@ -118,7 +119,8 @@
     "creatingTitle": "Đang tạo server",
     "creatingDescription": "Lần đầu có thể mất vài phút vì MineHost cần tải Java.",
     "failedTitle": "Không tạo được server",
-    "cancelledTitle": "Đã hủy tạo server."
+    "cancelledTitle": "Đã hủy tạo server.",
+    "purpurDescription": "Dựa trên Paper, hỗ trợ plugin và có thêm nhiều tùy chỉnh gameplay."
   },
   "jobs": {
     "starting": "Đang bắt đầu…",
@@ -127,7 +129,7 @@
       "check_disk": "Kiểm tra ổ đĩa",
       "resolve_version": "Lấy thông tin phiên bản {{minecraft}}",
       "download_java": "Tải Java {{major}}",
-      "download_server": "Tải Paper {{minecraft}}",
+      "download_server": "Tải server {{minecraft}}",
       "prepare_files": "Chuẩn bị file",
       "save_world": "Lưu world",
       "compress": "Nén bản sao lưu",

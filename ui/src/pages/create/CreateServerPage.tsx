@@ -19,7 +19,7 @@ export function CreateServerPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<WizardForm>(() => ({ loader: "paper", version: "", name: t("wizard.defaultName"), memoryMb: null, port: "" }));
-  const versions = useQuery({ queryKey: ["catalog", "paper"], queryFn: api.paperVersions, staleTime: 5 * 60_000 });
+  const versions = useQuery({ queryKey: ["catalog", form.loader], queryFn: () => api.catalogVersions(form.loader), staleTime: 5 * 60_000 });
   const create = useMutation({ mutationFn: (body: CreateServer) => api.createServer(body) });
 
   const version = form.version || versions.data?.[0]?.id || "";
@@ -52,7 +52,8 @@ export function CreateServerPage() {
           }}
         >
           <Stack gap={5}>
-            {step === 0 && <LoaderStep value={form.loader} onChange={(loader) => update({ loader })} />}
+            {/* Mỗi loại có danh sách phiên bản riêng: đổi loại thì chọn lại bản mới nhất của loại đó. */}
+            {step === 0 && <LoaderStep value={form.loader} onChange={(loader) => update({ loader, version: "" })} />}
             {step === 1 && <VersionStep versions={versions} value={version} onChange={(v) => update({ version: v })} />}
             {step === 2 && <SettingsStep form={form} update={update} />}
             {create.isError && <Notice tone="danger">{errorMessage(t, create.error)}</Notice>}

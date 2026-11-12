@@ -15,6 +15,8 @@ export type CreateServer = components["schemas"]["CreateServerBody"];
 export type Created = components["schemas"]["CreatedDto"];
 export type ConsoleLine = components["schemas"]["ConsoleLineDto"];
 export type ServerAction = "start" | "stop" | "restart" | "kill";
+/** Loại server tạo được (spec P2, mục 5.4). */
+export type Loader = "paper" | "vanilla" | "purpur";
 export type Property = components["schemas"]["PropertyDto"];
 export type ServerPatch = components["schemas"]["PatchServerBody"];
 export type Trashed = components["schemas"]["TrashedDto"];
@@ -113,7 +115,8 @@ export const api = {
     request<ServerMetrics>("GET", `${serverPath(id)}/metrics${since ? `?since=${encodeURIComponent(since)}` : ""}`),
   properties: (id: string) => request<{ properties: Property[] }>("GET", `${serverPath(id)}/properties`),
   saveProperties: (id: string, properties: Property[]) => request<void>("PUT", `${serverPath(id)}/properties`, { properties }),
-  paperVersions: () => request<CatalogVersion[]>("GET", "/catalog/paper/versions"),
+  /** Bản cài được của một loại server, mới nhất trước. */
+  catalogVersions: (loader: Loader) => request<CatalogVersion[]>("GET", `/catalog/${loader}/versions`),
   /** Job đang giữ, mới nhất trước; `serverId` có thì chỉ Job của server đó. */
   jobs: (serverId?: string) =>
     request<Job[]>("GET", serverId ? `/jobs?server_id=${encodeURIComponent(serverId)}` : "/jobs"),

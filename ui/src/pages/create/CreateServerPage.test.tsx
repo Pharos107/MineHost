@@ -27,6 +27,8 @@ const versions = ["1.21.4", "1.21.3", "1.21.1", "1.20.6", "1.20.4", "1.19.4"].ma
 function mockApi() {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === "/api/v1/catalog/paper/versions") return Response.json(versions);
+    // Purpur chưa có 1.21.4 trong dữ liệu giả: wizard phải lấy bản mới nhất của chính Purpur.
+    if (url === "/api/v1/catalog/purpur/versions") return Response.json(versions.slice(1));
     if (url === "/api/v1/system") return Response.json(system);
     if (url === "/api/v1/servers" && init?.method === "POST") return Response.json({ server_id: "01JB", job_id: 7 }, { status: 202 });
     if (url === "/api/v1/jobs/7") return Response.json(runningJob);
@@ -60,12 +62,28 @@ afterEach(() => {
 });
 
 describe("CreateServerPage", () => {
+  it("chọn Purpur thì lấy phiên bản của Purpur và gửi đúng loại", async () => {
+    const fetchMock = mockApi();
+    const user = userEvent.setup();
+    renderWizard();
+
+    await user.click(screen.getByRole("radio", { name: /Purpur/ }));
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    const select = await screen.findByRole("combobox", { name: "Phiên bản Minecraft" });
+    expect(select).toHaveProperty("value", "1.21.3");
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await user.click(screen.getByRole("button", { name: "Tạo server" }));
+
+    const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
+    expect(JSON.parse(String(post?.[1]?.body))).toMatchObject({ loader: "purpur", minecraft: "1.21.3" });
+  });
+
   it("đi hết 3 bước, gửi yêu cầu tạo rồi theo dõi Job tới trang chi tiết", async () => {
     const fetchMock = mockApi();
     const user = userEvent.setup();
     renderWizard();
 
-    expect(screen.getByRole("radio", { name: /Vanilla/ })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("radio", { name: /Vanilla/ })).toHaveProperty("disabled", false);
     await user.click(screen.getByRole("button", { name: "Tiếp" }));
 
     const select = await screen.findByRole("combobox", { name: "Phiên bản Minecraft" });
