@@ -22,5 +22,6 @@ test("tạo, bật và tắt một server", async ({ page }) => {
 
   await page.getByRole("link", { name: "Tất cả máy chủ" }).click();
   await page.getByRole("link", { name: "Tác vụ" }).click();
-  await expect(page.getByText("Xong", { exact: true })).toBeVisible();
+  // Các spec khác có thể để lại Job của chúng; chỉ cần có Job tạo server đã xong.
+  await expect(page.getByRole("row", { name: /Tạo server/ }).getByText("Xong", { exact: true }).first()).toBeVisible();
 });
