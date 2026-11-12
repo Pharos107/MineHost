@@ -3,7 +3,10 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use mh_core::{ErrorCode, GamePort, InstanceSpec, MemoryLimits, ServerId, ServerName, ServerState};
+use mh_core::{
+    DailyTime, ErrorCode, GamePort, InstanceSpec, MemoryLimits, ServerId, ServerName, ServerState,
+    normalize_restart_times,
+};
 use mh_store::BrokenReason;
 use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
 use time::OffsetDateTime;
@@ -30,6 +33,8 @@ pub struct SettingsPatch {
     pub port: Option<GamePort>,
     pub autostart: Option<bool>,
     pub restart_on_crash: Option<bool>,
+    /// Giờ khởi động lại hằng ngày; danh sách rỗng là tắt lịch.
+    pub restart_at: Option<Vec<DailyTime>>,
 }
 
 impl App {
@@ -84,6 +89,9 @@ impl App {
         }
         if let Some(restart) = patch.restart_on_crash {
             spec.policy.restart_on_crash = restart;
+        }
+        if let Some(times) = patch.restart_at {
+            spec.policy.restart_at = normalize_restart_times(&times)?;
         }
         self.store.save(&spec)?;
         self.notify_changed(id);

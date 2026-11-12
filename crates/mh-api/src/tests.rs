@@ -454,3 +454,6 @@ fn openapi_lists_all_routes() {
 
 #[path = "tests_files.rs"]
 mod tests_files;
+
+#[path = "tests_restart.rs"]
+mod tests_restart;

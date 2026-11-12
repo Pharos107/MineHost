@@ -189,3 +189,32 @@ fn jar_name_is_a_plain_file_name() {
         assert!(JarName::parse(bad).is_err(), "{bad:?}");
     }
 }
+
+#[test]
+fn restart_at_round_trips_and_is_omitted_when_empty() {
+    let text = SPEC_EXAMPLE.replace(
+        "restart_on_crash = true\n",
+        "restart_on_crash = true\nrestart_at = [\"04:00\", \"16:30\"]\n",
+    );
+    let spec = InstanceSpec::from_toml(&text).unwrap();
+    let times: Vec<String> = spec
+        .policy
+        .restart_at
+        .iter()
+        .map(ToString::to_string)
+        .collect();
+    assert_eq!(times, ["04:00", "16:30"]);
+    assert!(
+        spec.to_toml()
+            .unwrap()
+            .contains("restart_at = [\"04:00\", \"16:30\"]")
+    );
+
+    // Bản P1 không có khóa này: đọc và ghi lại không thêm gì.
+    assert!(!sample().to_toml().unwrap().contains("restart_at"));
+    let bad = SPEC_EXAMPLE.replace(
+        "restart_on_crash = true\n",
+        "restart_on_crash = true\nrestart_at = [\"4:00\"]\n",
+    );
+    assert!(InstanceSpec::from_toml(&bad).is_err());
+}
