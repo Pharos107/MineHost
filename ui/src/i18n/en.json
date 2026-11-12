@@ -130,7 +130,11 @@
       "download_server": "Downloading Paper {{minecraft}}",
       "prepare_files": "Preparing files",
       "save_world": "Saving the world",
-      "compress": "Compressing the backup"
+      "compress": "Compressing the backup",
+      "stop_server": "Stopping the server",
+      "before_restore": "Backing up the current world",
+      "unpack": "Unpacking the backup",
+      "swap": "Replacing the world"
     }
   },
   "server": {
