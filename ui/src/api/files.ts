@@ -1,4 +1,4 @@
-import { ApiError, request, serverPath, type Trashed } from "./client";
+import { ApiError, mutationHeaders, request, serverPath, type Trashed } from "./client";
 import type { components } from "./schema";
 
 export type FileEntry = components["schemas"]["FileEntryDto"];
@@ -31,8 +31,7 @@ export function uploadFiles(id: string, dir: string, files: File[], onProgress: 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `/api/v1${filesPath(id, "/upload", dir)}`);
-    // Controller bắt request thay đổi dữ liệu phải có Origin của nó hoặc header này.
-    xhr.setRequestHeader("X-MineHost", "1");
+    for (const [name, value] of Object.entries(mutationHeaders())) xhr.setRequestHeader(name, value);
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(e.loaded, e.total);
     };

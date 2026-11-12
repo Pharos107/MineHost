@@ -22,12 +22,14 @@ import { serverName } from "../pages/ServerListPage";
 import { serverKey } from "../pages/server/ServerLayout";
 import { AppShell, NavItem, NavSection } from "../ui";
 import { LanguageSwitch } from "./LanguageSwitch";
+import { LogoutButton } from "./LogoutButton";
 import { QuitButton } from "./QuitButton";
 
 function ShellControls() {
   return (
     <>
       <LanguageSwitch />
+      <LogoutButton />
       <QuitButton />
     </>
   );
@@ -50,6 +52,11 @@ export function SidebarLayout() {
       <Outlet />
     </AppShell>
   );
+}
+
+/** Khung chỉ có thanh trên và nút đổi ngôn ngữ, cho trang Đăng nhập: chưa đăng nhập thì chưa thoát được. */
+export function BareLayout({ children }: { children: ReactNode }) {
+  return <AppShell actions={<LanguageSwitch />}>{children}</AppShell>;
 }
 
 /** Khung không có thanh bên, cho wizard tạo server. */
