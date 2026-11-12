@@ -89,19 +89,19 @@ impl App {
         read_backup_list(&dir)
     }
 
-    /// `note` hoặc `protected` là `None` thì giữ nguyên giá trị cũ.
+    /// `note` hoặc `protected` là `None` thì giữ nguyên giá trị cũ; `Some(None)` là xóa ghi chú.
     pub fn update_backup(
         &self,
         id: ServerId,
         backup_id: &str,
-        note: Option<String>,
+        note: Option<Option<String>>,
         protected: Option<bool>,
     ) -> Result<BackupMeta, AppError> {
         self.store.load(id)?;
         let path = self.meta_path(id, backup_id)?;
         let mut meta = read_meta(&path)?;
         if let Some(note) = note {
-            meta.note = Some(note);
+            meta.note = note;
         }
         if let Some(protected) = protected {
             meta.protected = protected;

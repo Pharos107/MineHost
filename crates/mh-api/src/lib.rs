@@ -2,6 +2,7 @@
 
 mod access;
 mod auth;
+mod backups;
 mod dto;
 mod error;
 mod files;
@@ -44,6 +45,12 @@ pub use lan::{LanState, lan_listener};
         servers::send_command,
         servers::console,
         servers::metrics,
+        backups::list,
+        backups::create,
+        backups::patch,
+        backups::delete,
+        backups::download,
+        backups::restore,
         servers::get_properties,
         servers::put_properties,
         jobs::list,
@@ -85,6 +92,13 @@ pub use lan::{LanState, lan_listener};
         dto::CrashDto,
         dto::CreateServerBody,
         dto::CreatedDto,
+        dto::BackupSettingsDto,
+        dto::BackupSettingsBody,
+        backups::BackupDto,
+        backups::CreateBackupBody,
+        backups::PatchBackupBody,
+        backups::RestoreBody,
+        backups::JobStartedDto,
         import::InspectBody,
         import::DetectedDto,
         import::ImportBody,
@@ -167,6 +181,22 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
             get(servers::console).post(servers::send_command),
         )
         .route("/servers/{id}/metrics", get(servers::metrics))
+        .route(
+            "/servers/{id}/backups",
+            get(backups::list).post(backups::create),
+        )
+        .route(
+            "/servers/{id}/backups/{bid}",
+            axum::routing::patch(backups::patch).delete(backups::delete),
+        )
+        .route(
+            "/servers/{id}/backups/{bid}/download",
+            get(backups::download),
+        )
+        .route(
+            "/servers/{id}/backups/{bid}/restore",
+            post(backups::restore),
+        )
         .route(
             "/servers/{id}/properties",
             get(servers::get_properties).put(servers::put_properties),

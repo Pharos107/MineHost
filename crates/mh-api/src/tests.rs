@@ -460,3 +460,6 @@ mod tests_catalog;
 
 #[path = "tests_restart.rs"]
 mod tests_restart;
+
+#[path = "tests_backups.rs"]
+mod tests_backups;

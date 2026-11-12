@@ -399,7 +399,7 @@ async fn protected_backup_cannot_be_deleted_and_list_is_newest_first() {
     assert!(env.backup_dir(spec.id).join(format!("{id}.json")).is_file());
 
     let updated = app
-        .update_backup(spec.id, id, Some("đã sửa".to_owned()), Some(false))
+        .update_backup(spec.id, id, Some(Some("đã sửa".to_owned())), Some(false))
         .unwrap();
     assert_eq!(updated.note.as_deref(), Some("đã sửa"));
     assert!(!updated.protected);

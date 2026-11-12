@@ -65,6 +65,7 @@ pub struct ServerDto {
     pub restart_on_crash: Option<bool>,
     /// Giờ khởi động lại hằng ngày (giờ máy), dạng `HH:MM`, đã sắp xếp.
     pub restart_at: Option<Vec<String>>,
+    pub backup: Option<BackupSettingsDto>,
     pub eula_accepted: bool,
     /// RFC 3339.
     pub created_at: Option<String>,
@@ -96,6 +97,7 @@ impl From<ServerView> for ServerDto {
             autostart: None,
             restart_on_crash: None,
             restart_at: None,
+            backup: None,
             eula_accepted: false,
             created_at: None,
             job_id: None,
@@ -133,6 +135,10 @@ impl From<ServerView> for ServerDto {
                     .map(ToString::to_string)
                     .collect(),
             );
+            dto.backup = Some(BackupSettingsDto {
+                schedule: spec.backup.schedule.to_string(),
+                keep: spec.backup.keep,
+            });
             dto.eula_accepted = spec.eula_accepted();
             dto.created_at = spec.created_at.format(&Rfc3339).ok();
         }
@@ -178,6 +184,23 @@ pub struct PatchServerBody {
     pub restart_on_crash: Option<bool>,
     /// Giờ khởi động lại hằng ngày, `HH:MM`, tối đa 4 mốc. `[]` là tắt lịch.
     pub restart_at: Option<Vec<String>>,
+    /// Lịch sao lưu tự động; trường nào thiếu thì giữ nguyên.
+    pub backup: Option<BackupSettingsBody>,
+}
+
+/// Sao lưu tự động của một server (spec P2, mục 4.1).
+#[derive(Debug, Serialize, ToSchema)]
+pub struct BackupSettingsDto {
+    /// `off`, `every_<n>h` (n từ 1 tới 168) hoặc `daily@HH:MM`.
+    pub schedule: String,
+    /// Số bản tự động giữ lại, 1..100.
+    pub keep: u16,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct BackupSettingsBody {
+    pub schedule: Option<String>,
+    pub keep: Option<u16>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

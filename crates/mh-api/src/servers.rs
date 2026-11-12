@@ -6,7 +6,9 @@ use axum::Json;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use mh_app::{App, CreateRequest, SettingsPatch};
-use mh_core::{DailyTime, GamePort, LoaderKind, McVersion, MemoryLimits, ServerName};
+use mh_core::{
+    BackupSchedule, DailyTime, GamePort, LoaderKind, McVersion, MemoryLimits, ServerName,
+};
 use serde::Deserialize;
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
@@ -72,9 +74,14 @@ pub async fn patch(
         autostart: body.autostart,
         restart_on_crash: body.restart_on_crash,
         restart_at: body.restart_at.as_deref().map(restart_times).transpose()?,
-        // API cho lịch sao lưu thêm ở PR-24.
-        backup_schedule: None,
-        backup_keep: None,
+        backup_schedule: body
+            .backup
+            .as_ref()
+            .and_then(|b| b.schedule.as_deref())
+            .map(BackupSchedule::parse)
+            .transpose()
+            .map_err(|_| ApiError::invalid("backup.schedule"))?,
+        backup_keep: body.backup.as_ref().and_then(|b| b.keep),
     };
     app.update_settings(id, patch)?;
     Ok(Json(app.get(id)?.into()))
