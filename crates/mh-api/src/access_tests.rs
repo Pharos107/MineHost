@@ -132,6 +132,7 @@ async fn lan_requests_are_refused_once_password_is_reset() {
     let api = api();
     let lan = LanState::new();
     let router = crate::router_with_lan(Arc::clone(&api.app), 7878, Arc::clone(&lan));
+    let lan_router = crate::lan_listener(router.clone(), Arc::clone(&lan));
     api.app.auth().set_password(None, PASSWORD).unwrap();
     api.app.auth().set_lan(true).unwrap();
     lan.set_open(vec![LAN_HOST.parse().unwrap()]);
@@ -139,10 +140,23 @@ async fn lan_requests_are_refused_once_password_is_reset() {
     // `reset-password` xóa mật khẩu trong lúc listener LAN chưa kịp đóng.
     api.app.auth().reset().unwrap();
     for uri in ["/api/v1/auth/session", "/api/v1/servers"] {
-        let reply = call_at(&router, LAN_HOST, Method::GET, uri, None, None, None).await;
+        let reply = call_at(&lan_router, LAN_HOST, Method::GET, uri, None, None, None).await;
         assert_eq!(reply.status, StatusCode::FORBIDDEN, "{uri}");
         assert_eq!(reply.json()["params"]["reason"], "lan", "{uri}");
     }
+    // Client trong LAN đổi `Host` thành localhost cũng không giả được là máy này.
+    let reply = call_at(
+        &lan_router,
+        "127.0.0.1:7878",
+        Method::GET,
+        "/api/v1/servers",
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::FORBIDDEN);
+    assert_eq!(reply.json()["params"]["reason"], "host");
     // Trên máy này thì như P1: chưa có mật khẩu là vào được.
     let reply = call(&router, Method::GET, "/api/v1/servers", None, None, None).await;
     assert_eq!(reply.status, StatusCode::OK);

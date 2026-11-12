@@ -23,7 +23,7 @@ use utoipa::OpenApi;
 
 pub use error::ApiError;
 pub use guard::{LocalGuard, MINEHOST_HEADER};
-pub use lan::LanState;
+pub use lan::{LanState, lan_listener};
 
 #[derive(OpenApi)]
 #[openapi(

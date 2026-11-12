@@ -148,9 +148,7 @@ impl Worker {
             }
         };
         let (stop, stopped) = oneshot::channel::<()>();
-        let service = self
-            .router
-            .clone()
+        let service = mh_api::lan_listener(self.router.clone(), Arc::clone(&self.lan))
             .into_make_service_with_connect_info::<SocketAddr>();
         tokio::spawn(async move {
             let server = axum::serve(listener, service).with_graceful_shutdown(async {

@@ -87,6 +87,13 @@ impl AuthStore {
         Ok(hash.is_some_and(|phc| password_matches(password, &phc)))
     }
 
+    /// `(password_set, lan)` từ cùng một lần đọc file. Middleware dùng hàm này thay cho hai lần
+    /// gọi riêng, để `reset-password` chen giữa không làm hai giá trị lệch nhau.
+    pub fn snapshot(&self) -> Result<(bool, bool), AppError> {
+        let record = self.record()?;
+        Ok((record.password_hash.is_some(), record.lan))
+    }
+
     /// `true` chỉ khi file ghi `lan = true` và có hash. Thiếu hash thì `false`.
     pub fn lan(&self) -> Result<bool, AppError> {
         Ok(self.record()?.lan)

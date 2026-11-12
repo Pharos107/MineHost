@@ -25,8 +25,8 @@ use subtle::ConstantTimeEq;
 use utoipa::ToSchema;
 
 use crate::error::{ApiError, ApiJson, ErrorBody};
-use crate::guard::{self, ViaLan};
-use crate::lan::LanState;
+use crate::guard;
+use crate::lan::{LanState, ViaLan};
 
 pub(crate) const SESSION_COOKIE: &str = "mh_session";
 const CSRF_HEADER: HeaderName = HeaderName::from_static("x-csrf-token");
@@ -208,21 +208,19 @@ pub(crate) fn routes() -> Router<ApiState> {
 /// Chưa đặt mật khẩu thì để nguyên như P1. Đã đặt thì mọi route trừ session và login cần cookie,
 /// kể cả từ `127.0.0.1` (ADR 0003). File tĩnh không đi qua đây.
 pub async fn require_session(State(state): State<ApiState>, req: Request, next: Next) -> Response {
+    // Đọc mật khẩu và cờ LAN một lần, để hai lần đọc không thấy hai trạng thái khác nhau.
+    let (password_set, lan_on) = match state.app.auth().snapshot() {
+        Ok(snapshot) => snapshot,
+        Err(err) => return ApiError::from(err).into_response(),
+    };
     // Listener LAN còn mở thêm vài giây sau `reset-password` hoặc khi tắt LAN. Trong lúc đó
-    // không có mật khẩu, nên request từ LAN bị chặn ở đây thay vì được vào như P1.
-    if req.extensions().get::<ViaLan>().is_some() && !state.app.auth().lan().unwrap_or(false) {
+    // request từ LAN bị chặn ở đây, không bao giờ đi nhánh "chưa có mật khẩu" của P1.
+    if req.extensions().get::<ViaLan>().is_some() && !lan_on {
         return ApiError::new(StatusCode::FORBIDDEN, ErrorCode::Forbidden)
             .with_params(serde_json::json!({ "reason": "lan" }))
             .into_response();
     }
-    if is_public(req.uri().path()) {
-        return next.run(req).await;
-    }
-    let password_set = match state.app.auth().password_set() {
-        Ok(set) => set,
-        Err(err) => return ApiError::from(err).into_response(),
-    };
-    if !password_set {
+    if is_public(req.uri().path()) || !password_set {
         return next.run(req).await;
     }
     let Some(csrf) = session_csrf(&state.auth, req.headers()) else {
@@ -349,6 +347,8 @@ async fn change_password(
 ) -> Result<(CookieJar, StatusCode), ApiError> {
     blocking(work).await?;
     state.auth.clear_sessions();
+    // Xóa mật khẩu thì LAN tắt theo: đóng listener ngay, không chờ lần kiểm tra định kỳ.
+    state.lan.wake();
     Ok((clear_session_cookie(jar), StatusCode::NO_CONTENT))
 }
 

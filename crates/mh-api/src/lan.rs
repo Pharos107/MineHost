@@ -7,7 +7,36 @@ use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
+use axum::Router;
+use axum::extract::{Request, State};
+use axum::http::header;
+use axum::middleware::Next;
+use axum::response::Response;
 use tokio::sync::{Notify, watch};
+
+/// Request đi vào qua một listener LAN. Gắn theo kết nối (xem [`lan_listener`]), nên client
+/// trong LAN không thể giả làm `127.0.0.1` bằng cách đổi header `Host`.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct ViaLan;
+
+/// Bọc router cho listener LAN. Binary dùng bản này thay cho router của `127.0.0.1`.
+pub fn lan_listener(router: Router, lan: Arc<LanState>) -> Router {
+    router.layer(axum::middleware::from_fn_with_state(lan, mark_lan))
+}
+
+async fn mark_lan(State(lan): State<Arc<LanState>>, mut req: Request, next: Next) -> Response {
+    // Trên listener LAN, `Host` phải là chính địa chỉ LAN đang mở, không phải localhost.
+    let host_ok = req
+        .headers()
+        .get(header::HOST)
+        .and_then(|h| h.to_str().ok())
+        .is_some_and(|h| lan.has_host(h));
+    if !host_ok {
+        return crate::guard::forbidden("host");
+    }
+    req.extensions_mut().insert(ViaLan);
+    next.run(req).await
+}
 
 #[derive(Debug)]
 pub struct LanState {
@@ -38,6 +67,11 @@ impl LanState {
     pub fn set_open(&self, addrs: Vec<SocketAddr>) {
         *self.open.write().unwrap_or_else(|err| err.into_inner()) = addrs;
         self.applied.send_modify(|n| *n = n.wrapping_add(1));
+    }
+
+    /// Báo binary đọc lại cờ `lan` ngay, không chờ lần kiểm tra định kỳ.
+    pub fn wake(&self) {
+        self.wake.notify_one();
     }
 
     /// Chờ tới khi API báo cờ `lan` vừa đổi. Lỡ lúc không có ai chờ thì lần gọi sau trả ngay.

@@ -23,10 +23,6 @@ use crate::lan::LanState;
 
 pub const MINEHOST_HEADER: &str = "x-minehost";
 
-/// Đánh dấu request đi vào qua listener LAN. Middleware phiên dùng để chặn khi LAN đã tắt.
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct ViaLan;
-
 #[derive(Debug, Clone)]
 pub struct LocalGuard {
     hosts: [String; 2],
@@ -50,21 +46,20 @@ impl LocalGuard {
         }
     }
 
-    /// `Some(true)` khi `Host` là một listener LAN đang mở, `Some(false)` khi là localhost.
-    fn host_kind(&self, req: &Request) -> Option<bool> {
+    /// `Host` là localhost hoặc một listener LAN đang mở. Request đi vào listener nào thì
+    /// do [`crate::lan::lan_listener`] đánh dấu theo kết nối, không dựa vào header này.
+    fn host_ok(&self, req: &Request) -> bool {
         // HTTP/2 đặt host trong `:authority` (axum đưa vào URI) thay vì header `Host`.
         let host = req
             .headers()
             .get(header::HOST)
             .and_then(|h| h.to_str().ok())
             .map(str::to_owned)
-            .or_else(|| req.uri().authority().map(|a| a.to_string()))?
-            .to_ascii_lowercase();
-        if self.hosts.contains(&host) {
-            Some(false)
-        } else {
-            self.lan.has_host(&host).then_some(true)
-        }
+            .or_else(|| req.uri().authority().map(|a| a.to_string()));
+        host.is_some_and(|h| {
+            let h = h.to_ascii_lowercase();
+            self.hosts.contains(&h) || self.lan.has_host(&h)
+        })
     }
 
     /// Có `Origin` thì phải đúng; không có thì phải có `X-MineHost: 1`.
@@ -88,13 +83,10 @@ impl LocalGuard {
     }
 }
 
-pub async fn check(State(guard): State<LocalGuard>, mut req: Request, next: Next) -> Response {
-    let Some(via_lan) = guard.host_kind(&req) else {
+pub async fn check(State(guard): State<LocalGuard>, req: Request, next: Next) -> Response {
+    if !guard.host_ok(&req) {
         tracing::warn!(host = ?req.headers().get(header::HOST), "chặn request có Host lạ");
         return forbidden("host");
-    };
-    if via_lan {
-        req.extensions_mut().insert(ViaLan);
     }
     let mutating = is_mutating(req.method());
     // WebSocket là GET nhưng mở kênh hai chiều (gửi được lệnh console), nên cũng phải đúng Origin.
@@ -111,7 +103,7 @@ pub async fn check(State(guard): State<LocalGuard>, mut req: Request, next: Next
     next.run(req).await
 }
 
-fn forbidden(reason: &str) -> Response {
+pub(crate) fn forbidden(reason: &str) -> Response {
     ApiError::new(StatusCode::FORBIDDEN, ErrorCode::Forbidden)
         .with_params(serde_json::json!({ "reason": reason }))
         .into_response()
