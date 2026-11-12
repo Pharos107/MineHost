@@ -130,7 +130,11 @@
       "download_server": "Tải Paper {{minecraft}}",
       "prepare_files": "Chuẩn bị file",
       "save_world": "Lưu world",
-      "compress": "Nén bản sao lưu"
+      "compress": "Nén bản sao lưu",
+      "stop_server": "Tắt server",
+      "before_restore": "Sao lưu hiện trạng",
+      "unpack": "Giải nén bản sao lưu",
+      "swap": "Thay world"
     }
   },
   "server": {

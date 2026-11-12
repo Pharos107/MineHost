@@ -13,6 +13,7 @@ pub mod jobs;
 mod launcher;
 mod lifecycle;
 mod metrics;
+mod restore;
 mod servers;
 pub mod sources;
 
@@ -35,6 +36,7 @@ pub use files::{FileEntry, FileKind, TEXT_LIMIT, TextFile};
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};
 pub use metrics::{MetricSample, MetricsConfig, MetricsEvent, ServerMetrics};
 pub use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
+pub use restore::RestoreStarted;
 pub use servers::{ServerView, SettingsPatch};
 pub use sources::{CatalogVersion, JavaSource, ServerCatalog};
 
@@ -136,8 +138,9 @@ impl App {
     }
 
     pub fn with_deps(dirs: DataDirs, deps: AppDeps) -> Result<Self, AppError> {
-        // File nén không có mô tả là backup dở (mất điện giữa chừng). Dọn trước khi nhận request.
+        // File nén không có mô tả, hoặc thư mục đổi tên dở, là việc mất điện giữa chừng.
         backup::sweep_incomplete(&dirs.backups());
+        restore::sweep_interrupted(&dirs.servers());
         Ok(Self {
             store: ServerStore::new(dirs.servers(), dirs.trash()),
             dirs,
@@ -206,8 +209,8 @@ impl App {
         self.shutdown.notified().await;
     }
 
-    /// Thời gian chờ một server dừng khi thoát MineHost: hạn `stop` cộng thêm một chút.
-    fn shutdown_timeout(&self) -> Duration {
+    /// Thời gian chờ một server dừng khi thoát MineHost hoặc khôi phục: hạn `stop` cộng thêm một chút.
+    pub(crate) fn shutdown_timeout(&self) -> Duration {
         self.supervisor_config.stop_timeout + Duration::from_secs(10)
     }
 }
