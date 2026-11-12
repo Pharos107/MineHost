@@ -101,7 +101,7 @@ impl ServerCatalog for E2eCatalog {
 }
 
 fn versions_of(loader: LoaderKind) -> Result<Vec<CatalogVersion>, AppError> {
-    require_paper(loader)?;
+    require_known(loader)?;
     let mut out = Vec::with_capacity(KNOWN.len());
     for item in KNOWN {
         out.push(CatalogVersion {
@@ -113,11 +113,11 @@ fn versions_of(loader: LoaderKind) -> Result<Vec<CatalogVersion>, AppError> {
 }
 
 fn resolve_of(loader: LoaderKind, minecraft: &McVersion) -> Result<ResolvedServer, AppError> {
-    require_paper(loader)?;
+    require_known(loader)?;
     let Some(known) = KNOWN.iter().find(|item| item.id == minecraft.as_str()) else {
         return Err(AppError::new(
             ErrorCode::VersionNotFound,
-            format!("không có Paper {minecraft} trong catalog e2e"),
+            format!("không có {loader} {minecraft} trong catalog e2e"),
         ));
     };
     Ok(ResolvedServer {
@@ -128,11 +128,11 @@ fn resolve_of(loader: LoaderKind, minecraft: &McVersion) -> Result<ResolvedServe
     })
 }
 
-fn require_paper(loader: LoaderKind) -> Result<(), AppError> {
-    if loader == LoaderKind::Paper {
-        Ok(())
-    } else {
-        Err(crate::sources::unsupported(loader))
+/// Paper, Vanilla, Purpur dùng chung danh sách giả: `fake-mc` không quan tâm jar là loại nào.
+fn require_known(loader: LoaderKind) -> Result<(), AppError> {
+    match loader {
+        LoaderKind::Paper | LoaderKind::Vanilla | LoaderKind::Purpur => Ok(()),
+        _ => Err(crate::sources::unsupported(loader)),
     }
 }
 
@@ -213,6 +213,9 @@ mod tests {
         let versions = catalog.versions(LoaderKind::Paper).await.unwrap();
         let ids: Vec<_> = versions.iter().map(|v| v.id.as_str().to_owned()).collect();
         assert_eq!(ids, ["1.21.4", "1.20.4"]);
+        for loader in [LoaderKind::Vanilla, LoaderKind::Purpur] {
+            assert_eq!(catalog.versions(loader).await.unwrap(), versions);
+        }
 
         let old = McVersion::parse("1.20.4").unwrap();
         let resolved = catalog.resolve(LoaderKind::Paper, &old).await.unwrap();

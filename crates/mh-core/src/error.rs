@@ -61,6 +61,8 @@ pub enum ErrorCode {
     BackupCorrupt,
     /// Bản backup đang được bảo vệ, không xóa được.
     BackupProtected,
+    /// Server có mod (thư mục `mods/`): chưa hỗ trợ ở P2, có từ P3.
+    ModsNotSupported,
 }
 
 impl ErrorCode {
@@ -97,6 +99,7 @@ impl ErrorCode {
             Self::FileExists => "FILE_EXISTS",
             Self::BackupCorrupt => "BACKUP_CORRUPT",
             Self::BackupProtected => "BACKUP_PROTECTED",
+            Self::ModsNotSupported => "MODS_NOT_SUPPORTED",
         }
     }
 }
@@ -131,7 +134,7 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 30] = [
+    const ALL: [ErrorCode; 31] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::PlayerNotFound,
@@ -162,6 +165,7 @@ mod tests {
         ErrorCode::FileExists,
         ErrorCode::BackupCorrupt,
         ErrorCode::BackupProtected,
+        ErrorCode::ModsNotSupported,
     ];
 
     #[test]

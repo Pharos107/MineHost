@@ -190,6 +190,7 @@ lan = false
 | `AUTH_RATE_LIMITED` | Sai quá nhiều lần, kèm `retry_after_s` |
 | `PASSWORD_TOO_SHORT` | Mật khẩu mới dưới 8 ký tự |
 | `LAN_NEEDS_PASSWORD` | Bật LAN khi chưa đặt mật khẩu |
+| `MODS_NOT_SUPPORTED` | Nhập thư mục server có `mods/` (mod có từ P3) |
 
 ## 5. Thiết kế từng crate
 
@@ -257,7 +258,8 @@ Không thêm cạnh phụ thuộc mới giữa các crate: mọi phần ghép n�
 - **Lịch backup:** một task kiểm tra mỗi phút. Server không chạy kể từ bản backup trước thì bỏ qua.
   Lần kiểm tra đầu sau khi controller khởi động chờ 5 phút, để không backup ngay lúc mọi server đang bật.
 - **Lịch khởi động lại:** tới giờ thì gửi `say` báo trước 5 phút, 1 phút, 10 giây, rồi `restart`.
-  Server đang tắt thì bỏ qua.
+  Server đang tắt thì bỏ qua. Kiểm tra mỗi giây theo giờ máy; controller bật khi chỉ còn ít phút thì
+  chỉ gửi lời báo đang tới hạn.
 - **Chỉ số:** mỗi 5 giây lấy CPU, RAM của process Java và số người online; mỗi 5 phút tính lại dung lượng
   thư mục server. Vòng đệm 720 mẫu mỗi server, chỉ khi server có process.
 - **Cảnh báo RAM:** tổng `max` RAM của các server đang chạy cộng server sắp bật vượt RAM máy trừ 2 GB thì
@@ -288,7 +290,8 @@ REST mới (mọi thao tác dài trả `202` kèm `job_id`):
 | PATCH / DELETE | `/servers/{id}/backups/{bid}` | Sửa ghi chú, bảo vệ · xóa |
 | GET | `/servers/{id}/backups/{bid}/download` | Tải file `.tar.zst` |
 | POST | `/servers/{id}/backups/{bid}/restore` | `{ "confirm": true }` → Job |
-| POST | `/servers/import` | `{ path, name }` → Job (mục 6.11) |
+| POST | `/servers/import/inspect` | `{ path }` → `{ loader, minecraft, jar, has_mods }`, xem trước, không chép |
+| POST | `/servers/import` | `{ path, name, loader?, minecraft? }` → Job (mục 6.11); `loader`, `minecraft` chỉ gửi khi chọn tay |
 | GET | `/auth/session` | `{ password_set, logged_in, csrf_token? }`, không cần đăng nhập |
 | POST | `/auth/login` · `/auth/logout` | `{ password }` |
 | PUT / DELETE | `/auth/password` | `{ current?, new }` · `{ current }` (xóa mật khẩu thì tắt LAN) |
@@ -400,7 +403,9 @@ Cài đặt game thêm mô tả ngắn cho từng khóa phổ biến của `serv
 Trong wizard tạo server, bước 1 thêm lựa chọn "Nhập thư mục có sẵn": người dùng dán đường dẫn thư mục
 trên máy. MineHost nhận loại server từ jar (Paper, Purpur, Vanilla) và phiên bản từ `version_history.json`
 hoặc `version.json` trong jar; không nhận ra thì cho chọn tay. Thư mục được **chép** vào
-`servers/<id>/server/`, bản gốc giữ nguyên. Server có mod (`mods/`) thì báo "Chưa hỗ trợ, có ở P3".
+`servers/<id>/server/`, bản gốc giữ nguyên; symlink bị bỏ qua. Server có mod (`mods/`) thì báo
+`MODS_NOT_SUPPORTED`. Giữ cổng trong `server.properties` nếu còn trống. EULA vẫn phải bấm đồng ý lại
+trong MineHost dù thư mục đã có `eula=true`.
 
 ### 6.12 Component mới
 
@@ -420,6 +425,7 @@ hoặc `version.json` trong jar; không nhận ra thì cho chọn tay. Thư mụ
 | --- | --- | --- |
 | `mh-backup` | `tar`, `zstd` | Nén và giải nén backup |
 | `mh-app` | `argon2`, `rand` | Băm mật khẩu, token phiên và CSRF |
+| `mh-app` | `jiff` | Giờ máy theo múi giờ cho lịch khởi động lại; `time` không đọc được múi giờ an toàn khi process có nhiều luồng |
 | `mh-api` | `axum` feature `multipart`, `axum-extra` (cookie) | Tải file lên, cookie phiên |
 | `mh-providers` | `fastnbt` | Đọc điểm spawn trong `level.dat` |
 | `mh-core` | `md-5` | UUID offline của người chơi |

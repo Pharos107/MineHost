@@ -6,6 +6,7 @@ mod dto;
 mod error;
 mod files;
 mod guard;
+mod import;
 mod jobs;
 mod lan;
 mod servers;
@@ -33,6 +34,8 @@ pub use lan::{LanState, lan_listener};
         system::system_info,
         servers::list,
         servers::create,
+        import::inspect,
+        import::import,
         servers::get,
         servers::patch,
         servers::trash,
@@ -46,7 +49,7 @@ pub use lan::{LanState, lan_listener};
         jobs::list,
         jobs::get,
         jobs::cancel,
-        jobs::paper_versions,
+        jobs::catalog_versions,
         jobs::shutdown,
         auth::session,
         auth::login,
@@ -82,6 +85,9 @@ pub use lan::{LanState, lan_listener};
         dto::CrashDto,
         dto::CreateServerBody,
         dto::CreatedDto,
+        import::InspectBody,
+        import::DetectedDto,
+        import::ImportBody,
         dto::PatchServerBody,
         dto::EulaBody,
         dto::TrashedDto,
@@ -146,6 +152,8 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         .route("/health", get(system::health))
         .route("/system", get(system::system_info))
         .route("/servers", get(servers::list).post(servers::create))
+        .route("/servers/import", post(import::import))
+        .route("/servers/import/inspect", post(import::inspect))
         .route(
             "/servers/{id}",
             get(servers::get)
@@ -189,7 +197,7 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         )
         .route("/jobs/{id}", get(jobs::get))
         .route("/jobs/{id}/cancel", post(jobs::cancel))
-        .route("/catalog/paper/versions", get(jobs::paper_versions))
+        .route("/catalog/{loader}/versions", get(jobs::catalog_versions))
         .route("/app/shutdown", post(jobs::shutdown))
         .route(
             "/settings/access",

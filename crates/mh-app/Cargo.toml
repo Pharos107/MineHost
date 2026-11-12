@@ -9,6 +9,7 @@ publish.workspace = true
 
 [dependencies]
 argon2.workspace = true
+jiff.workspace = true
 mh-backup.workspace = true
 mh-core.workspace = true
 mh-java.workspace = true
@@ -27,6 +28,7 @@ tokio.workspace = true
 toml.workspace = true
 tracing.workspace = true
 ulid.workspace = true
+zip.workspace = true
 
 [features]
 # Catalog Paper và Java giả. Tắt ở bản phát hành; `minehost` bật khi build test giao diện.

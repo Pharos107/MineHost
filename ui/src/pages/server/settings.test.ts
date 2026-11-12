@@ -27,6 +27,17 @@ describe("cài đặt server", () => {
     expect(settingsPatch(server, form)).toEqual({ name: "Creative", memory_mb: { min: 1024, max: 6144 }, autostart: true });
   });
 
+  it("lịch khởi động lại: chỉ gửi khi đổi, bắt giờ sai và giờ trùng", () => {
+    const withTimes: Server = { ...server, restart_at: ["04:00", "16:00"] };
+    // Đổi thứ tự không phải là đổi lịch: backend luôn sắp xếp.
+    expect(settingsPatch(withTimes, { ...settingsFrom(withTimes), restartAt: ["16:00", "04:00"] })).toEqual({});
+    expect(settingsPatch(withTimes, { ...settingsFrom(withTimes), restartAt: [] })).toEqual({ restart_at: [] });
+    expect(settingsPatch(server, { ...settingsFrom(server), restartAt: ["05:30"] })).toEqual({ restart_at: ["05:30"] });
+    expect(settingsErrors({ ...settingsFrom(server), restartAt: [""] }).restartAt).toBe("settings.restartAtInvalid");
+    expect(settingsErrors({ ...settingsFrom(server), restartAt: ["04:00", "04:00"] }).restartAt).toBe("settings.restartAtDuplicate");
+    expect(settingsErrors({ ...settingsFrom(server), restartAt: ["23:59"] }).restartAt).toBeUndefined();
+  });
+
   it("cổng bắt buộc và phải hợp lệ", () => {
     expect(settingsErrors({ ...settingsFrom(server), port: "" }).port).toBe("wizard.portInvalid");
     expect(settingsErrors({ ...settingsFrom(server), port: "25570" }).port).toBeUndefined();

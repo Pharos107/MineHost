@@ -15,6 +15,10 @@ export type CreateServer = components["schemas"]["CreateServerBody"];
 export type Created = components["schemas"]["CreatedDto"];
 export type ConsoleLine = components["schemas"]["ConsoleLineDto"];
 export type ServerAction = "start" | "stop" | "restart" | "kill";
+/** Loại server tạo được (spec P2, mục 5.4). */
+export type Loader = "paper" | "vanilla" | "purpur";
+export type Detected = components["schemas"]["DetectedDto"];
+export type ImportServer = components["schemas"]["ImportBody"];
 export type Property = components["schemas"]["PropertyDto"];
 export type ServerPatch = components["schemas"]["PatchServerBody"];
 export type Trashed = components["schemas"]["TrashedDto"];
@@ -102,6 +106,9 @@ export const api = {
   servers: () => request<Server[]>("GET", "/servers"),
   server: (id: string) => request<Server>("GET", serverPath(id)),
   createServer: (body: CreateServer) => request<Created>("POST", "/servers", body),
+  /** Xem trước thư mục server có sẵn: loại, phiên bản, jar, có `mods/` không. */
+  inspectImport: (path: string) => request<Detected>("POST", "/servers/import/inspect", { path }),
+  importServer: (body: ImportServer) => request<Created>("POST", "/servers/import", body),
   action: (id: string, action: ServerAction) => request<void>("POST", `${serverPath(id)}/actions/${action}`),
   acceptEula: (id: string) => request<Server>("POST", `${serverPath(id)}/eula`, { accept: true }),
   sendCommand: (id: string, command: string) => request<void>("POST", `${serverPath(id)}/console`, { command }),
@@ -113,7 +120,8 @@ export const api = {
     request<ServerMetrics>("GET", `${serverPath(id)}/metrics${since ? `?since=${encodeURIComponent(since)}` : ""}`),
   properties: (id: string) => request<{ properties: Property[] }>("GET", `${serverPath(id)}/properties`),
   saveProperties: (id: string, properties: Property[]) => request<void>("PUT", `${serverPath(id)}/properties`, { properties }),
-  paperVersions: () => request<CatalogVersion[]>("GET", "/catalog/paper/versions"),
+  /** Bản cài được của một loại server, mới nhất trước. */
+  catalogVersions: (loader: Loader) => request<CatalogVersion[]>("GET", `/catalog/${loader}/versions`),
   /** Job đang giữ, mới nhất trước; `serverId` có thì chỉ Job của server đó. */
   jobs: (serverId?: string) =>
     request<Job[]>("GET", serverId ? `/jobs?server_id=${encodeURIComponent(serverId)}` : "/jobs"),

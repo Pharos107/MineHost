@@ -9,7 +9,7 @@ của nó. Phần còn lại của spec gốc (nhóm H) làm sau cùng.
 
 ## Tiến độ
 
-Cập nhật 2026-11-12, sau khi merge #52. PR nào merge
+Cập nhật 2026-11-12, sau khi merge #56. PR nào merge
 thì sửa dòng của nó ở đây trong chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -37,7 +37,9 @@ thì sửa dòng của nó ở đây trong chính PR ấy.
 | 27 | Phiên đăng nhập và CSRF | Đã merge | [#50](https://github.com/Pharos107/MineHost/pull/50) |
 | 28 | Listener LAN, `/settings/access`, đặt lại mật khẩu | Đã merge | [#51](https://github.com/Pharos107/MineHost/pull/51) |
 | 29 | Trang Đăng nhập và Cài đặt | Đã merge | [#52](https://github.com/Pharos107/MineHost/pull/52) |
-| 30, 31, 32 | Vanilla và Purpur, lịch khởi động lại, nhập server | Chưa bắt đầu | |
+| 30 | Vanilla và Purpur | Đã merge | [#53](https://github.com/Pharos107/MineHost/pull/53) |
+| 31 | Lịch khởi động lại | Đã merge | [#54](https://github.com/Pharos107/MineHost/pull/54) |
+| 32 | Nhập server có sẵn | Đã merge | [#55](https://github.com/Pharos107/MineHost/pull/55) |
 | 33 | Fuzz `SafeRoot` và workflow hằng tuần | Đã merge | [#56](https://github.com/Pharos107/MineHost/pull/56) |
 | 34 | Chạy dài 72 giờ, phát hành `v0.3.0` | Chưa bắt đầu | |
 

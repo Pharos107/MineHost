@@ -9,6 +9,7 @@ use toml::Table;
 use crate::error::{ErrorCode, InvalidValue};
 use crate::ids::{GamePort, ServerId, ServerName};
 use crate::memory::MemoryLimits;
+use crate::schedule::DailyTime;
 use crate::version::{LoaderKind, McVersion};
 
 /// Bản schema mà MineHost này đọc và ghi.
@@ -75,6 +76,9 @@ pub struct PolicySection {
     pub autostart: bool,
     #[serde(default = "default_restart_on_crash")]
     pub restart_on_crash: bool,
+    /// Giờ khởi động lại hằng ngày (giờ máy), tối đa 4 mốc, đã sắp xếp (spec P2, mục 4.1).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub restart_at: Vec<DailyTime>,
     #[serde(flatten)]
     pub extra: Table,
 }
@@ -88,6 +92,7 @@ impl Default for PolicySection {
         Self {
             autostart: false,
             restart_on_crash: default_restart_on_crash(),
+            restart_at: Vec::new(),
             extra: Table::new(),
         }
     }

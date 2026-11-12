@@ -84,14 +84,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalog/paper/versions": {
+    "/api/v1/catalog/{loader}/versions": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["paper_versions"];
+        get: operations["catalog_versions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -174,6 +174,38 @@ export interface paths {
         get: operations["list"];
         put?: never;
         post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/import/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["inspect"];
         delete?: never;
         options?: never;
         head?: never;
@@ -470,6 +502,15 @@ export interface components {
         CsrfDto: {
             csrf_token: string;
         };
+        DetectedDto: {
+            /** @description Có `mods/`: chưa hỗ trợ ở bản này. */
+            has_mods: boolean;
+            /** @description Jar sẽ chạy. `null` nghĩa là thư mục không có jar nào, không nhập được. */
+            jar?: string | null;
+            /** @description `paper`, `purpur`, `vanilla`; không nhận ra thì `null`, người dùng chọn tay. */
+            loader?: string | null;
+            minecraft?: string | null;
+        };
         DiskDto: {
             /** Format: int64 */
             available_bytes: number;
@@ -504,6 +545,17 @@ export interface components {
         Health: {
             status: string;
             version: string;
+        };
+        ImportBody: {
+            /** @description Chỉ gửi khi người dùng chọn tay; có thì thắng kết quả nhận diện. */
+            loader?: string | null;
+            minecraft?: string | null;
+            name: string;
+            path: string;
+        };
+        InspectBody: {
+            /** @description Đường dẫn tuyệt đối tới thư mục server trên máy chạy MineHost. */
+            path: string;
         };
         JobDto: {
             error?: components["schemas"]["ErrorBody"] | null;
@@ -556,6 +608,8 @@ export interface components {
             name?: string | null;
             /** Format: int32 */
             port?: number | null;
+            /** @description Giờ khởi động lại hằng ngày, `HH:MM`, tối đa 4 mốc. `[]` là tắt lịch. */
+            restart_at?: string[] | null;
             restart_on_crash?: boolean | null;
         };
         ProgressDto: {
@@ -609,6 +663,8 @@ export interface components {
             pid?: number | null;
             /** Format: int32 */
             port?: number | null;
+            /** @description Giờ khởi động lại hằng ngày (giờ máy), dạng `HH:MM`, đã sắp xếp. */
+            restart_at?: string[] | null;
             restart_on_crash?: boolean | null;
             /** @description Đang chờ tự khởi động lại sau crash. */
             restart_pending: boolean;
@@ -882,22 +938,34 @@ export interface operations {
             };
         };
     };
-    paper_versions: {
+    catalog_versions: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                /** @description `paper`, `vanilla` hoặc `purpur` */
+                loader: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Bản release Paper có build STABLE, mới nhất trước */
+            /** @description Bản release cài được, mới nhất trước. Paper chỉ tính bản có build STABLE */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["CatalogVersionDto"][];
+                };
+            };
+            /** @description Loại server chưa hỗ trợ */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
             502: {
@@ -1067,6 +1135,78 @@ export interface operations {
                 };
             };
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportBody"];
+            };
+        };
+        responses: {
+            /** @description Job nhập server đã chạy */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Có `mods/` hoặc cổng bận */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    inspect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InspectBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetectedDto"];
+                };
+            };
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

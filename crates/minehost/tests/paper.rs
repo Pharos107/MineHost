@@ -104,3 +104,22 @@ fn quit_stops_three_servers_cleanly() {
         assert!(world.exists(), "thiếu {}", world.display());
     }
 }
+
+/// Vanilla và Purpur (spec P2, kế hoạch PR-30): tạo bản 1.21.4, bật tới `Done`, tắt bằng `stop`.
+#[test]
+#[ignore = "tải Java, jar Mojang và Purpur thật; chạy trong job integration của CI"]
+fn vanilla_and_purpur_reach_done() {
+    let dir = DataDir::prepare();
+    let controller = Controller::start(&dir);
+    for loader in ["vanilla", "purpur"] {
+        let id = controller.create_server_of(&format!("Tích hợp {loader}"), loader);
+        let pid = controller.start_server(&id);
+        controller.post(&format!("/servers/{id}/actions/stop"), json!({}));
+        controller.wait_state(&id, "stopped", Duration::from_secs(90));
+        wait_until("Java thoát", Duration::from_secs(10), || {
+            (!process_alive(pid)).then_some(())
+        });
+    }
+    let status = controller.shutdown(Duration::from_secs(30));
+    assert!(status.success(), "{status}");
+}
