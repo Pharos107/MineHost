@@ -29,6 +29,9 @@ const EXCLUDED: &[(&str, &[u8])] = &[
     ("logs/latest.log", b"log"),
     ("crash-reports/crash.txt", b"crash"),
     ("cache/a.dat", b"cache"),
+    // Java khóa file này khi server chạy (Windows không cho đọc); Minecraft tự tạo lại.
+    ("world/session.lock", b"lock"),
+    ("world_nether/session.lock", b"lock"),
 ];
 
 const EMPTY_DIR: &str = "thư mục trống";
@@ -81,11 +84,13 @@ fn is_excluded_name(name: &str) -> bool {
         .split(['/', '\\'])
         .filter(|part| !part.is_empty() && *part != ".")
         .collect();
-    [["logs"], ["crash-reports"], ["cache"]]
-        .into_iter()
-        .any(|rule| {
-            parts.len() >= rule.len() && parts.iter().zip(rule).all(|(got, want)| *got == want)
-        })
+    let skipped_file = parts.last().is_some_and(|last| *last == "session.lock");
+    skipped_file
+        || [["logs"], ["crash-reports"], ["cache"]]
+            .into_iter()
+            .any(|rule| {
+                parts.len() >= rule.len() && parts.iter().zip(rule).all(|(got, want)| *got == want)
+            })
 }
 
 fn snapshot(root: &Path) -> BTreeMap<String, Kind> {

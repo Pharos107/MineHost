@@ -14,9 +14,23 @@ async function createServer(request: APIRequestContext, name: string): Promise<s
   return id;
 }
 
+const NAME = "Sao lưu e2e";
+let serverId: string | null = null;
+
+// Các spec dùng chung một controller; server-lifecycle cần danh sách server trống.
+test.afterEach(async ({ request }) => {
+  if (serverId === null) return;
+  const deleted = await request.delete(`/api/v1/servers/${serverId}?confirm_name=${encodeURIComponent(NAME)}`, {
+    headers: { "X-MineHost": "1" },
+  });
+  expect(deleted.ok()).toBe(true);
+  serverId = null;
+});
+
 // Spec P2, kế hoạch PR-25: sao lưu, bảo vệ rồi thử xóa, khôi phục có xác nhận.
 test("sao lưu, bảo vệ và khôi phục", async ({ page, request }) => {
-  const id = await createServer(request, "Sao lưu e2e");
+  const id = await createServer(request, NAME);
+  serverId = id;
   await page.goto(`/servers/${id}/backups`);
 
   await page.getByRole("textbox", { name: "Ghi chú" }).fill("Trước khi thử");
@@ -25,9 +39,11 @@ test("sao lưu, bảo vệ và khôi phục", async ({ page, request }) => {
   const table = page.getByRole("table");
   await expect(table.getByText("Trước khi thử")).toBeVisible({ timeout: 30_000 });
 
-  // Bản được bảo vệ: Xóa bị tắt trong menu.
-  await table.getByRole("button", { name: /Thao tác khác cho/ }).first().click();
-  await expect(page.getByRole("menuitem", { name: "Xóa" })).toBeDisabled();
+  // Bản được bảo vệ: Xóa bị tắt trong menu. Bảng có thể vẽ lại khi danh sách tải xong, nên thử lại.
+  await expect(async () => {
+    await table.getByRole("button", { name: /Thao tác khác cho/ }).first().click();
+    await expect(page.getByRole("menuitem", { name: "Xóa" })).toBeDisabled({ timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
   await page.keyboard.press("Escape");
 
   await table.getByRole("button", { name: /Khôi phục/ }).first().click();
