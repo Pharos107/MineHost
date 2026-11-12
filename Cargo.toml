@@ -29,6 +29,7 @@ mh-api = { path = "crates/mh-api" }
 anyhow = "1.0.104"
 argon2 = { version = "0.5.3", features = ["std"] }
 axum = { version = "0.8.9", features = ["ws", "multipart"] }
+axum-extra = { version = "0.12.6", features = ["cookie"] }
 base64 = "0.22.1"
 clap = { version = "4.6.7", features = ["derive", "env"] }
 directories = "6.0.0"
@@ -41,6 +42,7 @@ md-5 = "0.11.0"
 mime_guess = "2.0.5"
 open = "5.4.5"
 proptest = { version = "1.12.0", default-features = false, features = ["std"] }
+rand_core = { version = "0.6.4", features = ["getrandom"] }
 reqwest = { version = "0.13.5", default-features = false, features = ["rustls-no-provider", "http2"] }
 rust-embed = "8.13.0"
 rustls = { version = "0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
@@ -48,6 +50,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 sha1 = "0.11.0"
 sha2 = "0.11.1"
+subtle = "2.6.1"
 sysinfo = { version = "0.39.6", default-features = false, features = ["system", "disk"] }
 tar = "0.4.46"
 tempfile = "3.27.0"

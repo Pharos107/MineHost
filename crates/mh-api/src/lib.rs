@@ -1,5 +1,6 @@
 //! REST API và WebSocket của MineHost tại `/api/v1`, kèm UI tĩnh ở mọi đường dẫn còn lại.
 
+mod auth;
 mod dto;
 mod error;
 mod files;
@@ -44,6 +45,11 @@ pub use guard::{LocalGuard, MINEHOST_HEADER};
         jobs::cancel,
         jobs::paper_versions,
         jobs::shutdown,
+        auth::session,
+        auth::login,
+        auth::logout,
+        auth::put_password,
+        auth::delete_password,
         files::list,
         files::delete_file,
         files::read,
@@ -55,6 +61,11 @@ pub use guard::{LocalGuard, MINEHOST_HEADER};
     ),
     components(schemas(
         error::ErrorBody,
+        auth::SessionDto,
+        auth::CsrfDto,
+        auth::LoginBody,
+        auth::PasswordBody,
+        auth::ClearPasswordBody,
         system::Health,
         system::SystemDto,
         system::DiskDto,
@@ -102,7 +113,8 @@ pub fn router(app: Arc<App>, port: u16) -> Router {
 
 /// Như [`router`], nhưng test được đặt giới hạn từng file upload nhỏ hơn 512 MiB.
 pub(crate) fn router_with(app: Arc<App>, port: u16, upload_max_bytes: u64) -> Router {
-    let api = api_routes(app, upload_max_bytes);
+    let api = api_routes(auth::ApiState::new(app), upload_max_bytes);
+    // Guard thêm sau nên chạy trước: Host/Origin của P1 vẫn có hiệu lực.
     Router::new()
         .nest("/api/v1", api)
         .fallback(ui::serve)
@@ -112,8 +124,9 @@ pub(crate) fn router_with(app: Arc<App>, port: u16, upload_max_bytes: u64) -> Ro
         ))
 }
 
-fn api_routes(app: Arc<App>, upload_max_bytes: u64) -> Router {
-    Router::new()
+/// Phiên bọc route API, không bọc file tĩnh: trang đăng nhập phải tải được khi chưa có cookie.
+fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
+    auth::routes()
         .route("/health", get(system::health))
         .route("/system", get(system::system_info))
         .route("/servers", get(servers::list).post(servers::create))
@@ -164,8 +177,14 @@ fn api_routes(app: Arc<App>, upload_max_bytes: u64) -> Router {
         .route("/app/shutdown", post(jobs::shutdown))
         .route("/ws", get(ws::upgrade))
         .fallback(error::api_not_found)
-        .with_state(app)
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            auth::require_session,
+        ))
+        .with_state(state)
 }
 
+#[cfg(test)]
+mod auth_tests;
 #[cfg(test)]
 mod tests;
