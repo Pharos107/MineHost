@@ -538,6 +538,46 @@
       "whitelisted": "Whitelist",
       "banned": "Bị cấm",
       "frozen": "Đóng băng"
+    },
+    "details": "Chi tiết",
+    "uuid": "UUID",
+    "copyUuid": "Chép UUID",
+    "uuidUnknown": "Chưa biết (người này chưa vào server)",
+    "banReason": "Lý do cấm",
+    "skinOf": "Skin của {{name}}, kéo để xoay",
+    "group": {
+      "permissions": "Quyền",
+      "discipline": "Kỷ luật",
+      "interact": "Tương tác",
+      "message": "Nhắn tin"
+    },
+    "reason": "Lý do",
+    "reasonHint": "Không bắt buộc. Người chơi thấy lý do khi bị đuổi hoặc cấm.",
+    "target": "Dịch chuyển tới",
+    "noTarget": "Không có ai khác online",
+    "text": "Nội dung",
+    "blocked": {
+      "stopped": "Server đang tắt: chỉ đổi được whitelist, op và cấm. Bật server để đuổi, đóng băng, dịch chuyển hoặc nhắn tin.",
+      "offline": "Người này không online: đuổi, đóng băng, dịch chuyển và nhắn tin cần người đó đang trong game."
+    },
+    "done": {
+      "sent": "Đã gửi lệnh. Kết quả hiện trong Console.",
+      "saved": "Đã lưu. Có hiệu lực khi bật server."
+    },
+    "action": {
+      "whitelist_add": "Thêm vào whitelist",
+      "whitelist_remove": "Gỡ khỏi whitelist",
+      "op": "Cấp op",
+      "deop": "Thu hồi op",
+      "kick": "Đuổi",
+      "ban": "Cấm",
+      "pardon": "Bỏ cấm",
+      "freeze": "Đóng băng",
+      "unfreeze": "Bỏ đóng băng",
+      "teleport_to_spawn": "Về điểm spawn",
+      "teleport_to_player": "Dịch chuyển",
+      "message": "Nhắn tin",
+      "title": "Hiện giữa màn hình"
     }
   }
 }

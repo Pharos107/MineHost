@@ -538,6 +538,46 @@
       "whitelisted": "Whitelisted",
       "banned": "Banned",
       "frozen": "Frozen"
+    },
+    "details": "Details",
+    "uuid": "UUID",
+    "copyUuid": "Copy UUID",
+    "uuidUnknown": "Unknown (this player has not joined yet)",
+    "banReason": "Ban reason",
+    "skinOf": "Skin of {{name}}, drag to rotate",
+    "group": {
+      "permissions": "Permissions",
+      "discipline": "Discipline",
+      "interact": "Interact",
+      "message": "Message"
+    },
+    "reason": "Reason",
+    "reasonHint": "Optional. The player sees it when kicked or banned.",
+    "target": "Teleport to",
+    "noTarget": "Nobody else is online",
+    "text": "Text",
+    "blocked": {
+      "stopped": "The server is stopped: only the whitelist, ops and bans can change. Start the server to kick, freeze, teleport or message.",
+      "offline": "This player is offline: kicking, freezing, teleporting and messaging need them in the game."
+    },
+    "done": {
+      "sent": "Command sent. The result shows in the Console.",
+      "saved": "Saved. It takes effect when the server starts."
+    },
+    "action": {
+      "whitelist_add": "Add to whitelist",
+      "whitelist_remove": "Remove from whitelist",
+      "op": "Make op",
+      "deop": "Remove op",
+      "kick": "Kick",
+      "ban": "Ban",
+      "pardon": "Unban",
+      "freeze": "Freeze",
+      "unfreeze": "Unfreeze",
+      "teleport_to_spawn": "Send to spawn",
+      "teleport_to_player": "Teleport",
+      "message": "Send message",
+      "title": "Show on screen"
     }
   }
 }
