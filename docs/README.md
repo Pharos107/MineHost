@@ -30,6 +30,7 @@ quy tắc code và lộ trình nằm ở [AGENTS.md](../AGENTS.md).
 | [specs/p1-ui-components.md](specs/p1-ui-components.md) | Bộ component giao diện |
 | [specs/p2-nhieu-server-va-van-hanh.md](specs/p2-nhieu-server-va-van-hanh.md) | Spec P2 (đang làm) |
 | [specs/p2-ke-hoach-pr.md](specs/p2-ke-hoach-pr.md) | Kế hoạch PR của P2 kèm bảng tiến độ |
+| [specs/p2-lam-moi-giao-dien.md](specs/p2-lam-moi-giao-dien.md) | Làm mới giao diện các trang chung: thẻ server, bảng màu Đá và cỏ, nút sáng/tối |
 | [backlog.md](backlog.md) | Ý tưởng ngoài giai đoạn hiện tại |
 | [ra-soat/2026-11-11-kien-truc.md](ra-soat/2026-11-11-kien-truc.md) | Rà soát kiến trúc: điểm yếu, bằng chứng, việc cần làm |
 
