@@ -457,3 +457,6 @@ mod tests_files;
 
 #[path = "tests_catalog.rs"]
 mod tests_catalog;
+
+#[path = "tests_restart.rs"]
+mod tests_restart;

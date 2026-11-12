@@ -1,15 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Save, Undo2 } from "lucide-react";
-import { useState } from "react";
+import { Plus, Save, Undo2, X } from "lucide-react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { api, errorMessage, type Server } from "../../api/client";
 import { SERVERS_KEY } from "../../api/live";
 import { formatMemoryMb } from "../../format";
 import { MEMORY_STEP_MB, memoryRange } from "../../memory";
-import { Button, Card, Field, Notice, Slider, Stack, Switch, TextInput } from "../../ui";
+import { Button, Card, Field, IconButton, Notice, Slider, Stack, Switch, TextInput } from "../../ui";
 import { DeleteServer } from "./DeleteServer";
-import { settingsErrors, settingsFrom, settingsPatch, type SettingsForm } from "./settings";
+import { MAX_RESTART_TIMES, settingsErrors, settingsFrom, settingsPatch, type SettingsForm } from "./settings";
 
 /** Tab "Cài đặt server": tên, RAM, cổng, tự bật, tự khởi động lại khi crash, xóa server. */
 export function ServerSettingsTab({ server }: { server: Server }) {
@@ -26,7 +26,7 @@ export function ServerSettingsTab({ server }: { server: Server }) {
   const update = (patch: Partial<SettingsForm>) => setForm((current) => ({ ...current, ...patch }));
   const errors = settingsErrors(form);
   const dirty = Object.keys(settingsPatch(server, form)).length > 0;
-  const valid = !errors.name && !errors.port;
+  const valid = !errors.name && !errors.port && !errors.restartAt;
 
   return (
     <Stack gap={5}>
@@ -52,6 +52,7 @@ export function ServerSettingsTab({ server }: { server: Server }) {
             checked={form.restartOnCrash}
             onChange={(restartOnCrash) => update({ restartOnCrash })}
           />
+          <RestartTimesField times={form.restartAt} error={errors.restartAt && t(errors.restartAt)} onChange={(restartAt) => update({ restartAt })} />
           {save.isError && <Notice tone="danger">{errorMessage(t, save.error)}</Notice>}
           {save.isSuccess && !dirty && <Notice tone="success">{t("settings.saved")}</Notice>}
           <Stack direction="row" gap={2} justify="end">
@@ -66,6 +67,38 @@ export function ServerSettingsTab({ server }: { server: Server }) {
       </form>
       <DeleteServer server={server} />
     </Stack>
+  );
+}
+
+/** Giờ khởi động lại hằng ngày (spec P2, mục 6.9): mỗi mốc một ô chọn giờ, tối đa 4 mốc. */
+function RestartTimesField({ times, error, onChange }: { times: string[]; error?: string; onChange: (times: string[]) => void }) {
+  const { t } = useTranslation();
+  const baseId = useId();
+  const set = (index: number, value: string) => onChange(times.map((time, i) => (i === index ? value : time)));
+  return (
+    <Field label={t("settings.restartAt")} hint={t("settings.restartAtHint")} error={error}>
+      <Stack gap={2}>
+        {times.length === 0 && <span>{t("settings.restartAtNone")}</span>}
+        {times.map((time, index) => (
+          <Stack key={index} direction="row" gap={2} align="center">
+            {/* Ô đầu nhận `id` của `Field` để nhãn trỏ tới nó; các ô sau cần `id` riêng. */}
+            <TextInput
+              type="time"
+              {...(index === 0 ? {} : { id: `${baseId}-${index}` })}
+              aria-label={t("settings.restartAtTime", { n: index + 1 })}
+              value={time}
+              onChange={(e) => set(index, e.target.value)}
+            />
+            <IconButton icon={X} label={t("settings.restartAtRemove", { time })} onClick={() => onChange(times.filter((_, i) => i !== index))} />
+          </Stack>
+        ))}
+        <Stack direction="row">
+          <Button size="sm" icon={Plus} disabled={times.length >= MAX_RESTART_TIMES} onClick={() => onChange([...times, "04:00"])}>
+            {t("settings.restartAtAdd")}
+          </Button>
+        </Stack>
+      </Stack>
+    </Field>
   );
 }
 

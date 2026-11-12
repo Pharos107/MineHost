@@ -13,6 +13,7 @@ pub mod instance;
 pub mod memory;
 pub mod players;
 pub mod properties;
+pub mod schedule;
 pub mod state;
 pub mod version;
 
@@ -27,6 +28,7 @@ pub use players::{
     UnsupportedVersion, command, freeze_attributes, offline_uuid, parse_log_line,
 };
 pub use properties::Properties;
+pub use schedule::{DailyTime, MAX_RESTART_TIMES, normalize_restart_times, seconds_until_next};
 pub use state::{ServerEvent, ServerState, transition};
 pub use version::{LoaderKind, McVersion};
 
