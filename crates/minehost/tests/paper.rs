@@ -123,3 +123,60 @@ fn vanilla_and_purpur_reach_done() {
     let status = controller.shutdown(Duration::from_secs(30));
     assert!(status.success(), "{status}");
 }
+
+/// Tiêu chí mục 1 của spec P2: đặt khối, sao lưu, phá khối, khôi phục, bật lại thì khối còn đó.
+#[test]
+#[ignore = "tải Java và Paper thật; chạy trong job integration của CI"]
+fn restore_brings_back_placed_block() {
+    let dir = DataDir::prepare();
+    let controller = Controller::start(&dir);
+    let id = controller.create_server("Khôi phục");
+    controller.start_server(&id);
+    let console = |command: &str| {
+        controller.post(
+            &format!("/servers/{id}/console"),
+            json!({ "command": command }),
+        );
+    };
+    // Giữ chunk 0,0 luôn nạp để `setblock` và `execute if block` chạy được ngay.
+    console("forceload add 0 0");
+    console("setblock 0 100 0 minecraft:gold_block");
+    console("execute if block 0 100 0 minecraft:gold_block run say MH_PLACED");
+    controller.wait_console(&id, "MH_PLACED");
+
+    let started = controller.post(
+        &format!("/servers/{id}/backups"),
+        json!({ "note": "có khối vàng" }),
+    );
+    wait_job(&controller, &started);
+    let backups = controller.get(&format!("/servers/{id}/backups"));
+    let bid = backups[0]["id"].as_str().unwrap().to_owned();
+
+    console("setblock 0 100 0 minecraft:air");
+    console("execute unless block 0 100 0 minecraft:gold_block run say MH_GONE");
+    controller.wait_console(&id, "MH_GONE");
+
+    let started = controller.post(
+        &format!("/servers/{id}/backups/{bid}/restore"),
+        json!({ "confirm": true }),
+    );
+    wait_job(&controller, &started);
+    controller.wait_state(&id, "stopped", Duration::from_secs(90));
+    controller.start_server(&id);
+    console("execute if block 0 100 0 minecraft:gold_block run say MH_BACK");
+    controller.wait_console(&id, "MH_BACK");
+
+    controller.post(&format!("/servers/{id}/actions/stop"), json!({}));
+    controller.wait_state(&id, "stopped", Duration::from_secs(90));
+    let status = controller.shutdown(Duration::from_secs(30));
+    assert!(status.success(), "{status}");
+}
+
+fn wait_job(controller: &Controller, started: &serde_json::Value) {
+    let job = started["job_id"].as_u64().unwrap();
+    let done = wait_until("Job xong", Duration::from_secs(300), || {
+        let job = controller.get(&format!("/jobs/{job}"));
+        (job["state"] != "running").then_some(job)
+    });
+    assert_eq!(done["state"], "succeeded", "{done}");
+}

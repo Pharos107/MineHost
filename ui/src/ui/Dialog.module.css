@@ -51,3 +51,17 @@
   gap: var(--mh-space-2);
   padding: 0 var(--mh-space-5) var(--mh-space-5);
 }
+
+.ack {
+  display: flex;
+  align-items: center;
+  gap: var(--mh-space-2);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ack input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--mh-primary);
+}
