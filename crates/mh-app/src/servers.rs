@@ -12,6 +12,7 @@ use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
 use time::OffsetDateTime;
 
 use crate::launcher::{AppLauncher, port_in_use, read_properties, write_eula, write_properties};
+use crate::players::OnlinePlayers;
 use crate::{App, AppError, AppEvent, Installing, lock};
 
 /// Một server như UI thấy: đang cài, hỏng, hoặc đã cài kèm trạng thái chạy.
@@ -230,7 +231,7 @@ impl App {
                 port_free: Arc::clone(&self.port_free),
             };
             let handle = mh_supervisor::spawn(config, Arc::clone(&self.runtime), launcher);
-            forward_status(id, &handle, self.events.clone());
+            forward_status(id, &handle, self.events.clone(), Arc::clone(&self.online));
             handle
         });
         handle.clone()
@@ -299,17 +300,33 @@ fn forward_status(
     id: ServerId,
     handle: &SupervisorHandle,
     events: tokio::sync::broadcast::Sender<AppEvent>,
+    online: Arc<OnlinePlayers>,
 ) {
     use tokio::sync::broadcast::error::RecvError;
     let mut rx = handle.subscribe();
     tokio::spawn(async move {
         loop {
             match rx.recv().await {
-                Ok(SupervisorEvent::Status(_)) | Err(RecvError::Lagged(_)) => {
+                Ok(SupervisorEvent::Status(status)) => {
+                    // Bật lại hoặc tắt hẳn: log cũ không còn nói gì về ai đang online.
+                    let fresh = matches!(
+                        status.state,
+                        ServerState::Starting | ServerState::Stopped | ServerState::Crashed
+                    );
+                    if fresh && online.clear(id) {
+                        online.notify(id);
+                    }
                     let _ = events.send(AppEvent::ServerChanged(id));
                 }
-                // Sự kiện người chơi chưa phát ra API. PR-17 mới có topic players.
-                Ok(SupervisorEvent::Console(_) | SupervisorEvent::Players(_)) => {}
+                Err(RecvError::Lagged(_)) => {
+                    let _ = events.send(AppEvent::ServerChanged(id));
+                }
+                Ok(SupervisorEvent::Players(event)) => {
+                    if online.apply(id, &event) {
+                        online.notify(id);
+                    }
+                }
+                Ok(SupervisorEvent::Console(_)) => {}
                 Err(RecvError::Closed) => break,
             }
         }

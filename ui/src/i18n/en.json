@@ -327,7 +327,8 @@
     "FILE_CHANGED": "The file changed since it was opened. Reload the latest version.",
     "FILE_EXISTS": "A file or folder with that name already exists.",
     "BACKUP_PROTECTED": "This backup is protected. Remove the protection before deleting it.",
-    "MODS_NOT_SUPPORTED": "This server has mods (a mods folder). Mods are not supported yet; they come in a later version."
+    "MODS_NOT_SUPPORTED": "This server has mods (a mods folder). Mods are not supported yet; they come in a later version.",
+    "SERVER_NOT_RUNNING": "The server is not running. Start it and try again."
   },
   "jobsPage": {
     "description": "What MineHost is doing or just finished, such as creating a server or making a backup.",

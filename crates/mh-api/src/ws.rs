@@ -6,6 +6,7 @@
 //! `jobs` gửi `JobDto` mỗi khi một Job đổi trạng thái hoặc tiến độ, kể cả Job mới.
 //! Với console, `seq` là `seq` của dòng: kết nối lại với `since` thì nhận tiếp từ bộ đệm.
 //! `server.<id>.metrics` gửi từng mẫu mới; `since` không áp dụng cho topic này.
+//! `server.<id>.players` gửi `PlayersDto` lúc đăng ký và mỗi lần người chơi của server đổi.
 //! Origin đã được `guard` kiểm tra trước khi nâng cấp kết nối.
 
 use std::collections::{HashMap, HashSet};
@@ -24,6 +25,7 @@ use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 
 use crate::dto::{ConsoleLineDto, JobDto, MetricSampleDto, ServerDto};
+use crate::players::PlayersDto;
 
 const SERVERS: &str = "servers";
 const JOBS: &str = "jobs";
@@ -122,7 +124,7 @@ async fn feed(app: Arc<App>, topic: String, since: Option<u64>, out: Outbox) {
     let _ = out.error(&topic, ErrorCode::InvalidInput).await;
 }
 
-/// `server.<id>.console` hoặc `server.<id>.metrics`. Id không phải ULID thì `None`.
+/// `server.<id>.console`, `.metrics` hoặc `.players`. Id không phải ULID thì `None`.
 fn server_topic(topic: &str) -> Option<(ServerId, &str)> {
     let rest = topic.strip_prefix("server.")?;
     let (id, kind) = rest.rsplit_once('.')?;
@@ -140,6 +142,7 @@ async fn server_feed(
     match kind {
         "console" => console_feed(app, topic, id, since, out).await,
         "metrics" => metrics_feed(app, topic, id, out).await,
+        "players" => players_feed(app, topic, id, out).await,
         _ => {
             let _ = out.error(topic, ErrorCode::InvalidInput).await;
         }
@@ -164,6 +167,34 @@ async fn metrics_feed(app: &App, topic: &str, id: ServerId, out: &Outbox) {
         let data = serde_json::to_value(MetricSampleDto::from(sample)).unwrap_or_default();
         if !out.send(topic, seq, data).await {
             return;
+        }
+    }
+}
+
+/// Đăng ký trước rồi mới đọc, để thay đổi ở giữa không bị lỡ. Mỗi lần đổi gửi lại cả danh sách:
+/// đọc lại file thì vẫn rẻ, và giao diện chỉ cần thay dữ liệu.
+async fn players_feed(app: &App, topic: &str, id: ServerId, out: &Outbox) {
+    let mut events = app.subscribe_players();
+    let mut seq = 0u64;
+    loop {
+        let data = match app.players(id) {
+            Ok(view) => serde_json::to_value(PlayersDto::from(view)).unwrap_or_default(),
+            Err(err) => {
+                let _ = out.error(topic, err.code).await;
+                return;
+            }
+        };
+        seq += 1;
+        if !out.send(topic, seq, data).await {
+            return;
+        }
+        loop {
+            match events.recv().await {
+                Ok(got) if got == id => break,
+                Err(RecvError::Lagged(_)) => break,
+                Ok(_) => {}
+                Err(RecvError::Closed) => return,
+            }
         }
     }
 }
@@ -278,7 +309,7 @@ async fn console_feed(app: &App, topic: &str, id: ServerId, since: Option<u64>, 
                     return;
                 }
             }
-            // Status và Players không thuộc topic console (Players có topic riêng ở PR-17).
+            // Status và Players không thuộc topic console (Players có topic `.players`).
             // Dòng console đã gửi thì bỏ. Lagged thì vòng sau đọc bù từ bộ đệm.
             Ok(
                 SupervisorEvent::Status(_)

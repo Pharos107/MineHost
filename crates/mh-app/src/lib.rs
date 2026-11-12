@@ -16,6 +16,7 @@ pub mod jobs;
 mod launcher;
 mod lifecycle;
 mod metrics;
+mod players;
 mod restart_schedule;
 mod restore;
 mod servers;
@@ -43,6 +44,10 @@ pub use import::{Detected, ImportRequest};
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};
 pub use metrics::{MetricSample, MetricsConfig, MetricsEvent, ServerMetrics};
 pub use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
+pub use players::{
+    ActionDone, MojangDirectory, NoDirectory, PlayerDirectory, PlayerProfile, PlayerRequest,
+    PlayerView, PlayersView,
+};
 pub use restart_schedule::{RestartAction, RestartPlanner, RestartWarning, ServerSchedule};
 pub use restore::RestoreStarted;
 pub use servers::{ServerView, SettingsPatch};
@@ -114,6 +119,8 @@ pub struct App {
     save_flush_timeout: Duration,
     metrics_config: MetricsConfig,
     metrics_hub: metrics::MetricsHub,
+    online: Arc<players::OnlinePlayers>,
+    player_directory: Arc<dyn PlayerDirectory>,
     shutdown: tokio::sync::Notify,
     events: tokio::sync::broadcast::Sender<AppEvent>,
 }
@@ -135,7 +142,7 @@ impl App {
         let http = Arc::new(http);
         let deps = AppDeps {
             catalog: Arc::new(sources::OnlineCatalog::new(Arc::clone(&http))),
-            java: Arc::new(JavaManager::new(http, dirs.java())),
+            java: Arc::new(JavaManager::new(Arc::clone(&http), dirs.java())),
             port_free,
             free_space,
             total_memory_mb,
@@ -143,7 +150,7 @@ impl App {
             save_flush_timeout: backup::DEFAULT_SAVE_FLUSH_TIMEOUT,
             metrics: MetricsConfig::default(),
         };
-        Self::with_deps(dirs, deps)
+        Ok(Self::with_deps(dirs, deps)?.with_players(Arc::new(MojangDirectory::new(http))))
     }
 
     pub fn with_deps(dirs: DataDirs, deps: AppDeps) -> Result<Self, AppError> {
@@ -169,6 +176,8 @@ impl App {
             save_flush_timeout: deps.save_flush_timeout,
             metrics_config: deps.metrics,
             metrics_hub: metrics::MetricsHub::new(),
+            online: Arc::new(players::OnlinePlayers::new()),
+            player_directory: Arc::new(NoDirectory),
             shutdown: tokio::sync::Notify::new(),
             events: tokio::sync::broadcast::channel(256).0,
         })

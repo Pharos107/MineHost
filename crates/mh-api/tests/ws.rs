@@ -379,8 +379,39 @@ async fn metrics_topic_receives_a_sample() {
     .await;
     let data = &msgs.last().unwrap()["data"];
     assert!(data["cpu_percent"].is_number());
-    assert!(data["players"].is_null());
+    // Chưa ai vào: số người online là 0, không phải "chưa đo".
+    assert_eq!(data["players"], 0);
     assert!(data["at"].as_str().unwrap().contains('T'));
+    h.app.kill(id).await.unwrap();
+}
+
+#[tokio::test]
+async fn players_topic_sends_list_then_joins() {
+    let h = harness().await;
+    let id = h.installed_server().await;
+    let topic = format!("server.{id}.players");
+    let mut ws = h.subscribe(json!({ "subscribe": [topic] })).await;
+    let first = read_until(&mut ws, |m| m["topic"] == topic).await;
+    let data = &first.last().unwrap()["data"];
+    assert_eq!(
+        (
+            data["running"].as_bool(),
+            data["players"].as_array().map(Vec::len)
+        ),
+        (Some(false), Some(0))
+    );
+
+    h.app.start(id).await.unwrap();
+    let mut console = h
+        .subscribe(json!({ "subscribe": [format!("server.{id}.console")] }))
+        .await;
+    read_until(&mut console, text_contains("Done (")).await;
+    h.app.send_command(id, "fake-join Alex").await.unwrap();
+    let msgs = read_until(&mut ws, |m| {
+        m["topic"] == topic && m["data"]["players"][0]["online"] == true
+    })
+    .await;
+    assert_eq!(msgs.last().unwrap()["data"]["players"][0]["name"], "Alex");
     h.app.kill(id).await.unwrap();
 }
 

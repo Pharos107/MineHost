@@ -198,6 +198,33 @@ impl E2eJava {
     }
 }
 
+/// Tra người chơi không gọi Mojang: mọi tên đều có tài khoản, UUID tính như offline-mode,
+/// không ai có skin riêng (giao diện hiện chữ cái thay ảnh).
+pub fn players() -> Arc<dyn crate::PlayerDirectory> {
+    Arc::new(E2ePlayers)
+}
+
+#[derive(Debug)]
+struct E2ePlayers;
+
+impl crate::PlayerDirectory for E2ePlayers {
+    fn profile<'a>(
+        &'a self,
+        name: &'a mh_core::PlayerName,
+    ) -> BoxFut<'a, Result<crate::PlayerProfile, AppError>> {
+        let profile = crate::PlayerProfile {
+            uuid: mh_core::offline_uuid(name),
+            name: name.to_string(),
+        };
+        Box::pin(std::future::ready(Ok(profile)))
+    }
+
+    fn skin<'a>(&'a self, _: &'a str) -> BoxFut<'a, Result<Vec<u8>, AppError>> {
+        let err = AppError::new(ErrorCode::NotFound, "chế độ e2e không có skin");
+        Box::pin(std::future::ready(Err(err)))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;

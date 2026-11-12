@@ -393,6 +393,52 @@
         }
       }
     },
+    "/api/v1/players/{uuid}/skin": {
+      "get": {
+        "tags": [
+          "players"
+        ],
+        "operationId": "skin",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ảnh PNG",
+            "content": {
+              "image/png": {}
+            }
+          },
+          "404": {
+            "description": "Tài khoản không có skin riêng",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Không tải được và chưa có trong cache",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers": {
       "get": {
         "tags": [
@@ -1621,6 +1667,120 @@
         }
       }
     },
+    "/api/v1/servers/{id}/players": {
+      "get": {
+        "tags": [
+          "players"
+        ],
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayersDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/players/{name}/actions": {
+      "post": {
+        "tags": [
+          "players"
+        ],
+        "operationId": "action",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayerActionBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerActionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không có server, hoặc không có tài khoản Minecraft tên này",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Thao tác cần server đang chạy, hoặc bản Minecraft không hỗ trợ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}/properties": {
       "get": {
         "tags": [
@@ -2554,6 +2714,153 @@
               "boolean",
               "null"
             ]
+          }
+        }
+      },
+      "PlayerActionBody": {
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/PlayerActionKind"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`kick`, `ban`: tối đa 200 ký tự, có thể bỏ trống."
+          },
+          "target": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`teleport_to_player`: tên người chơi đích."
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`message`, `title`: tối đa 256 ký tự."
+          }
+        }
+      },
+      "PlayerActionDto": {
+        "type": "object",
+        "required": [
+          "done"
+        ],
+        "properties": {
+          "done": {
+            "type": "string",
+            "description": "`sent`: đã gửi lệnh console. `saved`: server tắt, MineHost đã sửa file."
+          }
+        }
+      },
+      "PlayerActionKind": {
+        "type": "string",
+        "enum": [
+          "whitelist_add",
+          "whitelist_remove",
+          "op",
+          "deop",
+          "kick",
+          "ban",
+          "pardon",
+          "freeze",
+          "unfreeze",
+          "teleport_to_player",
+          "teleport_to_spawn",
+          "message",
+          "title"
+        ]
+      },
+      "PlayerDto": {
+        "type": "object",
+        "required": [
+          "name",
+          "online",
+          "whitelisted",
+          "op",
+          "banned",
+          "frozen"
+        ],
+        "properties": {
+          "ban_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "banned": {
+            "type": "boolean"
+          },
+          "frozen": {
+            "type": "boolean"
+          },
+          "last_seen": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "RFC 3339. Có khi người này đã từng vào server."
+          },
+          "name": {
+            "type": "string"
+          },
+          "online": {
+            "type": "boolean"
+          },
+          "op": {
+            "type": "boolean"
+          },
+          "uuid": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Có gạch ngang. `None` khi server online-mode và người này chưa vào lần nào."
+          },
+          "whitelisted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PlayersDto": {
+        "type": "object",
+        "required": [
+          "running",
+          "online_mode",
+          "whitelist_enabled",
+          "max_players",
+          "players"
+        ],
+        "properties": {
+          "max_players": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "online_mode": {
+            "type": "boolean"
+          },
+          "players": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlayerDto"
+            },
+            "description": "Đang online trước, rồi người vào gần nhất."
+          },
+          "running": {
+            "type": "boolean",
+            "description": "`false` thì chỉ whitelist, op, cấm, bỏ cấm làm được (MineHost sửa file)."
+          },
+          "whitelist_enabled": {
+            "type": "boolean"
           }
         }
       },

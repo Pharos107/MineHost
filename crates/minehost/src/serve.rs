@@ -139,7 +139,8 @@ fn e2e_app(dirs: DataDirs, java: std::path::PathBuf) -> anyhow::Result<App> {
         "chế độ e2e: không gọi mạng; Paper giả 1.21.4 và 1.20.4; Java là binary trong biến môi trường"
     );
     let deps = mh_app::e2e::deps(java);
-    App::with_deps(dirs, deps).context("không khởi tạo được MineHost")
+    let app = App::with_deps(dirs, deps).context("không khởi tạo được MineHost")?;
+    Ok(app.with_players(mh_app::e2e::players()))
 }
 
 pub fn open_browser(url: &str) {

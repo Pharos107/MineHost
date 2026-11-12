@@ -370,6 +370,12 @@ trình duyệt). Không đổi gì ở backend.
 | | Dịch chuyển tới người chơi khác, tới điểm spawn | `tp <p> <đích>`, `execute in minecraft:overworld run tp <p> <spawn>` | Không được |
 | | Nhắn tin, thông báo giữa màn hình | `tellraw`, `title <p> title` | Không được |
 
+Khi server tắt, MineHost ghi UUID giống cách Minecraft sẽ tính: offline-mode tính từ tên; online-mode
+lấy từ `usercache.json` nếu người đó đã vào (bỏ UUID offline còn sót), không có thì hỏi Mojang. Mất
+mạng thì báo `NETWORK_UNAVAILABLE`, không ghi UUID đoán. Server đang bật hoặc đang tắt dở thì mọi thao
+tác trả `SERVER_BUSY`. Topic `server.<id>.players` gửi cả danh sách mỗi lần có người vào, ra, hoặc
+file người chơi đổi.
+
 - Sửa file khi server tắt cần UUID: `online-mode=true` thì hỏi Mojang (`profile_by_name`),
   `false` thì dùng `offline_uuid`. Điểm spawn đọc từ `level.dat`.
 - Thao tác không làm được khi server tắt thì nút bị mờ, kèm chú thích "Cần bật server".

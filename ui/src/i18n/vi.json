@@ -327,7 +327,8 @@
     "FILE_CHANGED": "File đã đổi kể từ lúc mở. Hãy tải lại bản mới.",
     "FILE_EXISTS": "Đã có file hoặc thư mục trùng tên.",
     "BACKUP_PROTECTED": "Bản sao lưu này đang được bảo vệ. Hãy bỏ bảo vệ trước khi xóa.",
-    "MODS_NOT_SUPPORTED": "Server này có mod (thư mục mods). Bản này chưa hỗ trợ mod; sẽ có ở bản sau."
+    "MODS_NOT_SUPPORTED": "Server này có mod (thư mục mods). Bản này chưa hỗ trợ mod; sẽ có ở bản sau.",
+    "SERVER_NOT_RUNNING": "Server chưa chạy. Bật server rồi thử lại."
   },
   "jobsPage": {
     "description": "Việc MineHost đang làm hoặc vừa làm xong, như tạo server hay sao lưu.",

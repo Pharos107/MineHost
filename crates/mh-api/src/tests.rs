@@ -447,6 +447,9 @@ fn openapi_lists_all_routes() {
         "/api/v1/jobs/{id}",
         "/api/v1/jobs/{id}/cancel",
         "/api/v1/app/shutdown",
+        "/api/v1/servers/{id}/players",
+        "/api/v1/servers/{id}/players/{name}/actions",
+        "/api/v1/players/{uuid}/skin",
     ] {
         assert!(spec.paths.paths.contains_key(path), "thiếu {path}");
     }
@@ -463,3 +466,6 @@ mod tests_restart;
 
 #[path = "tests_backups.rs"]
 mod tests_backups;
+
+#[path = "tests_players.rs"]
+mod tests_players;
