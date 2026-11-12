@@ -257,6 +257,9 @@ Không thêm cạnh phụ thuộc mới giữa các crate: mọi phần ghép n�
   thiếu `server/` thì đổi `.old-*` mới nhất về `server/`, rồi xóa các `.old-*` còn lại.
 - **Lịch backup:** một task kiểm tra mỗi phút. Server không chạy kể từ bản backup trước thì bỏ qua.
   Lần kiểm tra đầu sau khi controller khởi động chờ 5 phút, để không backup ngay lúc mọi server đang bật.
+  `every_<n>h` tính từ bản `scheduled` gần nhất; `daily@HH:MM` theo giờ máy, controller tắt đúng giờ đó
+  thì lần bật sau sao lưu bù một lần. Chưa có bản nào thì sao lưu ngay. Xong bản `scheduled` thì xóa
+  bản `scheduled` không bảo vệ vượt `keep`.
 - **Lịch khởi động lại:** tới giờ thì gửi `say` báo trước 5 phút, 1 phút, 10 giây, rồi `restart`.
   Server đang tắt thì bỏ qua. Kiểm tra mỗi giây theo giờ máy; controller bật khi chỉ còn ít phút thì
   chỉ gửi lời báo đang tới hạn.
