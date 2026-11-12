@@ -27,6 +27,7 @@ pub type JobId = u64;
 #[serde(rename_all = "snake_case")]
 pub enum JobKind {
     CreateServer,
+    ImportServer,
     Backup,
     Restore,
 }
@@ -55,6 +56,8 @@ pub enum JobStep {
     BeforeRestore,
     Unpack,
     Swap,
+    /// Chép thư mục server có sẵn khi nhập.
+    CopyFiles,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

@@ -1356,6 +1356,7 @@ dependencies = [
  "toml",
  "tracing",
  "ulid",
+ "zip",
 ]
 
 [[package]]

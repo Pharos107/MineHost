@@ -461,6 +461,93 @@
         }
       }
     },
+    "/api/v1/servers/import": {
+      "post": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "import",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Job nhập server đã chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Có `mods/` hoặc cổng bận",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/import/inspect": {
+      "post": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "inspect",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InspectBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}": {
       "get": {
         "tags": [
@@ -1635,6 +1722,38 @@
           }
         }
       },
+      "DetectedDto": {
+        "type": "object",
+        "required": [
+          "has_mods"
+        ],
+        "properties": {
+          "has_mods": {
+            "type": "boolean",
+            "description": "Có `mods/`: chưa hỗ trợ ở bản này."
+          },
+          "jar": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Jar sẽ chạy. `null` nghĩa là thư mục không có jar nào, không nhập được."
+          },
+          "loader": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`paper`, `purpur`, `vanilla`; không nhận ra thì `null`, người dùng chọn tay."
+          },
+          "minecraft": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "DiskDto": {
         "type": "object",
         "required": [
@@ -1748,6 +1867,46 @@
           },
           "version": {
             "type": "string"
+          }
+        }
+      },
+      "ImportBody": {
+        "type": "object",
+        "required": [
+          "path",
+          "name"
+        ],
+        "properties": {
+          "loader": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Chỉ gửi khi người dùng chọn tay; có thì thắng kết quả nhận diện."
+          },
+          "minecraft": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        }
+      },
+      "InspectBody": {
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Đường dẫn tuyệt đối tới thư mục server trên máy chạy MineHost."
           }
         }
       },

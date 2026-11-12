@@ -67,7 +67,7 @@ describe("CreateServerPage", () => {
     const user = userEvent.setup();
     renderWizard();
 
-    await user.click(screen.getByRole("radio", { name: /Purpur/ }));
+    await user.click(screen.getByRole("radio", { name: /^Purpur/ }));
     await user.click(screen.getByRole("button", { name: "Tiếp" }));
     const select = await screen.findByRole("combobox", { name: "Phiên bản Minecraft" });
     expect(select).toHaveProperty("value", "1.21.3");
@@ -83,7 +83,7 @@ describe("CreateServerPage", () => {
     const user = userEvent.setup();
     renderWizard();
 
-    expect(screen.getByRole("radio", { name: /Vanilla/ })).toHaveProperty("disabled", false);
+    expect(screen.getByRole("radio", { name: /^Vanilla/ })).toHaveProperty("disabled", false);
     await user.click(screen.getByRole("button", { name: "Tiếp" }));
 
     const select = await screen.findByRole("combobox", { name: "Phiên bản Minecraft" });

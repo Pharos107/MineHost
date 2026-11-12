@@ -90,7 +90,9 @@
     "steps": {
       "loader": "Loại server",
       "version": "Phiên bản",
-      "settings": "Tên và RAM"
+      "settings": "Tên và RAM",
+      "folder": "Thư mục",
+      "importName": "Tên"
     },
     "loader": "Chọn loại server",
     "paperDescription": "Nhanh, hỗ trợ plugin.",
@@ -120,7 +122,21 @@
     "creatingDescription": "Lần đầu có thể mất vài phút vì MineHost cần tải Java.",
     "failedTitle": "Không tạo được server",
     "cancelledTitle": "Đã hủy tạo server.",
-    "purpurDescription": "Dựa trên Paper, hỗ trợ plugin và có thêm nhiều tùy chỉnh gameplay."
+    "purpurDescription": "Dựa trên Paper, hỗ trợ plugin và có thêm nhiều tùy chỉnh gameplay.",
+    "importLabel": "Nhập thư mục có sẵn",
+    "importDescription": "Đã có server Paper, Purpur hoặc Vanilla trên máy: MineHost chép vào và quản lý.",
+    "importTitle": "Nhập server có sẵn",
+    "importPath": "Thư mục server",
+    "importPathHint": "Đường dẫn đầy đủ trên máy này, ví dụ C:\\Users\\ban\\Desktop\\server hoặc /home/ban/server. Thư mục gốc được giữ nguyên.",
+    "importInspect": "Kiểm tra thư mục",
+    "importUnknown": "Không nhận ra",
+    "importJar": "File jar",
+    "importNoJar": "Không thấy file .jar nào trong thư mục này.",
+    "importPickLoader": "Chọn loại server",
+    "importPickVersion": "Phiên bản Minecraft",
+    "importPickVersionHint": "Ví dụ 1.21.4.",
+    "importNote": "MineHost chép thư mục vào kho dữ liệu của nó, bản gốc giữ nguyên. Trước lần bật đầu tiên, bạn sẽ được hỏi đồng ý EULA.",
+    "importSubmit": "Nhập server"
   },
   "jobs": {
     "starting": "Đang bắt đầu…",
@@ -136,7 +152,8 @@
       "stop_server": "Tắt server",
       "before_restore": "Sao lưu hiện trạng",
       "unpack": "Giải nén bản sao lưu",
-      "swap": "Thay world"
+      "swap": "Thay world",
+      "copy_files": "Chép thư mục server"
     }
   },
   "server": {
@@ -309,7 +326,8 @@
     "FILE_NOT_TEXT": "File này không phải văn bản UTF-8.",
     "FILE_CHANGED": "File đã đổi kể từ lúc mở. Hãy tải lại bản mới.",
     "FILE_EXISTS": "Đã có file hoặc thư mục trùng tên.",
-    "BACKUP_PROTECTED": "Bản sao lưu này đang được bảo vệ. Hãy bỏ bảo vệ trước khi xóa."
+    "BACKUP_PROTECTED": "Bản sao lưu này đang được bảo vệ. Hãy bỏ bảo vệ trước khi xóa.",
+    "MODS_NOT_SUPPORTED": "Server này có mod (thư mục mods). Bản này chưa hỗ trợ mod; sẽ có ở bản sau."
   },
   "jobsPage": {
     "description": "Việc MineHost đang làm hoặc vừa làm xong, như tạo server hay sao lưu.",
