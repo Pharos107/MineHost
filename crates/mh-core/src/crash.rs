@@ -15,6 +15,8 @@ pub enum CrashHint {
     EulaNotAccepted,
     /// Lỗi trong game hoặc plugin; người dùng cần xem log.
     GameError,
+    /// OS dừng server vì vượt giới hạn RAM của MineHost (spec P3, mục 3.8). Không tự bật lại.
+    MemoryLimit,
 }
 
 /// Dấu hiệu trong log, xếp theo độ ưu tiên: dấu hiệu cụ thể đứng trước, vì một lần crash

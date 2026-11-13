@@ -68,9 +68,15 @@ Hai dòng "Không" là lỗ hổng đã biết, xem [rà soát 2026-11-11](../ra
 
 ## Giới hạn tài nguyên và cô lập
 
-Hiện không có. Server là process con chạy cùng user với controller, giới hạn duy nhất là `-Xmx` của
-JVM (giới hạn mềm, chỉ tính heap). Job Object trên Windows chỉ đặt cờ kill-khi-đóng, không đặt giới
-hạn RAM hay CPU. Linux không dùng cgroup. Hệ quả về bảo mật: [bao-mat.md](bao-mat.md).
+Server là process con chạy cùng user với controller, không bị chặn đọc file. Giới hạn tài nguyên
+(spec P3, mục 3.8):
+
+- **Windows:** mỗi process có Job Object riêng: kill khi đóng handle, bộ nhớ commit tối đa
+  `-Xmx × 1,5 + 1024 MB`, tối đa 16 process. Chạm giới hạn bộ nhớ thì crash có gợi ý `MEMORY_LIMIT`
+  và không tự bật lại.
+- **Linux:** chưa có (cgroup v2 ở PR-04 của P3). Giới hạn duy nhất là `-Xmx` của JVM (chỉ tính heap).
+
+Không giới hạn CPU. Hệ quả về bảo mật: [bao-mat.md](bao-mat.md).
 
 ## Đang có và chưa có
 

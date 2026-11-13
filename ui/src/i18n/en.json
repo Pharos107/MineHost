@@ -190,6 +190,7 @@
     "PORT_IN_USE": "Another program is using the server's port. Change the port on the Server settings page.",
     "EULA_NOT_ACCEPTED": "Accept the Minecraft EULA, then start the server again.",
     "GAME_ERROR": "The game or a plugin failed. Check the console for details, then try restarting.",
+    "MEMORY_LIMIT": "MineHost stopped the server because it went over its RAM limit. A mod or plugin may be leaking memory; check the console, or give the server more RAM in Server settings.",
     "unknown": "The cause is unknown. Check the console for details."
   },
   "eula": {

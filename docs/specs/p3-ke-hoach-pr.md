@@ -14,7 +14,7 @@ chính PR ấy.
 | --- | --- | --- | --- |
 | 01 | Loader mới, cách chạy, bảng mới trong `instance.toml` | Đã merge | [#65](https://github.com/Pharos107/MineHost/pull/65) |
 | 02 | Chạy kiểu `args_file` và chạy installer | Đã merge | [#66](https://github.com/Pharos107/MineHost/pull/66) |
-| 03 | Giới hạn RAM và số process trên Windows | Chưa bắt đầu | |
+| 03 | Giới hạn RAM và số process trên Windows | Đã merge | [#68](https://github.com/Pharos107/MineHost/pull/68) |
 | 04 | cgroup v2 trên Linux | Chưa bắt đầu | |
 | 05 | SHA-512, danh sách host, 429 | Đã merge | [#67](https://github.com/Pharos107/MineHost/pull/67) |
 | 06–13 | Nhóm B · Loader | Chưa bắt đầu | |

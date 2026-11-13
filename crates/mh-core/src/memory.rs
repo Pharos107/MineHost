@@ -63,6 +63,15 @@ impl From<MemoryLimits> for RawLimits {
     }
 }
 
+/// Giới hạn RAM mà OS áp cho cả process server, tính bằng MB (spec P3, mục 3.8).
+///
+/// JVM dùng thêm bộ nhớ ngoài heap (JIT, metaspace, luồng, bộ đệm mạng): lần chạy dài của P2 đo
+/// được Paper nhàn rỗi với `-Xmx512M` chiếm khoảng 1 GB. Công thức chừa rộng tay để chỉ chặn
+/// server mất kiểm soát, không chặn server bình thường.
+pub const fn memory_limit_mb(max_heap_mb: u32) -> u64 {
+    max_heap_mb as u64 * 3 / 2 + 1024
+}
+
 /// Đề xuất RAM cho server mới (spec P1, mục 4.3).
 ///
 /// `max` = 1/4 RAM máy, làm tròn xuống bội số 512, kẹp trong 1024..=8192; `min` = `min(1024, max)`.
@@ -81,6 +90,13 @@ pub fn suggest_memory_mb(total_mb: u64) -> MemoryLimits {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn os_limit_leaves_room_outside_heap() {
+        assert_eq!(memory_limit_mb(512), 1792);
+        assert_eq!(memory_limit_mb(6144), 10240);
+        assert_eq!(memory_limit_mb(MemoryLimits::CEILING_MB), 1_573_888);
+    }
 
     #[test]
     fn suggestion_for_common_machines() {
