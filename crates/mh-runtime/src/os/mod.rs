@@ -9,13 +9,17 @@ mod windows;
 
 use crate::ResourceLimits;
 
-/// Thứ phải giữ suốt vòng đời luồng spawner. Hiện không có trạng thái: Linux dựa vào chính luồng
-/// đó (`PR_SET_PDEATHSIG`), Windows dùng Job Object riêng của từng process.
+/// Thứ phải giữ suốt vòng đời luồng spawner. Linux dựa vào chính luồng đó (`PR_SET_PDEATHSIG`).
+/// Windows giữ một Job Object chung không giới hạn: luồng spawner dừng (drop `ProcessRuntime`,
+/// controller thoát hay bị kill) thì OS kill mọi process trong đó.
 #[derive(Debug)]
-pub(crate) struct Guard;
+pub(crate) struct Guard {
+    #[cfg(windows)]
+    job: windows::Job,
+}
 
-/// Giữ tới khi process thoát. Trên Windows là Job Object của process: handle đóng (kể cả khi
-/// controller bị kill) thì OS kill mọi process trong job.
+/// Giữ tới khi process thoát. Trên Windows là Job Object riêng của process, lồng trong job chung,
+/// mang giới hạn tài nguyên và completion port.
 #[derive(Debug)]
 pub(crate) struct ProcessGuard {
     #[cfg(windows)]
@@ -24,7 +28,10 @@ pub(crate) struct ProcessGuard {
 
 impl Guard {
     pub(crate) fn new() -> std::io::Result<Self> {
-        Ok(Self)
+        Ok(Self {
+            #[cfg(windows)]
+            job: windows::Job::new(None)?,
+        })
     }
 
     /// Cấu hình lệnh trước khi spawn.
@@ -46,6 +53,9 @@ impl Guard {
         {
             let job = windows::Job::new(limits)?;
             if let Some(handle) = child.raw_handle() {
+                // Gán vào job chung trước: gán tiếp vào job riêng thì job riêng thành job lồng
+                // bên trong (Windows 8 trở lên), nên đóng job chung vẫn kill được process.
+                self.job.assign(handle)?;
                 job.assign(handle)?;
             }
             Ok(ProcessGuard { job })
