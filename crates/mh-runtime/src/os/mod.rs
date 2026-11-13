@@ -46,13 +46,14 @@ impl Guard {
     }
 
     /// `ResourceLimits` có được OS áp thật hay không.
+    #[cfg(target_os = "linux")]
     pub(crate) fn limits_enforced(&self) -> bool {
-        #[cfg(target_os = "linux")]
-        return self.cgroups.is_some();
-        #[cfg(windows)]
-        return true;
-        #[cfg(not(any(windows, target_os = "linux")))]
-        false
+        self.cgroups.is_some()
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub(crate) fn limits_enforced(&self) -> bool {
+        cfg!(windows)
     }
 
     /// Cấu hình lệnh trước khi spawn.
@@ -64,18 +65,19 @@ impl Guard {
         #[cfg(windows)]
         cmd.creation_flags(windows::CREATE_NO_WINDOW);
         #[cfg(target_os = "linux")]
-        {
+        let cgroup = {
             linux::kill_with_parent(cmd);
             let cgroup = self.linux_cgroup(limits);
             if let Some(fd) = cgroup.as_ref().and_then(cgroup::ServerCgroup::procs_fd) {
                 linux::join_cgroup(cmd, fd);
             }
-            return Pending { limits, cgroup };
-        }
-        #[cfg(not(target_os = "linux"))]
-        {
-            let _ = cmd;
-            Pending { limits }
+            cgroup
+        };
+        let _ = cmd;
+        Pending {
+            limits,
+            #[cfg(target_os = "linux")]
+            cgroup,
         }
     }
 
@@ -122,15 +124,20 @@ impl Guard {
 
 impl ProcessGuard {
     /// Gọi sau khi process đã thoát.
+    #[cfg(windows)]
     pub(crate) fn memory_limit_hit(&self) -> bool {
-        #[cfg(windows)]
-        return self.job.memory_limit_hit();
-        #[cfg(target_os = "linux")]
-        return self
-            .cgroup
+        self.job.memory_limit_hit()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub(crate) fn memory_limit_hit(&self) -> bool {
+        self.cgroup
             .as_ref()
-            .is_some_and(cgroup::ServerCgroup::oom_killed);
-        #[cfg(not(any(windows, target_os = "linux")))]
+            .is_some_and(cgroup::ServerCgroup::oom_killed)
+    }
+
+    #[cfg(not(any(windows, target_os = "linux")))]
+    pub(crate) fn memory_limit_hit(&self) -> bool {
         false
     }
 }
