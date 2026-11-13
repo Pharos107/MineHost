@@ -71,7 +71,8 @@ async fn fabric_plan_uses_stable_loader_and_installer() {
     )])
     .await;
     // Installer phải trỏ về server giả để tải được file `.sha256`.
-    let installers = fixture("fabric/installer.json").replace("https://maven.fabricmc.net", &s.uri());
+    let installers =
+        fixture("fabric/installer.json").replace("https://maven.fabricmc.net", &s.uri());
     Mock::given(path("/v2/versions/installer"))
         .respond_with(ResponseTemplate::new(200).set_body_string(installers))
         .mount(&s)
@@ -91,7 +92,11 @@ async fn fabric_plan_uses_stable_loader_and_installer() {
     assert_eq!(plan.loader_version.as_str(), "0.20.1");
     assert_eq!(plan.files.len(), 1);
     let file = &plan.files[0];
-    assert!(file.url.ends_with("/fabric-installer-1.1.2.jar"), "{}", file.url);
+    assert!(
+        file.url.ends_with("/fabric-installer-1.1.2.jar"),
+        "{}",
+        file.url
+    );
     assert_eq!(
         file.checksum.hex(),
         "61e035bf7bf70153e127440ce34de47c9036f0a2d0c65d1529454bd35ceefe4f"
@@ -102,7 +107,14 @@ async fn fabric_plan_uses_stable_loader_and_installer() {
     assert_eq!(run.jar, file.dest);
     assert_eq!(
         run.args,
-        ["server", "-mcversion", "1.21.4", "-loader", "0.20.1", "-downloadMinecraft"]
+        [
+            "server",
+            "-mcversion",
+            "1.21.4",
+            "-loader",
+            "0.20.1",
+            "-downloadMinecraft"
+        ]
     );
     let Launch::Jar(jar) = plan.launch else {
         panic!("Fabric chạy bằng -jar");
@@ -144,7 +156,10 @@ async fn quilt_loaders_are_sorted_with_stable_first() {
 #[tokio::test]
 async fn quilt_plan_uses_hash_from_meta() {
     let (s, _t, http) = serve(&[
-        ("/v3/versions/loader/1.21.4", fixture("quilt/loader-1.21.4.json")),
+        (
+            "/v3/versions/loader/1.21.4",
+            fixture("quilt/loader-1.21.4.json"),
+        ),
         ("/v3/versions/installer", fixture("quilt/installer.json")),
         ("/v3/versions/game", fixture("quilt/game.json")),
     ])
@@ -163,7 +178,14 @@ async fn quilt_plan_uses_hash_from_meta() {
     assert_eq!(file.size, Some(8_734_533));
     assert_eq!(
         plan.installer.unwrap().args,
-        ["install", "server", "1.21.4", "0.30.2", "--download-server", "--install-dir=."]
+        [
+            "install",
+            "server",
+            "1.21.4",
+            "0.30.2",
+            "--download-server",
+            "--install-dir=."
+        ]
     );
     assert_eq!(
         plan.launch,

@@ -145,7 +145,11 @@ mod tests {
             version: LoaderVersion::parse(v).unwrap(),
             stable,
         };
-        let got = recommended_first(vec![r("0.21.0", false), r("0.20.1", true), r("0.20.0", false)]);
+        let got = recommended_first(vec![
+            r("0.21.0", false),
+            r("0.20.1", true),
+            r("0.20.0", false),
+        ]);
         let names: Vec<_> = got.iter().map(|r| r.version.as_str()).collect();
         assert_eq!(names, ["0.20.1", "0.21.0", "0.20.0"]);
         assert_eq!(pick(&got, None).unwrap().version.as_str(), "0.20.1");

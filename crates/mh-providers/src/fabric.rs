@@ -10,7 +10,9 @@ use mh_core::{Launch, LoaderVersion, McVersion};
 use mh_net::{Checksum, HttpClient, hosts};
 use serde::Deserialize;
 
-use crate::loader::{INSTALL_DIR, InstallPlan, InstallerRun, LoaderRelease, PlannedFile, pick, recommended_first};
+use crate::loader::{
+    INSTALL_DIR, InstallPlan, InstallerRun, LoaderRelease, PlannedFile, pick, recommended_first,
+};
 use crate::{ProviderError, Release};
 
 pub const META_BASE: &str = "https://meta.fabricmc.net/v2";
@@ -80,7 +82,10 @@ impl Fabric {
     }
 
     /// Bản loader cho `mc`, bản đề xuất đứng đầu. Bỏ qua bản có tên không hợp lệ.
-    pub async fn loader_versions(&self, mc: &McVersion) -> Result<Vec<LoaderRelease>, ProviderError> {
+    pub async fn loader_versions(
+        &self,
+        mc: &McVersion,
+    ) -> Result<Vec<LoaderRelease>, ProviderError> {
         let url = format!("{}/versions/loader/{mc}", self.base_url);
         let entries: Vec<RawLoaderEntry> = self.http.get_json(&url, TTL).await?.value;
         let releases = entries
@@ -154,6 +159,8 @@ impl Fabric {
         text.split_whitespace()
             .next()
             .and_then(Checksum::sha256)
-            .ok_or_else(|| ProviderError::invalid(SOURCE, "file .sha256 của installer sai định dạng"))
+            .ok_or_else(|| {
+                ProviderError::invalid(SOURCE, "file .sha256 của installer sai định dạng")
+            })
     }
 }

@@ -86,7 +86,10 @@ impl Quilt {
     }
 
     /// Bản loader cho `mc`, mới nhất trước, bản ổn định mới nhất đứng đầu.
-    pub async fn loader_versions(&self, mc: &McVersion) -> Result<Vec<LoaderRelease>, ProviderError> {
+    pub async fn loader_versions(
+        &self,
+        mc: &McVersion,
+    ) -> Result<Vec<LoaderRelease>, ProviderError> {
         let url = format!("{}/versions/loader/{mc}", self.base_url);
         let entries: Vec<RawLoaderEntry> = self.http.get_json(&url, TTL).await?.value;
         let mut releases: Vec<LoaderRelease> = entries
