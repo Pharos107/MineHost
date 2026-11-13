@@ -310,7 +310,7 @@ async fn create_rejects_bad_fields() {
             "name",
         ),
         (
-            json!({ "name": "a", "loader": "forge", "minecraft": "1.21.4" }),
+            json!({ "name": "a", "loader": "folia", "minecraft": "1.21.4" }),
             "loader",
         ),
         (

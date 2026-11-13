@@ -7,7 +7,8 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use mh_app::{App, CreateRequest, SettingsPatch};
 use mh_core::{
-    BackupSchedule, DailyTime, GamePort, LoaderKind, McVersion, MemoryLimits, ServerName,
+    BackupSchedule, DailyTime, GamePort, LoaderKind, LoaderVersion, McVersion, MemoryLimits,
+    ServerName,
 };
 use serde::Deserialize;
 use time::OffsetDateTime;
@@ -44,7 +45,12 @@ pub async fn create(
         name: ServerName::parse(&body.name).map_err(|_| ApiError::invalid("name"))?,
         loader: parse_loader(&body.loader)?,
         minecraft: McVersion::parse(&body.minecraft).map_err(|_| ApiError::invalid("minecraft"))?,
-        loader_version: None,
+        loader_version: body
+            .loader_version
+            .as_deref()
+            .map(LoaderVersion::parse)
+            .transpose()
+            .map_err(|_| ApiError::invalid("loader_version"))?,
         memory_mb: body.memory_mb.map(memory).transpose()?,
         port: body.port.map(port).transpose()?,
     };

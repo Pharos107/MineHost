@@ -6,10 +6,10 @@ use axum::Json;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use mh_app::App;
-use mh_core::ServerId;
+use mh_core::{McVersion, ServerId};
 use serde::Deserialize;
 
-use crate::dto::{CatalogVersionDto, JobDto};
+use crate::dto::{CatalogVersionDto, JobDto, LoaderVersionDto};
 use crate::error::{ApiError, ErrorBody};
 
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
@@ -60,7 +60,7 @@ pub async fn cancel(
 }
 
 #[utoipa::path(get, path = "/api/v1/catalog/{loader}/versions", tag = "catalog",
-    params(("loader" = String, Path, description = "`paper`, `vanilla` hoặc `purpur`")),
+    params(("loader" = String, Path, description = "`paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`")),
     responses(
         (status = 200, description = "Bản release cài được, mới nhất trước. Paper chỉ tính bản có build STABLE", body = [CatalogVersionDto]),
         (status = 400, description = "Loại server chưa hỗ trợ", body = ErrorBody),
@@ -72,6 +72,30 @@ pub async fn catalog_versions(
 ) -> Result<Json<Vec<CatalogVersionDto>>, ApiError> {
     let loader = crate::servers::parse_loader(&loader)?;
     let versions = app.catalog_versions(loader).await?;
+    Ok(Json(versions.into_iter().map(Into::into).collect()))
+}
+
+#[utoipa::path(get, path = "/api/v1/catalog/{loader}/{minecraft}/loader-versions", tag = "catalog",
+    params(
+        ("loader" = String, Path, description = "`fabric`, `quilt`, `forge` hoặc `neoforge`"),
+        ("minecraft" = String, Path)
+    ),
+    responses(
+        (status = 200, description = "Bản loader, bản đề xuất đứng đầu", body = [LoaderVersionDto]),
+        (status = 400, description = "Loại server không có bản loader", body = ErrorBody),
+        (status = 404, description = "Loader không có bản cho phiên bản này", body = ErrorBody),
+        (status = 502, body = ErrorBody)
+    ))]
+pub async fn loader_versions(
+    State(app): State<Arc<App>>,
+    Path((loader, minecraft)): Path<(String, String)>,
+) -> Result<Json<Vec<LoaderVersionDto>>, ApiError> {
+    let loader = crate::servers::parse_loader(&loader)?;
+    if !loader.is_mod_loader() {
+        return Err(ApiError::invalid("loader"));
+    }
+    let minecraft = McVersion::parse(&minecraft).map_err(|_| ApiError::invalid("minecraft"))?;
+    let versions = app.loader_versions(loader, &minecraft).await?;
     Ok(Json(versions.into_iter().map(Into::into).collect()))
 }
 
