@@ -32,7 +32,8 @@ pub struct ProcessSpec {
     pub limits: Option<ResourceLimits>,
 }
 
-/// Windows áp bằng Job Object riêng của process. Linux áp bằng cgroup v2 khi có (PR-04).
+/// Windows áp bằng Job Object riêng của process; Linux bằng cgroup v2 khi được giao quyền
+/// (`memory.max`; `pids.max` đếm cả luồng nên dùng mức riêng, không dùng `max_processes`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ResourceLimits {
     pub memory_bytes: u64,
@@ -126,6 +127,12 @@ impl ProcessRuntime {
                 source,
             })?;
         Ok(Self { spawner, handle })
+    }
+
+    /// `ProcessSpec::limits` có được OS áp thật không: luôn có trên Windows; trên Linux cần cgroup
+    /// v2 được giao quyền (spec P3, mục 3.8).
+    pub fn limits_enforced(&self) -> bool {
+        self.spawner.limits_enforced()
     }
 
     pub async fn spawn(&self, spec: ProcessSpec) -> Result<RunningProcess, RuntimeError> {

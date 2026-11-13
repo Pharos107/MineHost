@@ -56,3 +56,27 @@ async fn windows_job_stops_process_over_memory_limit() {
     assert!(exit.memory_limit_hit, "{exit:?}");
     assert_ne!(exit.code, Some(0));
 }
+
+/// Chỉ chạy được khi cgroup hiện tại được giao quyền, ví dụ
+/// `systemd-run --user --scope -p Delegate=yes <file test>`; không có thì bỏ qua.
+#[cfg(target_os = "linux")]
+#[tokio::test]
+async fn linux_cgroup_kills_process_over_memory_limit() {
+    let rt = ProcessRuntime::new().unwrap();
+    if !rt.limits_enforced() {
+        eprintln!("bỏ qua: không có cgroup v2 được giao quyền");
+        return;
+    }
+    let limits = ResourceLimits {
+        memory_bytes: 64 * 1024 * 1024,
+        max_processes: 4,
+    };
+    let proc = rt
+        .spawn(fake_mc(&["--alloc-mb", "512"], Some(limits)))
+        .await
+        .unwrap();
+    drop(proc.control);
+    let exit = tokio::time::timeout(WAIT, proc.exit).await.unwrap().unwrap();
+    assert!(exit.memory_limit_hit, "{exit:?}");
+    assert_eq!(exit.code, None, "bị SIGKILL nên không có mã thoát");
+}
