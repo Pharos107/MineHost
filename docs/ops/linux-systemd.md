@@ -43,6 +43,9 @@ KillMode=mixed
 KillSignal=SIGTERM
 # Mỗi server có tối đa 60 giây để lưu world; chừa thêm cho controller.
 TimeoutStopSec=120
+# Giao cgroup cho MineHost để giới hạn RAM của từng server (spec P3, mục 3.8). Thiếu dòng này thì
+# server chỉ bị giới hạn bằng -Xmx.
+Delegate=yes
 
 [Install]
 WantedBy=multi-user.target

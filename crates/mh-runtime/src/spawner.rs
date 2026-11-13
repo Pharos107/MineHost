@@ -26,6 +26,7 @@ struct Request {
 #[derive(Debug)]
 pub(crate) struct Spawner {
     tx: mpsc::Sender<Request>,
+    limits_enforced: bool,
 }
 
 impl Spawner {
@@ -33,7 +34,7 @@ impl Spawner {
     /// vì server dừng theo controller (ADR 0001).
     pub(crate) fn start(handle: Handle) -> io::Result<Self> {
         let (tx, rx) = mpsc::channel::<Request>();
-        let (ready_tx, ready_rx) = mpsc::channel::<io::Result<()>>();
+        let (ready_tx, ready_rx) = mpsc::channel::<io::Result<bool>>();
         std::thread::Builder::new()
             .name("mh-spawner".to_owned())
             .spawn(move || {
@@ -46,15 +47,22 @@ impl Spawner {
                         return;
                     }
                 };
-                let _ = ready_tx.send(Ok(()));
+                let _ = ready_tx.send(Ok(guard.limits_enforced()));
                 for req in rx {
                     let _ = req.reply.send(spawn_one(&guard, &req.spec));
                 }
             })?;
-        ready_rx
+        let limits_enforced = ready_rx
             .recv()
             .map_err(|_| io::Error::other("luồng spawner dừng trước khi sẵn sàng"))??;
-        Ok(Self { tx })
+        Ok(Self {
+            tx,
+            limits_enforced,
+        })
+    }
+
+    pub(crate) fn limits_enforced(&self) -> bool {
+        self.limits_enforced
     }
 
     pub(crate) async fn spawn(&self, spec: ProcessSpec) -> io::Result<Spawned> {
@@ -75,9 +83,9 @@ fn spawn_one(guard: &Guard, spec: &ProcessSpec) -> io::Result<Spawned> {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(false);
-    guard.prepare(&mut cmd);
+    let pending = guard.prepare(&mut cmd, spec.limits);
     let mut child = cmd.spawn()?;
-    let process_guard = match guard.adopt(&child, spec.limits) {
+    let process_guard = match guard.adopt(&child, pending) {
         Ok(process_guard) => process_guard,
         Err(e) => {
             // Không gắn được thì process có thể sống sót sau controller: không chạy nó.

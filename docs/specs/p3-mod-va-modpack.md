@@ -295,7 +295,7 @@ Không thêm cạnh phụ thuộc mới giữa các crate.
 
 ### 5.2 `mh-platform`
 
-- `fn cgroup_v2_writable() -> Option<PathBuf>` (Linux): cgroup hiện tại của process và quyền ghi.
+Không đổi. Phần dò cgroup v2 nằm ở `mh-runtime/src/os/cgroup.rs`, cạnh chỗ dùng nó (PR-04).
 
 ### 5.3 `mh-net`
 

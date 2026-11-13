@@ -15,7 +15,7 @@ chính PR ấy.
 | 01 | Loader mới, cách chạy, bảng mới trong `instance.toml` | Đã merge | [#65](https://github.com/Pharos107/MineHost/pull/65) |
 | 02 | Chạy kiểu `args_file` và chạy installer | Đã merge | [#66](https://github.com/Pharos107/MineHost/pull/66) |
 | 03 | Giới hạn RAM và số process trên Windows | Đã merge | [#68](https://github.com/Pharos107/MineHost/pull/68) |
-| 04 | cgroup v2 trên Linux | Chưa bắt đầu | |
+| 04 | cgroup v2 trên Linux | Đã merge | [#70](https://github.com/Pharos107/MineHost/pull/70) |
 | 05 | SHA-512, danh sách host, 429 | Đã merge | [#67](https://github.com/Pharos107/MineHost/pull/67) |
 | 06 | Fabric và Quilt | Đã merge | [#69](https://github.com/Pharos107/MineHost/pull/69) |
 | 07 | Forge | Đã merge | [#71](https://github.com/Pharos107/MineHost/pull/71) |
@@ -107,9 +107,9 @@ song song được. Chỗ dễ đụng nhau vẫn là `ui/src/i18n/{vi,en}.json`
 
 #### PR-04 · `feat(runtime)`: cgroup v2 trên Linux
 
-- Phạm vi: `cgroup_v2_writable()` trong `mh-platform`; cgroup con mỗi server với `memory.max`,
+- Phạm vi: dò cgroup v2 trong `mh-runtime`; cgroup con mỗi server với `memory.max`,
   `memory.swap.max`, `pids.max`; ghi `cgroup.procs` trong `pre_exec`; đọc `memory.events`; cảnh báo
-  một lần khi không ghi được; `GET /system` thêm `resource_limits: bool`.
+  một lần khi không ghi được; `ProcessRuntime::limits_enforced()`. Đưa ra API (`GET /system`) ở PR-35.
 - Test: chạy dưới `systemd-run --user --scope` trong CI Linux; máy không có cgroup ghi được thì bỏ qua
   có ghi lý do.
 
@@ -289,7 +289,8 @@ song song được. Chỗ dễ đụng nhau vẫn là `ui/src/i18n/{vi,en}.json`
 
 #### PR-35 · `feat`: bộ nhớ đệm tải về, trạng thái giới hạn tài nguyên
 
-- Phạm vi: dung lượng và nút xóa `cache/files/`; hiện `resource_limits` trong Cài đặt.
+- Phạm vi: dung lượng và nút xóa cache file theo hash; `GET /system` thêm `resource_limits`
+  (từ `ProcessRuntime::limits_enforced()`) và hiện trong Cài đặt.
 - Test: xóa cache khi đang có Job tải thì trả `SERVER_BUSY`.
 
 ### Nhóm H · Kiểm thử modpack và phát hành
