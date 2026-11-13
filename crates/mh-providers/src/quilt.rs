@@ -7,11 +7,12 @@ use std::time::Duration;
 
 use mh_core::instance::JarName;
 use mh_core::{Launch, LoaderVersion, McVersion};
-use mh_net::{Checksum, HttpClient, hosts};
+use mh_net::{Checksum, HostAllowlist, HttpClient, hosts};
 use serde::Deserialize;
 
 use crate::loader::{
-    INSTALL_DIR, InstallPlan, InstallerRun, LoaderRelease, PlannedFile, compare_versions, pick,
+    check_loader_url, installer_path,
+    InstallPlan, InstallerRun, LoaderRelease, PlannedFile, compare_versions, pick,
     recommended_first,
 };
 use crate::{ProviderError, Release};
@@ -25,6 +26,7 @@ pub const LAUNCH_JAR: &str = "quilt-server-launch.jar";
 pub struct Quilt {
     http: Arc<HttpClient>,
     base_url: String,
+    hosts: HostAllowlist,
 }
 
 #[derive(Deserialize)]
@@ -66,7 +68,14 @@ impl Quilt {
         Self {
             http,
             base_url: base_url.into(),
+            hosts: hosts::LOADERS,
         }
+    }
+
+    /// Dùng trong test: cho installer nằm trên server giả.
+    pub fn with_hosts(mut self, hosts: HostAllowlist) -> Self {
+        self.hosts = hosts;
+        self
     }
 
     /// Bản release của Mojang mà Quilt hỗ trợ, giữ thứ tự của `releases`.
@@ -123,7 +132,8 @@ impl Quilt {
             .ok_or_else(|| ProviderError::invalid(SOURCE, "không có installer"))?;
         let checksum = Checksum::sha256(&installer.hashes.sha256)
             .ok_or_else(|| ProviderError::invalid(SOURCE, "sha256 của installer sai định dạng"))?;
-        let jar = format!("{INSTALL_DIR}/quilt-installer-{}.jar", installer.version);
+        let jar = installer_path(SOURCE, "quilt-installer", &installer.version)?;
+        check_loader_url(SOURCE, &self.hosts, &installer.url)?;
         let launch_jar = JarName::parse(LAUNCH_JAR)
             .map_err(|_| ProviderError::invalid(SOURCE, "tên jar chạy không hợp lệ"))?;
         Ok(InstallPlan {
@@ -134,7 +144,7 @@ impl Quilt {
                 checksum,
                 size: installer.file_size,
                 dest: jar.clone(),
-                hosts: hosts::LOADERS,
+                hosts: self.hosts,
             }],
             installer: Some(InstallerRun {
                 jar,

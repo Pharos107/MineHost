@@ -7,11 +7,12 @@ use std::time::Duration;
 
 use mh_core::instance::JarName;
 use mh_core::{Launch, LoaderVersion, McVersion};
-use mh_net::{Checksum, HttpClient, hosts};
+use mh_net::{Checksum, HostAllowlist, HttpClient, hosts};
 use serde::Deserialize;
 
 use crate::loader::{
-    INSTALL_DIR, InstallPlan, InstallerRun, LoaderRelease, PlannedFile, pick, recommended_first,
+    check_loader_url, installer_path,
+    InstallPlan, InstallerRun, LoaderRelease, PlannedFile, pick, recommended_first,
 };
 use crate::{ProviderError, Release};
 
@@ -26,6 +27,7 @@ pub const LAUNCH_JAR: &str = "fabric-server-launch.jar";
 pub struct Fabric {
     http: Arc<HttpClient>,
     base_url: String,
+    hosts: HostAllowlist,
 }
 
 #[derive(Deserialize)]
@@ -62,7 +64,14 @@ impl Fabric {
         Self {
             http,
             base_url: base_url.into(),
+            hosts: hosts::LOADERS,
         }
+    }
+
+    /// Dùng trong test: cho installer nằm trên server giả.
+    pub fn with_hosts(mut self, hosts: HostAllowlist) -> Self {
+        self.hosts = hosts;
+        self
     }
 
     /// Bản release của Mojang mà Fabric hỗ trợ, giữ thứ tự của `releases`.
@@ -113,8 +122,9 @@ impl Fabric {
             version: wanted.map_or_else(|| mc.to_string(), ToString::to_string),
         })?;
         let installer = self.installer().await?;
+        let jar = installer_path(SOURCE, "fabric-installer", &installer.version)?;
+        check_loader_url(SOURCE, &self.hosts, &installer.url)?;
         let checksum = self.installer_sha256(&installer.url).await?;
-        let jar = format!("{INSTALL_DIR}/fabric-installer-{}.jar", installer.version);
         let launch_jar = JarName::parse(LAUNCH_JAR)
             .map_err(|_| ProviderError::invalid(SOURCE, "tên jar chạy không hợp lệ"))?;
         Ok(InstallPlan {
@@ -125,7 +135,7 @@ impl Fabric {
                 checksum,
                 size: None,
                 dest: jar.clone(),
-                hosts: hosts::LOADERS,
+                hosts: self.hosts,
             }],
             installer: Some(InstallerRun {
                 jar,

@@ -64,6 +64,17 @@ impl HostAllowlist {
     }
 }
 
+impl HostAllowlist {
+    /// Như [`HostAllowlist::check`] với URL dạng chuỗi; chuỗi không phải URL cũng bị từ chối.
+    pub fn check_str(&self, url: &str) -> Result<(), NetError> {
+        let parsed = Url::parse(url).map_err(|_| NetError::HostNotAllowed {
+            url: url.to_owned(),
+            host: String::new(),
+        })?;
+        self.check(&parsed)
+    }
+}
+
 fn is_loopback(host: &str) -> bool {
     host == "localhost"
         || host

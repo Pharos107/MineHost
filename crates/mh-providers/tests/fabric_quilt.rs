@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use mh_core::{ErrorCode, Launch, LoaderVersion, McVersion};
-use mh_net::{HttpClient, NetConfig, hosts};
+use mh_net::{HostAllowlist, HttpClient, NetConfig, hosts};
 use mh_providers::{Fabric, Quilt, Release};
 use time::macros::datetime;
 use wiremock::matchers::path;
@@ -86,7 +86,8 @@ async fn fabric_plan_uses_stable_loader_and_installer() {
     )
     .mount(&s)
     .await;
-    let fabric = Fabric::with_base_url(http, format!("{}/v2", s.uri()));
+    let local = HostAllowlist::new(&["127.0.0.1"]);
+    let fabric = Fabric::with_base_url(http, format!("{}/v2", s.uri())).with_hosts(local);
 
     let plan = fabric.plan(&v("1.21.4"), None).await.unwrap();
     assert_eq!(plan.loader_version.as_str(), "0.20.1");
@@ -101,7 +102,7 @@ async fn fabric_plan_uses_stable_loader_and_installer() {
         file.checksum.hex(),
         "61e035bf7bf70153e127440ce34de47c9036f0a2d0c65d1529454bd35ceefe4f"
     );
-    assert_eq!(file.hosts, hosts::LOADERS);
+    assert_eq!(file.hosts, local);
     assert_eq!(file.dest, ".minehost-install/fabric-installer-1.1.2.jar");
     let run = plan.installer.unwrap();
     assert_eq!(run.jar, file.dest);
@@ -191,4 +192,28 @@ async fn quilt_plan_uses_hash_from_meta() {
         plan.launch,
         Launch::Jar(mh_core::instance::JarName::parse("quilt-server-launch.jar").unwrap())
     );
+}
+
+/// Meta là dữ liệu bên ngoài: tên phiên bản thành tên file, URL thành nơi MineHost gọi tới.
+#[tokio::test]
+async fn hostile_installer_entries_are_refused() {
+    let good = fixture("quilt/installer.json");
+    let cases = [
+        (good.replace("\"0.15.1\"", "\"../../evil\""), ErrorCode::NetworkUnavailable),
+        (
+            good.replace("https://maven.quiltmc.org", "https://evil.example"),
+            ErrorCode::DownloadHostNotAllowed,
+        ),
+    ];
+    for (installers, code) in cases {
+        let (s, _t, http) = serve(&[
+            ("/v3/versions/loader/1.21.4", fixture("quilt/loader-1.21.4.json")),
+            ("/v3/versions/installer", installers),
+        ])
+        .await;
+        let quilt = Quilt::with_base_url(http, format!("{}/v3", s.uri()));
+        let err = quilt.plan(&v("1.21.4"), None).await.unwrap_err();
+        assert_eq!(err.code(), code, "{err}");
+    }
+    assert_eq!(hosts::LOADERS.check_str("not a url").unwrap_err().code(), ErrorCode::DownloadHostNotAllowed);
 }

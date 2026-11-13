@@ -8,6 +8,8 @@ use std::cmp::Ordering;
 use mh_core::{Launch, LoaderVersion, McVersion};
 use mh_net::{Checksum, HostAllowlist};
 
+use crate::ProviderError;
+
 /// Thư mục tạm trong `server/` chứa installer; `mh-app` xóa sau khi cài.
 pub const INSTALL_DIR: &str = ".minehost-install";
 
@@ -46,6 +48,31 @@ pub struct InstallPlan {
     pub installer: Option<InstallerRun>,
     /// Cách chạy dự kiến. Với `ArgsFile`, `mh-app` phải thấy file thật trên đĩa sau khi cài.
     pub launch: Launch,
+}
+
+/// Đường dẫn installer trong `INSTALL_DIR`. `version` đến từ meta bên ngoài nên phải qua
+/// `LoaderVersion::parse` (chỉ chữ, số, `. - _ +`) trước khi thành tên file.
+pub(crate) fn installer_path(
+    source: &'static str,
+    name: &str,
+    version: &str,
+) -> Result<String, ProviderError> {
+    let version = LoaderVersion::parse(version)
+        .map_err(|_| ProviderError::invalid(source, "phiên bản installer không hợp lệ"))?;
+    Ok(format!("{INSTALL_DIR}/{name}-{version}.jar"))
+}
+
+/// URL installer do meta trả về phải nằm trong danh sách host (mặc định `hosts::LOADERS`) trước
+/// khi MineHost gọi tới nó, kể cả để lấy file hash cạnh nó.
+pub(crate) fn check_loader_url(
+    source: &'static str,
+    allowed: &HostAllowlist,
+    url: &str,
+) -> Result<(), ProviderError> {
+    allowed.check_str(url).map_err(|e| {
+        tracing::warn!(source, url, error = %e, "meta trỏ installer ra ngoài danh sách host");
+        ProviderError::Net(e)
+    })
 }
 
 /// Bản đề xuất (ổn định đầu tiên theo thứ tự nguồn trả) lên đầu, phần còn lại giữ nguyên thứ tự.
