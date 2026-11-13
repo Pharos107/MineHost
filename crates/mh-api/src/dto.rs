@@ -82,6 +82,8 @@ pub struct ServerDto {
     pub slow_start: bool,
     /// Đang chờ tự khởi động lại sau crash.
     pub restart_pending: bool,
+    /// Có `user_jvm_args.txt` chứa cờ ngoài chú thích mà MineHost bỏ qua.
+    pub ignored_jvm_args: bool,
 }
 
 impl From<ServerView> for ServerDto {
@@ -109,6 +111,7 @@ impl From<ServerView> for ServerDto {
             pid: None,
             slow_start: false,
             restart_pending: false,
+            ignored_jvm_args: view.ignored_jvm_args,
         };
         if let Some(info) = view.installing {
             dto.name = Some(info.name.to_string());
@@ -192,6 +195,8 @@ pub struct PatchServerBody {
     pub restart_at: Option<Vec<String>>,
     /// Lịch sao lưu tự động; trường nào thiếu thì giữ nguyên.
     pub backup: Option<BackupSettingsBody>,
+    /// Phiên bản Java chính (`8`, `11`, `17`, `21`, `25`).
+    pub java_major: Option<u16>,
 }
 
 /// Sao lưu tự động của một server (spec P2, mục 4.1).

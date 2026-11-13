@@ -214,6 +214,40 @@ impl FromStr for LoaderKind {
     }
 }
 
+/// Bản Minecraft mà một bản NeoForge nhắm tới.
+///
+/// Theo quy ước đánh số của NeoForge: `20.2.x` trở lên tương ứng `1.20.2` (`21.0.x` là `1.21`),
+/// còn từ năm `26` dùng số năm trực tiếp (`26.1.0.x` → `26.1`, `26.1.2.x` → `26.1.2`).
+/// Bản có hậu tố `+...` hoặc `alpha` không phải bản release ổn định nên trả `None`.
+pub fn neoforge_minecraft(version: &str) -> Option<String> {
+    if version.contains('+') || version.contains("alpha") {
+        return None;
+    }
+    let core = version.split('-').next()?;
+    let parts: Vec<u32> = core
+        .split('.')
+        .map(str::parse)
+        .collect::<Result<_, _>>()
+        .ok()?;
+    match parts.as_slice() {
+        [major @ 20..=25, minor, _] if (*major, *minor) >= (20, 2) => Some(match minor {
+            0 => format!("1.{major}"),
+            _ => format!("1.{major}.{minor}"),
+        }),
+        [year, drop, 0, _] if *year >= 26 => Some(format!("{year}.{drop}")),
+        [year, drop, hotfix, _] if *year >= 26 => Some(format!("{year}.{drop}.{hotfix}")),
+        _ => None,
+    }
+}
+
+/// Các phiên bản Java mà MineHost hỗ trợ chọn cho từng server (Adoptium LTS / hiện hành).
+pub const JAVA_MAJORS: &[u16] = &[8, 11, 17, 21, 25];
+
+/// Có nằm trong danh sách phiên bản Java MineHost hỗ trợ không.
+pub const fn is_supported_java_major(major: u16) -> bool {
+    matches!(major, 8 | 11 | 17 | 21 | 25)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

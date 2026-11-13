@@ -62,11 +62,20 @@ export function CreateServerPage() {
                 value={importing ? "import" : form.loader}
                 onChange={(choice) => {
                   setImporting(choice === "import");
-                  if (choice !== "import") update({ loader: choice, version: "" });
+                  if (choice !== "import") update({ loader: choice, version: "", loaderVersion: "" });
                 }}
               />
             )}
-            {step === 1 && <VersionStep versions={versions} value={version} onChange={(v) => update({ version: v })} />}
+            {step === 1 && (
+              <VersionStep
+                versions={versions}
+                value={version}
+                onChange={(v) => update({ version: v, loaderVersion: "" })}
+                loader={form.loader}
+                loaderVersion={form.loaderVersion}
+                onLoaderVersionChange={(loaderVersion) => update({ loaderVersion })}
+              />
+            )}
             {step === 2 && <SettingsStep form={form} update={update} />}
             {create.isError && <Notice tone="danger">{errorMessage(t, create.error)}</Notice>}
             <Stack direction="row" justify="between">

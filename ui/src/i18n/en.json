@@ -101,8 +101,22 @@
       "importName": "Name"
     },
     "loader": "Choose a server type",
+    "kind": "Server kind",
+    "kindStandard": "Standard server",
+    "kindStandardDescription": "Play vanilla or add lightweight plugins.",
+    "kindModded": "Modded server",
+    "kindModdedDescription": "Pick individual mods with Fabric, NeoForge, Forge or Quilt.",
+    "kindModpack": "From a modpack",
+    "kindModpackDescription": "Install a ready-made modpack from Modrinth or CurseForge.",
+    "soon": "Coming soon",
     "paperDescription": "Fast, supports plugins.",
     "vanillaDescription": "The original server from Mojang, no plugins.",
+    "fabricDescription": "Lightweight, updates quickly, with a large library of modern mods.",
+    "neoforgeDescription": "Modern fork of Forge for recent Minecraft versions, used by many large mods.",
+    "forgeDescription": "Long-standing loader required by classic mods and older Minecraft versions.",
+    "quiltDescription": "Forked from Fabric and compatible with most Fabric mods.",
+    "loaderVersion": "Mod loader version",
+    "loaderVersionHint": "Defaults to the recommended stable version for the selected Minecraft version.",
     "recommended": "Recommended",
     "version": "Minecraft version",
     "versionHint": "Your friends need this exact version to join.",
@@ -137,7 +151,9 @@
     "importInspect": "Check folder",
     "importUnknown": "Not recognized",
     "importJar": "Jar file",
+    "importArgsFile": "Args file (args_file)",
     "importNoJar": "No .jar file found in this folder.",
+    "importIgnoredJvmArgs": "This folder contains user_jvm_args.txt. MineHost ignores that file to manage memory safely.",
     "importPickLoader": "Choose the server type",
     "importPickVersion": "Minecraft version",
     "importPickVersionHint": "For example 1.21.4.",
@@ -262,7 +278,13 @@
     "restartAtRemove": "Remove {{time}}",
     "restartAtTime": "Restart time {{n}}",
     "restartAtInvalid": "Pick both hour and minute for every time.",
-    "restartAtDuplicate": "Two times are the same."
+    "restartAtDuplicate": "Two times are the same.",
+    "ignoredJvmArgs": "This server folder contains user_jvm_args.txt, which MineHost ignores in favor of the memory setting below.",
+    "java": "Java version",
+    "javaHint": "Defaults to the Java version recommended for this Minecraft version. Change it only if a mod or plugin requires another version.",
+    "javaOption": "Java {{major}}",
+    "javaRecommended": "Java {{major}} (recommended)",
+    "javaWarning": "This Minecraft version normally uses Java {{recommended}}. Picking another version may prevent the server from starting."
   },
   "delete": {
     "title": "Delete server",
@@ -365,7 +387,8 @@
       "create_server": "Create server",
       "backup": "Backup",
       "restore": "Restore",
-      "import_server": "Import server"
+      "import_server": "Import server",
+      "install_java": "Install Java"
     },
     "states": {
       "running": "Running",

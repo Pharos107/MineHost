@@ -93,6 +93,7 @@ pub async fn patch(
             .transpose()
             .map_err(|_| ApiError::invalid("backup.schedule"))?,
         backup_keep: body.backup.as_ref().and_then(|b| b.keep),
+        java_major: body.java_major,
     };
     app.update_settings(id, patch)?;
     Ok(Json(app.get(id)?.into()))

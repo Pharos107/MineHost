@@ -669,12 +669,15 @@ export interface components {
             csrf_token: string;
         };
         DetectedDto: {
-            /** @description Có `mods/`: chưa hỗ trợ ở bản này. */
+            /** @description Có `mods/`: cần chọn mod loader để nhập. */
             has_mods: boolean;
-            /** @description Jar sẽ chạy. `null` nghĩa là thư mục không có jar nào, không nhập được. */
+            /** @description Có `user_jvm_args.txt` chứa cờ ngoài chú thích mà MineHost bỏ qua. */
+            ignored_jvm_args: boolean;
+            /** @description Jar sẽ chạy. `null` nghĩa là không có jar (trừ Forge/NeoForge dùng `args_file`). */
             jar?: string | null;
-            /** @description `paper`, `purpur`, `vanilla`; không nhận ra thì `null`, người dùng chọn tay. */
+            /** @description `paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge`, `neoforge`; không nhận ra thì `null`. */
             loader?: string | null;
+            loader_version?: string | null;
             minecraft?: string | null;
         };
         DiskDto: {
@@ -786,6 +789,11 @@ export interface components {
         PatchServerBody: {
             autostart?: boolean | null;
             backup?: components["schemas"]["BackupSettingsBody"] | null;
+            /**
+             * Format: int32
+             * @description Phiên bản Java chính (`8`, `11`, `17`, `21`, `25`).
+             */
+            java_major?: number | null;
             memory_mb?: components["schemas"]["MemoryDto"] | null;
             name?: string | null;
             /** Format: int32 */
@@ -873,6 +881,8 @@ export interface components {
             created_at?: string | null;
             eula_accepted: boolean;
             id: string;
+            /** @description Có `user_jvm_args.txt` chứa cờ ngoài chú thích mà MineHost bỏ qua. */
+            ignored_jvm_args: boolean;
             /** Format: int32 */
             java_major?: number | null;
             /**

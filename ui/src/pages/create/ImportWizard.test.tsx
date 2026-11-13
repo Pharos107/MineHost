@@ -50,7 +50,14 @@ afterEach(() => {
 });
 
 describe("importForm", () => {
-  const found: Detected = { loader: "paper", minecraft: "1.21.4", jar: "paper.jar", has_mods: false };
+  const found: Detected = {
+    loader: "paper",
+    loader_version: null,
+    minecraft: "1.21.4",
+    jar: "paper.jar",
+    has_mods: false,
+    ignored_jvm_args: false,
+  };
   const choice = { path: " /srv/mc ", loader: "" as const, minecraft: "", name: " Cũ " };
 
   it("chỉ gửi loại và phiên bản khi người dùng chọn tay", () => {
@@ -62,16 +69,32 @@ describe("importForm", () => {
     expect(importRequest(picked, unknown)).toMatchObject({ loader: "vanilla", minecraft: "1.20.4" });
   });
 
-  it("có mod hoặc không có jar thì không đi tiếp", () => {
+  it("server thường có mod hoặc thiếu jar thì không đi tiếp; mod loader với mods và args_file thì được", () => {
     expect(importReady(choice, { ...found, has_mods: true })).toBe(false);
     expect(importReady(choice, { ...found, jar: null })).toBe(false);
     expect(importReady(choice, undefined)).toBe(false);
+    expect(
+      importReady(choice, {
+        ...found,
+        loader: "neoforge",
+        loader_version: "21.4.140",
+        jar: null,
+        has_mods: true,
+      }),
+    ).toBe(true);
   });
 });
 
 describe("ImportWizard", () => {
   it("không nhận ra loại thì cho chọn tay rồi gửi yêu cầu nhập", async () => {
-    const fetchMock = mockApi({ loader: null, minecraft: "1.20.4", jar: "custom.jar", has_mods: false });
+    const fetchMock = mockApi({
+      loader: null,
+      loader_version: null,
+      minecraft: "1.20.4",
+      jar: "custom.jar",
+      has_mods: false,
+      ignored_jvm_args: false,
+    });
     const user = userEvent.setup();
     renderWizard();
     await openFolder(user, "/srv/mc");
@@ -86,13 +109,38 @@ describe("ImportWizard", () => {
     expect(JSON.parse(String(post?.[1]?.body))).toEqual({ path: "/srv/mc", name: "Server của tôi", loader: "vanilla", minecraft: null });
   });
 
-  it("thư mục có mod thì báo chưa hỗ trợ", async () => {
-    mockApi({ loader: "paper", minecraft: "1.21.4", jar: "paper.jar", has_mods: true });
+  it("thư mục Paper có mod thì báo chưa hỗ trợ", async () => {
+    mockApi({
+      loader: "paper",
+      loader_version: null,
+      minecraft: "1.21.4",
+      jar: "paper.jar",
+      has_mods: true,
+      ignored_jvm_args: false,
+    });
     const user = userEvent.setup();
     renderWizard();
     await openFolder(user, "/srv/modded");
 
     expect(await screen.findByText(/chưa hỗ trợ mod/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Tiếp" })).toHaveProperty("disabled", true);
+  });
+
+  it("thư mục NeoForge có mod và user_jvm_args.txt vẫn đi tiếp và hiện cảnh báo", async () => {
+    mockApi({
+      loader: "neoforge",
+      loader_version: "21.4.140",
+      minecraft: "1.21.4",
+      jar: null,
+      has_mods: true,
+      ignored_jvm_args: true,
+    });
+    const user = userEvent.setup();
+    renderWizard();
+    await openFolder(user, "/srv/neoforge");
+
+    expect(await screen.findByText("21.4.140")).toBeTruthy();
+    expect(screen.getByText(/user_jvm_args\.txt/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Tiếp" })).toHaveProperty("disabled", false);
   });
 });

@@ -20,7 +20,7 @@ function mockApi(servers: Server[]) {
 }
 
 function server(patch: Partial<Server>): Server {
-  return { id: "01JB", name: "Survival", state: "stopped", eula_accepted: true, restart_pending: false, slow_start: false, ...patch };
+  return { id: "01JB", name: "Survival", state: "stopped", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, ...patch };
 }
 
 function renderPage() {
@@ -64,6 +64,7 @@ describe("ServerListPage", () => {
         eula_accepted: true,
         restart_pending: false,
         slow_start: false,
+        ignored_jvm_args: false,
       },
     ]);
     renderPage();
@@ -78,6 +79,21 @@ describe("ServerListPage", () => {
     expect(localStorage.getItem("minehost.servers.view")).toBe("table");
     await userEvent.click(screen.getByRole("link", { name: "Survival" }));
     expect(screen.getByText("chi tiết")).toBeTruthy();
+  });
+
+  it("thẻ server mod loader hiện tên loader", async () => {
+    mockApi([
+      server({
+        id: "01FC",
+        name: "Modded",
+        loader: "fabric",
+        minecraft: "1.21.4",
+        memory_mb: { min: 1024, max: 4096 },
+      }),
+    ]);
+    renderPage();
+    const card = (await screen.findByRole("link", { name: "Modded" })).closest("article")!;
+    expect(within(card).getByText("Fabric 1.21.4, tối đa 4 GB RAM")).toBeTruthy();
   });
 
   it("lọc theo trạng thái; lọc ra trống vẫn đổi lại được", async () => {

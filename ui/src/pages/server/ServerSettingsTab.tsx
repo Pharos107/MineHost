@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, Undo2, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Save, Undo2, X } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -7,15 +7,17 @@ import { api, errorMessage, type Server } from "../../api/client";
 import { SERVERS_KEY } from "../../api/live";
 import { formatMemoryMb } from "../../format";
 import { MEMORY_STEP_MB, memoryRange } from "../../memory";
-import { Button, Card, Field, IconButton, Notice, Slider, Stack, Switch, TextInput } from "../../ui";
+import { Button, Card, Field, IconButton, Notice, Select, Slider, Stack, Switch, TextInput } from "../../ui";
 import { DeleteServer } from "./DeleteServer";
-import { MAX_RESTART_TIMES, settingsErrors, settingsFrom, settingsPatch, type SettingsForm } from "./settings";
+import { JAVA_MAJORS, MAX_RESTART_TIMES, recommendedJavaMajor, settingsErrors, settingsFrom, settingsPatch, type SettingsForm } from "./settings";
 
-/** Tab "Cài đặt server": tên, RAM, cổng, tự bật, tự khởi động lại khi crash, xóa server. */
+/** Tab "Cài đặt server": tên, RAM, cổng, tự bật, tự khởi động lại khi crash, Java, xóa server. */
 export function ServerSettingsTab({ server }: { server: Server }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [form, setForm] = useState(() => settingsFrom(server));
+  const recommendedJava = recommendedJavaMajor(server.minecraft);
+  const [advanced, setAdvanced] = useState(() => form.javaMajor !== recommendedJava);
   const save = useMutation({
     mutationFn: () => api.updateServer(server.id, settingsPatch(server, form)),
     onSuccess: (updated) => {
@@ -38,6 +40,7 @@ export function ServerSettingsTab({ server }: { server: Server }) {
       >
         <Card title={t("settings.title")}>
           {server.state !== "stopped" && server.state !== "crashed" && <Notice tone="info">{t("game.restartNote")}</Notice>}
+          {server.ignored_jvm_args && <Notice tone="warning">{t("settings.ignoredJvmArgs")}</Notice>}
           <Field label={t("wizard.name")} error={errors.name && t(errors.name)}>
             <TextInput value={form.name} onChange={(e) => update({ name: e.target.value })} autoComplete="off" />
           </Field>
@@ -53,6 +56,25 @@ export function ServerSettingsTab({ server }: { server: Server }) {
             onChange={(restartOnCrash) => update({ restartOnCrash })}
           />
           <RestartTimesField times={form.restartAt} error={errors.restartAt && t(errors.restartAt)} onChange={(restartAt) => update({ restartAt })} />
+          <div>
+            <Button variant="ghost" size="sm" icon={advanced ? ChevronDown : ChevronRight} aria-expanded={advanced} onClick={() => setAdvanced(!advanced)}>
+              {t("wizard.advanced")}
+            </Button>
+          </div>
+          {advanced && (
+            <>
+              <Field label={t("settings.java")} hint={t("settings.javaHint")}>
+                <Select value={String(form.javaMajor)} onChange={(e) => update({ javaMajor: Number(e.target.value) })}>
+                  {JAVA_MAJORS.map((major) => (
+                    <option key={major} value={String(major)}>
+                      {major === recommendedJava ? t("settings.javaRecommended", { major }) : t("settings.javaOption", { major })}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              {form.javaMajor !== recommendedJava && <Notice tone="warning">{t("settings.javaWarning", { recommended: recommendedJava })}</Notice>}
+            </>
+          )}
           {save.isError && <Notice tone="danger">{errorMessage(t, save.error)}</Notice>}
           {save.isSuccess && !dirty && <Notice tone="success">{t("settings.saved")}</Notice>}
           <Stack direction="row" gap={2} justify="end">

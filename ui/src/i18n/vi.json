@@ -101,8 +101,22 @@
       "importName": "Tên"
     },
     "loader": "Chọn loại server",
+    "kind": "Kiểu server",
+    "kindStandard": "Server thường",
+    "kindStandardDescription": "Chơi bản gốc hoặc cài thêm plugin nhẹ.",
+    "kindModded": "Server có mod",
+    "kindModdedDescription": "Tự chọn từng mod với Fabric, NeoForge, Forge hoặc Quilt.",
+    "kindModpack": "Từ modpack",
+    "kindModpackDescription": "Cài trọn bộ mod đóng gói sẵn từ Modrinth hoặc CurseForge.",
+    "soon": "Sắp có",
     "paperDescription": "Nhanh, hỗ trợ plugin.",
     "vanillaDescription": "Bản gốc của Mojang, không có plugin.",
+    "fabricDescription": "Nhẹ, cập nhật nhanh, có rất nhiều mod mới.",
+    "neoforgeDescription": "Nhánh mới của Forge cho các bản Minecraft gần đây, nhiều mod lớn.",
+    "forgeDescription": "Loader lâu đời, cần cho nhiều mod và phiên bản Minecraft cũ.",
+    "quiltDescription": "Phát triển từ Fabric, chạy được hầu hết mod của Fabric.",
+    "loaderVersion": "Phiên bản mod loader",
+    "loaderVersionHint": "Mặc định là bản ổn định đề xuất cho phiên bản Minecraft đã chọn.",
     "recommended": "Khuyên dùng",
     "version": "Phiên bản Minecraft",
     "versionHint": "Bạn bè cần dùng đúng phiên bản này để vào chơi.",
@@ -137,7 +151,9 @@
     "importInspect": "Kiểm tra thư mục",
     "importUnknown": "Không nhận ra",
     "importJar": "File jar",
+    "importArgsFile": "File tham số (args_file)",
     "importNoJar": "Không thấy file .jar nào trong thư mục này.",
+    "importIgnoredJvmArgs": "Thư mục có file user_jvm_args.txt. MineHost bỏ qua file này để quản lý RAM an toàn.",
     "importPickLoader": "Chọn loại server",
     "importPickVersion": "Phiên bản Minecraft",
     "importPickVersionHint": "Ví dụ 1.21.4.",
@@ -262,7 +278,13 @@
     "restartAtRemove": "Bỏ giờ {{time}}",
     "restartAtTime": "Giờ khởi động lại {{n}}",
     "restartAtInvalid": "Hãy chọn đủ giờ và phút cho mọi mốc.",
-    "restartAtDuplicate": "Hai mốc trùng giờ."
+    "restartAtDuplicate": "Hai mốc trùng giờ.",
+    "ignoredJvmArgs": "Thư mục server có user_jvm_args.txt nhưng MineHost bỏ qua file này để quản lý RAM theo cài đặt bên dưới.",
+    "java": "Phiên bản Java",
+    "javaHint": "Mặc định dùng bản Java đề xuất cho phiên bản Minecraft của server. Chỉ đổi khi mod hoặc plugin yêu cầu.",
+    "javaOption": "Java {{major}}",
+    "javaRecommended": "Java {{major}} (đề xuất)",
+    "javaWarning": "Minecraft này thường dùng Java {{recommended}}. Chọn bản khác có thể khiến server không khởi động được."
   },
   "delete": {
     "title": "Xóa server",
@@ -365,7 +387,8 @@
       "create_server": "Tạo server",
       "backup": "Sao lưu",
       "restore": "Khôi phục",
-      "import_server": "Nhập server"
+      "import_server": "Nhập server",
+      "install_java": "Tải Java"
     },
     "states": {
       "running": "Đang chạy",

@@ -141,7 +141,11 @@ export function ServerListPage() {
 
 function Cards({ servers, query, lan }: { servers: Server[]; query: string; lan: string[] | undefined }) {
   const { t } = useTranslation();
-  const shown = filterRows(servers, query, (s) => `${serverName(s)} ${s.minecraft ?? ""}`);
+  const shown = filterRows(
+    servers,
+    query,
+    (s) => `${serverName(s)} ${s.loader ? t(`loaders.${s.loader}`) : ""} ${s.minecraft ?? ""}`,
+  );
   if (shown.length === 0) return <EmptyState icon={ServerIcon} title={t("servers.noMatch")} />;
   return (
     <ServerCardGrid>
@@ -167,7 +171,7 @@ function ServerTable({ servers, loading }: { servers: Server[]; loading: boolean
         rowLabel={serverName}
         actions={actions}
         inlineActions={2}
-        searchText={(server) => `${serverName(server)} ${server.minecraft ?? ""}`}
+        searchText={(server) => `${serverName(server)} ${server.loader ? t(`loaders.${server.loader}`) : ""} ${server.minecraft ?? ""}`}
         loading={loading}
         empty={<EmptyState icon={ServerIcon} title={t("servers.noMatch")} />}
       />
