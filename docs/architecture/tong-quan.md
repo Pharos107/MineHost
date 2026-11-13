@@ -74,7 +74,11 @@ Server là process con chạy cùng user với controller, không bị chặn đ
 - **Windows:** mỗi process có Job Object riêng: kill khi đóng handle, bộ nhớ commit tối đa
   `-Xmx × 1,5 + 1024 MB`, tối đa 16 process. Chạm giới hạn bộ nhớ thì crash có gợi ý `MEMORY_LIMIT`
   và không tự bật lại.
-- **Linux:** chưa có (cgroup v2 ở PR-04 của P3). Giới hạn duy nhất là `-Xmx` của JVM (chỉ tính heap).
+- **Linux:** khi cgroup hiện tại được giao quyền (unit có `Delegate=yes`, hoặc `systemd-run --user`),
+  controller chuyển vào `<cgroup>/minehost-controller` và tạo một cgroup anh em cho mỗi process với
+  `memory.max` cùng công thức, `memory.swap.max = 0`, `pids.max = 2048`. Kernel kill vì vượt
+  `memory.max` thì crash có gợi ý `MEMORY_LIMIT`. Không được giao quyền (ví dụ chạy từ terminal
+  thường) thì chỉ có `-Xmx` và log một cảnh báo.
 
 Không giới hạn CPU. Hệ quả về bảo mật: [bao-mat.md](bao-mat.md).
 
