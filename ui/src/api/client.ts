@@ -11,12 +11,13 @@ export type MetricSample = components["schemas"]["MetricSampleDto"];
 export type ServerMetrics = components["schemas"]["ServerMetricsDto"];
 export type JobProgress = components["schemas"]["ProgressDto"];
 export type CatalogVersion = components["schemas"]["CatalogVersionDto"];
+export type LoaderVersion = components["schemas"]["LoaderVersionDto"];
 export type CreateServer = components["schemas"]["CreateServerBody"];
 export type Created = components["schemas"]["CreatedDto"];
 export type ConsoleLine = components["schemas"]["ConsoleLineDto"];
 export type ServerAction = "start" | "stop" | "restart" | "kill";
-/** Loại server tạo được (spec P2, mục 5.4). */
-export type Loader = "paper" | "vanilla" | "purpur";
+/** Loại server tạo được (spec P2 mục 5.4, spec P3 mục 3.1). */
+export type Loader = "paper" | "vanilla" | "purpur" | "fabric" | "quilt" | "forge" | "neoforge";
 export type Detected = components["schemas"]["DetectedDto"];
 export type ImportServer = components["schemas"]["ImportBody"];
 export type Property = components["schemas"]["PropertyDto"];
@@ -122,6 +123,9 @@ export const api = {
   saveProperties: (id: string, properties: Property[]) => request<void>("PUT", `${serverPath(id)}/properties`, { properties }),
   /** Bản cài được của một loại server, mới nhất trước. */
   catalogVersions: (loader: Loader) => request<CatalogVersion[]>("GET", `/catalog/${loader}/versions`),
+  /** Bản cài được của một mod loader cho một phiên bản Minecraft, bản đề xuất đứng đầu. */
+  loaderVersions: (loader: Loader, minecraft: string) =>
+    request<LoaderVersion[]>("GET", `/catalog/${loader}/${encodeURIComponent(minecraft)}/loader-versions`),
   /** Job đang giữ, mới nhất trước; `serverId` có thì chỉ Job của server đó. */
   jobs: (serverId?: string) =>
     request<Job[]>("GET", serverId ? `/jobs?server_id=${encodeURIComponent(serverId)}` : "/jobs"),
