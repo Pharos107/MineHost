@@ -76,7 +76,7 @@ hạn RAM hay CPU. Linux không dùng cgroup. Hệ quả về bảo mật: [bao-
 
 | Phần | Trạng thái |
 | --- | --- |
-| Loại server | Paper, Purpur (kiểm tra md5), Vanilla (jar của Mojang). Mod loader: P3 |
+| Loại server | Paper, Purpur (kiểm tra md5), Vanilla (jar của Mojang). `instance.toml` đã nhận Fabric, Quilt, Forge, NeoForge và bảng `[game.launch]`, `[modpack]`, nhưng chưa tạo hay chạy được (spec P3, nhóm A–B) |
 | Runtime | Chỉ process con. Docker: P4 |
 | Java | Temurin JRE do MineHost tải, chọn major theo Mojang. Không dùng Java có sẵn trên máy |
 | Lưu trữ | File trên đĩa. Không có SQLite ([ADR 0004](../adr/0004-chua-dung-sqlite.md)) |
@@ -109,3 +109,4 @@ Spec gốc viết trước khi code. Các điểm dưới đây code (và spec g
 | Không chạy dưới root hoặc Administrator | Code không kiểm tra điều này |
 | Chỉ tải từ danh sách domain được phép | `mh-net` không có danh sách domain; mỗi provider tự ghi URL. Riêng skin sẽ giới hạn domain (spec P2 mục 8) |
 | P2 có bảng `users` | P2 chỉ có một mật khẩu admin, không có tài khoản |
+| Provider có `install(ctx, version)` tự chạy installer của loader | Provider trả `InstallPlan`; `mh-app` chạy installer qua `mh-runtime` ([ADR 0006](../adr/0006-provider-tra-ke-hoach-app-chay-installer.md)) |

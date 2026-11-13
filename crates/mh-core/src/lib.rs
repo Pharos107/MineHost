@@ -11,6 +11,7 @@ pub mod crash;
 pub mod error;
 pub mod ids;
 pub mod instance;
+pub mod launch;
 pub mod memory;
 pub mod players;
 pub mod properties;
@@ -24,6 +25,7 @@ pub use crash::{CrashHint, diagnose};
 pub use error::{ErrorCode, InvalidValue};
 pub use ids::{GamePort, ServerId, ServerName};
 pub use instance::{InstanceError, InstanceSpec};
+pub use launch::{ArgsFilePath, ArgsOs, Launch};
 pub use memory::{MemoryLimits, suggest_memory_mb};
 pub use players::{
     FreezeAttribute, PlayerAction, PlayerCommandError, PlayerLogEvent, PlayerName,
@@ -32,7 +34,7 @@ pub use players::{
 pub use properties::Properties;
 pub use schedule::{DailyTime, MAX_RESTART_TIMES, normalize_restart_times, seconds_until_next};
 pub use state::{ServerEvent, ServerState, transition};
-pub use version::{LoaderKind, McVersion};
+pub use version::{ContentKind, LoaderKind, LoaderVersion, McVersion};
 
 /// Tên sản phẩm hiển thị cho người dùng.
 pub const PRODUCT_NAME: &str = "MineHost";

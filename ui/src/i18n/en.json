@@ -59,7 +59,11 @@
   "loaders": {
     "paper": "Paper",
     "vanilla": "Vanilla",
-    "purpur": "Purpur"
+    "purpur": "Purpur",
+    "fabric": "Fabric",
+    "quilt": "Quilt",
+    "forge": "Forge",
+    "neoforge": "NeoForge"
   },
   "servers": {
     "heading": "Your servers",
@@ -331,7 +335,17 @@
     "FILE_EXISTS": "A file or folder with that name already exists.",
     "BACKUP_PROTECTED": "This backup is protected. Remove the protection before deleting it.",
     "MODS_NOT_SUPPORTED": "This server has mods (a mods folder). Mods are not supported yet; they come in a later version.",
-    "SERVER_NOT_RUNNING": "The server is not running. Start it and try again."
+    "SERVER_NOT_RUNNING": "The server is not running. Start it and try again.",
+    "LOADER_INSTALL_FAILED": "Could not install the mod loader. See the job log for details.",
+    "CONTENT_INCOMPATIBLE": "This mod or plugin has no version for this server type and Minecraft version.",
+    "CONTENT_NOT_FOUND": "This mod, plugin or modpack was not found. It may have been removed from its source.",
+    "DEPENDENCY_MISSING": "Required mods are missing. Install them, then start the server again.",
+    "CURSEFORGE_UNAVAILABLE": "CurseForge is unavailable: there is no API key or the key was rejected. See CurseForge in Settings.",
+    "CURSEFORGE_FILES_PENDING": "Some CurseForge files must be downloaded by hand. Open the Mods page to download and drop them in.",
+    "UPLOAD_HASH_MISMATCH": "The uploaded file does not match the expected file. Download the exact version from the mod page.",
+    "MODPACK_INVALID": "The modpack file is invalid or damaged.",
+    "DOWNLOAD_HOST_NOT_ALLOWED": "A file points to a site that is not allowed, so MineHost did not download it.",
+    "UPSTREAM_RATE_LIMITED": "The source site is rate limiting requests. Try again in {{retry_after_s}} seconds."
   },
   "jobsPage": {
     "description": "What MineHost is doing or just finished, such as creating a server or making a backup.",
