@@ -16,7 +16,7 @@ chính PR ấy.
 | 02 | Chạy kiểu `args_file` và chạy installer | Đã merge | [#66](https://github.com/Pharos107/MineHost/pull/66) |
 | 03 | Giới hạn RAM và số process trên Windows | Chưa bắt đầu | |
 | 04 | cgroup v2 trên Linux | Chưa bắt đầu | |
-| 05 | SHA-1, SHA-512, danh sách host, 429 | Chưa bắt đầu | |
+| 05 | SHA-512, danh sách host, 429 | Đã merge | [#67](https://github.com/Pharos107/MineHost/pull/67) |
 | 06–13 | Nhóm B · Loader | Chưa bắt đầu | |
 | 14–21 | Nhóm C · Modrinth và trang Mod | Chưa bắt đầu | |
 | 22–25 | Nhóm D · Modpack Modrinth, `v0.4.0` | Chưa bắt đầu | |
