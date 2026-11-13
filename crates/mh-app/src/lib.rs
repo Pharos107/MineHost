@@ -15,6 +15,7 @@ mod import;
 pub mod jobs;
 mod launcher;
 mod lifecycle;
+mod loader_install;
 mod metrics;
 mod players;
 mod restart_schedule;

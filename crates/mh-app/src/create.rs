@@ -2,10 +2,12 @@
 
 use std::sync::Arc;
 
+use std::path::Path;
+
 use mh_core::instance::GameSection;
 use mh_core::{
-    ErrorCode, GamePort, InstanceSpec, LoaderKind, McVersion, MemoryLimits, Properties, ServerId,
-    ServerName,
+    ErrorCode, GamePort, InstanceSpec, LoaderKind, LoaderVersion, McVersion, MemoryLimits,
+    Properties, ServerId, ServerName,
 };
 use time::OffsetDateTime;
 
@@ -20,6 +22,9 @@ pub struct CreateRequest {
     pub name: ServerName,
     pub loader: LoaderKind,
     pub minecraft: McVersion,
+    /// Bản mod loader (spec P3, mục 4.1); không có thì dùng bản đề xuất. Bỏ qua với Paper,
+    /// Purpur, Vanilla.
+    pub loader_version: Option<LoaderVersion>,
     /// Không có thì dùng đề xuất theo RAM máy.
     pub memory_mb: Option<MemoryLimits>,
     /// Không có thì tự chọn cổng trống từ 25565.
@@ -80,6 +85,9 @@ impl App {
         memory: MemoryLimits,
         port: GamePort,
     ) -> Result<(), AppError> {
+        if req.loader.is_mod_loader() {
+            return self.install_with_loader(ctx, id, req, memory, port).await;
+        }
         ctx.step(JobStep::CheckDisk, 1, STEPS);
         self.check_disk()?;
 
@@ -117,11 +125,24 @@ impl App {
         ctx.check_cancel()?;
 
         ctx.step(JobStep::PrepareFiles, 5, STEPS);
+        self.write_new_server(&paths.server_dir, id, req, game, memory, port)
+    }
+
+    /// Bước cuối của mọi kiểu tạo server: `server.properties`, rồi `instance.toml`.
+    pub(crate) fn write_new_server(
+        &self,
+        server_dir: &Path,
+        id: ServerId,
+        req: &CreateRequest,
+        game: GameSection,
+        memory: MemoryLimits,
+        port: GamePort,
+    ) -> Result<(), AppError> {
         let mut props =
             Properties::parse("# Tạo bởi MineHost; Minecraft sẽ thêm các khóa còn lại.\n");
         props.set("motd", req.name.as_str());
         props.set("server-port", &port.to_string());
-        write_properties(&paths.server_dir, &props)?;
+        write_properties(server_dir, &props)?;
         let now = OffsetDateTime::now_utc();
         let now = now.replace_nanosecond(0).unwrap_or(now);
         let spec = InstanceSpec::new(id, req.name.clone(), now, game, memory, port);
@@ -143,7 +164,7 @@ impl App {
         self.notify_changed(id);
     }
 
-    fn check_disk(&self) -> Result<(), AppError> {
+    pub(crate) fn check_disk(&self) -> Result<(), AppError> {
         self.check_disk_for(0)
     }
 

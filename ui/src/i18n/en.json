@@ -159,7 +159,8 @@
       "before_restore": "Backing up the current world",
       "unpack": "Unpacking the backup",
       "swap": "Replacing the world",
-      "copy_files": "Copying server folder"
+      "copy_files": "Copying server folder",
+      "run_installer": "Installing {{loader}}"
     }
   },
   "server": {

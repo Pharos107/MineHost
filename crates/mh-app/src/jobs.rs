@@ -58,6 +58,10 @@ pub enum JobStep {
     Swap,
     /// Chép thư mục server có sẵn khi nhập.
     CopyFiles,
+    /// Chạy installer của mod loader (spec P3, mục 3.1).
+    RunInstaller {
+        loader: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
