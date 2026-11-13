@@ -22,7 +22,7 @@ chính PR ấy.
 | 08 | NeoForge | Đã merge | [#72](https://github.com/Pharos107/MineHost/pull/72) |
 | 09 | Job tạo server có loader | Đã merge | [#73](https://github.com/Pharos107/MineHost/pull/73) |
 | 10 | Wizard chọn kiểu server và loader | Chưa bắt đầu | |
-| 11 | Tích hợp mỗi loader trên Windows và Linux | Chưa bắt đầu | |
+| 11 | Tích hợp mỗi loader trên Windows và Linux | Đang chờ CI | [#75](https://github.com/Pharos107/MineHost/pull/75) |
 | 12 | Nhập server có sẵn có mod | Chưa bắt đầu | |
 | 13 | Chọn Java cho từng server | Chưa bắt đầu | |
 | 14–21 | Nhóm C · Modrinth và trang Mod | Chưa bắt đầu | |
