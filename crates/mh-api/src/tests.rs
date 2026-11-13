@@ -76,7 +76,10 @@ impl ServerCatalog for FakeCatalog {
                 version: mh_core::LoaderVersion::parse(v).unwrap(),
                 stable,
             };
-            Ok(vec![release("0.16.9", true), release("0.17.0-beta.1", false)])
+            Ok(vec![
+                release("0.16.9", true),
+                release("0.17.0-beta.1", false),
+            ])
         })
     }
 }

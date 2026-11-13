@@ -211,7 +211,7 @@
           {
             "name": "loader",
             "in": "path",
-            "description": "`paper`, `vanilla` hoặc `purpur`",
+            "description": "`paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`",
             "required": true,
             "schema": {
               "type": "string"
@@ -234,6 +234,77 @@
           },
           "400": {
             "description": "Loại server chưa hỗ trợ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog/{loader}/{minecraft}/loader-versions": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "operationId": "loader_versions",
+        "parameters": [
+          {
+            "name": "loader",
+            "in": "path",
+            "description": "`fabric`, `quilt`, `forge` hoặc `neoforge`",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "minecraft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bản loader, bản đề xuất đứng đầu",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LoaderVersionDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Loại server không có bản loader",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Loader không có bản cho phiên bản này",
             "content": {
               "application/json": {
                 "schema": {
@@ -2220,7 +2291,14 @@
         "properties": {
           "loader": {
             "type": "string",
-            "description": "P1 chỉ có `paper`."
+            "description": "`paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`."
+          },
+          "loader_version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Chỉ với mod loader; không gửi thì dùng bản đề xuất."
           },
           "memory_mb": {
             "oneOf": [
@@ -2546,6 +2624,23 @@
           "failed",
           "cancelled"
         ]
+      },
+      "LoaderVersionDto": {
+        "type": "object",
+        "description": "Một bản mod loader (spec P3, mục 5.8).",
+        "required": [
+          "version",
+          "stable"
+        ],
+        "properties": {
+          "stable": {
+            "type": "boolean",
+            "description": "Bản ổn định theo nguồn của loader; bản đề xuất luôn đứng đầu danh sách."
+          },
+          "version": {
+            "type": "string"
+          }
+        }
       },
       "LoginBody": {
         "type": "object",
@@ -3048,6 +3143,13 @@
               "string",
               "null"
             ]
+          },
+          "loader_version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Bản mod loader; chỉ có với Fabric, Quilt, Forge, NeoForge."
           },
           "memory_mb": {
             "oneOf": [

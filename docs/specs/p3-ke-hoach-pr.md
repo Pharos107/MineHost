@@ -20,7 +20,7 @@ chính PR ấy.
 | 06 | Fabric và Quilt | Đã merge | [#69](https://github.com/Pharos107/MineHost/pull/69) |
 | 07 | Forge | Đã merge | [#71](https://github.com/Pharos107/MineHost/pull/71) |
 | 08 | NeoForge | Đã merge | [#72](https://github.com/Pharos107/MineHost/pull/72) |
-| 09 | Job tạo server có loader | Chưa bắt đầu | |
+| 09 | Job tạo server có loader | Đã merge | [#73](https://github.com/Pharos107/MineHost/pull/73) |
 | 10 | Wizard chọn kiểu server và loader | Chưa bắt đầu | |
 | 11 | Tích hợp mỗi loader trên Windows và Linux | Chưa bắt đầu | |
 | 12 | Nhập server có sẵn có mod | Chưa bắt đầu | |

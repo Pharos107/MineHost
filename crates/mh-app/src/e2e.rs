@@ -16,17 +16,19 @@
 //! `cargo build -p minehost --features e2e` cũng tạo `target/debug/e2e-fake-mc` từ cùng mã nguồn,
 //! để test Rust lấy đường dẫn qua `CARGO_BIN_EXE`. Playwright nên dùng `fake-mc` của `mh-runtime`.
 
+mod loader;
+
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use mh_core::{ErrorCode, LoaderKind, McVersion};
+use mh_core::{ErrorCode, LoaderKind, LoaderVersion, McVersion};
 use mh_supervisor::SupervisorConfig;
 use time::OffsetDateTime;
 use time::macros::datetime;
 
 use crate::sources::{
-    BoxFut, CancellationToken, CatalogVersion, Checksum, JavaRuntime, JavaSource, ProgressFn,
-    ResolvedServer, ServerCatalog, ServerJar,
+    BoxFut, CancellationToken, CatalogVersion, Checksum, JavaRuntime, JavaSource, LoaderInstall,
+    LoaderRelease, PlannedFile, ProgressFn, ResolvedServer, ServerCatalog, ServerJar,
 };
 use crate::{AppDeps, AppError};
 
@@ -98,6 +100,41 @@ impl ServerCatalog for E2eCatalog {
     ) -> BoxFut<'a, Result<(), AppError>> {
         Box::pin(std::future::ready(write_fake_jar(dest, progress, cancel)))
     }
+
+    fn loader_versions<'a>(
+        &'a self,
+        loader: LoaderKind,
+        _minecraft: &'a McVersion,
+    ) -> BoxFut<'a, Result<Vec<LoaderRelease>, AppError>> {
+        Box::pin(std::future::ready(loader::versions(loader)))
+    }
+
+    fn plan<'a>(
+        &'a self,
+        loader: LoaderKind,
+        minecraft: &'a McVersion,
+        wanted: Option<&'a LoaderVersion>,
+    ) -> BoxFut<'a, Result<LoaderInstall, AppError>> {
+        Box::pin(std::future::ready(loader::plan(
+            loader, minecraft, wanted, JAVA_MAJOR,
+        )))
+    }
+
+    fn download_file<'a>(
+        &'a self,
+        _file: &'a PlannedFile,
+        dest: &'a Path,
+        progress: ProgressFn<'a>,
+        cancel: &'a CancellationToken,
+    ) -> BoxFut<'a, Result<(), AppError>> {
+        Box::pin(async move {
+            if let Some(dir) = dest.parent() {
+                std::fs::create_dir_all(dir)
+                    .map_err(|e| AppError::new(ErrorCode::Internal, e.to_string()))?;
+            }
+            write_fake_jar(dest, progress, cancel)
+        })
+    }
 }
 
 fn versions_of(loader: LoaderKind) -> Result<Vec<CatalogVersion>, AppError> {
@@ -128,10 +165,16 @@ fn resolve_of(loader: LoaderKind, minecraft: &McVersion) -> Result<ResolvedServe
     })
 }
 
-/// Paper, Vanilla, Purpur dùng chung danh sách giả: `fake-mc` không quan tâm jar là loại nào.
+/// Mọi loại server dùng chung danh sách phiên bản giả: `fake-mc` không quan tâm jar là loại nào.
 fn require_known(loader: LoaderKind) -> Result<(), AppError> {
     match loader {
-        LoaderKind::Paper | LoaderKind::Vanilla | LoaderKind::Purpur => Ok(()),
+        LoaderKind::Paper
+        | LoaderKind::Vanilla
+        | LoaderKind::Purpur
+        | LoaderKind::Fabric
+        | LoaderKind::Quilt
+        | LoaderKind::Forge
+        | LoaderKind::NeoForge => Ok(()),
         _ => Err(crate::sources::unsupported(loader)),
     }
 }
