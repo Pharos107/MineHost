@@ -34,7 +34,13 @@ impl App {
         ctx.step(JobStep::CheckDisk, 1, STEPS);
         self.check_disk()?;
         let minecraft = req.minecraft.to_string();
-        ctx.step(JobStep::ResolveVersion { minecraft: minecraft.clone() }, 2, STEPS);
+        ctx.step(
+            JobStep::ResolveVersion {
+                minecraft: minecraft.clone(),
+            },
+            2,
+            STEPS,
+        );
         let wanted = req.loader_version.as_ref();
         let install = ctx
             .cancellable(self.catalog.plan(req.loader, &req.minecraft, wanted))
@@ -50,7 +56,13 @@ impl App {
         let paths = self.store.create_dir(id)?;
         let root = SafeRoot::new(&paths.server_dir)?;
         self.download_plan_files(ctx, &root, &install).await?;
-        ctx.step(JobStep::RunInstaller { loader: req.loader.to_string() }, 5, STEPS);
+        ctx.step(
+            JobStep::RunInstaller {
+                loader: req.loader.to_string(),
+            },
+            5,
+            STEPS,
+        );
         if let Some(run) = &install.plan.installer {
             self.run_installer(ctx, &java.java_bin, &root, run).await?;
         }

@@ -102,11 +102,20 @@ impl ServerCatalog for FakeCatalog {
             }],
             installer: Some(InstallerRun {
                 jar,
-                args: self.installer_args.iter().map(|a| (*a).to_owned()).collect(),
+                args: self
+                    .installer_args
+                    .iter()
+                    .map(|a| (*a).to_owned())
+                    .collect(),
             }),
             launch: self.launch.clone(),
         };
-        Box::pin(async move { Ok(LoaderInstall { plan, java_major: 21 }) })
+        Box::pin(async move {
+            Ok(LoaderInstall {
+                plan,
+                java_major: 21,
+            })
+        })
     }
 
     fn download_file<'a>(
@@ -188,7 +197,10 @@ async fn run(app: &Arc<App>, req: CreateRequest) -> (ServerId, JobState) {
 }
 
 fn server_dir(tmp: &tempfile::TempDir, id: ServerId) -> PathBuf {
-    tmp.path().join("servers").join(id.to_string()).join("server")
+    tmp.path()
+        .join("servers")
+        .join(id.to_string())
+        .join("server")
 }
 
 #[tokio::test]
@@ -206,7 +218,10 @@ async fn fabric_server_is_installed_with_launcher_jar() {
     assert!(spec.game.launch.is_none());
     let dir = server_dir(&tmp, id);
     assert!(dir.join("fabric-server-launch.jar").is_file());
-    assert!(!dir.join(".minehost-install").exists(), "installer tạm phải bị xóa");
+    assert!(
+        !dir.join(".minehost-install").exists(),
+        "installer tạm phải bị xóa"
+    );
 }
 
 #[tokio::test]
@@ -220,7 +235,8 @@ async fn failed_installer_reports_code_and_cleans_up() {
     assert_eq!(params["exit_code"], 3);
     let tail = params["log_tail"].as_array().unwrap();
     assert!(
-        tail.iter().any(|l| l.as_str().unwrap().contains("finished with code 3")),
+        tail.iter()
+            .any(|l| l.as_str().unwrap().contains("finished with code 3")),
         "{tail:?}"
     );
     assert!(!tmp.path().join("servers").join(id.to_string()).exists());
@@ -253,9 +269,13 @@ async fn neoforge_server_starts_from_args_file() {
     app.accept_eula(id).unwrap();
     app.start(id).await.unwrap();
     let handle = app.handle(id).unwrap();
-    let status = handle.wait_for(WAIT, |s| s.state == ServerState::Running).await;
+    let status = handle
+        .wait_for(WAIT, |s| s.state == ServerState::Running)
+        .await;
     assert_eq!(status.state, ServerState::Running, "{status:?}");
     app.stop(id).await.unwrap();
-    let status = handle.wait_for(WAIT, |s| s.state == ServerState::Stopped).await;
+    let status = handle
+        .wait_for(WAIT, |s| s.state == ServerState::Stopped)
+        .await;
     assert_eq!(status.state, ServerState::Stopped, "{status:?}");
 }
