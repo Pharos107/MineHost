@@ -345,7 +345,15 @@ fn is_retryable(status: reqwest::StatusCode) -> bool {
 fn retry_after_s(resp: &reqwest::Response) -> u64 {
     ["retry-after", "x-ratelimit-reset"]
         .iter()
-        .find_map(|name| resp.headers().get(*name)?.to_str().ok()?.trim().parse().ok())
+        .find_map(|name| {
+            resp.headers()
+                .get(*name)?
+                .to_str()
+                .ok()?
+                .trim()
+                .parse()
+                .ok()
+        })
         .unwrap_or(1)
 }
 
@@ -353,13 +361,17 @@ pub(crate) fn parse_url(url: &str) -> Result<reqwest::Url, NetError> {
     reqwest::Url::parse(url).map_err(|e| unavailable(url, &e))
 }
 
-fn redirect_target(from: &reqwest::Url, resp: &reqwest::Response) -> Result<reqwest::Url, NetError> {
+fn redirect_target(
+    from: &reqwest::Url,
+    resp: &reqwest::Response,
+) -> Result<reqwest::Url, NetError> {
     let location = resp
         .headers()
         .get(reqwest::header::LOCATION)
         .and_then(|v| v.to_str().ok())
         .ok_or_else(|| unavailable(from.as_str(), &"chuyển hướng không có Location"))?;
-    from.join(location).map_err(|e| unavailable(from.as_str(), &e))
+    from.join(location)
+        .map_err(|e| unavailable(from.as_str(), &e))
 }
 
 fn unavailable(url: &str, reason: &dyn fmt::Display) -> NetError {

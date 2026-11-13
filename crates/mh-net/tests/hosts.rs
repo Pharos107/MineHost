@@ -5,7 +5,9 @@
 use std::time::Duration;
 
 use mh_core::ErrorCode;
-use mh_net::{CancellationToken, Checksum, Download, HostAllowlist, HttpClient, NetConfig, NetError};
+use mh_net::{
+    CancellationToken, Checksum, Download, HostAllowlist, HttpClient, NetConfig, NetError,
+};
 use sha2::{Digest, Sha512};
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -58,7 +60,12 @@ async fn fetch(
 #[tokio::test]
 async fn listed_host_downloads_and_follows_same_host_redirect() {
     let server = MockServer::start().await;
-    serve(&server, "/file.jar", ResponseTemplate::new(200).set_body_bytes(BODY)).await;
+    serve(
+        &server,
+        "/file.jar",
+        ResponseTemplate::new(200).set_body_bytes(BODY),
+    )
+    .await;
     serve(
         &server,
         "/old.jar",
@@ -74,11 +81,13 @@ async fn listed_host_downloads_and_follows_same_host_redirect() {
 async fn redirect_to_unlisted_host_is_refused() {
     let server = MockServer::start().await;
     // Cùng máy nhưng tên khác: `localhost` không có trong danh sách.
-    let elsewhere = format!(
-        "http://localhost:{}/file.jar",
-        server.address().port()
-    );
-    serve(&server, "/file.jar", ResponseTemplate::new(200).set_body_bytes(BODY)).await;
+    let elsewhere = format!("http://localhost:{}/file.jar", server.address().port());
+    serve(
+        &server,
+        "/file.jar",
+        ResponseTemplate::new(200).set_body_bytes(BODY),
+    )
+    .await;
     serve(
         &server,
         "/old.jar",
@@ -133,7 +142,12 @@ async fn short_rate_limit_waits_once_then_succeeds() {
         .up_to_n_times(1)
         .mount(&server)
         .await;
-    serve(&server, "/file.jar", ResponseTemplate::new(200).set_body_bytes(BODY)).await;
+    serve(
+        &server,
+        "/file.jar",
+        ResponseTemplate::new(200).set_body_bytes(BODY),
+    )
+    .await;
     let tmp = tempfile::tempdir().unwrap();
     let got = fetch(&tmp, &format!("{}/file.jar", server.uri()), Some(&LOCAL)).await;
     assert_eq!(got.unwrap(), BODY);
