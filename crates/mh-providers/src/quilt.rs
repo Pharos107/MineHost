@@ -11,9 +11,8 @@ use mh_net::{Checksum, HostAllowlist, HttpClient, hosts};
 use serde::Deserialize;
 
 use crate::loader::{
-    check_loader_url, installer_path,
-    InstallPlan, InstallerRun, LoaderRelease, PlannedFile, compare_versions, pick,
-    recommended_first,
+    InstallPlan, InstallerRun, LoaderRelease, PlannedFile, check_loader_url, compare_versions,
+    installer_path, pick, recommended_first,
 };
 use crate::{ProviderError, Release};
 

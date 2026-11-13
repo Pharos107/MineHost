@@ -199,7 +199,10 @@ async fn quilt_plan_uses_hash_from_meta() {
 async fn hostile_installer_entries_are_refused() {
     let good = fixture("quilt/installer.json");
     let cases = [
-        (good.replace("\"0.15.1\"", "\"../../evil\""), ErrorCode::NetworkUnavailable),
+        (
+            good.replace("\"0.15.1\"", "\"../../evil\""),
+            ErrorCode::NetworkUnavailable,
+        ),
         (
             good.replace("https://maven.quiltmc.org", "https://evil.example"),
             ErrorCode::DownloadHostNotAllowed,
@@ -207,7 +210,10 @@ async fn hostile_installer_entries_are_refused() {
     ];
     for (installers, code) in cases {
         let (s, _t, http) = serve(&[
-            ("/v3/versions/loader/1.21.4", fixture("quilt/loader-1.21.4.json")),
+            (
+                "/v3/versions/loader/1.21.4",
+                fixture("quilt/loader-1.21.4.json"),
+            ),
             ("/v3/versions/installer", installers),
         ])
         .await;
@@ -215,5 +221,8 @@ async fn hostile_installer_entries_are_refused() {
         let err = quilt.plan(&v("1.21.4"), None).await.unwrap_err();
         assert_eq!(err.code(), code, "{err}");
     }
-    assert_eq!(hosts::LOADERS.check_str("not a url").unwrap_err().code(), ErrorCode::DownloadHostNotAllowed);
+    assert_eq!(
+        hosts::LOADERS.check_str("not a url").unwrap_err().code(),
+        ErrorCode::DownloadHostNotAllowed
+    );
 }
