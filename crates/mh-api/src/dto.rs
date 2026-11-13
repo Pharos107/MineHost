@@ -82,6 +82,8 @@ pub struct ServerDto {
     pub slow_start: bool,
     /// Đang chờ tự khởi động lại sau crash.
     pub restart_pending: bool,
+    /// Có `user_jvm_args.txt` chứa cờ ngoài chú thích mà MineHost bỏ qua.
+    pub ignored_jvm_args: bool,
 }
 
 impl From<ServerView> for ServerDto {
@@ -109,6 +111,7 @@ impl From<ServerView> for ServerDto {
             pid: None,
             slow_start: false,
             restart_pending: false,
+            ignored_jvm_args: view.ignored_jvm_args,
         };
         if let Some(info) = view.installing {
             dto.name = Some(info.name.to_string());

@@ -8,7 +8,7 @@ use std::io::Read;
 use std::path::Path;
 
 use mh_core::instance::JarName;
-use mh_core::{LoaderKind, McVersion};
+use mh_core::{ArgsFilePath, Launch, LoaderKind, LoaderVersion, McVersion, neoforge_minecraft};
 use serde::Deserialize;
 
 /// JSON trong thư mục server hoặc trong jar chỉ vài trăm byte; đọc nhiều hơn là file lạ.
@@ -17,11 +17,16 @@ const SMALL_JSON: u64 = 64 * 1024;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Detected {
     pub loader: Option<LoaderKind>,
+    pub loader_version: Option<LoaderVersion>,
     pub minecraft: Option<McVersion>,
-    /// Jar sẽ chạy, nằm ngay trong thư mục. Không có thì không nhập được.
+    /// Jar sẽ chạy, nằm ngay trong thư mục. Không có thì không nhập được (trừ `args_file`).
     pub jar: Option<JarName>,
-    /// Có thư mục `mods/`: server có mod chưa hỗ trợ ở P2.
+    /// Cách chạy nhận ra từ thư mục (`ArgsFile` cho Forge/NeoForge, `Jar` cho phần còn lại).
+    pub launch: Option<Launch>,
+    /// Có thư mục `mods/`: chỉ nhập được khi chọn mod loader.
     pub has_mods: bool,
+    /// Có `user_jvm_args.txt` chứa cờ JVM ngoài chú thích `#` (MineHost không đọc file này).
+    pub ignored_jvm_args: bool,
 }
 
 #[derive(Deserialize)]
@@ -35,15 +40,46 @@ struct VersionJson {
     id: String,
 }
 
+/// Kiểm tra `user_jvm_args.txt` có dòng nào chứa cờ ngoài chú thích `#`.
+pub fn has_ignored_jvm_args(dir: &Path) -> bool {
+    let Some(text) = read_small(&dir.join("user_jvm_args.txt")) else {
+        return false;
+    };
+    text.lines()
+        .any(|line| !line.split('#').next().unwrap_or("").trim().is_empty())
+}
+
 /// Không đọc được file nào thì trả kết quả trống, không báo lỗi: người dùng vẫn chọn tay được.
 pub fn inspect(dir: &Path) -> Detected {
+    let has_mods = dir.join("mods").is_dir();
+    let ignored_jvm_args = has_ignored_jvm_args(dir);
+    if let Some((loader, loader_version, minecraft, launch)) = detect_args_file(dir) {
+        return Detected {
+            loader: Some(loader),
+            loader_version,
+            minecraft,
+            jar: None,
+            launch: Some(launch),
+            has_mods,
+            ignored_jvm_args,
+        };
+    }
     let (history_loader, history_version) = read_history(dir);
-    let (jar, jar_loader, jar_version) = pick_jar(dir);
+    let (jar, jar_loader, jar_mc, jar_lv) = pick_jar(dir);
+    let loader = history_loader.or(jar_loader);
+    let minecraft = history_version
+        .or(jar_mc)
+        .or_else(|| detect_mc_from_dirs(dir));
+    let loader_version = jar_lv.or_else(|| loader.and_then(|l| detect_loader_from_dirs(dir, l)));
+    let launch = jar.clone().map(Launch::Jar);
     Detected {
-        loader: history_loader.or(jar_loader),
-        minecraft: history_version.or(jar_version),
+        loader,
+        loader_version,
+        minecraft,
         jar,
-        has_mods: dir.join("mods").is_dir(),
+        launch,
+        has_mods,
+        ignored_jvm_args,
     }
 }
 
@@ -83,9 +119,16 @@ fn read_small(path: &Path) -> Option<String> {
 }
 
 /// Jar ngay trong thư mục, ưu tiên jar nhận ra được loại, rồi tới `server.jar`.
-fn pick_jar(dir: &Path) -> (Option<JarName>, Option<LoaderKind>, Option<McVersion>) {
+fn pick_jar(
+    dir: &Path,
+) -> (
+    Option<JarName>,
+    Option<LoaderKind>,
+    Option<McVersion>,
+    Option<LoaderVersion>,
+) {
     let Ok(entries) = std::fs::read_dir(dir) else {
-        return (None, None, None);
+        return (None, None, None, None);
     };
     let mut jars: Vec<JarName> = entries
         .flatten()
@@ -96,26 +139,29 @@ fn pick_jar(dir: &Path) -> (Option<JarName>, Option<LoaderKind>, Option<McVersio
     jars.sort_by_key(|jar| (jar.as_str() != "server.jar", jar.as_str().to_owned()));
     let mut fallback = None;
     for jar in jars {
-        let (loader, version) = inspect_jar(&dir.join(jar.as_str()), jar.as_str());
+        let (loader, version, lv) = inspect_jar(&dir.join(jar.as_str()), jar.as_str());
         if loader.is_some() {
-            return (Some(jar), loader, version);
+            return (Some(jar), loader, version, lv);
         }
-        fallback.get_or_insert((jar, version));
+        fallback.get_or_insert((jar, version, lv));
     }
     match fallback {
-        Some((jar, version)) => (Some(jar), None, version),
-        None => (None, None, None),
+        Some((jar, version, lv)) => (Some(jar), None, version, lv),
+        None => (None, None, None, None),
     }
 }
 
 /// Paper và Purpur đóng gói bằng paperclip; jar của Mojang từ 1.18 có `net/minecraft/bundler/`,
-/// bản cũ hơn có thẳng `net/minecraft/server/`. Purpur chỉ phân biệt được với Paper qua tên file.
-fn inspect_jar(path: &Path, name: &str) -> (Option<LoaderKind>, Option<McVersion>) {
+/// bản cũ hơn có thẳng `net/minecraft/server/`. Fabric/Quilt nhận qua `META-INF/MANIFEST.MF`.
+fn inspect_jar(
+    path: &Path,
+    name: &str,
+) -> (Option<LoaderKind>, Option<McVersion>, Option<LoaderVersion>) {
     let Ok(file) = File::open(path) else {
-        return (None, None);
+        return (None, None, None);
     };
     let Ok(mut zip) = zip::ZipArchive::new(file) else {
-        return (None, None);
+        return (None, None, None);
     };
     let names: Vec<String> = zip
         .file_names()
@@ -123,7 +169,31 @@ fn inspect_jar(path: &Path, name: &str) -> (Option<LoaderKind>, Option<McVersion
         .map(|name| name.into_owned())
         .collect();
     let has = |prefix: &str| names.iter().any(|n| n.starts_with(prefix));
-    let loader = if has("io/papermc/paperclip/") {
+    let main_class = read_zip_text(&mut zip, "META-INF/MANIFEST.MF")
+        .as_deref()
+        .and_then(manifest_main_class);
+    let loader = detect_jar_loader(name, &has, main_class.as_deref());
+    let (mc_from_name, lv_from_name) = parse_fabric_jar_name(name);
+    let lv = lv_from_name.or_else(|| loader.and_then(|l| loader_version_in_zip(&names, l)));
+    let version = read_zip_text(&mut zip, "version.json")
+        .and_then(|text| serde_json::from_str::<VersionJson>(&text).ok())
+        .and_then(|json| McVersion::parse(&json.id).ok())
+        .or(mc_from_name);
+    (loader, version, lv)
+}
+
+fn detect_jar_loader(
+    name: &str,
+    has: &dyn Fn(&str) -> bool,
+    main_class: Option<&str>,
+) -> Option<LoaderKind> {
+    if main_class.is_some_and(|m| m.contains("net.fabricmc.")) {
+        return Some(LoaderKind::Fabric);
+    }
+    if main_class.is_some_and(|m| m.contains("org.quiltmc.")) {
+        return Some(LoaderKind::Quilt);
+    }
+    if has("io/papermc/paperclip/") {
         if name.to_ascii_lowercase().contains("purpur") {
             Some(LoaderKind::Purpur)
         } else {
@@ -133,17 +203,119 @@ fn inspect_jar(path: &Path, name: &str) -> (Option<LoaderKind>, Option<McVersion
         Some(LoaderKind::Vanilla)
     } else {
         None
+    }
+}
+
+fn read_zip_text(zip: &mut zip::ZipArchive<File>, entry_name: &str) -> Option<String> {
+    let entry = zip.by_name(entry_name).ok()?;
+    let mut text = String::new();
+    entry.take(SMALL_JSON).read_to_string(&mut text).ok()?;
+    Some(text)
+}
+
+fn manifest_main_class(manifest: &str) -> Option<String> {
+    manifest
+        .lines()
+        .find_map(|line| line.strip_prefix("Main-Class:"))
+        .map(|s| s.trim().to_owned())
+}
+
+fn loader_version_in_zip(names: &[String], loader: LoaderKind) -> Option<LoaderVersion> {
+    let prefix = match loader {
+        LoaderKind::Fabric => "META-INF/jars/fabric-loader-",
+        LoaderKind::Quilt => "META-INF/jars/quilt-loader-",
+        _ => return None,
     };
-    let version = zip
-        .by_name("version.json")
-        .ok()
-        .and_then(|entry| {
-            let mut text = String::new();
-            entry.take(SMALL_JSON).read_to_string(&mut text).ok()?;
-            serde_json::from_str::<VersionJson>(&text).ok()
-        })
-        .and_then(|json| McVersion::parse(&json.id).ok());
-    (loader, version)
+    names.iter().find_map(|n| {
+        let rest = n.strip_prefix(prefix)?.strip_suffix(".jar")?;
+        LoaderVersion::parse(rest).ok()
+    })
+}
+
+/// Tên jar của Fabric từ trang tải đôi khi có dạng `fabric-server-mc.<mc>-loader.<loader>-launcher.<ver>.jar`.
+fn parse_fabric_jar_name(name: &str) -> (Option<McVersion>, Option<LoaderVersion>) {
+    let Some(rest) = name.strip_prefix("fabric-server-mc.") else {
+        return (None, None);
+    };
+    let Some((mc_s, tail)) = rest.split_once("-loader.") else {
+        return (None, None);
+    };
+    let lv_s = tail
+        .split_once("-launcher.")
+        .map(|(lv, _)| lv)
+        .unwrap_or(tail.trim_end_matches(".jar"));
+    (McVersion::parse(mc_s).ok(), LoaderVersion::parse(lv_s).ok())
+}
+
+fn detect_args_file(
+    dir: &Path,
+) -> Option<(LoaderKind, Option<LoaderVersion>, Option<McVersion>, Launch)> {
+    if let Some((ver, launch)) = scan_args_dir(dir, "libraries/net/neoforged/neoforge") {
+        let mc = neoforge_minecraft(&ver).and_then(|s| McVersion::parse(&s).ok());
+        let lv = LoaderVersion::parse(&ver).ok();
+        return Some((LoaderKind::NeoForge, lv, mc, launch));
+    }
+    if let Some((ver, launch)) = scan_args_dir(dir, "libraries/net/minecraftforge/forge") {
+        let (mc, lv) = match ver.split_once('-') {
+            Some((mc_s, forge_s)) => (
+                McVersion::parse(mc_s).ok(),
+                LoaderVersion::parse(forge_s).ok(),
+            ),
+            None => (None, LoaderVersion::parse(&ver).ok()),
+        };
+        return Some((LoaderKind::Forge, lv, mc, launch));
+    }
+    None
+}
+
+fn scan_args_dir(dir: &Path, sub: &str) -> Option<(String, Launch)> {
+    let mut versions: Vec<String> = std::fs::read_dir(dir.join(sub))
+        .ok()?
+        .flatten()
+        .filter(|e| e.file_type().is_ok_and(|k| k.is_dir()))
+        .filter_map(|e| e.file_name().into_string().ok())
+        .collect();
+    versions.sort();
+    for ver in versions.into_iter().rev() {
+        let folder = dir.join(sub).join(&ver);
+        if (folder.join("unix_args.txt").is_file() || folder.join("win_args.txt").is_file())
+            && let Ok(path) = ArgsFilePath::parse(&format!("{sub}/{ver}/{{os}}_args.txt"))
+        {
+            return Some((ver, Launch::ArgsFile(path)));
+        }
+    }
+    None
+}
+
+fn detect_mc_from_dirs(dir: &Path) -> Option<McVersion> {
+    let mut dirs: Vec<String> = std::fs::read_dir(dir.join("versions"))
+        .ok()?
+        .flatten()
+        .filter(|e| e.file_type().is_ok_and(|k| k.is_dir()))
+        .filter_map(|e| e.file_name().into_string().ok())
+        .collect();
+    dirs.sort();
+    dirs.into_iter()
+        .rev()
+        .find_map(|d| McVersion::parse(&d).ok())
+}
+
+fn detect_loader_from_dirs(dir: &Path, loader: LoaderKind) -> Option<LoaderVersion> {
+    let sub = match loader {
+        LoaderKind::Fabric => "libraries/net/fabricmc/fabric-loader",
+        LoaderKind::Quilt => "libraries/org/quiltmc/quilt-loader",
+        _ => return None,
+    };
+    let mut dirs: Vec<String> = std::fs::read_dir(dir.join(sub))
+        .ok()?
+        .flatten()
+        .filter(|e| e.file_type().is_ok_and(|k| k.is_dir()))
+        .filter_map(|e| e.file_name().into_string().ok())
+        .collect();
+    dirs.sort();
+    dirs.into_iter()
+        .rev()
+        .find_map(|d| LoaderVersion::parse(&d).ok())
 }
 
 #[cfg(test)]

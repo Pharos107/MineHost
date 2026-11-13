@@ -24,6 +24,8 @@ pub struct ServerView {
     pub installing: Option<Installing>,
     pub broken: Option<BrokenReason>,
     pub status: Option<Status>,
+    /// Thư mục server có `user_jvm_args.txt` không rỗng mà MineHost không đọc.
+    pub ignored_jvm_args: bool,
 }
 
 /// Các cài đặt sửa được trong tab "Cài đặt server". Có hiệu lực từ lần bật sau.
@@ -284,6 +286,8 @@ impl App {
 
     fn ready_view(&self, spec: InstanceSpec) -> ServerView {
         let status = self.supervisor(spec.id).status();
+        let ignored_jvm_args =
+            crate::import::detect::has_ignored_jvm_args(&self.store.paths(spec.id).server_dir);
         ServerView {
             id: spec.id,
             state: status.state,
@@ -291,6 +295,7 @@ impl App {
             installing: None,
             broken: None,
             status: Some(status),
+            ignored_jvm_args,
         }
     }
 }
@@ -341,6 +346,7 @@ fn installing_view(id: ServerId, info: Installing) -> ServerView {
         installing: Some(info),
         broken: None,
         status: None,
+        ignored_jvm_args: false,
     }
 }
 
@@ -352,5 +358,6 @@ fn broken_view(id: ServerId, reason: BrokenReason) -> ServerView {
         installing: None,
         broken: Some(reason),
         status: None,
+        ignored_jvm_args: false,
     }
 }

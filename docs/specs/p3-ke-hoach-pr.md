@@ -23,7 +23,7 @@ chính PR ấy.
 | 09 | Job tạo server có loader | Đã merge | [#73](https://github.com/Pharos107/MineHost/pull/73) |
 | 10 | Wizard chọn kiểu server và loader | Đang chờ CI | [#74](https://github.com/Pharos107/MineHost/pull/74) |
 | 11 | Tích hợp mỗi loader trên Windows và Linux | Chưa bắt đầu | |
-| 12 | Nhập server có sẵn có mod | Chưa bắt đầu | |
+| 12 | Nhập server có sẵn có mod | Đang chờ CI | [#76](https://github.com/Pharos107/MineHost/pull/76) |
 | 13 | Chọn Java cho từng server | Chưa bắt đầu | |
 | 14–21 | Nhóm C · Modrinth và trang Mod | Chưa bắt đầu | |
 | 22–25 | Nhóm D · Modpack Modrinth, `v0.4.0` | Chưa bắt đầu | |

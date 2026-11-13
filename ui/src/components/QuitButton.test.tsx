@@ -7,7 +7,7 @@ import type { Server } from "../api/client";
 import { QuitButton } from "./QuitButton";
 
 function server(id: string, state: Server["state"]): Server {
-  return { id, name: id, state, eula_accepted: true, restart_pending: false, slow_start: false };
+  return { id, name: id, state, eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false };
 }
 
 /** Giả lập controller: nhận lệnh Thoát xong thì web còn trả lời một lần rồi tắt hẳn. */
