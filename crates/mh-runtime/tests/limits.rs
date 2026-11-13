@@ -23,7 +23,10 @@ async fn exit_of(spec: ProcessSpec) -> Exit {
     let proc = rt.spawn(spec).await.unwrap();
     // Ngừng đọc log cũng không sao: kênh không giới hạn, pipe vẫn được đọc.
     drop(proc.control);
-    tokio::time::timeout(WAIT, proc.exit).await.unwrap().unwrap()
+    tokio::time::timeout(WAIT, proc.exit)
+        .await
+        .unwrap()
+        .unwrap()
 }
 
 #[tokio::test]

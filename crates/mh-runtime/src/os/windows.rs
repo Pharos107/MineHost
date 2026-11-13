@@ -12,7 +12,9 @@ use std::io;
 use std::os::windows::io::RawHandle;
 
 use windows_sys::Win32::Foundation::{CloseHandle, HANDLE, INVALID_HANDLE_VALUE};
-use windows_sys::Win32::System::IO::{CreateIoCompletionPort, GetQueuedCompletionStatus, OVERLAPPED};
+use windows_sys::Win32::System::IO::{
+    CreateIoCompletionPort, GetQueuedCompletionStatus, OVERLAPPED,
+};
 use windows_sys::Win32::System::JobObjects::{
     AssignProcessToJobObject, CreateJobObjectW, JOB_OBJECT_LIMIT_ACTIVE_PROCESS,
     JOB_OBJECT_LIMIT_JOB_MEMORY, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
@@ -33,6 +35,10 @@ const MSG_JOB_MEMORY_LIMIT: u32 = 10;
 /// Handle Win32 đóng đúng một lần khi drop.
 #[derive(Debug)]
 struct Owned(HANDLE);
+
+// SAFETY: handle kernel của Win32 không gắn với luồng tạo ra nó; dùng và đóng từ luồng khác đều
+// hợp lệ. `Owned` không `Sync` và không cho chép handle, nên chỉ một luồng giữ nó tại một lúc.
+unsafe impl Send for Owned {}
 
 impl Drop for Owned {
     fn drop(&mut self) {
@@ -131,7 +137,8 @@ fn set_limits(job: &Owned, limits: Option<ResourceLimits>) -> io::Result<()> {
 /// Completion port nhận thông báo của job, trong đó có "đã chạm giới hạn bộ nhớ".
 fn watch_port(job: &Owned) -> io::Result<Owned> {
     // SAFETY: `INVALID_HANDLE_VALUE` với port null nghĩa là tạo port mới không gắn file nào.
-    let handle = unsafe { CreateIoCompletionPort(INVALID_HANDLE_VALUE, std::ptr::null_mut(), 0, 1) };
+    let handle =
+        unsafe { CreateIoCompletionPort(INVALID_HANDLE_VALUE, std::ptr::null_mut(), 0, 1) };
     if handle.is_null() {
         return Err(io::Error::last_os_error());
     }
