@@ -190,6 +190,7 @@
     "PORT_IN_USE": "Cổng của server đang bị chương trình khác dùng. Hãy đổi cổng trong mục Cài đặt server.",
     "EULA_NOT_ACCEPTED": "Bạn cần đồng ý EULA của Minecraft rồi bật lại server.",
     "GAME_ERROR": "Game hoặc một plugin bị lỗi. Xem console để biết chi tiết rồi thử khởi động lại.",
+    "MEMORY_LIMIT": "MineHost đã dừng server vì dùng quá giới hạn RAM. Có thể một mod hoặc plugin bị rò bộ nhớ; xem console, hoặc tăng RAM trong mục Cài đặt server.",
     "unknown": "Không rõ nguyên nhân. Xem console để biết chi tiết."
   },
   "eula": {

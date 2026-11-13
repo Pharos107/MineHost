@@ -40,6 +40,7 @@ impl Launcher for FakeLauncher {
                 program: PathBuf::from(env!("CARGO_BIN_EXE_supervisor-fake-mc")),
                 args: self.args.clone(),
                 work_dir: std::env::temp_dir(),
+                limits: None,
             }),
         };
         async move { result }

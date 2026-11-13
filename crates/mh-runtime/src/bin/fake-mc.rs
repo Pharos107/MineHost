@@ -8,6 +8,7 @@
 //! - `--hang-on-stop`: bỏ qua lệnh `stop`, giống server bị treo khi lưu world.
 //! - `--crash-after-ms <n>`: in lỗi hết RAM rồi thoát mã 1 sau `n` mili giây.
 //! - `--slow-start-ms <n>`: chờ `n` mili giây trước khi in dòng `Done`.
+//! - `--alloc-mb <n>`: giữ `n` MB đã ghi dữ liệu trước khi in `Done`, để test giới hạn RAM.
 //! - `--hang-on-save-all` (hoặc `MINEHOST_FAKE_SAVE_ALL_HANG=1`): `save-all flush` không in
 //!   dòng `Saved the game`, để test thời hạn chờ khi sao lưu.
 //!
@@ -32,6 +33,7 @@ fn main() {
     }
     print_banner();
     schedule_crash(flag_number(&args, "--crash-after-ms"));
+    let _held = flag_number(&args, "--alloc-mb").map(alloc_mb);
     if let Some(ms) = flag_number(&args, "--slow-start-ms") {
         std::thread::sleep(Duration::from_millis(ms));
     }
@@ -81,6 +83,13 @@ fn print_banner() {
     println!("[10:00:00 INFO]: Starting minecraft server version fake");
     println!("[10:00:00 INFO]: Xin chào thế giới — tiếng Việt có dấu: ưỡẫ");
     eprintln!("[10:00:00 WARN]: dòng này ra stderr");
+}
+
+/// Ghi vào từng trang để bộ nhớ thật sự được commit, không chỉ được hứa.
+fn alloc_mb(mb: u64) -> Vec<Vec<u8>> {
+    let held: Vec<Vec<u8>> = (0..mb).map(|_| vec![1u8; 1024 * 1024]).collect();
+    println!("[10:00:00 INFO]: allocated {mb} MB");
+    held
 }
 
 fn schedule_crash(after_ms: Option<u64>) {

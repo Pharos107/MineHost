@@ -17,6 +17,7 @@ fn installer(dir: &std::path::Path, args: &[&str]) -> ProcessSpec {
         program: PathBuf::from(env!("CARGO_BIN_EXE_fake-mc")),
         args: all,
         work_dir: dir.to_path_buf(),
+        limits: None,
     }
 }
 

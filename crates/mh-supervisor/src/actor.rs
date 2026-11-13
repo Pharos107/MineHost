@@ -4,7 +4,9 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use mh_core::state::is_done_line;
-use mh_core::{ConsoleStream, ServerEvent, ServerState, diagnose, parse_log_line, transition};
+use mh_core::{
+    ConsoleStream, CrashHint, ServerEvent, ServerState, diagnose, parse_log_line, transition,
+};
 use mh_runtime::{Exit, OutputLine, ProcessControl, ProcessRuntime, RunningProcess};
 use time::OffsetDateTime;
 use tokio::sync::{broadcast, mpsc, oneshot, watch};
@@ -30,7 +32,7 @@ enum Wake {
     Command(Option<Command>),
     Line(OutputLine),
     OutputClosed,
-    Exited(Option<i32>),
+    Exited(Exit),
     StopTimeout,
     RestartDue,
     SlowStart,
@@ -91,7 +93,7 @@ impl<L: Launcher> Actor<L> {
                         live.output = None;
                     }
                 }
-                Wake::Exited(code) => self.on_exit(code).await,
+                Wake::Exited(exit) => self.on_exit(exit).await,
                 Wake::StopTimeout => self.on_stop_timeout(),
                 Wake::RestartDue => self.on_restart_due().await,
                 Wake::SlowStart => self.on_slow_start(),
@@ -266,7 +268,7 @@ impl<L: Launcher> Actor<L> {
         }
     }
 
-    async fn on_exit(&mut self, code: Option<i32>) {
+    async fn on_exit(&mut self, exit: Exit) {
         // Đọc nốt các dòng còn trong kênh, để thông tin crash có đủ log cuối.
         if let Some(mut live) = self.live.take()
             && let Some(output) = live.output.as_mut()
@@ -295,13 +297,19 @@ impl<L: Launcher> Actor<L> {
             }
             return;
         }
-        self.on_crash(code);
+        self.on_crash(exit);
         self.set_state(next);
     }
 
-    fn on_crash(&mut self, code: Option<i32>) {
+    fn on_crash(&mut self, exit: Exit) {
+        let code = exit.code;
         let last_lines = self.console.tail(CRASH_TAIL);
-        let hint = diagnose(&last_lines);
+        // OS biết chắc lý do; log chỉ là đoán (spec P3, mục 3.8).
+        let hint = if exit.memory_limit_hit {
+            Some(CrashHint::MemoryLimit)
+        } else {
+            diagnose(&last_lines)
+        };
         tracing::warn!(?code, ?hint, "server crash");
         self.status.crash = Some(Arc::new(CrashInfo {
             hint,
@@ -314,7 +322,8 @@ impl<L: Launcher> Actor<L> {
         self.crashes.retain(|t| now.duration_since(*t) < window);
         let delay = self.config.restart_delays.get(self.crashes.len()).copied();
         match delay {
-            Some(delay) if self.launcher.restart_on_crash() => {
+            // Bật lại cũng sẽ chạm giới hạn lần nữa.
+            Some(delay) if self.launcher.restart_on_crash() && !exit.memory_limit_hit => {
                 self.crashes.push_back(now);
                 self.restart_at = Some(now + delay);
             }
@@ -382,10 +391,13 @@ async fn recv_line(output: Option<&mut mpsc::UnboundedReceiver<OutputLine>>) -> 
     }
 }
 
-async fn wait_exit(exit: Option<&mut oneshot::Receiver<Exit>>) -> Option<i32> {
+async fn wait_exit(exit: Option<&mut oneshot::Receiver<Exit>>) -> Exit {
     match exit {
         // Kênh đóng mà không có kết quả nghĩa là task theo dõi đã mất: coi như process đã thoát.
-        Some(rx) => rx.await.ok().and_then(|e| e.code),
+        Some(rx) => rx.await.unwrap_or(Exit {
+            code: None,
+            memory_limit_hit: false,
+        }),
         None => std::future::pending().await,
     }
 }

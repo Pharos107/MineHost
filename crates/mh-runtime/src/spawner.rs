@@ -14,11 +14,13 @@ use tokio::runtime::Handle;
 use tokio::sync::oneshot;
 
 use crate::ProcessSpec;
-use crate::os::Guard;
+use crate::os::{Guard, ProcessGuard};
+
+type Spawned = (Child, ProcessGuard);
 
 struct Request {
     spec: ProcessSpec,
-    reply: oneshot::Sender<io::Result<Child>>,
+    reply: oneshot::Sender<io::Result<Spawned>>,
 }
 
 #[derive(Debug)]
@@ -55,7 +57,7 @@ impl Spawner {
         Ok(Self { tx })
     }
 
-    pub(crate) async fn spawn(&self, spec: ProcessSpec) -> io::Result<Child> {
+    pub(crate) async fn spawn(&self, spec: ProcessSpec) -> io::Result<Spawned> {
         let stopped = || io::Error::other("luồng spawner đã dừng");
         let (reply, rx) = oneshot::channel();
         self.tx
@@ -65,7 +67,7 @@ impl Spawner {
     }
 }
 
-fn spawn_one(guard: &Guard, spec: &ProcessSpec) -> io::Result<Child> {
+fn spawn_one(guard: &Guard, spec: &ProcessSpec) -> io::Result<Spawned> {
     let mut cmd = Command::new(&spec.program);
     cmd.args(&spec.args)
         .current_dir(&spec.work_dir)
@@ -75,11 +77,14 @@ fn spawn_one(guard: &Guard, spec: &ProcessSpec) -> io::Result<Child> {
         .kill_on_drop(false);
     guard.prepare(&mut cmd);
     let mut child = cmd.spawn()?;
-    if let Err(e) = guard.adopt(&child) {
-        // Không gắn được thì process có thể sống sót sau controller: không chạy nó.
-        let _ = child.start_kill();
-        return Err(e);
-    }
+    let process_guard = match guard.adopt(&child, spec.limits) {
+        Ok(process_guard) => process_guard,
+        Err(e) => {
+            // Không gắn được thì process có thể sống sót sau controller: không chạy nó.
+            let _ = child.start_kill();
+            return Err(e);
+        }
+    };
     // Ghi log mọi lần spawn, để giải thích được với người dùng khi antivirus hỏi.
     tracing::info!(
         program = %spec.program.display(),
@@ -87,5 +92,5 @@ fn spawn_one(guard: &Guard, spec: &ProcessSpec) -> io::Result<Child> {
         pid = child.id(),
         "đã chạy process server"
     );
-    Ok(child)
+    Ok((child, process_guard))
 }
