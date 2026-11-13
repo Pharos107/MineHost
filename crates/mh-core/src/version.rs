@@ -282,11 +282,20 @@ mod tests {
 
     #[test]
     fn loader_version_accepts_real_versions() {
-        for ok in ["0.16.9", "21.4.140", "26.1.2.76-beta", "47.3.0", "1.20.1-47.3.0", "0.27.1+mc"] {
+        for ok in [
+            "0.16.9",
+            "21.4.140",
+            "26.1.2.76-beta",
+            "47.3.0",
+            "1.20.1-47.3.0",
+            "0.27.1+mc",
+        ] {
             assert_eq!(LoaderVersion::parse(ok).unwrap().as_str(), ok);
         }
-        for bad in ["", "-1", "1.0-", "1 0", "../1", "1/2", "1.0
-"] {
+        for bad in [
+            "", "-1", "1.0-", "1 0", "../1", "1/2", "1.0
+",
+        ] {
             assert!(LoaderVersion::parse(bad).is_err(), "{bad:?}");
         }
     }

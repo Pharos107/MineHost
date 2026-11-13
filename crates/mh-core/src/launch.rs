@@ -115,8 +115,8 @@ mod tests {
 
     #[test]
     fn accepts_installer_paths() {
-        let p = ArgsFilePath::parse("libraries/net/neoforged/neoforge/21.4.140/{os}_args.txt")
-            .unwrap();
+        let p =
+            ArgsFilePath::parse("libraries/net/neoforged/neoforge/21.4.140/{os}_args.txt").unwrap();
         assert_eq!(
             p.for_os(ArgsOs::Unix),
             "libraries/net/neoforged/neoforge/21.4.140/unix_args.txt"

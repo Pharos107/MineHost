@@ -49,7 +49,10 @@ impl TryFrom<RawLaunch> for LaunchSection {
             (LaunchKindName::Jar, None) => LaunchMode::Jar,
             (LaunchKindName::ArgsFile, Some(path)) => LaunchMode::ArgsFile(path),
             (LaunchKindName::Jar, Some(_)) => {
-                return Err(InvalidValue::new("LaunchSection", "`jar` không có `args_file`"));
+                return Err(InvalidValue::new(
+                    "LaunchSection",
+                    "`jar` không có `args_file`",
+                ));
             }
             (LaunchKindName::ArgsFile, None) => {
                 return Err(InvalidValue::new("LaunchSection", "thiếu `args_file`"));
@@ -118,7 +121,10 @@ impl ContentId {
     pub fn parse(s: &str) -> Result<Self, InvalidValue> {
         let allowed = |c: char| c.is_ascii_alphanumeric() || matches!(c, '-' | '_');
         if s.is_empty() || s.len() > 64 || !s.chars().all(allowed) {
-            return Err(InvalidValue::new("ContentId", "chỉ được có chữ, số, - và _"));
+            return Err(InvalidValue::new(
+                "ContentId",
+                "chỉ được có chữ, số, - và _",
+            ));
         }
         Ok(Self(s.to_owned()))
     }
@@ -139,7 +145,10 @@ impl UpstreamText {
     pub fn parse(s: &str) -> Result<Self, InvalidValue> {
         let trimmed = s.trim();
         if trimmed.is_empty() || trimmed.chars().count() > Self::MAX_CHARS {
-            return Err(InvalidValue::new("UpstreamText", "rỗng hoặc dài quá 200 ký tự"));
+            return Err(InvalidValue::new(
+                "UpstreamText",
+                "rỗng hoặc dài quá 200 ký tự",
+            ));
         }
         if trimmed.chars().any(char::is_control) {
             return Err(InvalidValue::new("UpstreamText", "có ký tự điều khiển"));

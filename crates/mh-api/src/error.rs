@@ -248,12 +248,27 @@ mod tests {
             (ErrorCode::ContentIncompatible, StatusCode::CONFLICT),
             (ErrorCode::DependencyMissing, StatusCode::CONFLICT),
             (ErrorCode::CurseforgeFilesPending, StatusCode::CONFLICT),
-            (ErrorCode::CurseforgeUnavailable, StatusCode::SERVICE_UNAVAILABLE),
-            (ErrorCode::UpstreamRateLimited, StatusCode::TOO_MANY_REQUESTS),
-            (ErrorCode::UploadHashMismatch, StatusCode::UNPROCESSABLE_ENTITY),
+            (
+                ErrorCode::CurseforgeUnavailable,
+                StatusCode::SERVICE_UNAVAILABLE,
+            ),
+            (
+                ErrorCode::UpstreamRateLimited,
+                StatusCode::TOO_MANY_REQUESTS,
+            ),
+            (
+                ErrorCode::UploadHashMismatch,
+                StatusCode::UNPROCESSABLE_ENTITY,
+            ),
             (ErrorCode::ModpackInvalid, StatusCode::UNPROCESSABLE_ENTITY),
-            (ErrorCode::DownloadHostNotAllowed, StatusCode::UNPROCESSABLE_ENTITY),
-            (ErrorCode::LoaderInstallFailed, StatusCode::INTERNAL_SERVER_ERROR),
+            (
+                ErrorCode::DownloadHostNotAllowed,
+                StatusCode::UNPROCESSABLE_ENTITY,
+            ),
+            (
+                ErrorCode::LoaderInstallFailed,
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
         ];
         for (code, status) in cases {
             assert_eq!(status_for(code), status, "{code}");

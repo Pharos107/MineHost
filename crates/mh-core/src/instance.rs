@@ -9,14 +9,16 @@ use toml::Table;
 use crate::backup_schedule::{BackupSchedule, DEFAULT_KEEP};
 use crate::error::{ErrorCode, InvalidValue};
 use crate::ids::{GamePort, ServerId, ServerName};
+use crate::launch::Launch;
 use crate::memory::MemoryLimits;
 use crate::schedule::DailyTime;
-use crate::launch::Launch;
 use crate::version::{LoaderKind, LoaderVersion, McVersion};
 
 mod sections;
 
-pub use sections::{ContentId, LaunchMode, LaunchSection, ModpackSection, ModpackSource, UpstreamText};
+pub use sections::{
+    ContentId, LaunchMode, LaunchSection, ModpackSection, ModpackSource, UpstreamText,
+};
 
 /// Bản schema mà MineHost này đọc và ghi.
 pub const CURRENT_SCHEMA: u32 = 1;
