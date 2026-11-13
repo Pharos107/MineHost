@@ -19,7 +19,7 @@ chính PR ấy.
 | 05 | SHA-512, danh sách host, 429 | Đã merge | [#67](https://github.com/Pharos107/MineHost/pull/67) |
 | 06 | Fabric và Quilt | Đã merge | [#69](https://github.com/Pharos107/MineHost/pull/69) |
 | 07 | Forge | Đã merge | [#71](https://github.com/Pharos107/MineHost/pull/71) |
-| 08 | NeoForge | Chưa bắt đầu | |
+| 08 | NeoForge | Đã merge | [#72](https://github.com/Pharos107/MineHost/pull/72) |
 | 09 | Job tạo server có loader | Chưa bắt đầu | |
 | 10 | Wizard chọn kiểu server và loader | Chưa bắt đầu | |
 | 11 | Tích hợp mỗi loader trên Windows và Linux | Chưa bắt đầu | |
