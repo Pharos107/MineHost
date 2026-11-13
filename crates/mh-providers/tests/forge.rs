@@ -32,10 +32,12 @@ async fn forge() -> (MockServer, tempfile::TempDir, Forge) {
             .await;
     }
     // Mọi file `.sha256` của installer trả cùng một hash; test chỉ cần đúng định dạng.
-    Mock::given(wiremock::matchers::path_regex(r"^/maven/.+-installer\.jar\.sha256$"))
-        .respond_with(ResponseTemplate::new(200).set_body_string(SHA))
-        .mount(&server)
-        .await;
+    Mock::given(wiremock::matchers::path_regex(
+        r"^/maven/.+-installer\.jar\.sha256$",
+    ))
+    .respond_with(ResponseTemplate::new(200).set_body_string(SHA))
+    .mount(&server)
+    .await;
     let tmp = tempfile::tempdir().unwrap();
     let mut config = NetConfig::new(tmp.path());
     config.retry_delays = vec![Duration::from_millis(1)];
@@ -64,7 +66,10 @@ async fn versions_start_at_1_12_2() {
         ("1.7.10", datetime!(2014-05-14 17:29 UTC)),
     ]
     .into_iter()
-    .map(|(id, release_time)| Release { id: v(id), release_time })
+    .map(|(id, release_time)| Release {
+        id: v(id),
+        release_time,
+    })
     .collect();
     let got: Vec<String> = forge
         .versions(&releases)

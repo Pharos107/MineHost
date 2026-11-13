@@ -107,7 +107,10 @@ impl Forge {
     }
 
     /// Bản Forge cho `mc`, mới nhất trước; bản `recommended` (không có thì `latest`) đứng đầu.
-    pub async fn loader_versions(&self, mc: &McVersion) -> Result<Vec<LoaderRelease>, ProviderError> {
+    pub async fn loader_versions(
+        &self,
+        mc: &McVersion,
+    ) -> Result<Vec<LoaderRelease>, ProviderError> {
         let url = format!("{}/maven-metadata.xml", self.maven_base);
         let body = self.http.get_bytes(&url, MAX_METADATA).await?;
         let xml = String::from_utf8_lossy(&body);
@@ -140,7 +143,10 @@ impl Forge {
         };
         let era = era(mc).ok_or_else(not_found)?;
         let releases = self.loader_versions(mc).await?;
-        let loader = pick(&releases, wanted).ok_or_else(not_found)?.version.clone();
+        let loader = pick(&releases, wanted)
+            .ok_or_else(not_found)?
+            .version
+            .clone();
         let full = format!("{mc}-{loader}");
         let url = format!("{0}/{full}/forge-{full}-installer.jar", self.maven_base);
         check_loader_url(SOURCE, &self.hosts, &url)?;
@@ -178,7 +184,9 @@ impl Forge {
         text.split_whitespace()
             .next()
             .and_then(Checksum::sha256)
-            .ok_or_else(|| ProviderError::invalid(SOURCE, "file .sha256 của installer sai định dạng"))
+            .ok_or_else(|| {
+                ProviderError::invalid(SOURCE, "file .sha256 của installer sai định dạng")
+            })
     }
 }
 
@@ -191,7 +199,9 @@ fn launch_for(era: Era, full: &str) -> Result<Launch, ProviderError> {
         }
         Era::ArgsFile => {
             let path = format!("libraries/net/minecraftforge/forge/{full}/{{os}}_args.txt");
-            Ok(Launch::ArgsFile(ArgsFilePath::parse(&path).map_err(|_| bad())?))
+            Ok(Launch::ArgsFile(
+                ArgsFilePath::parse(&path).map_err(|_| bad())?,
+            ))
         }
     }
 }
