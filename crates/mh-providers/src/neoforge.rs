@@ -88,7 +88,10 @@ impl NeoForge {
 
     /// Bản NeoForge cho `mc`, mới nhất trước. Bản `-beta` chỉ có mặt khi `mc` chưa có bản ổn định
     /// nào (NeoForge cho 26.1 và 26.1.1 chưa từng ra khỏi beta).
-    pub async fn loader_versions(&self, mc: &McVersion) -> Result<Vec<LoaderRelease>, ProviderError> {
+    pub async fn loader_versions(
+        &self,
+        mc: &McVersion,
+    ) -> Result<Vec<LoaderRelease>, ProviderError> {
         let all = self.all_versions().await?;
         let mut releases: Vec<LoaderRelease> = all
             .iter()
@@ -119,7 +122,10 @@ impl NeoForge {
             })?
             .version
             .clone();
-        let url = format!("{0}/{loader}/neoforge-{loader}-installer.jar", self.maven_base);
+        let url = format!(
+            "{0}/{loader}/neoforge-{loader}-installer.jar",
+            self.maven_base
+        );
         check_loader_url(SOURCE, &self.hosts, &url)?;
         let checksum = self.installer_sha256(&url).await?;
         let jar = installer_path(SOURCE, "neoforge-installer", loader.as_str())?;
@@ -148,7 +154,10 @@ impl NeoForge {
         let url = format!("{}/maven-metadata.xml", self.maven_base);
         let body = self.http.get_bytes(&url, MAX_METADATA).await?;
         let xml = String::from_utf8_lossy(&body);
-        Ok(maven_versions(&xml).into_iter().map(str::to_owned).collect())
+        Ok(maven_versions(&xml)
+            .into_iter()
+            .map(str::to_owned)
+            .collect())
     }
 
     async fn installer_sha256(&self, jar_url: &str) -> Result<Checksum, ProviderError> {
@@ -160,7 +169,9 @@ impl NeoForge {
         text.split_whitespace()
             .next()
             .and_then(Checksum::sha256)
-            .ok_or_else(|| ProviderError::invalid(SOURCE, "file .sha256 của installer sai định dạng"))
+            .ok_or_else(|| {
+                ProviderError::invalid(SOURCE, "file .sha256 của installer sai định dạng")
+            })
     }
 }
 

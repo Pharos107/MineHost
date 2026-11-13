@@ -23,13 +23,15 @@ async fn neoforge() -> (MockServer, tempfile::TempDir, NeoForge) {
         .respond_with(ResponseTemplate::new(200).set_body_string(fixture("maven-metadata.xml")))
         .mount(&server)
         .await;
-    Mock::given(path("/maven/21.4.161/neoforge-21.4.161-installer.jar.sha256"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_string(fixture("neoforge-21.4.161-installer.jar.sha256")),
-        )
-        .mount(&server)
-        .await;
+    Mock::given(path(
+        "/maven/21.4.161/neoforge-21.4.161-installer.jar.sha256",
+    ))
+    .respond_with(
+        ResponseTemplate::new(200)
+            .set_body_string(fixture("neoforge-21.4.161-installer.jar.sha256")),
+    )
+    .mount(&server)
+    .await;
     let tmp = tempfile::tempdir().unwrap();
     let mut config = NetConfig::new(tmp.path());
     config.retry_delays = vec![Duration::from_millis(1)];
@@ -54,7 +56,10 @@ async fn versions_follow_mapping() {
         ("1.20.1", datetime!(2023-06-12 13:25 UTC)),
     ]
     .into_iter()
-    .map(|(id, release_time)| Release { id: v(id), release_time })
+    .map(|(id, release_time)| Release {
+        id: v(id),
+        release_time,
+    })
     .collect();
     let got: Vec<String> = neo
         .versions(&releases)
@@ -91,7 +96,10 @@ async fn plan_runs_from_args_file() {
         file.url
     );
     assert_eq!(file.checksum.hex().len(), 64);
-    assert_eq!(file.dest, ".minehost-install/neoforge-installer-21.4.161.jar");
+    assert_eq!(
+        file.dest,
+        ".minehost-install/neoforge-installer-21.4.161.jar"
+    );
     assert_eq!(plan.installer.unwrap().args, ["--installServer"]);
     let Launch::ArgsFile(args) = plan.launch else {
         panic!("NeoForge chạy bằng file tham số");
