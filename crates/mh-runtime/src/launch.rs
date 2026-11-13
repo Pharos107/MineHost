@@ -4,6 +4,8 @@ use std::path::PathBuf;
 
 use mh_core::{ArgsOs, Launch, MemoryLimits};
 
+use crate::ResourceLimits;
+
 use crate::ProcessSpec;
 
 /// Java trên Windows ghi ra pipe theo code page của hệ thống; thiếu các cờ này là tiếng Việt
@@ -56,6 +58,7 @@ impl JavaLaunch {
             program: self.java_bin,
             args,
             work_dir: self.work_dir,
+            limits: Some(ResourceLimits::for_heap_mb(self.memory.max_mb())),
         }
     }
 }

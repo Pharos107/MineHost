@@ -28,6 +28,27 @@ pub struct ProcessSpec {
     pub program: PathBuf,
     pub args: Vec<String>,
     pub work_dir: PathBuf,
+    /// Giới hạn OS áp cho process và mọi process con của nó (spec P3, mục 3.8).
+    pub limits: Option<ResourceLimits>,
+}
+
+/// Windows áp bằng Job Object riêng của process. Linux áp bằng cgroup v2 khi có (PR-04).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ResourceLimits {
+    pub memory_bytes: u64,
+    pub max_processes: u32,
+}
+
+impl ResourceLimits {
+    /// Java thường chỉ có một process; chừa chỗ cho plugin gọi chương trình ngoài.
+    pub const MAX_PROCESSES: u32 = 16;
+
+    pub const fn for_heap_mb(max_heap_mb: u32) -> Self {
+        Self {
+            memory_bytes: mh_core::memory_limit_mb(max_heap_mb) * 1024 * 1024,
+            max_processes: Self::MAX_PROCESSES,
+        }
+    }
 }
 
 /// Một dòng stdout/stderr, đã giải mã UTF-8 kiểu lossy và bỏ ký tự xuống dòng.
@@ -41,6 +62,8 @@ pub struct OutputLine {
 pub struct Exit {
     /// `None` khi process bị kill bằng tín hiệu (Linux).
     pub code: Option<i32>,
+    /// OS đã chặn hoặc kill process vì vượt `ResourceLimits::memory_bytes`.
+    pub memory_limit_hit: bool,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -107,7 +130,7 @@ impl ProcessRuntime {
 
     pub async fn spawn(&self, spec: ProcessSpec) -> Result<RunningProcess, RuntimeError> {
         let program = spec.program.display().to_string();
-        let mut child = self
+        let (mut child, guard) = self
             .spawner
             .spawn(spec)
             .await
@@ -133,7 +156,8 @@ impl ProcessRuntime {
         }
         let (kill_tx, kill_rx) = mpsc::channel(1);
         let (exit_tx, exit) = oneshot::channel();
-        self.handle.spawn(watch(child, kill_rx, readers, exit_tx));
+        self.handle
+            .spawn(watch(child, guard, kill_rx, readers, exit_tx));
         Ok(RunningProcess {
             pid,
             control: ProcessControl {
@@ -199,8 +223,10 @@ async fn write_lines(mut stdin: ChildStdin, mut rx: mpsc::Receiver<String>) {
     }
 }
 
+/// `guard` sống tới khi process thoát: trên Windows nó giữ Job Object riêng của process.
 async fn watch(
     mut child: Child,
+    guard: os::ProcessGuard,
     mut kill_rx: mpsc::Receiver<()>,
     readers: Vec<JoinHandle<()>>,
     exit_tx: oneshot::Sender<Exit>,
@@ -226,5 +252,12 @@ async fn watch(
             None
         }
     };
-    let _ = exit_tx.send(Exit { code });
+    let memory_limit_hit = guard.memory_limit_hit();
+    if memory_limit_hit {
+        tracing::warn!(?code, "process server đã chạm giới hạn RAM");
+    }
+    let _ = exit_tx.send(Exit {
+        code,
+        memory_limit_hit,
+    });
 }
