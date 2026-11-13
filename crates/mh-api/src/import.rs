@@ -81,9 +81,8 @@ pub async fn import(
         loader: body
             .loader
             .as_deref()
-            .map(LoaderKind::parse)
-            .transpose()
-            .map_err(|_| ApiError::invalid("loader"))?,
+            .map(crate::servers::parse_loader)
+            .transpose()?,
         minecraft: body
             .minecraft
             .as_deref()

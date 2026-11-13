@@ -21,6 +21,14 @@ use crate::error::{ApiError, ApiJson, ErrorBody, IdPath};
 
 type ApiResult<T> = Result<T, ApiError>;
 
+/// Loại server từ request. Loại đã biết nhưng bản này chưa cài được cũng trả `INVALID_INPUT`.
+pub(crate) fn parse_loader(s: &str) -> Result<LoaderKind, ApiError> {
+    LoaderKind::parse(s)
+        .ok()
+        .filter(|l| mh_app::sources::installable(*l))
+        .ok_or_else(|| ApiError::invalid("loader"))
+}
+
 #[utoipa::path(get, path = "/api/v1/servers", tag = "servers",
     responses((status = 200, body = [ServerDto])))]
 pub async fn list(State(app): State<Arc<App>>) -> ApiResult<Json<Vec<ServerDto>>> {
@@ -38,7 +46,7 @@ pub async fn create(
 ) -> ApiResult<(StatusCode, Json<CreatedDto>)> {
     let req = CreateRequest {
         name: ServerName::parse(&body.name).map_err(|_| ApiError::invalid("name"))?,
-        loader: LoaderKind::parse(&body.loader).map_err(|_| ApiError::invalid("loader"))?,
+        loader: parse_loader(&body.loader)?,
         minecraft: McVersion::parse(&body.minecraft).map_err(|_| ApiError::invalid("minecraft"))?,
         memory_mb: body.memory_mb.map(memory).transpose()?,
         port: body.port.map(port).transpose()?,

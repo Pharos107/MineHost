@@ -82,6 +82,15 @@ pub fn launch_args(loader: LoaderKind) -> Vec<String> {
     }
 }
 
+/// Loại server tạo hoặc nhập được bằng bản này. `instance.toml` đã đọc được bốn mod loader
+/// (spec P3, PR-01) nhưng phải chờ Job cài loader (PR-09) mới tạo được.
+pub const fn installable(loader: LoaderKind) -> bool {
+    matches!(
+        loader,
+        LoaderKind::Paper | LoaderKind::Vanilla | LoaderKind::Purpur
+    )
+}
+
 pub(crate) fn unsupported(loader: LoaderKind) -> AppError {
     AppError::new(
         ErrorCode::InvalidInput,
