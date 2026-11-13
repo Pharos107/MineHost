@@ -28,10 +28,10 @@ quy tắc code và lộ trình nằm ở [AGENTS.md](../AGENTS.md).
 | [specs/p1-ke-hoach-pr.md](specs/p1-ke-hoach-pr.md) | Kế hoạch PR của P1 |
 | [specs/p1-ket-qua-thu-tay.md](specs/p1-ket-qua-thu-tay.md) | Kết quả thử tay P1 (chưa làm lần chính thức) |
 | [specs/p1-ui-components.md](specs/p1-ui-components.md) | Bộ component giao diện |
-| [specs/p2-nhieu-server-va-van-hanh.md](specs/p2-nhieu-server-va-van-hanh.md) | Spec P2 (đang làm) |
+| [specs/p2-nhieu-server-va-van-hanh.md](specs/p2-nhieu-server-va-van-hanh.md) | Spec P2 (còn PR-34: chạy dài 72 giờ, `v0.3.0`) |
 | [specs/p2-ke-hoach-pr.md](specs/p2-ke-hoach-pr.md) | Kế hoạch PR của P2 kèm bảng tiến độ |
 | [specs/p2-lam-moi-giao-dien.md](specs/p2-lam-moi-giao-dien.md) | Làm mới giao diện các trang chung: thẻ server, bảng màu Đá và cỏ, nút sáng/tối |
-| [specs/p3-mod-va-modpack.md](specs/p3-mod-va-modpack.md) | Spec P3: loader, mod, plugin, modpack (bản nháp, chờ duyệt) |
+| [specs/p3-mod-va-modpack.md](specs/p3-mod-va-modpack.md) | Spec P3: loader, mod, plugin, modpack (đang làm) |
 | [specs/p3-ke-hoach-pr.md](specs/p3-ke-hoach-pr.md) | Kế hoạch PR của P3 |
 | [backlog.md](backlog.md) | Ý tưởng ngoài giai đoạn hiện tại |
 | [ra-soat/2026-11-11-kien-truc.md](ra-soat/2026-11-11-kien-truc.md) | Rà soát kiến trúc: điểm yếu, bằng chứng, việc cần làm |

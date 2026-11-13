@@ -3,12 +3,11 @@
 Spec: [p3-mod-va-modpack.md](p3-mod-va-modpack.md). P3 chia thành 38 PR trong 8 nhóm. Mỗi PR làm một
 việc, khoảng 400 dòng trở xuống (không tính fixture và code sinh tự động), có test, CI xanh mới merge.
 
-Nếu duyệt đề xuất chia hai bản phát hành (spec mục 11): nhóm A–D ra `v0.4.0` (PR-25), nhóm E–H ra
-`v0.5.0` (PR-38).
+Hai bản phát hành (spec mục 11): nhóm A–D ra `v0.4.0` (PR-25), nhóm E–H ra `v0.5.0` (PR-38).
 
 ## Tiến độ
 
-Cập nhật 2026-11-13. Chưa bắt đầu: spec đang chờ duyệt. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-13, spec đã duyệt. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |

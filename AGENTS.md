@@ -11,16 +11,17 @@ Spec gốc đã lệch với code ở vài chỗ; danh sách chỗ lệch nằm 
 giai đoạn trong `docs/specs/` và ADR trong `docs/adr/` là bản đúng. Mục lục mọi tài liệu:
 [docs/README.md](docs/README.md).
 
-## Giai đoạn hiện tại: P2 — Nhiều server, backup, quản lý
+## Giai đoạn hiện tại: P3 — Mod, plugin và modpack
 
-- [Spec P2](docs/specs/p2-nhieu-server-va-van-hanh.md) (đã duyệt) và
-  [kế hoạch PR](docs/specs/p2-ke-hoach-pr.md): 34 PR, làm theo thứ tự nhóm A → I. Tiến độ từng PR
-  ghi ở đầu kế hoạch PR; PR nào merge thì sửa bảng đó trong chính PR ấy.
+- [Spec P3](docs/specs/p3-mod-va-modpack.md) (đã duyệt) và
+  [kế hoạch PR](docs/specs/p3-ke-hoach-pr.md): 38 PR, nhóm A → H, hai bản phát hành `v0.4.0` (sau
+  nhóm D) và `v0.5.0`. Tiến độ ghi ở đầu kế hoạch PR; PR nào merge thì sửa bảng đó trong chính PR ấy.
+- Còn mở từ P2: PR-34 (10 server chạy 72 giờ, phát hành `v0.3.0`), xem
+  [kế hoạch PR P2](docs/specs/p2-ke-hoach-pr.md). Spec P2: [p2-nhieu-server-va-van-hanh.md](docs/specs/p2-nhieu-server-va-van-hanh.md).
 - Còn mở từ P1: lần thử tay 5 phút trên Windows mới cài
-  ([kết quả thử tay](docs/specs/p1-ket-qua-thu-tay.md)). Lỗi tìm được ở đó sửa trước việc của P2.
-- P1 đã xong (v0.2.0): [spec](docs/specs/p1-mot-server-chay-duoc.md),
-  [kế hoạch PR](docs/specs/p1-ke-hoach-pr.md). Quyết định từ P1 vẫn giữ: chưa dùng SQLite; chỉ dùng
-  Java do MineHost tải; icon khay chỉ có trên Windows; xóa server là chuyển vào `trash/`.
+  ([kết quả thử tay](docs/specs/p1-ket-qua-thu-tay.md)). Lỗi tìm được ở đó sửa trước việc của P3.
+- Quyết định từ P1, P2 vẫn giữ: chưa dùng SQLite (ADR 0004); chỉ dùng Java do MineHost tải; icon khay
+  chỉ có trên Windows; xóa server hay file là chuyển vào `trash/`; điều khiển qua console, không RCON.
 
 Chỉ làm việc thuộc giai đoạn hiện tại. Ý tưởng ngoài phạm vi ghi vào
 [docs/backlog.md](docs/backlog.md), không code.

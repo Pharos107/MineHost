@@ -1,6 +1,6 @@
 # Spec P3 — Mod, plugin và modpack
 
-- Trạng thái: **bản nháp, chờ duyệt.** Chưa code gì của P3 trước khi spec này merge.
+- Trạng thái: đã duyệt ngày 2026-11-13, đang làm. Tiến độ từng PR: [kế hoạch PR](p3-ke-hoach-pr.md#tiến-độ).
 - Ngày: 2026-11-13
 - Spec gốc: "MineHost v2 — Spec kiến trúc (Rust)", phần Providers, Modpack và Lộ trình P3
 - Kế hoạch PR: [p3-ke-hoach-pr.md](p3-ke-hoach-pr.md)
@@ -313,8 +313,7 @@ Không thêm cạnh phụ thuộc mới giữa các crate.
   `version(id)`, `versions_by_hash(sha1[])` (để nhận ra mod "thêm tay" và kiểm tra cập nhật).
   Cache 10 phút cho tìm kiếm, 1 giờ cho project.
 - `curseforge`: `search`, `mod(id)`, `files(mod, loader, mc)`, `files_by_id[]`. Game `432`; lớp
-  `6` (mod), `4471` (modpack), `5` (plugin Bukkit, chỉ dùng để tìm, không cài trong P3: xem câu hỏi
-  mở ở mục 11).
+  `6` (mod), `4471` (modpack), `5` (plugin Bukkit) không dùng trong P3 (mục 11).
 - `modpack`: đọc `.mrpack` và `.zip` của CurseForge bằng `zip`, giải nén `overrides/` rồi
   `server-overrides/` qua `SafeRoot`, bỏ symlink. Trả `PackPlan { loader, minecraft, loader_version,
   files, skipped_client, blocked }`.
@@ -496,23 +495,17 @@ Workflow ghi thời gian cài, thời gian tới `Done` và RSS lớn nhất và
 | Giới hạn RAM kill nhầm server modpack lớn | Công thức rộng tay (gấp 1,5 lần heap cộng 1 GB); đo trong workflow modpack; lý do `memory_limit` hiện rõ |
 | Modpack lớn tải lâu, mạng yếu | Cache theo hash dùng chung; tiếp tục từ file đã có khi chạy lại Job |
 | Runner tự host làm chậm dịch vụ khác trên máy | Giới hạn của unit systemd (mục 3.11), mỗi lần một pack, chạy lúc 04:00 |
-| Phạm vi P3 lớn | Chia thành hai bản phát hành (mục 11) |
+| Phạm vi P3 lớn | Hai bản phát hành `v0.4.0` và `v0.5.0` (mục 11) |
 
-## 11. Quyết định và câu hỏi khi duyệt
-
-Đã chốt với chủ dự án ngày 2026-11-13:
+## 11. Quyết định khi duyệt (2026-11-13)
 
 1. CurseForge dùng key riêng của MineHost nhúng lúc build; người dùng ghi đè được (mục 3.6). Chủ dự
    án tự đăng ký key và đặt secret `MINEHOST_CURSEFORGE_KEY`.
 2. Workflow modpack chạy trên runner tự host ở máy Linux thử nghiệm (mục 3.11).
 3. Giới hạn RAM và số process vào đầu P3; chặn đọc file để backlog (mục 3.8).
-4. PR-34 của P2 (chạy dài 72 giờ, `v0.3.0`) chạy song song với việc viết spec này.
-
-Cần quyết định khi duyệt:
-
-| Câu hỏi | Đề xuất |
-| --- | --- |
-| Chia P3 thành hai bản phát hành? | Có: `v0.4.0` sau nhóm A–D (bốn loader, Modrinth, `.mrpack`); `v0.5.0` sau nhóm E–H (CurseForge, cập nhật, workflow 20 pack). Người dùng có mod sớm hơn vài tuần |
-| Plugin từ CurseForge (lớp Bukkit)? | Không trong P3; plugin chỉ từ Modrinth. Phần lớn plugin trên CurseForge cũng có trên Modrinth hoặc Hangar |
-| Thứ tự loader trong wizard | Fabric, NeoForge, Forge, Quilt (theo số modpack trên Modrinth), Fabric đứng đầu vì nhẹ nhất |
-| User-Agent ghi URL repo private | Giữ; Modrinth chỉ cần một cách liên hệ. Đổi khi repo public hoặc có trang web |
+4. PR-34 của P2 (chạy dài 72 giờ, `v0.3.0`) chạy song song với P3.
+5. P3 chia hai bản phát hành: `v0.4.0` sau nhóm A–D (bốn loader, Modrinth, `.mrpack`), `v0.5.0` sau
+   nhóm E–H (CurseForge, cập nhật, workflow 20 pack).
+6. Plugin chỉ lấy từ Modrinth; không cài plugin Bukkit từ CurseForge trong P3.
+7. Thứ tự loader trong wizard: Fabric, NeoForge, Forge, Quilt.
+8. User-Agent ghi URL repo (mục 5.3); đổi khi repo public hoặc có trang web.
