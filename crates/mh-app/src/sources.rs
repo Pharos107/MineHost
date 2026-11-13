@@ -98,6 +98,11 @@ pub trait ServerCatalog: Send + Sync + 'static {
 }
 
 pub trait JavaSource: Send + Sync + 'static {
+    /// Kiểm tra nhanh xem bản Java đã có sẵn trên đĩa chưa (mặc định true cho nguồn giả lập).
+    fn is_installed(&self, _major: u16) -> bool {
+        true
+    }
+
     fn ensure<'a>(
         &'a self,
         major: u16,
@@ -335,6 +340,10 @@ impl ServerCatalog for OnlineCatalog {
 }
 
 impl JavaSource for JavaManager {
+    fn is_installed(&self, major: u16) -> bool {
+        JavaManager::is_installed(self, major)
+    }
+
     fn ensure<'a>(
         &'a self,
         major: u16,

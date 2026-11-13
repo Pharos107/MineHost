@@ -789,6 +789,11 @@ export interface components {
         PatchServerBody: {
             autostart?: boolean | null;
             backup?: components["schemas"]["BackupSettingsBody"] | null;
+            /**
+             * Format: int32
+             * @description Phiên bản Java chính (`8`, `11`, `17`, `21`, `25`).
+             */
+            java_major?: number | null;
             memory_mb?: components["schemas"]["MemoryDto"] | null;
             name?: string | null;
             /** Format: int32 */

@@ -30,6 +30,7 @@ pub enum JobKind {
     ImportServer,
     Backup,
     Restore,
+    InstallJava,
 }
 
 /// Bước đang làm. UI dịch theo `kind`, ví dụ "Tải Java 21 (48/61 MB)".

@@ -279,7 +279,12 @@
     "restartAtTime": "Restart time {{n}}",
     "restartAtInvalid": "Pick both hour and minute for every time.",
     "restartAtDuplicate": "Two times are the same.",
-    "ignoredJvmArgs": "This server folder contains user_jvm_args.txt, which MineHost ignores in favor of the memory setting below."
+    "ignoredJvmArgs": "This server folder contains user_jvm_args.txt, which MineHost ignores in favor of the memory setting below.",
+    "java": "Java version",
+    "javaHint": "Defaults to the Java version recommended for this Minecraft version. Change it only if a mod or plugin requires another version.",
+    "javaOption": "Java {{major}}",
+    "javaRecommended": "Java {{major}} (recommended)",
+    "javaWarning": "This Minecraft version normally uses Java {{recommended}}. Picking another version may prevent the server from starting."
   },
   "delete": {
     "title": "Delete server",
@@ -382,7 +387,8 @@
       "create_server": "Create server",
       "backup": "Backup",
       "restore": "Restore",
-      "import_server": "Import server"
+      "import_server": "Import server",
+      "install_java": "Install Java"
     },
     "states": {
       "running": "Running",

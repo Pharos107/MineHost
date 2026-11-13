@@ -4,11 +4,13 @@ use std::path::Path;
 use std::sync::Arc;
 
 use mh_core::{ErrorCode, GamePort, Properties, ServerId};
+use mh_java::JavaRuntime;
 use mh_net::CancellationToken;
 use mh_runtime::{JavaLaunch, ProcessSpec};
 use mh_store::ServerStore;
 use mh_supervisor::{LaunchError, Launcher};
 
+use crate::jobs::{JobKind, JobRunner, JobStep};
 use crate::sources::{JavaSource, launch_args};
 use crate::{AppError, PortProbe};
 
@@ -19,6 +21,7 @@ pub(crate) struct AppLauncher {
     pub id: ServerId,
     pub store: ServerStore,
     pub java: Arc<dyn JavaSource>,
+    pub jobs: Arc<JobRunner>,
     pub port_free: PortProbe,
 }
 
@@ -62,14 +65,7 @@ impl AppLauncher {
         if !(self.port_free)(port.get()) {
             return Err(port_in_use(port, None));
         }
-        let java = self
-            .java
-            .ensure(
-                spec.game.java_major,
-                &mut |_, _| {},
-                &CancellationToken::new(),
-            )
-            .await?;
+        let java = self.ensure_java(spec.game.java_major).await?;
         Ok(JavaLaunch {
             java_bin: java.java_bin,
             work_dir: paths.server_dir,
@@ -79,6 +75,38 @@ impl AppLauncher {
             args: launch_args(spec.game.loader),
         }
         .into_spec())
+    }
+
+    /// Đảm bảo bản Java server cần đã có sẵn; nếu thiếu thì chạy qua Job để báo tiến độ tải.
+    async fn ensure_java(&self, major: u16) -> Result<JavaRuntime, AppError> {
+        if self.java.is_installed(major) {
+            return self
+                .java
+                .ensure(major, &mut |_, _| {}, &CancellationToken::new())
+                .await;
+        }
+        let java = Arc::clone(&self.java);
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        self.jobs
+            .spawn(JobKind::InstallJava, Some(self.id), move |ctx| async move {
+                let res = async {
+                    let _permit = ctx.download_permit().await?;
+                    ctx.step(JobStep::DownloadJava { major }, 1, 1);
+                    java.ensure(
+                        major,
+                        &mut |done, total| ctx.bytes(done, total),
+                        &ctx.cancel,
+                    )
+                    .await
+                }
+                .await;
+                let outcome = res.as_ref().map(|_| ()).map_err(|e| {
+                    AppError::new(e.code, e.detail.clone()).with_params(e.params.clone())
+                });
+                let _ = tx.send(res);
+                outcome
+            });
+        rx.await.unwrap_or_else(|_| Err(AppError::cancelled()))
     }
 }
 

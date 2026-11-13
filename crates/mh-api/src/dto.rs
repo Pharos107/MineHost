@@ -195,6 +195,8 @@ pub struct PatchServerBody {
     pub restart_at: Option<Vec<String>>,
     /// Lịch sao lưu tự động; trường nào thiếu thì giữ nguyên.
     pub backup: Option<BackupSettingsBody>,
+    /// Phiên bản Java chính (`8`, `11`, `17`, `21`, `25`).
+    pub java_major: Option<u16>,
 }
 
 /// Sao lưu tự động của một server (spec P2, mục 4.1).
