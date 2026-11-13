@@ -117,6 +117,6 @@ Spec gốc viết trước khi code. Các điểm dưới đây code (và spec g
 | Test dùng `cargo-nextest`, `insta`; API thật chạy hằng đêm; fuzz hằng tuần | `cargo test`; không có workflow chạy theo lịch nào ([ops/kiem-thu-va-ci.md](../ops/kiem-thu-va-ci.md)) |
 | CHANGELOG sinh tự động | Không có file CHANGELOG; ghi chú phát hành do GitHub sinh |
 | Không chạy dưới root hoặc Administrator | Code không kiểm tra điều này |
-| Chỉ tải từ danh sách domain được phép | `mh-net` không có danh sách domain; mỗi provider tự ghi URL. Riêng skin sẽ giới hạn domain (spec P2 mục 8) |
+| Chỉ tải từ danh sách domain được phép | Chỉ khi người gọi truyền `HostAllowlist` (mod, modpack, loader của P3; skin của P2). Mojang, Paper, Purpur, Adoptium vẫn tải theo URL do provider ghi |
 | P2 có bảng `users` | P2 chỉ có một mật khẩu admin, không có tài khoản |
 | Provider có `install(ctx, version)` tự chạy installer của loader | Provider trả `InstallPlan`; `mh-app` chạy installer qua `mh-runtime` ([ADR 0006](../adr/0006-provider-tra-ke-hoach-app-chay-installer.md)) |

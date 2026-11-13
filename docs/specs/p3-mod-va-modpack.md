@@ -108,8 +108,8 @@ như trang Tệp (spec P2, mục 3.6). Chặn bật, tắt, gỡ mod khi server 
 
 ### 3.4 File tải về lưu theo hash, dùng chung giữa các server
 
-Mọi file mod, plugin, installer lưu ở `cache/files/<sha1[0..2]>/<sha1>` sau khi kiểm tra hash, rồi
-chép sang thư mục server. Modpack 300 mod cài cho server thứ hai không phải tải lại. Cache không tự
+Mọi file mod, plugin, installer lưu ở `cache/<thuật toán>/<2 ký tự đầu>/<hash>` sau khi kiểm tra
+hash (cơ chế `mh-net` đã có từ P1), rồi chép sang thư mục server. Modpack 300 mod cài cho server thứ hai không phải tải lại. Cache không tự
 dọn trong P3; trang Cài đặt hiện dung lượng và có nút "Xóa bộ nhớ đệm tải về".
 
 ### 3.5 Mod chỉ chạy ở client tự bị tắt
@@ -299,7 +299,7 @@ Không đổi. Phần dò cgroup v2 nằm ở `mh-runtime/src/os/cgroup.rs`, c�
 
 ### 5.3 `mh-net`
 
-- `Checksum::Sha1`, `Checksum::Sha512`.
+- `Checksum::Sha512` (`Sha1` đã có).
 - `HostAllowlist` gắn vào từng lần tải (mục 3.7); kiểm tra cả sau mỗi lần chuyển hướng.
 - User-Agent chung `MineHost/<phiên bản> (+https://github.com/Pharos107/MineHost)`; Modrinth bắt buộc
   có User-Agent riêng.

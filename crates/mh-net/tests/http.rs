@@ -187,6 +187,7 @@ async fn downloads_and_verifies_hash() {
         checksum: &sum,
         dest: &dest,
         size: None,
+        allowed_hosts: None,
     };
 
     client(&fx.tmp)
@@ -208,6 +209,7 @@ async fn wrong_hash_removes_part_file() {
         checksum: &sum,
         dest: &dest,
         size: None,
+        allowed_hosts: None,
     };
 
     let err = client(&fx.tmp)
@@ -230,6 +232,7 @@ async fn cancel_midway_leaves_nothing() {
         checksum: &sum,
         dest: &dest,
         size: None,
+        allowed_hosts: None,
     };
 
     let err = client(&fx.tmp)
@@ -255,6 +258,7 @@ async fn second_download_comes_from_cache() {
             checksum: &sum,
             dest: &dest,
             size: None,
+            allowed_hosts: None,
         };
         http.download(req, |_, _| {}, &CancellationToken::new())
             .await
@@ -274,6 +278,7 @@ async fn refuses_when_disk_is_almost_full() {
         checksum: &sum,
         dest: &dest,
         size: None,
+        allowed_hosts: None,
     };
 
     let err = http
@@ -296,6 +301,7 @@ async fn md5_download_is_verified() {
         checksum: &bad,
         dest: &dest,
         size: None,
+        allowed_hosts: None,
     };
     let err = client(&fx.tmp)
         .download(req, |_, _| {}, &CancellationToken::new())

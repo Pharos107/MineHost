@@ -30,6 +30,14 @@ pub enum NetError {
     #[error("đã hủy")]
     Cancelled,
 
+    /// URL hoặc một bước chuyển hướng nằm ngoài danh sách host (spec P3, mục 3.7).
+    #[error("không tải từ {host}: host không nằm trong danh sách được phép ({url})")]
+    HostNotAllowed { url: String, host: String },
+
+    /// Nguồn trả 429 và bảo chờ lâu hơn mức MineHost tự chờ.
+    #[error("{url} giới hạn số lần gọi, thử lại sau {retry_after_s} giây")]
+    RateLimited { url: String, retry_after_s: u64 },
+
     #[error("ổ đĩa chỉ còn {available} byte trống")]
     NotEnoughDisk { available: u64 },
 
@@ -57,15 +65,28 @@ impl NetError {
             Self::Download { .. } => ErrorCode::DownloadFailed,
             Self::ChecksumMismatch { .. } => ErrorCode::ChecksumMismatch,
             Self::Cancelled => ErrorCode::JobCancelled,
+            Self::HostNotAllowed { .. } => ErrorCode::DownloadHostNotAllowed,
+            Self::RateLimited { .. } => ErrorCode::UpstreamRateLimited,
             Self::NotEnoughDisk { .. } => ErrorCode::NotEnoughDisk,
             Self::Io { .. } => ErrorCode::Internal,
+        }
+    }
+
+    /// Tham số gửi kèm mã lỗi cho client, ví dụ `retry_after_s` của `UPSTREAM_RATE_LIMITED`.
+    pub fn params(&self) -> serde_json::Value {
+        match self {
+            Self::RateLimited { retry_after_s, .. } => {
+                serde_json::json!({ "retry_after_s": retry_after_s })
+            }
+            Self::HostNotAllowed { host, .. } => serde_json::json!({ "host": host }),
+            _ => serde_json::Value::Object(serde_json::Map::new()),
         }
     }
 
     /// Lỗi do mạng chứ không do dữ liệu: dùng bản cache cũ thay thế được.
     pub(crate) fn is_network(&self) -> bool {
         match self {
-            Self::Unavailable { .. } => true,
+            Self::Unavailable { .. } | Self::RateLimited { .. } => true,
             Self::Status { status, .. } => *status >= 500 || *status == 429,
             _ => false,
         }

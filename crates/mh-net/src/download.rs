@@ -2,12 +2,12 @@ use std::path::{Path, PathBuf};
 
 use md5::Md5;
 use sha1::Sha1;
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha256, Sha512};
 use tokio::io::AsyncWriteExt;
 use tokio_util::sync::CancellationToken;
 
 use crate::client::hex;
-use crate::{HttpClient, NetError};
+use crate::{HostAllowlist, HttpClient, NetError};
 
 /// Dưới mức này thì không tải gì nữa (spec P1, mục 4.5 `NOT_ENOUGH_DISK`).
 pub const MIN_FREE_BYTES: u64 = 1024 * 1024 * 1024;
@@ -20,6 +20,8 @@ pub enum Checksum {
     Md5(String),
     Sha1(String),
     Sha256(String),
+    /// Modrinth ghi cả SHA-1 và SHA-512 cho mỗi file; dùng SHA-512 khi có.
+    Sha512(String),
 }
 
 impl Checksum {
@@ -35,17 +37,22 @@ impl Checksum {
         valid_hex(hex, 64).map(Self::Sha256)
     }
 
+    pub fn sha512(hex: &str) -> Option<Self> {
+        valid_hex(hex, 128).map(Self::Sha512)
+    }
+
     fn algo(&self) -> &'static str {
         match self {
             Self::Md5(_) => "md5",
             Self::Sha1(_) => "sha1",
             Self::Sha256(_) => "sha256",
+            Self::Sha512(_) => "sha512",
         }
     }
 
     pub fn hex(&self) -> &str {
         match self {
-            Self::Md5(h) | Self::Sha1(h) | Self::Sha256(h) => h,
+            Self::Md5(h) | Self::Sha1(h) | Self::Sha256(h) | Self::Sha512(h) => h,
         }
     }
 }
@@ -63,12 +70,15 @@ pub struct Download<'a> {
     pub dest: &'a Path,
     /// Kích thước biết trước (từ API), để hiện tiến độ khi server không gửi `Content-Length`.
     pub size: Option<u64>,
+    /// Có thì URL và mọi bước chuyển hướng phải nằm trong danh sách (spec P3, mục 3.7).
+    pub allowed_hosts: Option<&'a HostAllowlist>,
 }
 
 enum Hasher {
     Md5(Md5),
     Sha1(Sha1),
     Sha256(Sha256),
+    Sha512(Sha512),
 }
 
 impl Hasher {
@@ -77,6 +87,7 @@ impl Hasher {
             Checksum::Md5(_) => Self::Md5(Md5::new()),
             Checksum::Sha1(_) => Self::Sha1(Sha1::new()),
             Checksum::Sha256(_) => Self::Sha256(Sha256::new()),
+            Checksum::Sha512(_) => Self::Sha512(Sha512::new()),
         }
     }
 
@@ -85,6 +96,7 @@ impl Hasher {
             Self::Md5(h) => h.update(data),
             Self::Sha1(h) => h.update(data),
             Self::Sha256(h) => h.update(data),
+            Self::Sha512(h) => h.update(data),
         }
     }
 
@@ -93,6 +105,7 @@ impl Hasher {
             Self::Md5(h) => hex(&h.finalize()),
             Self::Sha1(h) => hex(&h.finalize()),
             Self::Sha256(h) => hex(&h.finalize()),
+            Self::Sha512(h) => hex(&h.finalize()),
         }
     }
 }
@@ -118,6 +131,10 @@ impl HttpClient {
     ) -> Result<(), NetError> {
         if cancel.is_cancelled() {
             return Err(NetError::Cancelled);
+        }
+        // Kiểm tra cả khi file đã có trong cache: URL lạ trong một modpack là dấu hiệu pack hỏng.
+        if let Some(allow) = req.allowed_hosts {
+            allow.check(&crate::client::parse_url(req.url)?)?;
         }
         let dir = req.dest.parent().unwrap_or(Path::new("."));
         tokio::fs::create_dir_all(dir)
@@ -153,7 +170,7 @@ impl HttpClient {
     ) -> Result<(), NetError> {
         let mut resp = tokio::select! {
             () = cancel.cancelled() => return Err(NetError::Cancelled),
-            resp = self.send(req.url) => resp?,
+            resp = self.send_download(req.url, req.allowed_hosts) => resp?,
         };
         let total = resp.content_length().or(req.size);
         let mut file = tokio::fs::File::create(part)
