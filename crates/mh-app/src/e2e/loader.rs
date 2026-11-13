@@ -6,7 +6,9 @@ use mh_core::{ArgsFilePath, ErrorCode, Launch, LoaderKind, LoaderVersion, McVers
 use mh_net::hosts;
 
 use crate::AppError;
-use crate::sources::{Checksum, InstallPlan, InstallerRun, LoaderInstall, LoaderRelease, PlannedFile};
+use crate::sources::{
+    Checksum, InstallPlan, InstallerRun, LoaderInstall, LoaderRelease, PlannedFile,
+};
 
 const INSTALLER: &str = ".minehost-install/e2e-installer.jar";
 /// Đường dẫn file tham số giả của Forge, NeoForge.
