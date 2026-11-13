@@ -34,7 +34,7 @@ pub use players::{
 pub use properties::Properties;
 pub use schedule::{DailyTime, MAX_RESTART_TIMES, normalize_restart_times, seconds_until_next};
 pub use state::{ServerEvent, ServerState, transition};
-pub use version::{ContentKind, LoaderKind, LoaderVersion, McVersion};
+pub use version::{ContentKind, LoaderKind, LoaderVersion, McVersion, neoforge_minecraft};
 
 /// Tên sản phẩm hiển thị cho người dùng.
 pub const PRODUCT_NAME: &str = "MineHost";

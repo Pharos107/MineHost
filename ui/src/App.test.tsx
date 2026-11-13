@@ -11,7 +11,7 @@ vi.mock("./pages/server/ConsoleTab", () => ({
   ConsoleTab: ({ server }: { server: Server }) => <p>console của {server.name}</p>,
 }));
 
-const server: Server = { id: "01JB", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false };
+const server: Server = { id: "01JB", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false };
 
 function renderAt(path: string) {
   vi.stubGlobal(

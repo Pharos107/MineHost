@@ -21,8 +21,8 @@ vi.mock("../../api/ws", () => ({
 }));
 
 const servers: Server[] = [
-  { id: "A", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false },
-  { id: "B", name: "Creative", state: "stopped", eula_accepted: true, restart_pending: false, slow_start: false },
+  { id: "A", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false },
+  { id: "B", name: "Creative", state: "stopped", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false },
 ];
 
 function job(patch: Partial<Job>): Job {

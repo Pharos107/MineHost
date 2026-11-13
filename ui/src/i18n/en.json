@@ -151,7 +151,9 @@
     "importInspect": "Check folder",
     "importUnknown": "Not recognized",
     "importJar": "Jar file",
+    "importArgsFile": "Args file (args_file)",
     "importNoJar": "No .jar file found in this folder.",
+    "importIgnoredJvmArgs": "This folder contains user_jvm_args.txt. MineHost ignores that file to manage memory safely.",
     "importPickLoader": "Choose the server type",
     "importPickVersion": "Minecraft version",
     "importPickVersionHint": "For example 1.21.4.",
@@ -276,7 +278,8 @@
     "restartAtRemove": "Remove {{time}}",
     "restartAtTime": "Restart time {{n}}",
     "restartAtInvalid": "Pick both hour and minute for every time.",
-    "restartAtDuplicate": "Two times are the same."
+    "restartAtDuplicate": "Two times are the same.",
+    "ignoredJvmArgs": "This server folder contains user_jvm_args.txt, which MineHost ignores in favor of the memory setting below."
   },
   "delete": {
     "title": "Delete server",

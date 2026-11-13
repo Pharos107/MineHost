@@ -213,3 +213,58 @@ async fn folder_inside_data_dir_or_relative_is_refused() {
     let err = app.inspect_import(Path::new("relative/dir")).unwrap_err();
     assert_eq!(err.params["field"], "path");
 }
+
+#[tokio::test]
+async fn modded_neoforge_with_mods_and_jvm_args_imports_cleanly() {
+    let (tmp, app) = test_app();
+    let source = tempfile::tempdir().unwrap();
+    let args_dir = source
+        .path()
+        .join("libraries/net/neoforged/neoforge/21.4.140");
+    std::fs::create_dir_all(&args_dir).unwrap();
+    std::fs::write(args_dir.join("unix_args.txt"), "-p foo").unwrap();
+    std::fs::create_dir(source.path().join("mods")).unwrap();
+    std::fs::write(source.path().join("mods/sodium.jar"), b"mod").unwrap();
+    std::fs::write(source.path().join("user_jvm_args.txt"), "-Xmx6G\n").unwrap();
+
+    let found = app.inspect_import(source.path()).unwrap();
+    assert_eq!(found.loader, Some(LoaderKind::NeoForge));
+    assert_eq!(
+        found.loader_version.as_ref().map(|v| v.as_str()),
+        Some("21.4.140")
+    );
+    assert!(found.has_mods);
+    assert!(found.ignored_jvm_args);
+
+    let id = finish(&app, request(source.path())).await;
+    let view = app.get(id).unwrap();
+    assert!(view.ignored_jvm_args);
+    let spec = view.spec.unwrap();
+    assert_eq!(spec.game.loader, LoaderKind::NeoForge);
+    assert_eq!(
+        spec.game.loader_version.as_ref().map(|v| v.as_str()),
+        Some("21.4.140")
+    );
+    assert!(matches!(spec.game.launch(), mh_core::Launch::ArgsFile(_)));
+    assert!(
+        tmp.path()
+            .join(format!("servers/{id}/server/mods/sodium.jar"))
+            .is_file()
+    );
+}
+
+#[tokio::test]
+async fn unknown_jar_with_mods_accepts_manual_mod_loader() {
+    let (_tmp, app) = test_app();
+    let source = tempfile::tempdir().unwrap();
+    std::fs::write(source.path().join("custom-fabric.jar"), b"not-a-zip").unwrap();
+    std::fs::create_dir(source.path().join("mods")).unwrap();
+
+    let mut req = request(source.path());
+    req.loader = Some(LoaderKind::Fabric);
+    req.minecraft = Some(McVersion::parse("1.21.4").unwrap());
+    let id = finish(&app, req).await;
+    let spec = app.get(id).unwrap().spec.unwrap();
+    assert_eq!(spec.game.loader, LoaderKind::Fabric);
+    assert_eq!(spec.game.jar.as_str(), "custom-fabric.jar");
+}

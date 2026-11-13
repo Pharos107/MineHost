@@ -7,7 +7,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use mh_core::{ArgsFilePath, Launch, LoaderVersion, McVersion};
+use mh_core::{ArgsFilePath, Launch, LoaderVersion, McVersion, neoforge_minecraft};
 use mh_net::{Checksum, HostAllowlist, HttpClient, hosts};
 
 use crate::loader::{
@@ -26,33 +26,6 @@ pub struct NeoForge {
     http: Arc<HttpClient>,
     maven_base: String,
     hosts: HostAllowlist,
-}
-
-/// Bản Minecraft mà một bản NeoForge nhắm tới.
-///
-/// Trước 26.1: ba phần, hai phần đầu là số phụ và số vá của Minecraft (`21.4.140` là 1.21.4,
-/// `21.0.167` là 1.21). Từ 26.1: bốn phần, ba phần đầu là Minecraft (`26.1.2.76` là 26.1.2,
-/// `26.3.0.103` là 26.3). Bản dựng cho snapshot (`+snapshot…`, `alpha`) và bản đùa ngày 1/4 không
-/// tương ứng bản release nào nên trả `None`.
-pub(crate) fn minecraft_of(version: &str) -> Option<String> {
-    if version.contains('+') || version.contains("alpha") {
-        return None;
-    }
-    let core = version.split('-').next()?;
-    let parts: Vec<u32> = core
-        .split('.')
-        .map(str::parse)
-        .collect::<Result<_, _>>()
-        .ok()?;
-    match parts.as_slice() {
-        [major @ 20..=25, minor, _] if (*major, *minor) >= (20, 2) => Some(match minor {
-            0 => format!("1.{major}"),
-            _ => format!("1.{major}.{minor}"),
-        }),
-        [year, drop, 0, _] if *year >= 26 => Some(format!("{year}.{drop}")),
-        [year, drop, hotfix, _] if *year >= 26 => Some(format!("{year}.{drop}.{hotfix}")),
-        _ => None,
-    }
 }
 
 impl NeoForge {
@@ -78,7 +51,7 @@ impl NeoForge {
     /// Bản release của Mojang có NeoForge, giữ thứ tự của `releases`.
     pub async fn versions(&self, releases: &[Release]) -> Result<Vec<Release>, ProviderError> {
         let all = self.all_versions().await?;
-        let known: HashSet<String> = all.iter().filter_map(|v| minecraft_of(v)).collect();
+        let known: HashSet<String> = all.iter().filter_map(|v| neoforge_minecraft(v)).collect();
         Ok(releases
             .iter()
             .filter(|r| known.contains(r.id.as_str()))
@@ -95,7 +68,7 @@ impl NeoForge {
         let all = self.all_versions().await?;
         let mut releases: Vec<LoaderRelease> = all
             .iter()
-            .filter(|v| minecraft_of(v).as_deref() == Some(mc.as_str()))
+            .filter(|v| neoforge_minecraft(v).as_deref() == Some(mc.as_str()))
             .filter_map(|v| LoaderVersion::parse(v).ok())
             .map(|version| LoaderRelease {
                 stable: !version.as_str().contains('-'),
@@ -196,7 +169,7 @@ mod tests {
             ("21.4", None),
         ];
         for (neo, mc) in cases {
-            assert_eq!(minecraft_of(neo).as_deref(), mc, "{neo}");
+            assert_eq!(neoforge_minecraft(neo).as_deref(), mc, "{neo}");
         }
     }
 }

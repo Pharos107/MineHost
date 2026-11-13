@@ -7,7 +7,7 @@ import type { Server } from "../../api/client";
 import { ServerActions } from "./ServerActions";
 
 function server(patch: Partial<Server>): Server {
-  return { id: "01JB", name: "Survival", state: "stopped", eula_accepted: false, restart_pending: false, slow_start: false, ...patch };
+  return { id: "01JB", name: "Survival", state: "stopped", eula_accepted: false, restart_pending: false, slow_start: false, ignored_jvm_args: false, ...patch };
 }
 
 function mockApi() {

@@ -38,6 +38,7 @@ export function ServerSettingsTab({ server }: { server: Server }) {
       >
         <Card title={t("settings.title")}>
           {server.state !== "stopped" && server.state !== "crashed" && <Notice tone="info">{t("game.restartNote")}</Notice>}
+          {server.ignored_jvm_args && <Notice tone="warning">{t("settings.ignoredJvmArgs")}</Notice>}
           <Field label={t("wizard.name")} error={errors.name && t(errors.name)}>
             <TextInput value={form.name} onChange={(e) => update({ name: e.target.value })} autoComplete="off" />
           </Field>

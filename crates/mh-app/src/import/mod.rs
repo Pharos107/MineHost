@@ -1,15 +1,16 @@
 //! Job `import` (spec P2, mục 6.11): chép thư mục server có sẵn vào `servers/<id>/server/`.
 //! Bản gốc giữ nguyên; MineHost không sửa gì trong thư mục người dùng chọn.
 
-mod detect;
+pub(crate) mod detect;
 
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use mh_core::instance::{GameSection, JarName};
+use mh_core::instance::{GameSection, LaunchMode, LaunchSection};
 use mh_core::{
-    ErrorCode, GamePort, InstanceSpec, LoaderKind, McVersion, MemoryLimits, ServerId, ServerName,
+    ErrorCode, GamePort, InstanceSpec, Launch, LoaderKind, LoaderVersion, McVersion, MemoryLimits,
+    ServerId, ServerName,
 };
 use time::OffsetDateTime;
 
@@ -36,8 +37,9 @@ pub struct ImportRequest {
 struct Plan {
     source: PathBuf,
     loader: LoaderKind,
+    loader_version: Option<LoaderVersion>,
     minecraft: McVersion,
-    jar: JarName,
+    launch: Launch,
     port: GamePort,
     memory: MemoryLimits,
 }
@@ -85,12 +87,6 @@ impl App {
     fn import_plan(&self, req: &ImportRequest) -> Result<Plan, AppError> {
         let source = self.import_source(&req.path)?;
         let found = detect::inspect(&source);
-        if found.has_mods {
-            return Err(AppError::new(
-                ErrorCode::ModsNotSupported,
-                "thư mục có mods/, chưa hỗ trợ ở P2",
-            ));
-        }
         let missing = |field: &str| {
             AppError::new(ErrorCode::InvalidInput, format!("không nhận ra {field}"))
                 .with_params(serde_json::json!({ "field": field }))
@@ -99,19 +95,29 @@ impl App {
             .loader
             .or(found.loader)
             .ok_or_else(|| missing("loader"))?;
+        if found.has_mods && !loader.is_mod_loader() {
+            return Err(AppError::new(
+                ErrorCode::ModsNotSupported,
+                "thư mục có mods/, cần chọn mod loader",
+            ));
+        }
         let minecraft = req
             .minecraft
             .clone()
             .or(found.minecraft)
             .ok_or_else(|| missing("minecraft"))?;
-        let jar = found.jar.ok_or_else(|| missing("jar"))?;
+        let launch = found
+            .launch
+            .or_else(|| found.jar.map(Launch::Jar))
+            .ok_or_else(|| missing("jar"))?;
         Ok(Plan {
             port: self.import_port(&source)?,
             memory: self.suggested_memory(),
             source,
             loader,
+            loader_version: found.loader_version,
             minecraft,
-            jar,
+            launch,
         })
     }
 
@@ -189,7 +195,15 @@ impl App {
         props.set("server-port", &plan.port.to_string());
         write_properties(&paths.server_dir, &props)?;
         let mut game = GameSection::new(plan.loader, plan.minecraft.clone(), None, major);
-        game.jar = plan.jar.clone();
+        game.loader_version = plan.loader_version.clone();
+        match &plan.launch {
+            Launch::Jar(jar) => {
+                game.jar = jar.clone();
+            }
+            Launch::ArgsFile(path) => {
+                game.launch = Some(LaunchSection::new(LaunchMode::ArgsFile(path.clone())));
+            }
+        }
         let now = OffsetDateTime::now_utc();
         let now = now.replace_nanosecond(0).unwrap_or(now);
         // EULA không tự đánh dấu dù thư mục đã có `eula=true`: người dùng xác nhận lại trong MineHost.

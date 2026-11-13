@@ -9,7 +9,7 @@ import { joinPath, pathSteps, type FileEntry } from "../../../api/files";
 import { FileEditorPage } from "./FileEditorPage";
 import { FilesPage } from "./FilesPage";
 
-const server: Server = { id: "A", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false };
+const server: Server = { id: "A", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false };
 
 type Handler = (url: string, init?: RequestInit) => Response | undefined;
 

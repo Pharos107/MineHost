@@ -4,7 +4,7 @@ import type { Server } from "./client";
 import { applyServerEvent } from "./live";
 
 function server(id: string, state: Server["state"] = "stopped"): Server {
-  return { id, state, eula_accepted: false, restart_pending: false, slow_start: false };
+  return { id, state, eula_accepted: false, restart_pending: false, slow_start: false, ignored_jvm_args: false };
 }
 
 describe("applyServerEvent", () => {

@@ -15,6 +15,7 @@ const server: Server = {
   eula_accepted: true,
   restart_pending: false,
   slow_start: false,
+  ignored_jvm_args: false,
 };
 
 describe("cài đặt server", () => {

@@ -151,7 +151,9 @@
     "importInspect": "Kiểm tra thư mục",
     "importUnknown": "Không nhận ra",
     "importJar": "File jar",
+    "importArgsFile": "File tham số (args_file)",
     "importNoJar": "Không thấy file .jar nào trong thư mục này.",
+    "importIgnoredJvmArgs": "Thư mục có file user_jvm_args.txt. MineHost bỏ qua file này để quản lý RAM an toàn.",
     "importPickLoader": "Chọn loại server",
     "importPickVersion": "Phiên bản Minecraft",
     "importPickVersionHint": "Ví dụ 1.21.4.",
@@ -276,7 +278,8 @@
     "restartAtRemove": "Bỏ giờ {{time}}",
     "restartAtTime": "Giờ khởi động lại {{n}}",
     "restartAtInvalid": "Hãy chọn đủ giờ và phút cho mọi mốc.",
-    "restartAtDuplicate": "Hai mốc trùng giờ."
+    "restartAtDuplicate": "Hai mốc trùng giờ.",
+    "ignoredJvmArgs": "Thư mục server có user_jvm_args.txt nhưng MineHost bỏ qua file này để quản lý RAM theo cài đặt bên dưới."
   },
   "delete": {
     "title": "Xóa server",
