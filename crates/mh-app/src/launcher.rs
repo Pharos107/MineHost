@@ -75,7 +75,7 @@ impl AppLauncher {
             work_dir: paths.server_dir,
             memory: spec.runtime.memory_mb,
             jvm_args: spec.runtime.jvm_args,
-            jar: spec.game.jar,
+            launch: spec.game.launch(),
             args: launch_args(spec.game.loader),
         }
         .into_spec())

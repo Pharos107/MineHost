@@ -1,6 +1,7 @@
 //! Chạy server dưới dạng process con (spec P1, mục 5.5). Crate này không biết gì về provider:
 //! nó chỉ nhận chương trình, tham số và thư mục làm việc.
 
+mod complete;
 mod launch;
 mod os;
 mod spawner;
@@ -15,6 +16,7 @@ use tokio::runtime::Handle;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinHandle;
 
+pub use complete::Completion;
 pub use launch::{ENCODING_FLAGS, JavaLaunch};
 
 /// Sau khi process thoát, chờ tối đa chừng này để đọc nốt log còn trong pipe. Process cháu

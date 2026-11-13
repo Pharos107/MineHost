@@ -11,6 +11,10 @@
 //! - `--hang-on-save-all` (hoặc `MINEHOST_FAKE_SAVE_ALL_HANG=1`): `save-all flush` không in
 //!   dòng `Saved the game`, để test thời hạn chờ khi sao lưu.
 //!
+//! Chế độ installer giả (spec P3, PR-02), khi có `--install`: in vài dòng, tạo các file
+//! `--write <đường dẫn tương đối>` (lặp được), chờ `--sleep-ms <n>`, đọc stdin tới EOF nếu có
+//! `--read-stdin`, rồi thoát với mã `--exit-code <n>` (mặc định 0). Không in dòng `Done`.
+//!
 //! Lệnh stdin: `stop` thoát, `say …` in lại nội dung; `save-off`, `save-all flush`, `save-on`
 //! (sao lưu); cho test người chơi: `list`,
 //! `fake-join <tên>`, `fake-leave <tên>`.
@@ -23,6 +27,9 @@ use std::time::Duration;
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if has_flag(&args, "--install") {
+        install(&args);
+    }
     print_banner();
     schedule_crash(flag_number(&args, "--crash-after-ms"));
     if let Some(ms) = flag_number(&args, "--slow-start-ms") {
@@ -34,6 +41,40 @@ fn main() {
     let hang_save_all = has_flag(&args, "--hang-on-save-all")
         || std::env::var("MINEHOST_FAKE_SAVE_ALL_HANG").ok().as_deref() == Some("1");
     read_commands(has_flag(&args, "--hang-on-stop"), hang_save_all);
+}
+
+fn install(args: &[String]) -> ! {
+    println!("Installing fake loader");
+    for (i, arg) in args.iter().enumerate() {
+        if arg != "--write" {
+            continue;
+        }
+        let Some(rel) = args.get(i + 1) else {
+            continue;
+        };
+        let path = std::path::Path::new(rel);
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        match std::fs::write(
+            path,
+            b"-Dfake=1
+",
+        ) {
+            Ok(()) => println!("Wrote {rel}"),
+            Err(e) => eprintln!("Cannot write {rel}: {e}"),
+        }
+    }
+    if let Some(ms) = flag_number(args, "--sleep-ms") {
+        std::thread::sleep(Duration::from_millis(ms));
+    }
+    if has_flag(args, "--read-stdin") {
+        let lines = std::io::stdin().lock().lines().count();
+        println!("stdin closed after {lines} lines");
+    }
+    let code = flag_number(args, "--exit-code").unwrap_or(0);
+    eprintln!("Installer finished with code {code}");
+    std::process::exit(i32::try_from(code).unwrap_or(1));
 }
 
 fn print_banner() {

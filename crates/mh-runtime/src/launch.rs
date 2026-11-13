@@ -2,8 +2,7 @@
 
 use std::path::PathBuf;
 
-use mh_core::MemoryLimits;
-use mh_core::instance::JarName;
+use mh_core::{ArgsOs, Launch, MemoryLimits};
 
 use crate::ProcessSpec;
 
@@ -24,22 +23,34 @@ pub struct JavaLaunch {
     pub work_dir: PathBuf,
     pub memory: MemoryLimits,
     pub jvm_args: Vec<String>,
-    pub jar: JarName,
-    /// Tham số sau `-jar`, ví dụ `--nogui`.
+    pub launch: Launch,
+    /// Tham số sau jar hoặc file tham số, ví dụ `--nogui`.
     pub args: Vec<String>,
 }
 
 impl JavaLaunch {
-    /// `<java> -Xms -Xmx <encoding> <jvm_args> -jar <jar> <args>`.
+    /// `<java> -Xms -Xmx <encoding> <jvm_args> -jar <jar> <args>`, hoặc `@<file>` thay cho
+    /// `-jar <jar>` với Forge, NeoForge từ 1.17 (spec P3, mục 3.2). File tham số lấy theo OS đang
+    /// chạy, nên server tạo trên Linux chép sang Windows vẫn bật được.
     pub fn into_spec(self) -> ProcessSpec {
+        self.into_spec_for(ArgsOs::current())
+    }
+
+    fn into_spec_for(self, os: ArgsOs) -> ProcessSpec {
         let mut args = vec![
             format!("-Xms{}M", self.memory.min_mb()),
             format!("-Xmx{}M", self.memory.max_mb()),
         ];
         args.extend(ENCODING_FLAGS.map(str::to_owned));
         args.extend(self.jvm_args);
-        args.push("-jar".to_owned());
-        args.push(self.jar.as_str().to_owned());
+        match self.launch {
+            Launch::Jar(jar) => {
+                args.push("-jar".to_owned());
+                args.push(jar.as_str().to_owned());
+            }
+            // Java đọc `@file` tương đối với thư mục làm việc, tức thư mục server.
+            Launch::ArgsFile(path) => args.push(format!("@{}", path.for_os(os))),
+        }
         args.extend(self.args);
         ProcessSpec {
             program: self.java_bin,
@@ -51,6 +62,9 @@ impl JavaLaunch {
 
 #[cfg(test)]
 mod tests {
+    use mh_core::ArgsFilePath;
+    use mh_core::instance::JarName;
+
     use super::*;
 
     #[test]
@@ -60,7 +74,7 @@ mod tests {
             work_dir: PathBuf::from("servers/x/server"),
             memory: MemoryLimits::new(1024, 4096).unwrap(),
             jvm_args: vec!["-XX:+UseG1GC".to_owned()],
-            jar: JarName::server_jar(),
+            launch: Launch::Jar(JarName::server_jar()),
             args: vec!["--nogui".to_owned()],
         }
         .into_spec();
@@ -80,6 +94,38 @@ mod tests {
                 "server.jar",
                 "--nogui",
             ]
+        );
+    }
+
+    #[test]
+    fn args_file_replaces_jar_per_os() {
+        let path =
+            ArgsFilePath::parse("libraries/net/neoforged/neoforge/21.4.140/{os}_args.txt").unwrap();
+        let launch = |os| {
+            JavaLaunch {
+                java_bin: PathBuf::from("java"),
+                work_dir: PathBuf::from("server"),
+                memory: MemoryLimits::new(1024, 2048).unwrap(),
+                jvm_args: Vec::new(),
+                launch: Launch::ArgsFile(path.clone()),
+                args: vec!["nogui".to_owned()],
+            }
+            .into_spec_for(os)
+            .args
+        };
+        let unix = launch(ArgsOs::Unix);
+        assert_eq!(
+            unix[unix.len() - 2..],
+            [
+                "@libraries/net/neoforged/neoforge/21.4.140/unix_args.txt",
+                "nogui"
+            ]
+        );
+        assert!(!unix.iter().any(|a| a == "-jar"));
+        let win = launch(ArgsOs::Windows);
+        assert_eq!(
+            win[win.len() - 2],
+            "@libraries/net/neoforged/neoforge/21.4.140/win_args.txt"
         );
     }
 }
