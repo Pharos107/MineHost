@@ -65,7 +65,12 @@ pub fn inspect(dir: &Path) -> Detected {
         };
     }
     let (history_loader, history_version) = read_history(dir);
-    let (jar, jar_loader, jar_mc, jar_lv) = pick_jar(dir);
+    let JarPick {
+        jar,
+        loader: jar_loader,
+        minecraft: jar_mc,
+        loader_version: jar_lv,
+    } = pick_jar(dir);
     let loader = history_loader.or(jar_loader);
     let minecraft = history_version
         .or(jar_mc)
@@ -118,17 +123,30 @@ fn read_small(path: &Path) -> Option<String> {
     Some(text)
 }
 
-/// Jar ngay trong thư mục, ưu tiên jar nhận ra được loại, rồi tới `server.jar`.
-fn pick_jar(
-    dir: &Path,
-) -> (
-    Option<JarName>,
-    Option<LoaderKind>,
-    Option<McVersion>,
-    Option<LoaderVersion>,
-) {
+/// Jar ngay trong thư mục sẽ chạy, kèm loại, bản Minecraft và bản loader nhận ra được.
+#[derive(Debug, Default)]
+struct JarPick {
+    jar: Option<JarName>,
+    loader: Option<LoaderKind>,
+    minecraft: Option<McVersion>,
+    loader_version: Option<LoaderVersion>,
+}
+
+/// Thứ tự ưu tiên khi thư mục có nhiều jar: jar khởi động mod loader đứng trước `server.jar` của
+/// Mojang nằm cạnh nó (Fabric, Quilt cài bằng installer; Forge trước 1.17), rồi tới Paper/Purpur,
+/// Vanilla, cuối cùng là jar không nhận ra.
+fn jar_rank(loader: Option<LoaderKind>) -> u8 {
+    match loader {
+        Some(LoaderKind::Vanilla) => 2,
+        Some(kind) if kind.is_mod_loader() => 0,
+        Some(_) => 1,
+        None => 3,
+    }
+}
+
+fn pick_jar(dir: &Path) -> JarPick {
     let Ok(entries) = std::fs::read_dir(dir) else {
-        return (None, None, None, None);
+        return JarPick::default();
     };
     let mut jars: Vec<JarName> = entries
         .flatten()
@@ -137,18 +155,26 @@ fn pick_jar(
         .filter_map(|name| JarName::parse(&name).ok())
         .collect();
     jars.sort_by_key(|jar| (jar.as_str() != "server.jar", jar.as_str().to_owned()));
-    let mut fallback = None;
-    for jar in jars {
-        let (loader, version, lv) = inspect_jar(&dir.join(jar.as_str()), jar.as_str());
-        if loader.is_some() {
-            return (Some(jar), loader, version, lv);
-        }
-        fallback.get_or_insert((jar, version, lv));
-    }
-    match fallback {
-        Some((jar, version, lv)) => (Some(jar), None, version, lv),
-        None => (None, None, None, None),
-    }
+    let mut found: Vec<JarPick> = jars
+        .into_iter()
+        .map(|jar| {
+            let (loader, minecraft, loader_version) =
+                inspect_jar(&dir.join(jar.as_str()), jar.as_str());
+            JarPick {
+                jar: Some(jar),
+                loader,
+                minecraft,
+                loader_version,
+            }
+        })
+        .collect();
+    // Sắp xếp ổn định: cùng hạng thì giữ thứ tự `server.jar` trước, rồi theo tên.
+    found.sort_by_key(|pick| jar_rank(pick.loader));
+    // Jar khởi động của Fabric/Quilt không ghi bản Minecraft; lấy từ `server.jar` nằm cạnh.
+    let minecraft = found.iter().find_map(|pick| pick.minecraft.clone());
+    let mut best = found.into_iter().next().unwrap_or_default();
+    best.minecraft = best.minecraft.or(minecraft);
+    best
 }
 
 /// Paper và Purpur đóng gói bằng paperclip; jar của Mojang từ 1.18 có `net/minecraft/bundler/`,
@@ -173,7 +199,10 @@ fn inspect_jar(
         .as_deref()
         .and_then(manifest_main_class);
     let loader = detect_jar_loader(name, &has, main_class.as_deref());
-    let (mc_from_name, lv_from_name) = parse_fabric_jar_name(name);
+    let (mc_from_name, lv_from_name) = match loader {
+        Some(LoaderKind::Forge) => parse_forge_jar_name(name),
+        _ => parse_fabric_jar_name(name),
+    };
     let lv = lv_from_name.or_else(|| loader.and_then(|l| loader_version_in_zip(&names, l)));
     let version = read_zip_text(&mut zip, "version.json")
         .and_then(|text| serde_json::from_str::<VersionJson>(&text).ok())
@@ -192,6 +221,12 @@ fn detect_jar_loader(
     }
     if main_class.is_some_and(|m| m.contains("org.quiltmc.")) {
         return Some(LoaderKind::Quilt);
+    }
+    // Forge trước 1.17 chạy thẳng `forge-<mc>-<bản>.jar` do installer tạo, không có args file.
+    if main_class.is_some_and(|m| m.contains("net.minecraftforge."))
+        || (name.starts_with("forge-") && has("net/minecraftforge/"))
+    {
+        return Some(LoaderKind::Forge);
     }
     if has("io/papermc/paperclip/") {
         if name.to_ascii_lowercase().contains("purpur") {
@@ -247,6 +282,21 @@ fn parse_fabric_jar_name(name: &str) -> (Option<McVersion>, Option<LoaderVersion
     (McVersion::parse(mc_s).ok(), LoaderVersion::parse(lv_s).ok())
 }
 
+/// Jar Forge cũ: `forge-<mc>-<bản>.jar`, bản rất cũ thêm hậu tố `-universal`.
+fn parse_forge_jar_name(name: &str) -> (Option<McVersion>, Option<LoaderVersion>) {
+    let Some(rest) = name
+        .strip_prefix("forge-")
+        .and_then(|rest| rest.strip_suffix(".jar"))
+    else {
+        return (None, None);
+    };
+    let rest = rest.strip_suffix("-universal").unwrap_or(rest);
+    match rest.split_once('-') {
+        Some((mc, forge)) => (McVersion::parse(mc).ok(), LoaderVersion::parse(forge).ok()),
+        None => (None, None),
+    }
+}
+
 fn detect_args_file(
     dir: &Path,
 ) -> Option<(LoaderKind, Option<LoaderVersion>, Option<McVersion>, Launch)> {
@@ -269,34 +319,18 @@ fn detect_args_file(
 }
 
 fn scan_args_dir(dir: &Path, sub: &str) -> Option<(String, Launch)> {
-    let mut versions: Vec<String> = std::fs::read_dir(dir.join(sub))
-        .ok()?
-        .flatten()
-        .filter(|e| e.file_type().is_ok_and(|k| k.is_dir()))
-        .filter_map(|e| e.file_name().into_string().ok())
-        .collect();
-    versions.sort();
-    for ver in versions.into_iter().rev() {
+    newest_first(&dir.join(sub)).into_iter().find_map(|ver| {
         let folder = dir.join(sub).join(&ver);
-        if (folder.join("unix_args.txt").is_file() || folder.join("win_args.txt").is_file())
-            && let Ok(path) = ArgsFilePath::parse(&format!("{sub}/{ver}/{{os}}_args.txt"))
-        {
-            return Some((ver, Launch::ArgsFile(path)));
-        }
-    }
-    None
+        let has_args =
+            folder.join("unix_args.txt").is_file() || folder.join("win_args.txt").is_file();
+        let path = ArgsFilePath::parse(&format!("{sub}/{ver}/{{os}}_args.txt")).ok()?;
+        has_args.then_some((ver, Launch::ArgsFile(path)))
+    })
 }
 
 fn detect_mc_from_dirs(dir: &Path) -> Option<McVersion> {
-    let mut dirs: Vec<String> = std::fs::read_dir(dir.join("versions"))
-        .ok()?
-        .flatten()
-        .filter(|e| e.file_type().is_ok_and(|k| k.is_dir()))
-        .filter_map(|e| e.file_name().into_string().ok())
-        .collect();
-    dirs.sort();
-    dirs.into_iter()
-        .rev()
+    newest_first(&dir.join("versions"))
+        .into_iter()
         .find_map(|d| McVersion::parse(&d).ok())
 }
 
@@ -306,16 +340,34 @@ fn detect_loader_from_dirs(dir: &Path, loader: LoaderKind) -> Option<LoaderVersi
         LoaderKind::Quilt => "libraries/org/quiltmc/quilt-loader",
         _ => return None,
     };
-    let mut dirs: Vec<String> = std::fs::read_dir(dir.join(sub))
-        .ok()?
+    newest_first(&dir.join(sub))
+        .into_iter()
+        .find_map(|d| LoaderVersion::parse(&d).ok())
+}
+
+/// Tên các thư mục con, bản mới nhất trước. Nâng cấp tại chỗ thường để lại thư mục bản cũ.
+fn newest_first(dir: &Path) -> Vec<String> {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    let mut names: Vec<String> = entries
         .flatten()
         .filter(|e| e.file_type().is_ok_and(|k| k.is_dir()))
         .filter_map(|e| e.file_name().into_string().ok())
         .collect();
-    dirs.sort();
-    dirs.into_iter()
-        .rev()
-        .find_map(|d| LoaderVersion::parse(&d).ok())
+    names.sort_by_key(|name| std::cmp::Reverse(version_key(name)));
+    names
+}
+
+/// Khóa so phiên bản theo từng số: `21.1.10` mới hơn `21.1.9`, `1.20` mới hơn `1.9`.
+/// Phần không phải số (`beta`, `pre1`) xếp sau mọi số ở cùng vị trí.
+fn version_key(name: &str) -> Vec<(u64, String)> {
+    name.split(['.', '-', '+'])
+        .map(|part| match part.parse::<u64>() {
+            Ok(n) => (n + 1, String::new()),
+            Err(_) => (0, part.to_owned()),
+        })
+        .collect()
 }
 
 #[cfg(test)]

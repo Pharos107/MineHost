@@ -188,7 +188,9 @@ Cùng luồng này lo luôn việc cập nhật build Paper và Purpur cho serve
 
 `game.java_major` vẫn lấy theo Mojang khi tạo. Trang Cài đặt server (chế độ Nâng cao) cho chọn major
 khác trong các bản Adoptium có, kèm cảnh báo khi khác bản Mojang yêu cầu. Lý do: modpack cũ đôi khi
-cần đúng một bản Java (rà soát B1).
+cần đúng một bản Java (rà soát B1). Danh sách bản chọn được (`GET /system` → `java_majors`) và bản
+Mojang yêu cầu (`ServerDto.java_recommended`, theo các mốc cố định của từng phiên bản) đều do backend
+trả, UI không tự tính.
 
 ### 3.11 Kiểm thử modpack trên runner tự host
 
@@ -349,9 +351,11 @@ Không đổi. Phần dò cgroup v2 nằm ở `mh-runtime/src/os/cgroup.rs`, c�
   `DEPENDENCY_MISSING` hoặc `CURSEFORGE_FILES_PENDING`, trừ khi gửi `{ "ignore_preflight": true }`.
 - **Cập nhật:** `check_updates` hỏi Modrinth theo hash (`versions_by_hash`) và CurseForge theo file id;
   `update(items)` và `change_version(minecraft?, loader_version?)` đi theo mục 3.9.
-- **Nhập server có sẵn:** nhận ra Fabric (`.fabric/`, `fabric-server-launch.jar`), Quilt, Forge
-  (`libraries/net/minecraftforge`), NeoForge (`libraries/net/neoforged`); không còn trả
-  `MODS_NOT_SUPPORTED` cho bốn loại này.
+- **Nhập server có sẵn:** nhận ra Fabric, Quilt (jar khởi động, qua `Main-Class` trong manifest),
+  Forge (args file trong `libraries/net/minecraftforge`, hoặc `forge-<mc>-<bản>.jar` trước 1.17),
+  NeoForge (`libraries/net/neoforged`); không còn trả `MODS_NOT_SUPPORTED` cho bốn loại này. Jar
+  của mod loader được chọn trước `server.jar` của Mojang nằm cạnh nó. Còn nhiều thư mục phiên bản
+  (nâng cấp tại chỗ) thì lấy bản mới nhất, so theo số.
 
 ### 5.8 `mh-api`
 

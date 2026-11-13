@@ -36,7 +36,7 @@ pub use schedule::{DailyTime, MAX_RESTART_TIMES, normalize_restart_times, second
 pub use state::{ServerEvent, ServerState, transition};
 pub use version::{
     ContentKind, JAVA_MAJORS, LoaderKind, LoaderVersion, McVersion, is_supported_java_major,
-    neoforge_minecraft,
+    mojang_java_major, neoforge_minecraft,
 };
 
 /// Tên sản phẩm hiển thị cho người dùng.

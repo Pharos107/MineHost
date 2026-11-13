@@ -886,6 +886,11 @@ export interface components {
             /** Format: int32 */
             java_major?: number | null;
             /**
+             * Format: int32
+             * @description Bản Java Mojang yêu cầu cho phiên bản Minecraft này; `null` khi chưa biết (spec P3, mục 3.10).
+             */
+            java_recommended?: number | null;
+            /**
              * Format: int64
              * @description Job đang cài server này.
              */
@@ -949,6 +954,8 @@ export interface components {
              * @description Byte còn trống trên ổ chứa thư mục dữ liệu. Trùng `data_disk.available_bytes`.
              */
             disk_free_bytes?: number | null;
+            /** @description Bản Java chọn được cho từng server, tăng dần. */
+            java_majors: number[];
             /** @description Địa chỉ IPv4 trong mạng LAN, để bạn bè vào chơi. */
             lan_addresses: string[];
             /** Format: int64 */

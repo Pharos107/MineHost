@@ -61,6 +61,8 @@ pub struct ServerDto {
     /// Bản mod loader; chỉ có với Fabric, Quilt, Forge, NeoForge.
     pub loader_version: Option<String>,
     pub java_major: Option<u16>,
+    /// Bản Java Mojang yêu cầu cho phiên bản Minecraft này; `null` khi chưa biết (spec P3, mục 3.10).
+    pub java_recommended: Option<u16>,
     pub port: Option<u16>,
     pub memory_mb: Option<MemoryDto>,
     pub autostart: Option<bool>,
@@ -97,6 +99,7 @@ impl From<ServerView> for ServerDto {
             build: None,
             loader_version: None,
             java_major: None,
+            java_recommended: None,
             port: None,
             memory_mb: None,
             autostart: None,
@@ -127,6 +130,7 @@ impl From<ServerView> for ServerDto {
             dto.build = spec.game.build;
             dto.loader_version = spec.game.loader_version.as_ref().map(ToString::to_string);
             dto.java_major = Some(spec.game.java_major);
+            dto.java_recommended = mh_core::mojang_java_major(&spec.game.minecraft);
             dto.port = Some(spec.network.port.get());
             let memory = spec.runtime.memory_mb;
             dto.memory_mb = Some(MemoryDto {
