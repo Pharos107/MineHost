@@ -82,7 +82,7 @@ Không giới hạn CPU. Hệ quả về bảo mật: [bao-mat.md](bao-mat.md).
 
 | Phần | Trạng thái |
 | --- | --- |
-| Loại server | Paper, Purpur (kiểm tra md5), Vanilla (jar của Mojang). `instance.toml` đã nhận Fabric, Quilt, Forge, NeoForge và bảng `[game.launch]`, `[modpack]`, nhưng chưa tạo hay chạy được (spec P3, nhóm A–B) |
+| Loại server | Paper, Purpur (kiểm tra md5), Vanilla (jar của Mojang). Fabric, Quilt, Forge (từ 1.12.2), NeoForge (từ 1.20.2): Job tải installer chính thức, chạy bằng Java của server trong `.minehost-install/`, kiểm tra file chạy trên đĩa rồi mới ghi `instance.toml` ([ADR 0006](../adr/0006-provider-tra-ke-hoach-app-chay-installer.md)). Tạo được qua API; wizard ở PR-10 của P3 |
 | Runtime | Chỉ process con. Docker: P4 |
 | Java | Temurin JRE do MineHost tải, chọn major theo Mojang. Không dùng Java có sẵn trên máy |
 | Lưu trữ | File trên đĩa. Không có SQLite ([ADR 0004](../adr/0004-chua-dung-sqlite.md)) |

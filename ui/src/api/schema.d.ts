@@ -100,6 +100,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalog/{loader}/{minecraft}/loader-versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["loader_versions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -634,8 +650,10 @@ export interface components {
             protected?: boolean | null;
         };
         CreateServerBody: {
-            /** @description P1 chỉ có `paper`. */
+            /** @description `paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`. */
             loader: string;
+            /** @description Chỉ với mod loader; không gửi thì dùng bản đề xuất. */
+            loader_version?: string | null;
             memory_mb?: components["schemas"]["MemoryDto"] | null;
             minecraft: string;
             name: string;
@@ -725,6 +743,12 @@ export interface components {
         };
         /** @enum {string} */
         JobStateDto: "running" | "succeeded" | "failed" | "cancelled";
+        /** @description Một bản mod loader (spec P3, mục 5.8). */
+        LoaderVersionDto: {
+            /** @description Bản ổn định theo nguồn của loader; bản đề xuất luôn đứng đầu danh sách. */
+            stable: boolean;
+            version: string;
+        };
         LoginBody: {
             password: string;
         };
@@ -857,6 +881,8 @@ export interface components {
              */
             job_id?: number | null;
             loader?: string | null;
+            /** @description Bản mod loader; chỉ có với Fabric, Quilt, Forge, NeoForge. */
+            loader_version?: string | null;
             memory_mb?: components["schemas"]["MemoryDto"] | null;
             minecraft?: string | null;
             name?: string | null;
@@ -1144,7 +1170,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description `paper`, `vanilla` hoặc `purpur` */
+                /** @description `paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge` */
                 loader: string;
             };
             cookie?: never;
@@ -1162,6 +1188,56 @@ export interface operations {
             };
             /** @description Loại server chưa hỗ trợ */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    loader_versions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description `fabric`, `quilt`, `forge` hoặc `neoforge` */
+                loader: string;
+                minecraft: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bản loader, bản đề xuất đứng đầu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoaderVersionDto"][];
+                };
+            };
+            /** @description Loại server không có bản loader */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Loader không có bản cho phiên bản này */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -95,6 +95,22 @@ pub(crate) fn pick<'a>(
     }
 }
 
+/// Các giá trị `<version>` trong `maven-metadata.xml`. Đọc tay thay vì kéo thư viện XML: file
+/// này chỉ có một cấu trúc phẳng, và giá trị lạ bị `LoaderVersion::parse` lọc ở bước sau.
+pub(crate) fn maven_versions(xml: &str) -> Vec<&str> {
+    const OPEN: &str = "<version>";
+    const CLOSE: &str = "</version>";
+    let mut out = Vec::new();
+    let mut rest = xml;
+    while let Some(start) = rest.find(OPEN) {
+        rest = &rest[start + OPEN.len()..];
+        let Some(end) = rest.find(CLOSE) else { break };
+        out.push(rest[..end].trim());
+        rest = &rest[end + CLOSE.len()..];
+    }
+    out
+}
+
 /// So sánh kiểu semver đủ dùng cho bản loader: phần số trước `-` so theo số, bản không có
 /// hậu tố (ổn định) đứng trên bản `-beta…` cùng số, hậu tố so từng đoạn.
 pub(crate) fn compare_versions(a: &str, b: &str) -> Ordering {
@@ -164,6 +180,15 @@ mod tests {
                 "0.20.0-beta.9",
             ]
         );
+    }
+
+    #[test]
+    fn reads_maven_versions() {
+        let xml = "<metadata><versioning><versions>
+  <version>1.21.4-54.1.6</version>
+                   <version> 26.3-66.0.0 </version><version>broken";
+        assert_eq!(maven_versions(xml), ["1.21.4-54.1.6", "26.3-66.0.0"]);
+        assert!(maven_versions("").is_empty());
     }
 
     #[test]

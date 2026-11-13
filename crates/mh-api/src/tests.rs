@@ -65,6 +65,23 @@ impl ServerCatalog for FakeCatalog {
             Ok(())
         })
     }
+
+    fn loader_versions<'a>(
+        &'a self,
+        _: LoaderKind,
+        _: &'a McVersion,
+    ) -> BoxFut<'a, Result<Vec<mh_app::sources::LoaderRelease>, AppError>> {
+        Box::pin(async {
+            let release = |v: &str, stable| mh_app::sources::LoaderRelease {
+                version: mh_core::LoaderVersion::parse(v).unwrap(),
+                stable,
+            };
+            Ok(vec![
+                release("0.16.9", true),
+                release("0.17.0-beta.1", false),
+            ])
+        })
+    }
 }
 
 /// Test API không bật server thật, nên Java trỏ tới một file không tồn tại.
@@ -310,7 +327,7 @@ async fn create_rejects_bad_fields() {
             "name",
         ),
         (
-            json!({ "name": "a", "loader": "forge", "minecraft": "1.21.4" }),
+            json!({ "name": "a", "loader": "folia", "minecraft": "1.21.4" }),
             "loader",
         ),
         (

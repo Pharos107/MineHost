@@ -61,6 +61,7 @@ pub use lan::{LanState, lan_listener};
         jobs::get,
         jobs::cancel,
         jobs::catalog_versions,
+        jobs::loader_versions,
         jobs::shutdown,
         auth::session,
         auth::login,
@@ -123,6 +124,7 @@ pub use lan::{LanState, lan_listener};
         dto::PropertiesDto,
         dto::PropertyDto,
         dto::CatalogVersionDto,
+        dto::LoaderVersionDto,
         dto::JobDto,
         dto::JobStateDto,
         dto::ProgressDto,
@@ -243,6 +245,10 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         .route("/jobs/{id}", get(jobs::get))
         .route("/jobs/{id}/cancel", post(jobs::cancel))
         .route("/catalog/{loader}/versions", get(jobs::catalog_versions))
+        .route(
+            "/catalog/{loader}/{minecraft}/loader-versions",
+            get(jobs::loader_versions),
+        )
         .route("/app/shutdown", post(jobs::shutdown))
         .route(
             "/settings/access",

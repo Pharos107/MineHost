@@ -159,7 +159,8 @@
       "before_restore": "Sao lưu hiện trạng",
       "unpack": "Giải nén bản sao lưu",
       "swap": "Thay world",
-      "copy_files": "Chép thư mục server"
+      "copy_files": "Chép thư mục server",
+      "run_installer": "Cài {{loader}}"
     }
   },
   "server": {

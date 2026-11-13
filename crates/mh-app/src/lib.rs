@@ -15,6 +15,7 @@ mod import;
 pub mod jobs;
 mod launcher;
 mod lifecycle;
+mod loader_install;
 mod metrics;
 mod players;
 mod restart_schedule;
@@ -210,6 +211,15 @@ impl App {
         loader: LoaderKind,
     ) -> Result<Vec<CatalogVersion>, AppError> {
         self.catalog.versions(loader).await
+    }
+
+    /// Bản mod loader cài được cho `minecraft`, bản đề xuất đứng đầu (spec P3, mục 5.8).
+    pub async fn loader_versions(
+        &self,
+        loader: LoaderKind,
+        minecraft: &mh_core::McVersion,
+    ) -> Result<Vec<sources::LoaderRelease>, AppError> {
+        self.catalog.loader_versions(loader, minecraft).await
     }
 
     pub fn subscribe_events(&self) -> tokio::sync::broadcast::Receiver<AppEvent> {

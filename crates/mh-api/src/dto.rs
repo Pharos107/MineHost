@@ -58,6 +58,8 @@ pub struct ServerDto {
     pub loader: Option<String>,
     pub minecraft: Option<String>,
     pub build: Option<u32>,
+    /// Bản mod loader; chỉ có với Fabric, Quilt, Forge, NeoForge.
+    pub loader_version: Option<String>,
     pub java_major: Option<u16>,
     pub port: Option<u16>,
     pub memory_mb: Option<MemoryDto>,
@@ -91,6 +93,7 @@ impl From<ServerView> for ServerDto {
             loader: None,
             minecraft: None,
             build: None,
+            loader_version: None,
             java_major: None,
             port: None,
             memory_mb: None,
@@ -119,6 +122,7 @@ impl From<ServerView> for ServerDto {
             dto.loader = Some(spec.game.loader.to_string());
             dto.minecraft = Some(spec.game.minecraft.to_string());
             dto.build = spec.game.build;
+            dto.loader_version = spec.game.loader_version.as_ref().map(ToString::to_string);
             dto.java_major = Some(spec.game.java_major);
             dto.port = Some(spec.network.port.get());
             let memory = spec.runtime.memory_mb;
@@ -162,9 +166,11 @@ impl From<ServerView> for ServerDto {
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateServerBody {
     pub name: String,
-    /// P1 chỉ có `paper`.
+    /// `paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`.
     pub loader: String,
     pub minecraft: String,
+    /// Chỉ với mod loader; không gửi thì dùng bản đề xuất.
+    pub loader_version: Option<String>,
     pub memory_mb: Option<MemoryDto>,
     pub port: Option<u16>,
 }
@@ -264,6 +270,23 @@ pub struct PropertyDto {
 pub struct PropertiesDto {
     /// Theo thứ tự trong file.
     pub properties: Vec<PropertyDto>,
+}
+
+/// Một bản mod loader (spec P3, mục 5.8).
+#[derive(Debug, Serialize, ToSchema)]
+pub struct LoaderVersionDto {
+    pub version: String,
+    /// Bản ổn định theo nguồn của loader; bản đề xuất luôn đứng đầu danh sách.
+    pub stable: bool,
+}
+
+impl From<mh_app::sources::LoaderRelease> for LoaderVersionDto {
+    fn from(r: mh_app::sources::LoaderRelease) -> Self {
+        Self {
+            version: r.version.to_string(),
+            stable: r.stable,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, ToSchema)]

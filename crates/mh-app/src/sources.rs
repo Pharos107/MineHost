@@ -5,10 +5,10 @@ use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use mh_core::{ErrorCode, LoaderKind, McVersion};
+use mh_core::{ErrorCode, LoaderKind, LoaderVersion, McVersion};
 use mh_java::JavaManager;
 use mh_net::{Download, HttpClient};
-use mh_providers::{Mojang, Paper, Purpur, Release};
+use mh_providers::{Fabric, Forge, Mojang, NeoForge, Paper, Purpur, Quilt, Release};
 use time::OffsetDateTime;
 
 use crate::AppError;
@@ -17,7 +17,7 @@ use crate::AppError;
 // các crate tầng dưới.
 pub use mh_java::JavaRuntime;
 pub use mh_net::{CancellationToken, Checksum};
-pub use mh_providers::ServerJar;
+pub use mh_providers::{InstallPlan, InstallerRun, LoaderRelease, PlannedFile, ServerJar};
 
 pub type BoxFut<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 pub type ProgressFn<'a> = &'a mut (dyn FnMut(u64, Option<u64>) + Send);
@@ -29,6 +29,13 @@ pub struct CatalogVersion {
 }
 
 /// Những gì cần để cài một phiên bản cụ thể.
+/// Kế hoạch cài mod loader kèm bản Java mà Minecraft đó cần (spec P3, mục 3.1).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LoaderInstall {
+    pub plan: InstallPlan,
+    pub java_major: u16,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResolvedServer {
     pub minecraft: McVersion,
@@ -54,6 +61,40 @@ pub trait ServerCatalog: Send + Sync + 'static {
         progress: ProgressFn<'a>,
         cancel: &'a CancellationToken,
     ) -> BoxFut<'a, Result<(), AppError>>;
+
+    /// Bản mod loader cho một phiên bản Minecraft, bản đề xuất đứng đầu. Catalog không có mod
+    /// loader (ví dụ trong test của P2) dùng bản mặc định này.
+    fn loader_versions<'a>(
+        &'a self,
+        loader: LoaderKind,
+        _minecraft: &'a McVersion,
+    ) -> BoxFut<'a, Result<Vec<LoaderRelease>, AppError>> {
+        Box::pin(std::future::ready(Err(unsupported(loader))))
+    }
+
+    /// Kế hoạch cài mod loader; `wanted` không có thì dùng bản đề xuất.
+    fn plan<'a>(
+        &'a self,
+        loader: LoaderKind,
+        _minecraft: &'a McVersion,
+        _wanted: Option<&'a LoaderVersion>,
+    ) -> BoxFut<'a, Result<LoaderInstall, AppError>> {
+        Box::pin(std::future::ready(Err(unsupported(loader))))
+    }
+
+    /// Tải một file trong kế hoạch cài, chỉ từ host mà kế hoạch cho phép.
+    fn download_file<'a>(
+        &'a self,
+        _file: &'a PlannedFile,
+        _dest: &'a Path,
+        _progress: ProgressFn<'a>,
+        _cancel: &'a CancellationToken,
+    ) -> BoxFut<'a, Result<(), AppError>> {
+        Box::pin(std::future::ready(Err(AppError::new(
+            ErrorCode::Internal,
+            "catalog này không tải file của mod loader",
+        ))))
+    }
 }
 
 pub trait JavaSource: Send + Sync + 'static {
@@ -82,15 +123,6 @@ pub fn launch_args(loader: LoaderKind) -> Vec<String> {
     }
 }
 
-/// Loại server tạo hoặc nhập được bằng bản này. `instance.toml` đã đọc được bốn mod loader
-/// (spec P3, PR-01) nhưng phải chờ Job cài loader (PR-09) mới tạo được.
-pub const fn installable(loader: LoaderKind) -> bool {
-    matches!(
-        loader,
-        LoaderKind::Paper | LoaderKind::Vanilla | LoaderKind::Purpur
-    )
-}
-
 pub(crate) fn unsupported(loader: LoaderKind) -> AppError {
     AppError::new(
         ErrorCode::InvalidInput,
@@ -98,13 +130,18 @@ pub(crate) fn unsupported(loader: LoaderKind) -> AppError {
     )
 }
 
-/// Mojang cho biết bản Java cần dùng (và jar Vanilla); Paper, Purpur cho jar của chúng.
+/// Mojang cho biết bản Java cần dùng (và jar Vanilla); Paper, Purpur cho jar của chúng; bốn mod
+/// loader cho kế hoạch cài.
 #[derive(Debug)]
 pub struct OnlineCatalog {
     http: Arc<HttpClient>,
     mojang: Mojang,
     paper: Paper,
     purpur: Purpur,
+    fabric: Fabric,
+    quilt: Quilt,
+    forge: Forge,
+    neoforge: NeoForge,
 }
 
 impl OnlineCatalog {
@@ -113,8 +150,49 @@ impl OnlineCatalog {
             mojang: Mojang::new(Arc::clone(&http)),
             paper: Paper::new(Arc::clone(&http)),
             purpur: Purpur::new(Arc::clone(&http)),
+            fabric: Fabric::new(Arc::clone(&http)),
+            quilt: Quilt::new(Arc::clone(&http)),
+            forge: Forge::new(Arc::clone(&http)),
+            neoforge: NeoForge::new(Arc::clone(&http)),
             http,
         }
+    }
+
+    async fn loader_releases(
+        &self,
+        loader: LoaderKind,
+        mc: &McVersion,
+    ) -> Result<Vec<LoaderRelease>, AppError> {
+        Ok(match loader {
+            LoaderKind::Fabric => self.fabric.loader_versions(mc).await?,
+            LoaderKind::Quilt => self.quilt.loader_versions(mc).await?,
+            LoaderKind::Forge => self.forge.loader_versions(mc).await?,
+            LoaderKind::NeoForge => self.neoforge.loader_versions(mc).await?,
+            _ => return Err(unsupported(loader)),
+        })
+    }
+
+    async fn loader_plan(
+        &self,
+        loader: LoaderKind,
+        mc: &McVersion,
+        wanted: Option<&LoaderVersion>,
+    ) -> Result<LoaderInstall, AppError> {
+        let detail = self.mojang.version_detail(mc);
+        let plan = async {
+            Ok::<_, AppError>(match loader {
+                LoaderKind::Fabric => self.fabric.plan(mc, wanted).await?,
+                LoaderKind::Quilt => self.quilt.plan(mc, wanted).await?,
+                LoaderKind::Forge => self.forge.plan(mc, wanted).await?,
+                LoaderKind::NeoForge => self.neoforge.plan(mc, wanted).await?,
+                _ => return Err(unsupported(loader)),
+            })
+        };
+        let (detail, plan) = tokio::join!(detail, plan);
+        Ok(LoaderInstall {
+            plan: plan?,
+            java_major: detail?.java_major,
+        })
     }
 }
 
@@ -125,6 +203,10 @@ impl OnlineCatalog {
             LoaderKind::Paper => self.paper.versions(&releases).await?,
             LoaderKind::Purpur => self.purpur.versions(&releases).await?,
             LoaderKind::Vanilla => releases,
+            LoaderKind::Fabric => self.fabric.versions(&releases).await?,
+            LoaderKind::Quilt => self.quilt.versions(&releases).await?,
+            LoaderKind::Forge => self.forge.versions(&releases).await?,
+            LoaderKind::NeoForge => self.neoforge.versions(&releases).await?,
             _ => return Err(unsupported(loader)),
         })
     }
@@ -208,6 +290,43 @@ impl ServerCatalog for OnlineCatalog {
                 // Purpur không ghi kích thước (0): để `Content-Length` cho biết.
                 size: (jar.size > 0).then_some(jar.size),
                 allowed_hosts: None,
+            };
+            self.http.download(req, progress, cancel).await?;
+            Ok(())
+        })
+    }
+
+    fn loader_versions<'a>(
+        &'a self,
+        loader: LoaderKind,
+        minecraft: &'a McVersion,
+    ) -> BoxFut<'a, Result<Vec<LoaderRelease>, AppError>> {
+        Box::pin(self.loader_releases(loader, minecraft))
+    }
+
+    fn plan<'a>(
+        &'a self,
+        loader: LoaderKind,
+        minecraft: &'a McVersion,
+        wanted: Option<&'a LoaderVersion>,
+    ) -> BoxFut<'a, Result<LoaderInstall, AppError>> {
+        Box::pin(self.loader_plan(loader, minecraft, wanted))
+    }
+
+    fn download_file<'a>(
+        &'a self,
+        file: &'a PlannedFile,
+        dest: &'a Path,
+        progress: ProgressFn<'a>,
+        cancel: &'a CancellationToken,
+    ) -> BoxFut<'a, Result<(), AppError>> {
+        Box::pin(async move {
+            let req = Download {
+                url: &file.url,
+                checksum: &file.checksum,
+                dest,
+                size: file.size,
+                allowed_hosts: Some(&file.hosts),
             };
             self.http.download(req, progress, cancel).await?;
             Ok(())

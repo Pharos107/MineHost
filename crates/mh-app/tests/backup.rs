@@ -162,6 +162,7 @@ fn request(name: &str) -> CreateRequest {
         name: ServerName::parse(name).unwrap(),
         loader: LoaderKind::Paper,
         minecraft: McVersion::parse("1.21.4").unwrap(),
+        loader_version: None,
         memory_mb: None,
         port: None,
     }
