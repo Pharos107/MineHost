@@ -7,8 +7,8 @@ import { useTranslation } from "react-i18next";
 import { api, errorMessage, type CatalogVersion, type Loader } from "../../api/client";
 import { formatBytes, formatMemoryMb } from "../../format";
 import { exceedsAvailable, MEMORY_STEP_MB, memoryRange } from "../../memory";
-import { Badge, Button, ChoiceGroup, Field, Notice, Select, Slider, Spinner, Switch, TextInput } from "../../ui";
-import { nameError, portError, type WizardForm } from "./form";
+import { Badge, Button, ChoiceGroup, Field, Notice, Select, Slider, Spinner, Stack, Switch, TextInput } from "../../ui";
+import { isModLoader, MOD_LOADERS, nameError, portError, STANDARD_LOADERS, type WizardForm } from "./form";
 
 /** Số bản mới nhất hiện sẵn; các bản cũ hơn nằm sau công tắc "Hiện bản cũ hơn". */
 const RECENT_VERSIONS = 5;
@@ -29,32 +29,57 @@ function LoadError({ error, retry }: { error: unknown; retry: () => void }) {
   );
 }
 
-const LOADERS: readonly Loader[] = ["paper", "purpur", "vanilla"];
+const ALL_LOADERS: readonly Loader[] = [...STANDARD_LOADERS, ...MOD_LOADERS];
 
 function isLoader(value: string): value is Loader {
-  return (LOADERS as readonly string[]).includes(value);
+  return (ALL_LOADERS as readonly string[]).includes(value);
 }
 
-/** Bước 1: loại server cần tải, hoặc `import` để nhập thư mục có sẵn (spec P2, mục 6.11). */
+/** Bước 1: chọn kiểu server (thường, có mod, modpack, nhập có sẵn) và loader (spec P3, mục 6.1). */
 export function LoaderStep({ value, onChange }: { value: Loader | "import"; onChange: (value: Loader | "import") => void }) {
   const { t } = useTranslation();
+  const kind = value === "import" ? "import" : isModLoader(value) ? "modded" : "standard";
+  const loaders = kind === "modded" ? MOD_LOADERS : STANDARD_LOADERS;
+
   return (
-    <ChoiceGroup
-      label={t("wizard.loader")}
-      value={value}
-      onChange={(next) => {
-        if (isLoader(next) || next === "import") onChange(next);
-      }}
-      options={[
-        ...LOADERS.map((loader) => ({
-          value: loader,
-          label: t(`loaders.${loader}`),
-          description: t(`wizard.${loader}Description`),
-          badge: loader === "paper" ? <Badge tone="primary">{t("wizard.recommended")}</Badge> : undefined,
-        })),
-        { value: "import", label: t("wizard.importLabel"), description: t("wizard.importDescription") },
-      ]}
-    />
+    <Stack gap={5}>
+      <ChoiceGroup
+        label={t("wizard.kind")}
+        value={kind}
+        onChange={(next) => {
+          if (next === "standard") onChange("paper");
+          else if (next === "modded") onChange("fabric");
+          else if (next === "import") onChange("import");
+        }}
+        options={[
+          { value: "standard", label: t("wizard.kindStandard"), description: t("wizard.kindStandardDescription") },
+          { value: "modded", label: t("wizard.kindModded"), description: t("wizard.kindModdedDescription") },
+          {
+            value: "modpack",
+            label: t("wizard.kindModpack"),
+            description: t("wizard.kindModpackDescription"),
+            badge: <Badge>{t("wizard.soon")}</Badge>,
+            disabled: true,
+          },
+          { value: "import", label: t("wizard.importLabel"), description: t("wizard.importDescription") },
+        ]}
+      />
+      {kind !== "import" && (
+        <ChoiceGroup
+          label={t("wizard.loader")}
+          value={value}
+          onChange={(next) => {
+            if (isLoader(next)) onChange(next);
+          }}
+          options={loaders.map((loader) => ({
+            value: loader,
+            label: t(`loaders.${loader}`),
+            description: t(`wizard.${loader}Description`),
+            badge: loader === "paper" || loader === "fabric" ? <Badge tone="primary">{t("wizard.recommended")}</Badge> : undefined,
+          }))}
+        />
+      )}
+    </Stack>
   );
 }
 
@@ -62,12 +87,23 @@ interface VersionStepProps {
   versions: UseQueryResult<CatalogVersion[]>;
   value: string;
   onChange: (version: string) => void;
+  loader?: Loader;
+  loaderVersion?: string;
+  onLoaderVersionChange?: (version: string) => void;
 }
 
-export function VersionStep({ versions, value, onChange }: VersionStepProps) {
+export function VersionStep({ versions, value, onChange, loader, loaderVersion, onLoaderVersionChange }: VersionStepProps) {
   const { t } = useTranslation();
   const list = versions.data ?? [];
   const [showOlder, setShowOlder] = useState(() => list.findIndex((v) => v.id === value) >= RECENT_VERSIONS);
+  const [advanced, setAdvanced] = useState(() => Boolean(loaderVersion));
+  const modded = Boolean(loader && isModLoader(loader));
+  const loaderVersions = useQuery({
+    queryKey: ["catalog", loader, value, "loader-versions"],
+    queryFn: () => api.loaderVersions(loader!, value),
+    enabled: modded && value !== "",
+    staleTime: 5 * 60_000,
+  });
 
   if (versions.isPending) return <Spinner label={t("ui.loading")} />;
   if (versions.isError) return <LoadError error={versions.error} retry={() => void versions.refetch()} />;
@@ -79,6 +115,8 @@ export function VersionStep({ versions, value, onChange }: VersionStepProps) {
     // Ẩn bản cũ đang chọn thì quay về bản mới nhất để ô chọn không trống.
     if (!on && !list.slice(0, RECENT_VERSIONS).some((v) => v.id === value)) onChange(list[0]?.id ?? "");
   };
+  const loaderList = loaderVersions.data ?? [];
+  const chosenLoader = loaderVersion || loaderList[0]?.version || "";
 
   return (
     <>
@@ -92,6 +130,32 @@ export function VersionStep({ versions, value, onChange }: VersionStepProps) {
         </Select>
       </Field>
       {list.length > RECENT_VERSIONS && <Switch label={t("wizard.showOlder")} checked={showOlder} onChange={toggle} />}
+      {modded && (
+        <>
+          <div>
+            <Button variant="ghost" size="sm" icon={advanced ? ChevronDown : ChevronRight} aria-expanded={advanced} onClick={() => setAdvanced(!advanced)}>
+              {t("wizard.advanced")}
+            </Button>
+          </div>
+          {advanced && (
+            <>
+              {loaderVersions.isPending && <Spinner label={t("ui.loading")} />}
+              {loaderVersions.isError && <LoadError error={loaderVersions.error} retry={() => void loaderVersions.refetch()} />}
+              {loaderVersions.isSuccess && loaderList.length > 0 && (
+                <Field label={t("wizard.loaderVersion")} hint={t("wizard.loaderVersionHint")}>
+                  <Select value={chosenLoader} onChange={(e) => onLoaderVersionChange?.(e.target.value)}>
+                    {loaderList.map((item, index) => (
+                      <option key={item.version} value={item.version}>
+                        {index === 0 ? t("wizard.latest", { version: item.version }) : item.version}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              )}
+            </>
+          )}
+        </>
+      )}
     </>
   );
 }
