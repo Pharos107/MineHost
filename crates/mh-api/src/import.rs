@@ -7,7 +7,7 @@ use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use mh_app::{App, Detected, ImportRequest};
-use mh_core::{LoaderKind, McVersion, ServerName};
+use mh_core::{McVersion, ServerName};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 

@@ -6,7 +6,7 @@ use axum::Json;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use mh_app::App;
-use mh_core::{LoaderKind, ServerId};
+use mh_core::ServerId;
 use serde::Deserialize;
 
 use crate::dto::{CatalogVersionDto, JobDto};
