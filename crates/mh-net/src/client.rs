@@ -8,7 +8,7 @@ use serde::de::DeserializeOwned;
 use sha2::{Digest, Sha256};
 
 use crate::download::digest_hex;
-use crate::{Checksum, NetError};
+use crate::{Checksum, HostAllowlist, NetError};
 
 /// PaperMC yêu cầu User-Agent có thông tin liên hệ; thiếu thì có thể bị chặn.
 pub const USER_AGENT: &str = concat!(
@@ -49,6 +49,12 @@ pub struct Fetched<T> {
     pub value: T,
     pub stale: bool,
 }
+
+/// Số bước chuyển hướng tối đa, bằng mặc định của reqwest.
+const MAX_REDIRECTS: usize = 10;
+
+/// 429 bảo chờ tới mức này thì tự chờ rồi thử lại một lần; lâu hơn thì báo người dùng.
+const MAX_RATE_LIMIT_WAIT_S: u64 = 10;
 
 /// Thân response theo URL, kèm thời điểm tải để tính TTL.
 type MemoryCache = HashMap<String, (Instant, Arc<[u8]>)>;
@@ -156,7 +162,7 @@ impl HttpClient {
     ///
     /// Dừng khi thân dài hơn `max_bytes`, không giữ phần vượt quá.
     pub async fn get_bytes(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, NetError> {
-        let mut resp = self.send_with(&self.direct, url).await?;
+        let mut resp = self.send_with(&self.direct, url, false).await?;
         if resp
             .content_length()
             .is_some_and(|len| len > max_bytes as u64)
@@ -168,18 +174,55 @@ impl HttpClient {
 
     /// GET có retry khi timeout, lỗi kết nối, 5xx hoặc 429. Chỉ trả response 2xx.
     pub(crate) async fn send(&self, url: &str) -> Result<reqwest::Response, NetError> {
-        self.send_with(&self.http, url).await
+        self.send_with(&self.http, url, false).await
+    }
+
+    /// Như `send`; có danh sách host thì tự theo chuyển hướng và kiểm tra từng bước.
+    pub(crate) async fn send_download(
+        &self,
+        url: &str,
+        allowed: Option<&HostAllowlist>,
+    ) -> Result<reqwest::Response, NetError> {
+        let Some(allowed) = allowed else {
+            return self.send(url).await;
+        };
+        let mut current = parse_url(url)?;
+        for _ in 0..=MAX_REDIRECTS {
+            allowed.check(&current)?;
+            let resp = self.send_with(&self.direct, current.as_str(), true).await?;
+            if !resp.status().is_redirection() {
+                return Ok(resp);
+            }
+            current = redirect_target(&current, &resp)?;
+        }
+        Err(unavailable(url, &"chuyển hướng quá nhiều lần"))
     }
 
     async fn send_with(
         &self,
         http: &reqwest::Client,
         url: &str,
+        accept_redirect: bool,
     ) -> Result<reqwest::Response, NetError> {
         let mut attempt = 0;
+        let mut waited_for_limit = false;
         loop {
             let err = match http.get(url).send().await {
                 Ok(resp) if resp.status().is_success() => return Ok(resp),
+                Ok(resp) if accept_redirect && resp.status().is_redirection() => return Ok(resp),
+                Ok(resp) if resp.status() == reqwest::StatusCode::TOO_MANY_REQUESTS => {
+                    let wait = retry_after_s(&resp);
+                    if waited_for_limit || wait > MAX_RATE_LIMIT_WAIT_S {
+                        return Err(NetError::RateLimited {
+                            url: url.to_owned(),
+                            retry_after_s: wait,
+                        });
+                    }
+                    tracing::warn!(url, wait, "nguồn trả 429, chờ rồi thử lại một lần");
+                    tokio::time::sleep(Duration::from_secs(wait)).await;
+                    waited_for_limit = true;
+                    continue;
+                }
                 Ok(resp) if !is_retryable(resp.status()) => {
                     return Err(NetError::Status {
                         url: url.to_owned(),
@@ -294,7 +337,29 @@ fn body_too_large(url: &str, max_bytes: usize) -> NetError {
 }
 
 fn is_retryable(status: reqwest::StatusCode) -> bool {
-    status.is_server_error() || status == reqwest::StatusCode::TOO_MANY_REQUESTS
+    status.is_server_error()
+}
+
+/// `Retry-After` (giây), hoặc `X-Ratelimit-Reset` của Modrinth (giây tới lúc mở lại). Thiếu
+/// hoặc là ngày giờ thì coi như 1 giây.
+fn retry_after_s(resp: &reqwest::Response) -> u64 {
+    ["retry-after", "x-ratelimit-reset"]
+        .iter()
+        .find_map(|name| resp.headers().get(*name)?.to_str().ok()?.trim().parse().ok())
+        .unwrap_or(1)
+}
+
+pub(crate) fn parse_url(url: &str) -> Result<reqwest::Url, NetError> {
+    reqwest::Url::parse(url).map_err(|e| unavailable(url, &e))
+}
+
+fn redirect_target(from: &reqwest::Url, resp: &reqwest::Response) -> Result<reqwest::Url, NetError> {
+    let location = resp
+        .headers()
+        .get(reqwest::header::LOCATION)
+        .and_then(|v| v.to_str().ok())
+        .ok_or_else(|| unavailable(from.as_str(), &"chuyển hướng không có Location"))?;
+    from.join(location).map_err(|e| unavailable(from.as_str(), &e))
 }
 
 fn unavailable(url: &str, reason: &dyn fmt::Display) -> NetError {

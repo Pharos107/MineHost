@@ -207,6 +207,7 @@ impl ServerCatalog for OnlineCatalog {
                 dest,
                 // Purpur không ghi kích thước (0): để `Content-Length` cho biết.
                 size: (jar.size > 0).then_some(jar.size),
+                allowed_hosts: None,
             };
             self.http.download(req, progress, cancel).await?;
             Ok(())

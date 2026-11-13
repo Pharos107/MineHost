@@ -121,6 +121,7 @@ impl JavaManager {
             checksum: &package.checksum,
             dest: &archive,
             size: Some(package.size),
+            allowed_hosts: None,
         };
         self.http.download(req, progress, cancel).await?;
         let extracted = tmp.path().join("x");

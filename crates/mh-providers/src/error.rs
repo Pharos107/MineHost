@@ -43,6 +43,14 @@ pub enum ProviderError {
 }
 
 impl ProviderError {
+    /// Tham số đi kèm mã lỗi; chỉ lỗi mạng mới có (ví dụ `retry_after_s`).
+    pub fn params(&self) -> serde_json::Value {
+        match self {
+            Self::Net(e) => e.params(),
+            _ => serde_json::Value::Object(serde_json::Map::new()),
+        }
+    }
+
     pub fn code(&self) -> ErrorCode {
         match self {
             // API của Paper trả 404 cho phiên bản không có. 404 của hồ sơ người chơi
