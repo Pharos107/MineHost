@@ -2781,6 +2781,15 @@
               }
             ]
           },
+          "java_major": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Phiên bản Java chính (`8`, `11`, `17`, `21`, `25`).",
+            "minimum": 0
+          },
           "memory_mb": {
             "oneOf": [
               {

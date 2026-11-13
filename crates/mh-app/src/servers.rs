@@ -42,6 +42,8 @@ pub struct SettingsPatch {
     pub backup_schedule: Option<BackupSchedule>,
     /// Số bản tự động giữ lại, 1..=100.
     pub backup_keep: Option<u16>,
+    /// Phiên bản Java chính (8, 11, 17, 21, 25). Có hiệu lực từ lần bật sau.
+    pub java_major: Option<u16>,
 }
 
 impl App {
@@ -105,6 +107,16 @@ impl App {
         }
         if let Some(keep) = patch.backup_keep {
             spec.backup.keep = check_keep(keep)?;
+        }
+        if let Some(major) = patch.java_major {
+            if !mh_core::is_supported_java_major(major) {
+                return Err(AppError::new(
+                    ErrorCode::InvalidInput,
+                    format!("không hỗ trợ Java {major}"),
+                )
+                .with_params(serde_json::json!({ "field": "java_major" })));
+            }
+            spec.game.java_major = major;
         }
         self.store.save(&spec)?;
         self.notify_changed(id);
@@ -230,6 +242,7 @@ impl App {
                 id,
                 store: self.store.clone(),
                 java: Arc::clone(&self.java),
+                jobs: Arc::clone(&self.jobs),
                 port_free: Arc::clone(&self.port_free),
             };
             let handle = mh_supervisor::spawn(config, Arc::clone(&self.runtime), launcher);

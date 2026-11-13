@@ -75,6 +75,11 @@ impl JavaManager {
         self
     }
 
+    /// Kiểm tra nhanh xem file thực thi `java` cho `major` đã có sẵn trên đĩa chưa.
+    pub fn is_installed(&self, major: u16) -> bool {
+        java_bin(&self.java_dir.join(major.to_string())).is_file()
+    }
+
     /// Bảo đảm có Java `major`: dùng bản đã cài nếu chạy được, nếu không thì tải từ Adoptium.
     pub async fn ensure(
         &self,

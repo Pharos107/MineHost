@@ -49,4 +49,14 @@ test("tạo, bật và tắt một server Fabric từ wizard", async ({ page }) 
   await page.getByRole("link", { name: "Fabric E2E" }).click();
   await page.getByRole("button", { name: "Tắt" }).click();
   await expect(page.getByText("Đã tắt", { exact: true })).toBeVisible({ timeout: 30_000 });
+
+  await page.getByRole("link", { name: "Cài đặt server" }).click();
+  await page.getByRole("button", { name: "Nâng cao" }).click();
+  await page.getByRole("combobox", { name: "Phiên bản Java" }).selectOption("17");
+  await expect(page.getByText(/thường dùng Java 21/)).toBeVisible();
+  await page.getByRole("button", { name: "Lưu" }).click();
+  await expect(page.getByText("Đã lưu.")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("combobox", { name: "Phiên bản Java" })).toHaveValue("17");
 });

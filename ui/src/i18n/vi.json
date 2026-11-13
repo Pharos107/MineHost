@@ -279,7 +279,12 @@
     "restartAtTime": "Giờ khởi động lại {{n}}",
     "restartAtInvalid": "Hãy chọn đủ giờ và phút cho mọi mốc.",
     "restartAtDuplicate": "Hai mốc trùng giờ.",
-    "ignoredJvmArgs": "Thư mục server có user_jvm_args.txt nhưng MineHost bỏ qua file này để quản lý RAM theo cài đặt bên dưới."
+    "ignoredJvmArgs": "Thư mục server có user_jvm_args.txt nhưng MineHost bỏ qua file này để quản lý RAM theo cài đặt bên dưới.",
+    "java": "Phiên bản Java",
+    "javaHint": "Mặc định dùng bản Java đề xuất cho phiên bản Minecraft của server. Chỉ đổi khi mod hoặc plugin yêu cầu.",
+    "javaOption": "Java {{major}}",
+    "javaRecommended": "Java {{major}} (đề xuất)",
+    "javaWarning": "Minecraft này thường dùng Java {{recommended}}. Chọn bản khác có thể khiến server không khởi động được."
   },
   "delete": {
     "title": "Xóa server",
@@ -382,7 +387,8 @@
       "create_server": "Tạo server",
       "backup": "Sao lưu",
       "restore": "Khôi phục",
-      "import_server": "Nhập server"
+      "import_server": "Nhập server",
+      "install_java": "Tải Java"
     },
     "states": {
       "running": "Đang chạy",

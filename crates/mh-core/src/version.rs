@@ -240,6 +240,14 @@ pub fn neoforge_minecraft(version: &str) -> Option<String> {
     }
 }
 
+/// Các phiên bản Java mà MineHost hỗ trợ chọn cho từng server (Adoptium LTS / hiện hành).
+pub const JAVA_MAJORS: &[u16] = &[8, 11, 17, 21, 25];
+
+/// Có nằm trong danh sách phiên bản Java MineHost hỗ trợ không.
+pub const fn is_supported_java_major(major: u16) -> bool {
+    matches!(major, 8 | 11 | 17 | 21 | 25)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
