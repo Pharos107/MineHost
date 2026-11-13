@@ -2,23 +2,10 @@ import type { Server, ServerPatch } from "../../api/client";
 import { memoryFor } from "../../memory";
 import { nameError, portError } from "../create/form";
 
-/** Các phiên bản Java MineHost hỗ trợ chọn cho từng server. */
-export const JAVA_MAJORS = [8, 11, 17, 21, 25] as const;
-
-/** Java đề xuất theo quy ước phiên bản của Minecraft. */
-export function recommendedJavaMajor(minecraft: string | null | undefined): number {
-  if (!minecraft) return 21;
-  const parts = (minecraft.split("-")[0] ?? "").split(".").map(Number);
-  const first = parts[0] ?? 0;
-  if (first >= 26) return 25;
-  if (first === 1) {
-    const minor = parts[1] ?? 0;
-    const patch = parts[2] ?? 0;
-    if (minor > 20 || (minor === 20 && patch >= 5)) return 21;
-    if (minor >= 17) return 17;
-    return 8;
-  }
-  return 21;
+/** Bản Java hiện trong ô chọn: danh sách backend cho phép, cộng bản server đang dùng nếu nằm ngoài. */
+export function javaChoices(supported: readonly number[], current: number): number[] {
+  const all = current > 0 && !supported.includes(current) ? [...supported, current] : [...supported];
+  return all.sort((a, b) => a - b);
 }
 
 /** Giá trị đang sửa trong tab Cài đặt server; `port` là chữ để gõ dở vẫn giữ được. */
@@ -45,7 +32,7 @@ export function settingsFrom(server: Server): SettingsForm {
     autostart: server.autostart ?? false,
     restartOnCrash: server.restart_on_crash ?? true,
     restartAt: server.restart_at ?? [],
-    javaMajor: server.java_major ?? recommendedJavaMajor(server.minecraft),
+    javaMajor: server.java_major ?? server.java_recommended ?? 0,
   };
 }
 

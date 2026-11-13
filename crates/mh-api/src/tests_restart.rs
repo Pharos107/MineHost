@@ -42,6 +42,12 @@ async fn java_major_is_validated_and_saved() {
         .await;
     assert_eq!(status, StatusCode::OK, "{server}");
     assert_eq!(server["java_major"], 17);
+    // Bản Mojang yêu cầu không đổi theo lựa chọn của người dùng, để UI còn cảnh báo được.
+    assert_eq!(server["java_recommended"], 21);
+
+    let (status, system) = api.get("/api/v1/system").await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(system["java_majors"], json!([8, 11, 16, 17, 21, 25]));
 
     let (status, body) = api
         .call(Method::PATCH, &uri, Some(json!({ "java_major": 19 })))

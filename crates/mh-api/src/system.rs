@@ -43,6 +43,8 @@ pub struct SystemDto {
     pub suggested_memory_mb: MemoryDto,
     /// Địa chỉ IPv4 trong mạng LAN, để bạn bè vào chơi.
     pub lan_addresses: Vec<String>,
+    /// Bản Java chọn được cho từng server, tăng dần.
+    pub java_majors: Vec<u16>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -109,5 +111,6 @@ pub async fn system_info(State(app): State<Arc<App>>) -> Result<Json<SystemDto>,
             max: suggested.max_mb(),
         },
         lan_addresses,
+        java_majors: mh_core::JAVA_MAJORS.to_vec(),
     }))
 }

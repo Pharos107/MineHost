@@ -9,15 +9,18 @@ import { formatMemoryMb } from "../../format";
 import { MEMORY_STEP_MB, memoryRange } from "../../memory";
 import { Button, Card, Field, IconButton, Notice, Select, Slider, Stack, Switch, TextInput } from "../../ui";
 import { DeleteServer } from "./DeleteServer";
-import { JAVA_MAJORS, MAX_RESTART_TIMES, recommendedJavaMajor, settingsErrors, settingsFrom, settingsPatch, type SettingsForm } from "./settings";
+import { javaChoices, MAX_RESTART_TIMES, settingsErrors, settingsFrom, settingsPatch, type SettingsForm } from "./settings";
 
 /** Tab "Cài đặt server": tên, RAM, cổng, tự bật, tự khởi động lại khi crash, Java, xóa server. */
 export function ServerSettingsTab({ server }: { server: Server }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [form, setForm] = useState(() => settingsFrom(server));
-  const recommendedJava = recommendedJavaMajor(server.minecraft);
-  const [advanced, setAdvanced] = useState(() => form.javaMajor !== recommendedJava);
+  // Bản Mojang yêu cầu do backend tính; `null` (bản chưa biết) thì không cảnh báo.
+  const recommendedJava = server.java_recommended ?? null;
+  const javaDiffers = recommendedJava !== null && form.javaMajor !== recommendedJava;
+  const system = useQuery({ queryKey: ["system"], queryFn: api.system });
+  const [advanced, setAdvanced] = useState(() => javaDiffers);
   const save = useMutation({
     mutationFn: () => api.updateServer(server.id, settingsPatch(server, form)),
     onSuccess: (updated) => {
@@ -65,14 +68,14 @@ export function ServerSettingsTab({ server }: { server: Server }) {
             <>
               <Field label={t("settings.java")} hint={t("settings.javaHint")}>
                 <Select value={String(form.javaMajor)} onChange={(e) => update({ javaMajor: Number(e.target.value) })}>
-                  {JAVA_MAJORS.map((major) => (
+                  {javaChoices(system.data?.java_majors ?? [], form.javaMajor).map((major) => (
                     <option key={major} value={String(major)}>
                       {major === recommendedJava ? t("settings.javaRecommended", { major }) : t("settings.javaOption", { major })}
                     </option>
                   ))}
                 </Select>
               </Field>
-              {form.javaMajor !== recommendedJava && <Notice tone="warning">{t("settings.javaWarning", { recommended: recommendedJava })}</Notice>}
+              {javaDiffers && <Notice tone="warning">{t("settings.javaWarning", { recommended: recommendedJava })}</Notice>}
             </>
           )}
           {save.isError && <Notice tone="danger">{errorMessage(t, save.error)}</Notice>}

@@ -240,12 +240,41 @@ pub fn neoforge_minecraft(version: &str) -> Option<String> {
     }
 }
 
-/// Các phiên bản Java mà MineHost hỗ trợ chọn cho từng server (Adoptium LTS / hiện hành).
-pub const JAVA_MAJORS: &[u16] = &[8, 11, 17, 21, 25];
+/// Các bản Java chọn được cho từng server (spec P3, mục 3.10): mọi bản Mojang từng yêu cầu
+/// (8, 16, 17, 21, 25) cộng LTS 11. Đều có trên Adoptium.
+pub const JAVA_MAJORS: &[u16] = &[8, 11, 16, 17, 21, 25];
 
 /// Có nằm trong danh sách phiên bản Java MineHost hỗ trợ không.
-pub const fn is_supported_java_major(major: u16) -> bool {
-    matches!(major, 8 | 11 | 17 | 21 | 25)
+pub fn is_supported_java_major(major: u16) -> bool {
+    JAVA_MAJORS.contains(&major)
+}
+
+/// Bản Java Mojang yêu cầu (`javaVersion.majorVersion` trong file phiên bản) cho một bản release.
+///
+/// Dùng để cảnh báo khi người dùng chọn bản khác, kể cả sau khi đã đổi `java_major`. Các mốc đã cố
+/// định: dưới 1.17 là 8, 1.17 là 16, 1.18 tới 1.20.4 là 17, 1.20.5 tới 1.21.x là 21, 26.x là 25.
+/// Bản chưa biết (snapshot, năm sau 26) trả `None`.
+pub fn mojang_java_major(minecraft: &McVersion) -> Option<u16> {
+    let parts: Vec<u32> = minecraft
+        .as_str()
+        .split('.')
+        .map(str::parse)
+        .collect::<Result<_, _>>()
+        .ok()?;
+    match parts.as_slice() {
+        [1, minor, rest @ ..] => {
+            let patch = rest.first().copied().unwrap_or(0);
+            Some(match (*minor, patch) {
+                (..=16, _) => 8,
+                (17, _) => 16,
+                (18..=19, _) | (20, ..=4) => 17,
+                (20, _) | (21, _) => 21,
+                _ => return None,
+            })
+        }
+        [26, ..] => Some(25),
+        _ => None,
+    }
 }
 
 #[cfg(test)]
@@ -312,6 +341,31 @@ mod tests {
         assert!(LoaderKind::Quilt.is_mod_loader());
         assert!(!LoaderKind::Purpur.is_mod_loader());
         assert_eq!(ContentKind::Plugins.dir(), "plugins");
+    }
+
+    #[test]
+    fn mojang_java_major_follows_release_milestones() {
+        let cases = [
+            ("1.12.2", Some(8)),
+            ("1.16.5", Some(8)),
+            ("1.17", Some(16)),
+            ("1.17.1", Some(16)),
+            ("1.18", Some(17)),
+            ("1.20.4", Some(17)),
+            ("1.20.5", Some(21)),
+            ("1.21.4", Some(21)),
+            ("26.1", Some(25)),
+            ("26.1.2", Some(25)),
+            ("24w14a", None),
+            ("27.1", None),
+        ];
+        for (mc, java) in cases {
+            let version = McVersion::parse(mc).unwrap();
+            assert_eq!(mojang_java_major(&version), java, "{mc}");
+            if let Some(major) = java {
+                assert!(is_supported_java_major(major), "{mc} cần Java {major}");
+            }
+        }
     }
 
     #[test]
