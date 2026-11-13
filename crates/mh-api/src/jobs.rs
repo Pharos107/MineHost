@@ -6,7 +6,7 @@ use axum::Json;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use mh_app::App;
-use mh_core::{LoaderKind, ServerId};
+use mh_core::ServerId;
 use serde::Deserialize;
 
 use crate::dto::{CatalogVersionDto, JobDto};
@@ -70,7 +70,7 @@ pub async fn catalog_versions(
     State(app): State<Arc<App>>,
     Path(loader): Path<String>,
 ) -> Result<Json<Vec<CatalogVersionDto>>, ApiError> {
-    let loader = LoaderKind::parse(&loader).map_err(|_| ApiError::invalid("loader"))?;
+    let loader = crate::servers::parse_loader(&loader)?;
     let versions = app.catalog_versions(loader).await?;
     Ok(Json(versions.into_iter().map(Into::into).collect()))
 }

@@ -59,7 +59,11 @@
   "loaders": {
     "paper": "Paper",
     "vanilla": "Vanilla",
-    "purpur": "Purpur"
+    "purpur": "Purpur",
+    "fabric": "Fabric",
+    "quilt": "Quilt",
+    "forge": "Forge",
+    "neoforge": "NeoForge"
   },
   "servers": {
     "heading": "Server của bạn",
@@ -331,7 +335,17 @@
     "FILE_EXISTS": "Đã có file hoặc thư mục trùng tên.",
     "BACKUP_PROTECTED": "Bản sao lưu này đang được bảo vệ. Hãy bỏ bảo vệ trước khi xóa.",
     "MODS_NOT_SUPPORTED": "Server này có mod (thư mục mods). Bản này chưa hỗ trợ mod; sẽ có ở bản sau.",
-    "SERVER_NOT_RUNNING": "Server chưa chạy. Bật server rồi thử lại."
+    "SERVER_NOT_RUNNING": "Server chưa chạy. Bật server rồi thử lại.",
+    "LOADER_INSTALL_FAILED": "Không cài được mod loader. Xem log của tác vụ để biết chi tiết.",
+    "CONTENT_INCOMPATIBLE": "Mod hoặc plugin này không có bản cho loại server và phiên bản Minecraft này.",
+    "CONTENT_NOT_FOUND": "Không tìm thấy mod, plugin hoặc modpack này. Có thể nó đã bị gỡ khỏi trang nguồn.",
+    "DEPENDENCY_MISSING": "Còn thiếu mod bắt buộc. Cài các mod còn thiếu rồi bật lại.",
+    "CURSEFORGE_UNAVAILABLE": "Chưa dùng được CurseForge: chưa có key hoặc key bị từ chối. Xem mục CurseForge trong Cài đặt.",
+    "CURSEFORGE_FILES_PENDING": "Còn file từ CurseForge cần tự tải. Mở trang Mod để tải và kéo file vào.",
+    "UPLOAD_HASH_MISMATCH": "File vừa tải lên không khớp file cần. Hãy tải đúng phiên bản từ trang mod.",
+    "MODPACK_INVALID": "File modpack không hợp lệ hoặc bị hỏng.",
+    "DOWNLOAD_HOST_NOT_ALLOWED": "Có file cần tải từ một trang không được phép, nên MineHost không tải.",
+    "UPSTREAM_RATE_LIMITED": "Trang nguồn đang giới hạn số lần truy cập. Thử lại sau {{retry_after_s}} giây."
   },
   "jobsPage": {
     "description": "Việc MineHost đang làm hoặc vừa làm xong, như tạo server hay sao lưu.",

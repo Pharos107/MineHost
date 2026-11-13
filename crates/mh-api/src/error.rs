@@ -63,15 +63,19 @@ impl ApiError {
 /// `PASSWORD_TOO_SHORT` là 400, `LAN_NEEDS_PASSWORD` là 409 (spec P2, mục 4.5).
 fn status_for(code: ErrorCode) -> StatusCode {
     match code {
-        ErrorCode::NotFound | ErrorCode::VersionNotFound | ErrorCode::PlayerNotFound => {
-            StatusCode::NOT_FOUND
-        }
+        ErrorCode::NotFound
+        | ErrorCode::VersionNotFound
+        | ErrorCode::PlayerNotFound
+        | ErrorCode::ContentNotFound => StatusCode::NOT_FOUND,
         ErrorCode::InvalidInput | ErrorCode::PathOutsideRoot | ErrorCode::PasswordTooShort => {
             StatusCode::BAD_REQUEST
         }
         ErrorCode::AuthRequired | ErrorCode::AuthInvalid => StatusCode::UNAUTHORIZED,
         ErrorCode::Forbidden => StatusCode::FORBIDDEN,
-        ErrorCode::AuthRateLimited => StatusCode::TOO_MANY_REQUESTS,
+        ErrorCode::AuthRateLimited | ErrorCode::UpstreamRateLimited => {
+            StatusCode::TOO_MANY_REQUESTS
+        }
+        ErrorCode::CurseforgeUnavailable => StatusCode::SERVICE_UNAVAILABLE,
         ErrorCode::ServerBusy
         | ErrorCode::EulaNotAccepted
         | ErrorCode::PortInUse
@@ -81,12 +85,20 @@ fn status_for(code: ErrorCode) -> StatusCode {
         | ErrorCode::LanNeedsPassword
         | ErrorCode::BackupProtected
         | ErrorCode::ModsNotSupported
-        | ErrorCode::ServerNotRunning => StatusCode::CONFLICT,
+        | ErrorCode::ServerNotRunning
+        | ErrorCode::ContentIncompatible
+        | ErrorCode::DependencyMissing
+        | ErrorCode::CurseforgeFilesPending => StatusCode::CONFLICT,
         ErrorCode::NetworkUnavailable | ErrorCode::DownloadFailed | ErrorCode::ChecksumMismatch => {
             StatusCode::BAD_GATEWAY
         }
         ErrorCode::NotEnoughDisk => StatusCode::INSUFFICIENT_STORAGE,
-        ErrorCode::ConfigInvalid | ErrorCode::BackupCorrupt => StatusCode::UNPROCESSABLE_ENTITY,
+        // File hay modpack người dùng gửi lên đúng cú pháp HTTP nhưng nội dung không dùng được.
+        ErrorCode::ConfigInvalid
+        | ErrorCode::BackupCorrupt
+        | ErrorCode::UploadHashMismatch
+        | ErrorCode::ModpackInvalid
+        | ErrorCode::DownloadHostNotAllowed => StatusCode::UNPROCESSABLE_ENTITY,
         ErrorCode::FileTooLarge => StatusCode::PAYLOAD_TOO_LARGE,
         // File nhị phân không đọc được như văn bản: đúng kiểu 415, không phải 400.
         ErrorCode::FileNotText => StatusCode::UNSUPPORTED_MEDIA_TYPE,
@@ -227,5 +239,39 @@ mod tests {
             status_for(ErrorCode::ModsNotSupported),
             StatusCode::CONFLICT
         );
+    }
+
+    #[test]
+    fn p3_codes_map_to_status() {
+        let cases = [
+            (ErrorCode::ContentNotFound, StatusCode::NOT_FOUND),
+            (ErrorCode::ContentIncompatible, StatusCode::CONFLICT),
+            (ErrorCode::DependencyMissing, StatusCode::CONFLICT),
+            (ErrorCode::CurseforgeFilesPending, StatusCode::CONFLICT),
+            (
+                ErrorCode::CurseforgeUnavailable,
+                StatusCode::SERVICE_UNAVAILABLE,
+            ),
+            (
+                ErrorCode::UpstreamRateLimited,
+                StatusCode::TOO_MANY_REQUESTS,
+            ),
+            (
+                ErrorCode::UploadHashMismatch,
+                StatusCode::UNPROCESSABLE_ENTITY,
+            ),
+            (ErrorCode::ModpackInvalid, StatusCode::UNPROCESSABLE_ENTITY),
+            (
+                ErrorCode::DownloadHostNotAllowed,
+                StatusCode::UNPROCESSABLE_ENTITY,
+            ),
+            (
+                ErrorCode::LoaderInstallFailed,
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+        ];
+        for (code, status) in cases {
+            assert_eq!(status_for(code), status, "{code}");
+        }
     }
 }

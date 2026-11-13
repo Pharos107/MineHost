@@ -10,8 +10,11 @@ async fn catalog_accepts_every_supported_loader() {
         assert_eq!(status, StatusCode::OK, "{loader}: {body}");
         assert_eq!(body[0]["id"], "1.21.4", "{loader}");
     }
-    let (status, body) = api.get("/api/v1/catalog/forge/versions").await;
-    assert_eq!(status, StatusCode::BAD_REQUEST);
-    assert_eq!(body["code"], "INVALID_INPUT");
-    assert_eq!(body["params"]["field"], "loader");
+    // `forge`, `fabric` là loại đã biết nhưng chưa cài được (spec P3, PR-09); `folia` là loại lạ.
+    for loader in ["forge", "fabric", "folia"] {
+        let (status, body) = api.get(&format!("/api/v1/catalog/{loader}/versions")).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{loader}");
+        assert_eq!(body["code"], "INVALID_INPUT");
+        assert_eq!(body["params"]["field"], "loader");
+    }
 }

@@ -65,16 +65,30 @@ pub trait JavaSource: Send + Sync + 'static {
     ) -> BoxFut<'a, Result<JavaRuntime, AppError>>;
 }
 
-/// Tham số chạy sau `-jar` theo loại server.
+/// Tham số chạy sau `-jar` hoặc `@args_file` theo loại server.
 pub fn launch_args(loader: LoaderKind) -> Vec<String> {
     match loader {
         // Purpur là bản sửa của Paper nên nhận cùng tham số.
         LoaderKind::Paper | LoaderKind::Purpur => Paper::recipe().args,
-        // Jar của Mojang nhận `nogui` không có gạch ngang, đúng từ các bản rất cũ.
-        LoaderKind::Vanilla => vec!["nogui".to_owned()],
+        // Jar của Mojang nhận `nogui` không có gạch ngang, đúng từ các bản rất cũ. Bốn mod
+        // loader chuyển tham số cho lớp main của Minecraft nên nhận cùng kiểu.
+        LoaderKind::Vanilla
+        | LoaderKind::Fabric
+        | LoaderKind::Quilt
+        | LoaderKind::Forge
+        | LoaderKind::NeoForge => vec!["nogui".to_owned()],
         // `LoaderKind` là `non_exhaustive`; loại mới phải tự khai báo cách chạy ở đây.
         _ => Vec::new(),
     }
+}
+
+/// Loại server tạo hoặc nhập được bằng bản này. `instance.toml` đã đọc được bốn mod loader
+/// (spec P3, PR-01) nhưng phải chờ Job cài loader (PR-09) mới tạo được.
+pub const fn installable(loader: LoaderKind) -> bool {
+    matches!(
+        loader,
+        LoaderKind::Paper | LoaderKind::Vanilla | LoaderKind::Purpur
+    )
 }
 
 pub(crate) fn unsupported(loader: LoaderKind) -> AppError {

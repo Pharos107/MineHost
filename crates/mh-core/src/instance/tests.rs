@@ -151,7 +151,7 @@ fn invalid_values_are_rejected() {
         ("name = \"Server của tôi\"", "name = \"  \""),
         ("id = \"01JB8Z6Q0K3V5T2N8XWJ4R7M9C\"", "id = \"../x\""),
         ("min = 1024, max = 4096", "min = 4096, max = 1024"),
-        ("loader = \"paper\"", "loader = \"forge\""),
+        ("loader = \"paper\"", "loader = \"folia\""),
         ("jar = \"server.jar\"", "jar = \"../server.jar\""),
         (
             "created_at = \"2026-10-23T10:00:00Z\"",

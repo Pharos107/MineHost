@@ -63,8 +63,28 @@ pub enum ErrorCode {
     BackupCorrupt,
     /// Bản backup đang được bảo vệ, không xóa được.
     BackupProtected,
-    /// Server có mod (thư mục `mods/`): chưa hỗ trợ ở P2, có từ P3.
+    /// Nhập server có `mods/` mà không nhận ra loader (spec P3, mục 4.4).
     ModsNotSupported,
+    /// Installer của loader thoát với mã khác 0 hoặc quá 15 phút (spec P3, mục 3.1).
+    LoaderInstallFailed,
+    /// Mod hoặc plugin không có bản cho loader và phiên bản Minecraft của server.
+    ContentIncompatible,
+    /// Project hoặc file không còn trên Modrinth hoặc CurseForge.
+    ContentNotFound,
+    /// Bật server khi còn thiếu dependency bắt buộc.
+    DependencyMissing,
+    /// Không có key CurseForge, hoặc key bị từ chối.
+    CurseforgeUnavailable,
+    /// Bật server khi còn file CurseForge chưa tải tay (spec P3, mục 3.6).
+    CurseforgeFilesPending,
+    /// File kéo vào không khớp hash của file đang chờ.
+    UploadHashMismatch,
+    /// File modpack thiếu index, sai định dạng hoặc có đường dẫn thoát thư mục.
+    ModpackInvalid,
+    /// URL tải nằm ngoài danh sách host được phép (spec P3, mục 3.7).
+    DownloadHostNotAllowed,
+    /// Modrinth hoặc CurseForge trả 429; kèm `retry_after_s`.
+    UpstreamRateLimited,
 }
 
 impl ErrorCode {
@@ -103,6 +123,16 @@ impl ErrorCode {
             Self::BackupProtected => "BACKUP_PROTECTED",
             Self::ModsNotSupported => "MODS_NOT_SUPPORTED",
             Self::ServerNotRunning => "SERVER_NOT_RUNNING",
+            Self::LoaderInstallFailed => "LOADER_INSTALL_FAILED",
+            Self::ContentIncompatible => "CONTENT_INCOMPATIBLE",
+            Self::ContentNotFound => "CONTENT_NOT_FOUND",
+            Self::DependencyMissing => "DEPENDENCY_MISSING",
+            Self::CurseforgeUnavailable => "CURSEFORGE_UNAVAILABLE",
+            Self::CurseforgeFilesPending => "CURSEFORGE_FILES_PENDING",
+            Self::UploadHashMismatch => "UPLOAD_HASH_MISMATCH",
+            Self::ModpackInvalid => "MODPACK_INVALID",
+            Self::DownloadHostNotAllowed => "DOWNLOAD_HOST_NOT_ALLOWED",
+            Self::UpstreamRateLimited => "UPSTREAM_RATE_LIMITED",
         }
     }
 }
@@ -137,7 +167,7 @@ impl InvalidValue {
 mod tests {
     use super::*;
 
-    const ALL: [ErrorCode; 32] = [
+    const ALL: [ErrorCode; 42] = [
         ErrorCode::Internal,
         ErrorCode::NotFound,
         ErrorCode::PlayerNotFound,
@@ -170,6 +200,16 @@ mod tests {
         ErrorCode::BackupProtected,
         ErrorCode::ModsNotSupported,
         ErrorCode::ServerNotRunning,
+        ErrorCode::LoaderInstallFailed,
+        ErrorCode::ContentIncompatible,
+        ErrorCode::ContentNotFound,
+        ErrorCode::DependencyMissing,
+        ErrorCode::CurseforgeUnavailable,
+        ErrorCode::CurseforgeFilesPending,
+        ErrorCode::UploadHashMismatch,
+        ErrorCode::ModpackInvalid,
+        ErrorCode::DownloadHostNotAllowed,
+        ErrorCode::UpstreamRateLimited,
     ];
 
     #[test]

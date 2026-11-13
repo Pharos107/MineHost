@@ -9,9 +9,16 @@ use toml::Table;
 use crate::backup_schedule::{BackupSchedule, DEFAULT_KEEP};
 use crate::error::{ErrorCode, InvalidValue};
 use crate::ids::{GamePort, ServerId, ServerName};
+use crate::launch::Launch;
 use crate::memory::MemoryLimits;
 use crate::schedule::DailyTime;
-use crate::version::{LoaderKind, McVersion};
+use crate::version::{LoaderKind, LoaderVersion, McVersion};
+
+mod sections;
+
+pub use sections::{
+    ContentId, LaunchMode, LaunchSection, ModpackSection, ModpackSource, UpstreamText,
+};
 
 /// Bản schema mà MineHost này đọc và ghi.
 pub const CURRENT_SCHEMA: u32 = 1;
@@ -38,6 +45,9 @@ pub struct InstanceSpec {
     pub backup: BackupSection,
     #[serde(default, skip_serializing_if = "EulaSection::is_empty")]
     pub eula: EulaSection,
+    /// Nguồn modpack (spec P3, mục 4.1). Chỉ có khi server được tạo từ modpack.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub modpack: Option<ModpackSection>,
     #[serde(flatten)]
     pub extra: Table,
 }
@@ -49,9 +59,16 @@ pub struct GameSection {
     /// Build của Paper; loại server không có số build thì để trống.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub build: Option<u32>,
+    /// Bản mod loader (spec P3, mục 4.1); Paper, Purpur dùng `build`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub loader_version: Option<LoaderVersion>,
+    /// Vẫn bắt buộc để bản P2 đọc được file; kiểu `args_file` không dùng tới.
     pub jar: JarName,
     /// Lấy từ `javaVersion.majorVersion` trong manifest của Mojang.
     pub java_major: u16,
+    /// `[game.launch]`; thiếu nghĩa là chạy `jar` bằng `-jar`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub launch: Option<LaunchSection>,
     #[serde(flatten)]
     pub extra: Table,
 }
@@ -214,6 +231,7 @@ impl InstanceSpec {
             policy: PolicySection::default(),
             backup: BackupSection::default(),
             eula: EulaSection::default(),
+            modpack: None,
             extra: Table::new(),
         }
     }
@@ -250,9 +268,19 @@ impl GameSection {
             loader,
             minecraft,
             build,
+            loader_version: None,
             jar: JarName::server_jar(),
             java_major,
+            launch: None,
             extra: Table::new(),
+        }
+    }
+
+    /// Cách chạy server: `args_file` nếu có, không thì `jar`.
+    pub fn launch(&self) -> Launch {
+        match self.launch.as_ref().map(|l| &l.mode) {
+            Some(LaunchMode::ArgsFile(path)) => Launch::ArgsFile(path.clone()),
+            Some(LaunchMode::Jar) | None => Launch::Jar(self.jar.clone()),
         }
     }
 }
@@ -309,3 +337,5 @@ impl From<JarName> for String {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_p3;
