@@ -53,7 +53,9 @@ impl Cgroups {
         let controllers = fs::read_to_string(base.join("cgroup.controllers"))?;
         let has = |name: &str| controllers.split_whitespace().any(|c| c == name);
         if !has("memory") || !has("pids") {
-            return Err(io::Error::other("cgroup hiện tại không có controller memory và pids"));
+            return Err(io::Error::other(
+                "cgroup hiện tại không có controller memory và pids",
+            ));
         }
         let leaf = base.join(CONTROLLER_LEAF);
         create_dir(&leaf)?;
@@ -68,8 +70,12 @@ impl Cgroups {
         let n = NEXT_ID.fetch_add(1, Ordering::Relaxed);
         let dir = self.base.join(format!("mh-{}-{n}", std::process::id()));
         create_dir(&dir)?;
-        let group = ServerCgroup { dir, procs: None };
-        fs::write(group.dir.join("memory.max"), limits.memory_bytes.to_string())?;
+        // Tạo trước để lỗi giữa chừng vẫn xóa được thư mục (khi drop).
+        let mut group = ServerCgroup { dir, procs: None };
+        fs::write(
+            group.dir.join("memory.max"),
+            limits.memory_bytes.to_string(),
+        )?;
         // Có swap thì JVM chậm lại thay vì bị dừng, người dùng chỉ thấy server lag.
         if group.dir.join("memory.swap.max").exists() {
             fs::write(group.dir.join("memory.swap.max"), "0")?;
@@ -78,10 +84,8 @@ impl Cgroups {
         let procs = OpenOptions::new()
             .write(true)
             .open(group.dir.join("cgroup.procs"))?;
-        Ok(ServerCgroup {
-            procs: Some(procs),
-            ..group
-        })
+        group.procs = Some(procs);
+        Ok(group)
     }
 }
 

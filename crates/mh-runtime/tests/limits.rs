@@ -76,7 +76,10 @@ async fn linux_cgroup_kills_process_over_memory_limit() {
         .await
         .unwrap();
     drop(proc.control);
-    let exit = tokio::time::timeout(WAIT, proc.exit).await.unwrap().unwrap();
+    let exit = tokio::time::timeout(WAIT, proc.exit)
+        .await
+        .unwrap()
+        .unwrap();
     assert!(exit.memory_limit_hit, "{exit:?}");
     assert_eq!(exit.code, None, "bị SIGKILL nên không có mã thoát");
 }
