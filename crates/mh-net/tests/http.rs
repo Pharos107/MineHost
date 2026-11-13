@@ -313,7 +313,6 @@ async fn md5_download_is_verified() {
     let req = Download {
         checksum: &good,
         ..req
-        allowed_hosts: None,
     };
     client(&fx.tmp)
         .download(req, |_, _| {}, &CancellationToken::new())
