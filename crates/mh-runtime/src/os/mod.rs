@@ -12,9 +12,13 @@ mod windows;
 use crate::ResourceLimits;
 
 /// Thứ phải giữ suốt vòng đời luồng spawner. Linux giữ thông tin cgroup (nếu dùng được) và dựa
-/// vào chính luồng đó cho `PR_SET_PDEATHSIG`; Windows dùng Job Object riêng của từng process.
+/// vào chính luồng đó cho `PR_SET_PDEATHSIG`. Windows giữ một Job Object chung không giới hạn:
+/// luồng spawner dừng (drop `ProcessRuntime`, controller thoát hay bị kill) thì OS kill mọi
+/// process trong đó.
 #[derive(Debug)]
 pub(crate) struct Guard {
+    #[cfg(windows)]
+    job: windows::Job,
     #[cfg(target_os = "linux")]
     cgroups: Option<cgroup::Cgroups>,
 }
@@ -27,8 +31,8 @@ pub(crate) struct Pending {
     cgroup: Option<cgroup::ServerCgroup>,
 }
 
-/// Giữ tới khi process thoát. Windows: Job Object của process, handle đóng (kể cả khi controller
-/// bị kill) thì OS kill mọi process trong job. Linux: cgroup của process, xóa khi drop.
+/// Giữ tới khi process thoát. Windows: Job Object riêng của process, lồng trong job chung, mang
+/// giới hạn tài nguyên và completion port. Linux: cgroup của process, xóa khi drop.
 #[derive(Debug)]
 pub(crate) struct ProcessGuard {
     #[cfg(windows)]
@@ -40,6 +44,8 @@ pub(crate) struct ProcessGuard {
 impl Guard {
     pub(crate) fn new() -> std::io::Result<Self> {
         Ok(Self {
+            #[cfg(windows)]
+            job: windows::Job::new(None)?,
             #[cfg(target_os = "linux")]
             cgroups: cgroup::Cgroups::detect(),
         })
@@ -101,6 +107,9 @@ impl Guard {
         {
             let job = windows::Job::new(pending.limits)?;
             if let Some(handle) = child.raw_handle() {
+                // Gán vào job chung trước: gán tiếp vào job riêng thì job riêng thành job lồng
+                // bên trong (Windows 8 trở lên), nên đóng job chung vẫn kill được process.
+                self.job.assign(handle)?;
                 job.assign(handle)?;
             }
             Ok(ProcessGuard { job })
