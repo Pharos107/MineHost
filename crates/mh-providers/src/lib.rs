@@ -5,6 +5,7 @@
 
 mod error;
 pub mod fabric;
+pub mod forge;
 pub mod loader;
 pub mod mojang;
 pub mod paper;
@@ -13,6 +14,7 @@ pub mod quilt;
 
 pub use error::ProviderError;
 pub use fabric::Fabric;
+pub use forge::Forge;
 pub use loader::{InstallPlan, InstallerRun, LoaderRelease, PlannedFile};
 pub use mojang::{Mojang, Profile, Release, ServerJar, VersionDetail};
 pub use paper::{LaunchRecipe, Paper, PaperBuild};
