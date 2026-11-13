@@ -7,7 +7,7 @@ Hai bản phát hành (spec mục 11): nhóm A–D ra `v0.4.0` (PR-25), nhóm E�
 
 ## Tiến độ
 
-Cập nhật 2026-11-13, sau khi merge #66. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-13, sau khi merge #77. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -21,10 +21,10 @@ chính PR ấy.
 | 07 | Forge | Đã merge | [#71](https://github.com/Pharos107/MineHost/pull/71) |
 | 08 | NeoForge | Đã merge | [#72](https://github.com/Pharos107/MineHost/pull/72) |
 | 09 | Job tạo server có loader | Đã merge | [#73](https://github.com/Pharos107/MineHost/pull/73) |
-| 10 | Wizard chọn kiểu server và loader | Đang chờ CI | [#74](https://github.com/Pharos107/MineHost/pull/74) |
+| 10 | Wizard chọn kiểu server và loader | Đã merge | [#74](https://github.com/Pharos107/MineHost/pull/74) |
 | 11 | Tích hợp mỗi loader trên Windows và Linux | Chưa bắt đầu | |
-| 12 | Nhập server có sẵn có mod | Đang chờ CI | [#76](https://github.com/Pharos107/MineHost/pull/76) |
-| 13 | Chọn Java cho từng server | Đang chờ CI | [#77](https://github.com/Pharos107/MineHost/pull/77) |
+| 12 | Nhập server có sẵn có mod | Đã merge | [#76](https://github.com/Pharos107/MineHost/pull/76) |
+| 13 | Chọn Java cho từng server | Đã merge | [#77](https://github.com/Pharos107/MineHost/pull/77) |
 | 14–21 | Nhóm C · Modrinth và trang Mod | Chưa bắt đầu | |
 | 22–25 | Nhóm D · Modpack Modrinth, `v0.4.0` | Chưa bắt đầu | |
 | 26–30 | Nhóm E · CurseForge | Chưa bắt đầu | |
