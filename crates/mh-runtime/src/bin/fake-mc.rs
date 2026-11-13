@@ -56,8 +56,11 @@ fn install(args: &[String]) -> ! {
         if let Some(parent) = path.parent() {
             let _ = std::fs::create_dir_all(parent);
         }
-        match std::fs::write(path, b"-Dfake=1
-") {
+        match std::fs::write(
+            path,
+            b"-Dfake=1
+",
+        ) {
             Ok(()) => println!("Wrote {rel}"),
             Err(e) => eprintln!("Cannot write {rel}: {e}"),
         }

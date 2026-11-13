@@ -99,8 +99,8 @@ mod tests {
 
     #[test]
     fn args_file_replaces_jar_per_os() {
-        let path = ArgsFilePath::parse("libraries/net/neoforged/neoforge/21.4.140/{os}_args.txt")
-            .unwrap();
+        let path =
+            ArgsFilePath::parse("libraries/net/neoforged/neoforge/21.4.140/{os}_args.txt").unwrap();
         let launch = |os| {
             JavaLaunch {
                 java_bin: PathBuf::from("java"),
