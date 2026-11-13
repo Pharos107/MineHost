@@ -49,8 +49,8 @@ pub(crate) fn minecraft_of(version: &str) -> Option<String> {
             0 => format!("1.{major}"),
             _ => format!("1.{major}.{minor}"),
         }),
-        [year @ 26.., drop, 0, _] => Some(format!("{year}.{drop}")),
-        [year @ 26.., drop, hotfix, _] => Some(format!("{year}.{drop}.{hotfix}")),
+        [year, drop, 0, _] if *year >= 26 => Some(format!("{year}.{drop}")),
+        [year, drop, hotfix, _] if *year >= 26 => Some(format!("{year}.{drop}.{hotfix}")),
         _ => None,
     }
 }
