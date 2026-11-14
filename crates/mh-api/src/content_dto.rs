@@ -3,8 +3,8 @@
 use std::path::Path;
 
 use mh_app::content::{
-    ContentFile, ContentInstallPlan, ContentList, ContentSource, ModrinthVersion, PendingContent,
-    PlannedContent, Project, SearchHit, SideSupport,
+    CatalogSource, ContentFile, ContentInstallPlan, ContentList, ContentProject, ContentSearchHit,
+    ContentSource, ContentVersion, PendingContent, PlannedContent, SideSupport,
 };
 use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
@@ -12,7 +12,7 @@ use utoipa::ToSchema;
 
 use crate::dto::ContentKindDto;
 
-pub(crate) const SOURCE_MODRINTH: &str = "modrinth";
+pub(crate) const SOURCE_MODRINTH: &str = CatalogSource::Modrinth.as_str();
 
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct SearchQuery {
@@ -69,13 +69,14 @@ pub struct SearchHitDto {
     pub downloads: u64,
     pub categories: Vec<String>,
     pub game_versions: Vec<String>,
-    pub server_side: SideSupportDto,
+    /// Chỉ Modrinth trả thông tin này; CurseForge để `null`.
+    pub server_side: Option<SideSupportDto>,
 }
 
-impl From<SearchHit> for SearchHitDto {
-    fn from(hit: SearchHit) -> Self {
+impl From<ContentSearchHit> for SearchHitDto {
+    fn from(hit: ContentSearchHit) -> Self {
         Self {
-            source: SOURCE_MODRINTH.to_owned(),
+            source: hit.source.as_str().to_owned(),
             project_id: hit.project_id,
             slug: hit.slug,
             kind: hit.project_type,
@@ -84,8 +85,8 @@ impl From<SearchHit> for SearchHitDto {
             icon_url: hit.icon_url,
             downloads: hit.downloads,
             categories: hit.categories,
-            game_versions: hit.versions,
-            server_side: hit.server_side.into(),
+            game_versions: hit.game_versions,
+            server_side: hit.server_side.map(Into::into),
         }
     }
 }
@@ -115,21 +116,20 @@ pub struct ProjectDto {
     pub kind: String,
     pub title: String,
     pub description: String,
-    pub body: String,
+    pub body: Option<String>,
     pub icon_url: Option<String>,
     pub downloads: u64,
     pub loaders: Vec<String>,
     pub game_versions: Vec<String>,
-    pub client_side: SideSupportDto,
-    pub server_side: SideSupportDto,
+    pub client_side: Option<SideSupportDto>,
+    pub server_side: Option<SideSupportDto>,
     pub links: ProjectLinksDto,
 }
 
-impl From<Project> for ProjectDto {
-    fn from(p: Project) -> Self {
-        let page = p.page_url();
+impl From<ContentProject> for ProjectDto {
+    fn from(p: ContentProject) -> Self {
         Self {
-            source: SOURCE_MODRINTH.to_owned(),
+            source: p.source.as_str().to_owned(),
             project_id: p.id,
             slug: p.slug,
             kind: p.project_type,
@@ -140,10 +140,10 @@ impl From<Project> for ProjectDto {
             downloads: p.downloads,
             loaders: p.loaders,
             game_versions: p.game_versions,
-            client_side: p.client_side.into(),
-            server_side: p.server_side.into(),
+            client_side: p.client_side.map(Into::into),
+            server_side: p.server_side.map(Into::into),
             links: ProjectLinksDto {
-                page,
+                page: p.page_url,
                 source: p.links.source_url,
                 issues: p.links.issues_url,
                 wiki: p.links.wiki_url,
@@ -158,7 +158,7 @@ pub struct ContentVersionDto {
     pub id: String,
     pub project_id: String,
     pub name: String,
-    pub version_number: String,
+    pub version_number: Option<String>,
     pub version_type: String,
     pub game_versions: Vec<String>,
     pub loaders: Vec<String>,
@@ -166,10 +166,12 @@ pub struct ContentVersionDto {
     pub date_published: String,
     pub file_name: Option<String>,
     pub file_size: Option<u64>,
+    pub manual_download: bool,
+    pub download_page_url: Option<String>,
 }
 
-impl From<ModrinthVersion> for ContentVersionDto {
-    fn from(v: ModrinthVersion) -> Self {
+impl From<ContentVersion> for ContentVersionDto {
+    fn from(v: ContentVersion) -> Self {
         let primary = v.primary_file().cloned();
         Self {
             id: v.id,
@@ -181,7 +183,9 @@ impl From<ModrinthVersion> for ContentVersionDto {
             loaders: v.loaders,
             date_published: v.date_published.format(&Rfc3339).unwrap_or_default(),
             file_name: primary.as_ref().map(|f| f.filename.clone()),
-            file_size: primary.map(|f| f.size),
+            file_size: primary.as_ref().map(|f| f.size),
+            manual_download: primary.as_ref().is_some_and(|f| f.manual_download),
+            download_page_url: primary.and_then(|f| f.download_page_url),
         }
     }
 }
@@ -317,6 +321,8 @@ pub struct PlannedContentDto {
     pub client_only: bool,
     pub replaces_existing: bool,
     pub is_dependency: bool,
+    pub manual_download: bool,
+    pub download_page_url: Option<String>,
 }
 
 impl From<PlannedContent> for PlannedContentDto {
@@ -331,6 +337,8 @@ impl From<PlannedContent> for PlannedContentDto {
             client_only: p.client_only,
             replaces_existing: p.replaces_existing,
             is_dependency: p.is_dependency,
+            manual_download: p.file.manual_download,
+            download_page_url: p.file.download_page_url,
         }
     }
 }

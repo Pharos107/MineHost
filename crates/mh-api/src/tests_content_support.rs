@@ -152,7 +152,7 @@ impl JavaSource for FakeJava {
     }
 }
 
-pub(super) fn content_api(hold_download: Option<Arc<Notify>>) -> TestApi {
+pub(super) fn content_api_with_cf(hold_download: Option<Arc<Notify>>, with_cf: bool) -> TestApi {
     let tmp = tempfile::tempdir().unwrap();
     let dirs = DataDirs::resolve(Some(tmp.path().to_path_buf())).unwrap();
     dirs.ensure().unwrap();
@@ -166,17 +166,24 @@ pub(super) fn content_api(hold_download: Option<Arc<Notify>>) -> TestApi {
         save_flush_timeout: Duration::from_secs(60),
         metrics: mh_app::MetricsConfig::default(),
     };
-    let app = Arc::new(
-        App::with_deps(dirs, deps)
-            .unwrap()
-            .with_content(Arc::new(FakeModCatalog::sample())),
-    );
+    let mut builder = App::with_deps(dirs, deps)
+        .unwrap()
+        .with_content(Arc::new(FakeModCatalog::sample()))
+        .with_curseforge(Arc::new(FakeModCatalog::curseforge()));
+    if with_cf {
+        builder = builder.with_curseforge_key(mh_core::CurseforgeKey::parse("test-key").unwrap());
+    }
+    let app = Arc::new(builder);
     let router = crate::router(Arc::clone(&app), PORT);
     TestApi {
         _tmp: tmp,
         app,
         router,
     }
+}
+
+pub(super) fn content_api(hold_download: Option<Arc<Notify>>) -> TestApi {
+    content_api_with_cf(hold_download, false)
 }
 
 pub(super) async fn create_with_loader(

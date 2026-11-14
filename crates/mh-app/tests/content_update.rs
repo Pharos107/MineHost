@@ -7,14 +7,14 @@ mod content_support;
 use std::sync::Arc;
 
 use content_support::{FakeModCatalog, build_jar, finish_job, make_server, test_app};
-use mh_app::content::SideSupport;
+use mh_app::content::{CatalogSource, SideSupport};
 use mh_app::{App, JobState};
 use mh_core::{LoaderKind, ServerId};
 use mh_store::ServerStore;
 
 async fn install(app: &Arc<App>, id: ServerId, version: &str) {
     let job = app
-        .install_content(id, "M", Some(version.to_owned()))
+        .install_content(id, CatalogSource::Modrinth, "M", Some(version.to_owned()))
         .unwrap();
     assert_eq!(finish_job(app, job).await.state, JobState::Succeeded);
 }
