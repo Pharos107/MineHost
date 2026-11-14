@@ -191,11 +191,24 @@ pub fn extract_curseforge_overrides_with(
     dest_dir: &Path,
     limits: PackLimits,
 ) -> Result<(), ProviderError> {
+    extract_curseforge_overrides_after(archive_path, dest_dir, limits, 0, 0)
+}
+
+/// Như [`extract_curseforge_overrides_with`], nhưng tính cả `prior_files` file / `prior_bytes` byte
+/// của mod đã tải trước đó vào giới hạn chống zip bomb, như luồng `.mrpack` làm: giới hạn 8 GiB và
+/// 20.000 file áp cho cả pack, không riêng phần overrides.
+pub fn extract_curseforge_overrides_after(
+    archive_path: &Path,
+    dest_dir: &Path,
+    limits: PackLimits,
+    prior_files: usize,
+    prior_bytes: u64,
+) -> Result<(), ProviderError> {
     let mut archive = open_pack_archive(archive_path, limits)?;
     let (manifest, _) = read_cf_manifest(&mut archive, archive_path, limits)?;
     let prefix = format!("{}/", manifest.overrides);
-    let mut total_files = 0usize;
-    let mut declared_bytes = 0u64;
+    let mut total_files = prior_files;
+    let mut declared_bytes = prior_bytes;
     let mut layers = scan_prefixed_layers(
         &mut archive,
         archive_path,
@@ -206,7 +219,14 @@ pub fn extract_curseforge_overrides_with(
         &mut declared_bytes,
     )?;
     let entries = layers.pop().unwrap_or_default();
-    extract_entries(&mut archive, archive_path, dest_dir, entries, limits, 0)
+    extract_entries(
+        &mut archive,
+        archive_path,
+        dest_dir,
+        entries,
+        limits,
+        prior_bytes,
+    )
 }
 
 /// Giải nén server pack `.zip` CurseForge vào `dest_dir`, trả danh sách entry khởi chạy/installer đã bỏ qua.
