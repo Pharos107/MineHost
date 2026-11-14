@@ -366,6 +366,7 @@
     "CONTENT_INCOMPATIBLE": "This mod or plugin has no version for this server type and Minecraft version.",
     "CONTENT_NOT_FOUND": "This mod, plugin or modpack was not found. It may have been removed from its source.",
     "DEPENDENCY_MISSING": "Required mods are missing. Install them, then start the server again.",
+    "DEPENDENCY_MISSING_LIST": "Required mods are missing: {{list}}. Install them, then start the server again.",
     "CURSEFORGE_UNAVAILABLE": "CurseForge is unavailable: there is no API key or the key was rejected. See CurseForge in Settings.",
     "CURSEFORGE_FILES_PENDING": "Some CurseForge files must be downloaded by hand. Open the Mods page to download and drop them in.",
     "UPLOAD_HASH_MISMATCH": "The uploaded file does not match the expected file. Download the exact version from the mod page.",
@@ -643,5 +644,16 @@
     "count": "{{count}} / {{max}}",
     "starting": "Waiting for the server to start",
     "openConsole": "Open console"
+  },
+  "preflight": {
+    "blockingTitle": "Action needed before starting",
+    "warningTitle": "Mod notes before starting",
+    "startAnyway": "Start anyway",
+    "missingItem": "Missing {{id}} {{version}} (required by {{by}})",
+    "missingItemAny": "Missing {{id}} (required by {{by}})",
+    "mismatchItem": "{{by}} needs {{id}} {{version}}, found {{installed}}",
+    "wrongLoaderItem": "{{name}} ({{file}}) is for a different server loader",
+    "pendingItem": "Waiting for manual CurseForge download: {{file}}",
+    "clientOnlyItem": "{{name}} is client-only (can usually be ignored or disabled)"
   }
 }

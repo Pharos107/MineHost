@@ -38,7 +38,7 @@ vi.mock("../../ui/Terminal", () => ({
   },
 }));
 
-const server: Server = { id: "01JB", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false };
+const server: Server = { id: "01JB", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, preflight_blocking: false };
 
 function emit(text: string) {
   act(() => handlers.at(-1)?.({ data: { seq: 1, stream: "stdout", text } }));

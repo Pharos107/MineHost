@@ -53,6 +53,8 @@ pub struct ContentFile {
     pub enabled: bool,
     pub size: u64,
     pub sha1: String,
+    /// Các file metadata tìm thấy trong jar theo thứ tự `META_PRIORITY` (để nhận biết jar đa loader).
+    pub formats: Vec<ModMetaFormat>,
     pub meta: Result<ModMeta, ContentMetaError>,
     pub record: Option<ContentRecord>,
     /// `true` khi jar không có bản ghi tương ứng trong `content.toml`.
@@ -69,6 +71,7 @@ struct CacheKey {
 #[derive(Debug, Clone)]
 struct CachedJar {
     sha1: String,
+    formats: Vec<ModMetaFormat>,
     meta: Result<ModMeta, ContentMetaError>,
 }
 
@@ -76,6 +79,7 @@ struct CachedJar {
 #[derive(Debug, Clone)]
 pub struct JarInfo {
     pub sha1: String,
+    pub formats: Vec<ModMetaFormat>,
     pub meta: Result<ModMeta, ContentMetaError>,
 }
 
@@ -84,6 +88,7 @@ pub fn inspect_jar_file(path: &Path) -> Result<JarInfo, StoreError> {
     let jar = inspect_jar(path)?;
     Ok(JarInfo {
         sha1: jar.sha1,
+        formats: jar.formats,
         meta: jar.meta,
     })
 }
@@ -144,6 +149,26 @@ impl ContentScanner {
         content_file: &Path,
         kind: ContentKind,
     ) -> Result<Vec<ContentFile>, StoreError> {
+        self.scan_dirs_inner(server_dir, content_file, kind, true)
+    }
+
+    /// Quét như `scan_dirs` nhưng không ghi lại `content.toml` (dùng cho đọc trạng thái tổng quan).
+    pub fn scan_readonly(
+        &self,
+        server_dir: &Path,
+        content_file: &Path,
+        kind: ContentKind,
+    ) -> Result<Vec<ContentFile>, StoreError> {
+        self.scan_dirs_inner(server_dir, content_file, kind, false)
+    }
+
+    fn scan_dirs_inner(
+        &self,
+        server_dir: &Path,
+        content_file: &Path,
+        kind: ContentKind,
+        save_manifest: bool,
+    ) -> Result<Vec<ContentFile>, StoreError> {
         let mut jars = self.scan_disk_jars(server_dir, kind)?;
         jars.sort_by(|a, b| {
             a.file_name
@@ -155,7 +180,7 @@ impl ContentScanner {
 
         let mut manifest = ContentManifest::load(content_file)?;
         let (files, changed) = reconcile_records(jars, &mut manifest);
-        if changed {
+        if save_manifest && changed {
             manifest.save(content_file)?;
         }
         Ok(files)
@@ -334,6 +359,7 @@ fn reconcile_records(
                 enabled: jar.enabled,
                 size: jar.size,
                 sha1: jar.cached.sha1,
+                formats: jar.cached.formats,
                 meta: jar.cached.meta,
                 manual: record.is_none(),
                 record,
@@ -352,9 +378,11 @@ fn inspect_jar(path: &Path) -> Result<CachedJar, StoreError> {
     let mut file = File::open(path).map_err(|e| StoreError::io(path, e))?;
     let sha1 = compute_sha1(&mut file).map_err(|e| StoreError::io(path, e))?;
     file.rewind().map_err(|e| StoreError::io(path, e))?;
+    let (formats, meta) = read_jar_metadata(file);
     Ok(CachedJar {
         sha1,
-        meta: read_jar_metadata(file),
+        formats,
+        meta,
     })
 }
 
@@ -374,22 +402,45 @@ pub(super) fn to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
-fn read_jar_metadata(file: File) -> Result<ModMeta, ContentMetaError> {
-    let mut archive =
-        ZipArchive::new(file).map_err(|e| ContentMetaError::InvalidArchive(e.to_string()))?;
+fn read_jar_metadata(file: File) -> (Vec<ModMetaFormat>, Result<ModMeta, ContentMetaError>) {
+    let mut archive = match ZipArchive::new(file) {
+        Ok(a) => a,
+        Err(e) => {
+            return (
+                Vec::new(),
+                Err(ContentMetaError::InvalidArchive(e.to_string())),
+            );
+        }
+    };
+    let mut formats = Vec::new();
+    let mut primary = None;
     for entry_name in META_PRIORITY {
         let Some(format) = ModMetaFormat::from_archive_path(entry_name) else {
             continue;
         };
-        if let Some(text) = read_zip_text(&mut archive, entry_name)? {
-            let mut meta = parse_mod_meta(format, &text)?;
-            if meta.version.is_none() {
+        let text = match read_zip_text(&mut archive, entry_name) {
+            Ok(Some(text)) => text,
+            Ok(None) => continue,
+            Err(err) => {
+                primary.get_or_insert(Err(err));
+                continue;
+            }
+        };
+        formats.push(format);
+        if primary.is_none() {
+            let mut parsed = parse_mod_meta(format, &text).map_err(ContentMetaError::from);
+            if let Ok(meta) = &mut parsed
+                && meta.version.is_none()
+            {
                 meta.version = read_manifest_impl_version(&mut archive);
             }
-            return Ok(meta);
+            primary = Some(parsed);
         }
     }
-    Err(ContentMetaError::MissingMetadata)
+    (
+        formats,
+        primary.unwrap_or(Err(ContentMetaError::MissingMetadata)),
+    )
 }
 
 fn read_zip_text(

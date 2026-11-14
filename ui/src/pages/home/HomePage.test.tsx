@@ -20,7 +20,7 @@ const players = {
 };
 
 function server(patch: Partial<Server>): Server {
-  return { id: "A", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, port: 25565, ...patch };
+  return { id: "A", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, preflight_blocking: false, port: 25565, ...patch };
 }
 
 const system = {

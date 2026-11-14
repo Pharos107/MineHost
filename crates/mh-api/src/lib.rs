@@ -13,6 +13,7 @@ mod import;
 mod jobs;
 mod lan;
 mod players;
+mod preflight;
 mod servers;
 mod system;
 mod ui;
@@ -89,6 +90,7 @@ pub use lan::{LanState, lan_listener};
         content::upload,
         content::toggle,
         content::remove,
+        preflight::get,
     ),
     components(schemas(
         error::ErrorBody,
@@ -161,6 +163,12 @@ pub use lan::{LanState, lan_listener};
         content::PlannedContentDto,
         content::ContentPlanDto,
         content::ToggleContentBody,
+        preflight::StartActionBody,
+        preflight::MissingDepDto,
+        preflight::VersionMismatchDto,
+        preflight::WrongLoaderDto,
+        preflight::ClientOnlyDto,
+        preflight::PreflightDto,
     ))
 )]
 struct ApiDoc;
@@ -212,6 +220,7 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
                 .delete(servers::trash),
         )
         .route("/servers/{id}/eula", post(servers::eula))
+        .route("/servers/{id}/preflight", get(preflight::get))
         .route("/servers/{id}/actions/{action}", post(servers::action))
         .route(
             "/servers/{id}/console",

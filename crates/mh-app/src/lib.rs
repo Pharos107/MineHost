@@ -40,8 +40,9 @@ pub use auth::AuthStore;
 pub use backup::{BackupKind, BackupMeta, BackupRequest, BackupStarted};
 pub use backup_schedule::{BackupCandidate, BackupPlanner};
 pub use content::{
-    ContentCatalog, ContentInstallPlan, ContentList, ModrinthCatalog, NoContentCatalog,
-    PlannedContent,
+    ClientOnlyMod, ContentCatalog, ContentInstallPlan, ContentList, MissingDependency,
+    ModrinthCatalog, NoContentCatalog, PlannedContent, PreflightReport, VersionMismatch,
+    WrongLoaderMod,
 };
 pub use create::{CreateRequest, Created};
 pub use error::AppError;

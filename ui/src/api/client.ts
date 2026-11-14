@@ -23,6 +23,8 @@ export type ImportServer = components["schemas"]["ImportBody"];
 export type Property = components["schemas"]["PropertyDto"];
 export type ServerPatch = components["schemas"]["PatchServerBody"];
 export type Trashed = components["schemas"]["TrashedDto"];
+export type Preflight = components["schemas"]["PreflightDto"];
+export type StartActionBody = components["schemas"]["StartActionBody"];
 type ErrorBody = components["schemas"]["ErrorBody"];
 
 /** Lỗi từ API. Thông báo được dịch theo `code`, không lấy câu chữ từ backend. */
@@ -110,7 +112,9 @@ export const api = {
   /** Xem trước thư mục server có sẵn: loại, phiên bản, jar, có `mods/` không. */
   inspectImport: (path: string) => request<Detected>("POST", "/servers/import/inspect", { path }),
   importServer: (body: ImportServer) => request<Created>("POST", "/servers/import", body),
-  action: (id: string, action: ServerAction) => request<void>("POST", `${serverPath(id)}/actions/${action}`),
+  preflight: (id: string) => request<Preflight>("GET", `${serverPath(id)}/preflight`),
+  action: (id: string, action: ServerAction, body?: StartActionBody) =>
+    request<void>("POST", `${serverPath(id)}/actions/${action}`, body),
   acceptEula: (id: string) => request<Server>("POST", `${serverPath(id)}/eula`, { accept: true }),
   sendCommand: (id: string, command: string) => request<void>("POST", `${serverPath(id)}/console`, { command }),
   updateServer: (id: string, patch: ServerPatch) => request<Server>("PATCH", serverPath(id), patch),
@@ -133,9 +137,21 @@ export const api = {
   cancelJob: (id: number) => request<void>("POST", `/jobs/${id}/cancel`),
 };
 
+interface MissingDepParam {
+  id?: string;
+  version_req?: string;
+  required_by?: string;
+}
+
 /** Câu thông báo đã dịch cho một lỗi bất kỳ. */
 export function errorMessage(t: TFunction, error: unknown): string {
   if (error instanceof ApiError) {
+    if (error.code === "DEPENDENCY_MISSING" && Array.isArray(error.params.missing) && error.params.missing.length > 0) {
+      const list = (error.params.missing as MissingDepParam[])
+        .map((m) => (m.version_req && m.version_req !== "*" ? `${m.id} (${m.version_req}) — ${m.required_by}` : `${m.id} — ${m.required_by}`))
+        .join(", ");
+      return t("errors.DEPENDENCY_MISSING_LIST", { list });
+    }
     return t(`errors.${error.code}`, { ...error.params, defaultValue: t("errors.INTERNAL") });
   }
   return t("errors.INTERNAL");

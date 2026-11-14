@@ -11,7 +11,7 @@ import { PlayersPage } from "./PlayersPage";
 
 vi.mock("../../../api/ws", () => ({ live: { subscribe: () => () => {} } }));
 
-const server: Server = { id: "A", name: "Survival", state: "stopped", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false };
+const server: Server = { id: "A", name: "Survival", state: "stopped", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, preflight_blocking: false };
 
 const players: Players = {
   running: false,

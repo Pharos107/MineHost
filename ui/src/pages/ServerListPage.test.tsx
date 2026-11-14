@@ -20,7 +20,7 @@ function mockApi(servers: Server[]) {
 }
 
 function server(patch: Partial<Server>): Server {
-  return { id: "01JB", name: "Survival", state: "stopped", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, ...patch };
+  return { id: "01JB", name: "Survival", state: "stopped", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, preflight_blocking: false, ...patch };
 }
 
 function renderPage() {
@@ -65,6 +65,7 @@ describe("ServerListPage", () => {
         restart_pending: false,
         slow_start: false,
         ignored_jvm_args: false,
+        preflight_blocking: false,
       },
     ]);
     renderPage();

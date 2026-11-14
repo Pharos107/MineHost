@@ -214,6 +214,7 @@ fn upload_sync(
         enabled: true,
         size,
         sha1: info.sha1,
+        formats: info.formats,
         meta: info.meta,
         record: Some(record),
         manual: false,

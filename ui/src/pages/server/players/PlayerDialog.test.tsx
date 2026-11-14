@@ -26,7 +26,7 @@ function makePlayers(running: boolean): Players {
 }
 
 function setup(running: boolean, list: () => Players = () => makePlayers(running)) {
-  const server: Server = { id: "A", name: "Survival", state: running ? "running" : "stopped", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false };
+  const server: Server = { id: "A", name: "Survival", state: running ? "running" : "stopped", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, preflight_blocking: false };
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === "/api/v1/servers/A/players") return Response.json(list());
     if (url.endsWith("/actions") && init?.method === "POST") return Response.json({ done: running ? "sent" : "saved" });

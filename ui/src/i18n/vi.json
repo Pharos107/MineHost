@@ -366,6 +366,7 @@
     "CONTENT_INCOMPATIBLE": "Mod hoặc plugin này không có bản cho loại server và phiên bản Minecraft này.",
     "CONTENT_NOT_FOUND": "Không tìm thấy mod, plugin hoặc modpack này. Có thể nó đã bị gỡ khỏi trang nguồn.",
     "DEPENDENCY_MISSING": "Còn thiếu mod bắt buộc. Cài các mod còn thiếu rồi bật lại.",
+    "DEPENDENCY_MISSING_LIST": "Còn thiếu mod bắt buộc: {{list}}. Cài các mod còn thiếu rồi bật lại.",
     "CURSEFORGE_UNAVAILABLE": "Chưa dùng được CurseForge: chưa có key hoặc key bị từ chối. Xem mục CurseForge trong Cài đặt.",
     "CURSEFORGE_FILES_PENDING": "Còn file từ CurseForge cần tự tải. Mở trang Mod để tải và kéo file vào.",
     "UPLOAD_HASH_MISMATCH": "File vừa tải lên không khớp file cần. Hãy tải đúng phiên bản từ trang mod.",
@@ -643,5 +644,16 @@
     "count": "{{count}} / {{max}}",
     "starting": "Chờ server bật xong",
     "openConsole": "Mở console"
+  },
+  "preflight": {
+    "blockingTitle": "Cần xử lý trước khi bật server",
+    "warningTitle": "Lưu ý về mod trước khi bật",
+    "startAnyway": "Vẫn bật",
+    "missingItem": "Thiếu {{id}} {{version}} (do {{by}} yêu cầu)",
+    "missingItemAny": "Thiếu {{id}} (do {{by}} yêu cầu)",
+    "mismatchItem": "{{by}} cần {{id}} {{version}}, hiện có {{installed}}",
+    "wrongLoaderItem": "{{name}} ({{file}}) không khớp loại server hiện tại",
+    "pendingItem": "Chờ tải tay từ CurseForge: {{file}}",
+    "clientOnlyItem": "{{name}} chỉ chạy ở máy người chơi (có thể bỏ qua hoặc tắt bớt)"
   }
 }

@@ -7,7 +7,7 @@ import type { Server } from "../../api/client";
 import { ServerActions } from "./ServerActions";
 
 function server(patch: Partial<Server>): Server {
-  return { id: "01JB", name: "Survival", state: "stopped", eula_accepted: false, restart_pending: false, slow_start: false, ignored_jvm_args: false, ...patch };
+  return { id: "01JB", name: "Survival", state: "stopped", eula_accepted: false, restart_pending: false, slow_start: false, ignored_jvm_args: false, preflight_blocking: false, ...patch };
 }
 
 function mockApi() {
@@ -64,5 +64,28 @@ describe("ServerActions", () => {
     expect(posts()).toEqual([]);
     await userEvent.click(screen.getByRole("button", { name: "Buộc dừng" }));
     await vi.waitFor(() => expect(posts()).toEqual(["/actions/kill"]));
+  });
+
+  it("gặp DEPENDENCY_MISSING khi bấm Bật thì hiện lỗi kèm danh sách mod thiếu", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.endsWith("/actions/start")) {
+          return Response.json(
+            {
+              code: "DEPENDENCY_MISSING",
+              params: { missing: [{ id: "absent-lib", version_req: ">=1.0.0", required_by: "Broken Mod" }] },
+            },
+            { status: 409 },
+          );
+        }
+        return new Response(null, { status: 404 });
+      }),
+    );
+    renderActions(server({ eula_accepted: true }));
+    await userEvent.click(screen.getByRole("button", { name: "Bật server" }));
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("absent-lib");
+    expect(alert.textContent).toContain("Broken Mod");
   });
 });

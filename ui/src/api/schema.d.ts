@@ -630,6 +630,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/preflight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Kiểm tra điều kiện mod/plugin trước khi bật server. */
+        get: operations["get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}/properties": {
         parameters: {
             query?: never;
@@ -737,6 +754,10 @@ export interface components {
         };
         ClearPasswordBody: {
             current: string;
+        };
+        ClientOnlyDto: {
+            file_name: string;
+            name: string;
         };
         CommandBody: {
             command: string;
@@ -930,6 +951,11 @@ export interface components {
              */
             players?: number | null;
         };
+        MissingDepDto: {
+            id: string;
+            required_by: string;
+            version_req: string;
+        };
         MkdirBody: {
             path: string;
         };
@@ -1017,6 +1043,14 @@ export interface components {
             /** @description `false` thì chỉ whitelist, op, cấm, bỏ cấm làm được (MineHost sửa file). */
             running: boolean;
             whitelist_enabled: boolean;
+        };
+        /** @description Báo cáo kiểm tra trước khi bật server. */
+        PreflightDto: {
+            client_only: components["schemas"]["ClientOnlyDto"][];
+            missing_deps: components["schemas"]["MissingDepDto"][];
+            pending: components["schemas"]["PendingContentDto"][];
+            version_mismatches: components["schemas"]["VersionMismatchDto"][];
+            wrong_loader: components["schemas"]["WrongLoaderDto"][];
         };
         ProgressDto: {
             /** Format: int64 */
@@ -1136,6 +1170,8 @@ export interface components {
             pid?: number | null;
             /** Format: int32 */
             port?: number | null;
+            /** @description Có lỗi preflight đang chặn bật server (còn thiếu mod hoặc file CurseForge pending). */
+            preflight_blocking: boolean;
             /** @description Giờ khởi động lại hằng ngày (giờ máy), dạng `HH:MM`, đã sắp xếp. */
             restart_at?: string[] | null;
             restart_on_crash?: boolean | null;
@@ -1160,6 +1196,9 @@ export interface components {
         };
         /** @enum {string} */
         SideSupportDto: "required" | "optional" | "unsupported" | "unknown";
+        StartActionBody: {
+            ignore_preflight?: boolean;
+        };
         /** @enum {string} */
         StateDto: "installing" | "stopped" | "starting" | "running" | "stopping" | "crashed" | "broken";
         /** @enum {string} */
@@ -1221,6 +1260,17 @@ export interface components {
         TrashedDto: {
             /** @description Thư mục trong thùng rác, để người dùng tự lấy lại. */
             trash_path: string;
+        };
+        VersionMismatchDto: {
+            id: string;
+            installed_version: string;
+            required_by: string;
+            version_req: string;
+        };
+        WrongLoaderDto: {
+            file_name: string;
+            formats: string[];
+            name: string;
         };
     };
     responses: never;
@@ -2076,7 +2126,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StartActionBody"] | null;
+            };
+        };
         responses: {
             /** @description Đã nhận lệnh */
             204: {
@@ -3091,6 +3145,35 @@ export interface operations {
             };
             /** @description Thao tác cần server đang chạy, hoặc bản Minecraft không hỗ trợ */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreflightDto"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

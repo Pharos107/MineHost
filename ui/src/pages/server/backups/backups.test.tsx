@@ -19,6 +19,7 @@ const server: Server = {
   restart_pending: false,
   slow_start: false,
   ignored_jvm_args: false,
+  preflight_blocking: false,
   backup: { schedule: "every_6h", keep: 10 },
 };
 

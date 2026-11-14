@@ -104,6 +104,8 @@ pub struct ServerDto {
     pub restart_pending: bool,
     /// Có `user_jvm_args.txt` chứa cờ ngoài chú thích mà MineHost bỏ qua.
     pub ignored_jvm_args: bool,
+    /// Có lỗi preflight đang chặn bật server (còn thiếu mod hoặc file CurseForge pending).
+    pub preflight_blocking: bool,
 }
 
 impl From<ServerView> for ServerDto {
@@ -134,6 +136,7 @@ impl From<ServerView> for ServerDto {
             slow_start: false,
             restart_pending: false,
             ignored_jvm_args: view.ignored_jvm_args,
+            preflight_blocking: view.preflight_blocking,
         };
         if let Some(info) = view.installing {
             dto.name = Some(info.name.to_string());

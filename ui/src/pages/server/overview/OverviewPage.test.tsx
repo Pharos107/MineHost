@@ -24,7 +24,7 @@ vi.mock("../../../api/ws", () => ({
 const GB = 1024 ** 3;
 
 function server(patch: Partial<Server>): Server {
-  return { id: "A", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, memory_mb: { min: 1024, max: 4096 }, ...patch };
+  return { id: "A", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, preflight_blocking: false, memory_mb: { min: 1024, max: 4096 }, ...patch };
 }
 
 function sample(at: string, cpu: number, memory: number): MetricSample {

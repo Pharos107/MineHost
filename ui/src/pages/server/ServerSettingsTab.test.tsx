@@ -15,6 +15,7 @@ const base: Server = {
   restart_pending: false,
   slow_start: false,
   ignored_jvm_args: false,
+  preflight_blocking: false,
   port: 25565,
   memory_mb: { min: 1024, max: 2048 },
   autostart: false,
