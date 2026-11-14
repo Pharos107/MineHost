@@ -196,11 +196,17 @@ pub(super) fn make_version(
     }
 }
 
+/// Jar giả có bytes cố định trên mọi máy: test E2E ghi sẵn hash của nó trong `.mrpack` dựng tay
+/// (`ui/e2e/modpack.spec.ts`). Phải cố định cả cách nén, mốc thời gian lẫn hệ điều hành ghi trong
+/// zip (crate `zip` mặc định ghi DOS trên Windows, Unix trên Linux, làm bytes khác nhau).
 pub(super) fn build_jar(entry_name: &str, content: &str) -> Vec<u8> {
+    let options = SimpleFileOptions::default()
+        .compression_method(CompressionMethod::Stored)
+        .last_modified_time(zip::DateTime::default())
+        .system(zip::System::Unix)
+        .unix_permissions(0o644);
     let mut zip = ZipWriter::new(Cursor::new(Vec::new()));
-    if zip
-        .start_file(entry_name, SimpleFileOptions::default())
-        .is_ok()
+    if zip.start_file(entry_name, options).is_ok()
         && zip.write_all(content.as_bytes()).is_ok()
         && let Ok(cur) = zip.finish()
     {
@@ -220,6 +226,33 @@ pub(super) fn sha512_hex(bytes: &[u8]) -> String {
 mod tests {
     use crate::content::ContentCatalog;
     use crate::e2e::content::E2eContent;
+
+    /// Hash của jar `fabric-api` giả được ghi cứng trong `ui/e2e/modpack.spec.ts` (test kéo thả
+    /// `.mrpack`). Đổi nội dung jar giả thì phải sửa cả hai chỗ.
+    #[tokio::test]
+    async fn fake_fabric_api_jar_bytes_are_stable() {
+        let cat = E2eContent::new();
+        let vers = cat.project_versions("e2e-fabric-api").await.unwrap();
+        let file = &vers[0].files[0];
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("fabric-api.jar");
+        let cancel = crate::sources::CancellationToken::new();
+        cat.download(file, &path, &mut |_, _| {}, &cancel)
+            .await
+            .unwrap();
+        let bytes = std::fs::read(&path).unwrap();
+        use sha1::Digest as _;
+        let sha1: String = sha1::Sha1::digest(&bytes)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        assert_eq!(bytes.len(), 223);
+        assert_eq!(sha1, "a4128590aebddb6984d71ac0d89e56c4df143f0f");
+        assert_eq!(
+            super::sha512_hex(&bytes),
+            "6305d5c3619594eec9264dbcc5987847402722871548ed6af51ca84b750daa7b405818b21c3dadcdb5dcbedafde01dc1ce6b402fed75392809a6687ad45fa4ba"
+        );
+    }
 
     #[tokio::test]
     async fn e2e_content_provides_valid_mrpack_and_cdn_files() {

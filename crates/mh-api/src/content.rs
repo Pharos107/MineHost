@@ -125,12 +125,13 @@ pub async fn versions(
     if pid.is_empty() {
         return Err(ApiError::invalid("pid"));
     }
-    let raw_id = query
-        .server_id
-        .as_deref()
-        .ok_or_else(|| ApiError::invalid("server_id"))?;
-    let server_id = ServerId::parse(raw_id).map_err(|_| ApiError::invalid("server_id"))?;
-    let list = app.content_versions(source, pid, server_id).await?;
+    let list = match query.server_id.as_deref() {
+        Some(raw_id) => {
+            let server_id = ServerId::parse(raw_id).map_err(|_| ApiError::invalid("server_id"))?;
+            app.content_versions(source, pid, server_id).await?
+        }
+        None => app.project_versions(source, pid).await?,
+    };
     Ok(Json(list.into_iter().map(Into::into).collect()))
 }
 

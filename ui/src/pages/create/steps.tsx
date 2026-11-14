@@ -36,9 +36,15 @@ function isLoader(value: string): value is Loader {
 }
 
 /** Bước 1: chọn kiểu server (thường, có mod, modpack, nhập có sẵn) và loader (spec P3, mục 6.1). */
-export function LoaderStep({ value, onChange }: { value: Loader | "import"; onChange: (value: Loader | "import") => void }) {
+export function LoaderStep({
+  value,
+  onChange,
+}: {
+  value: Loader | "import" | "modpack";
+  onChange: (value: Loader | "import" | "modpack") => void;
+}) {
   const { t } = useTranslation();
-  const kind = value === "import" ? "import" : isModLoader(value) ? "modded" : "standard";
+  const kind = value === "import" ? "import" : value === "modpack" ? "modpack" : isModLoader(value) ? "modded" : "standard";
   const loaders = kind === "modded" ? MOD_LOADERS : STANDARD_LOADERS;
 
   return (
@@ -49,22 +55,17 @@ export function LoaderStep({ value, onChange }: { value: Loader | "import"; onCh
         onChange={(next) => {
           if (next === "standard") onChange("paper");
           else if (next === "modded") onChange("fabric");
+          else if (next === "modpack") onChange("modpack");
           else if (next === "import") onChange("import");
         }}
         options={[
           { value: "standard", label: t("wizard.kindStandard"), description: t("wizard.kindStandardDescription") },
           { value: "modded", label: t("wizard.kindModded"), description: t("wizard.kindModdedDescription") },
-          {
-            value: "modpack",
-            label: t("wizard.kindModpack"),
-            description: t("wizard.kindModpackDescription"),
-            badge: <Badge>{t("wizard.soon")}</Badge>,
-            disabled: true,
-          },
+          { value: "modpack", label: t("wizard.kindModpack"), description: t("wizard.kindModpackDescription") },
           { value: "import", label: t("wizard.importLabel"), description: t("wizard.importDescription") },
         ]}
       />
-      {kind !== "import" && (
+      {kind !== "import" && kind !== "modpack" && (
         <ChoiceGroup
           label={t("wizard.loader")}
           value={value}
@@ -160,12 +161,15 @@ export function VersionStep({ versions, value, onChange, loader, loaderVersion, 
   );
 }
 
+export type ServerSettingsValues = Pick<WizardForm, "name" | "memoryMb" | "port">;
+
 interface SettingsStepProps {
-  form: WizardForm;
-  update: (patch: Partial<WizardForm>) => void;
+  form: ServerSettingsValues;
+  update: (patch: Partial<ServerSettingsValues>) => void;
+  modpack?: boolean;
 }
 
-export function SettingsStep({ form, update }: SettingsStepProps) {
+export function SettingsStep({ form, update, modpack = false }: SettingsStepProps) {
   const { t } = useTranslation();
   const [advanced, setAdvanced] = useState(form.port !== "");
   const nameKey = nameError(form.name);
@@ -176,7 +180,7 @@ export function SettingsStep({ form, update }: SettingsStepProps) {
       <Field label={t("wizard.name")} hint={t("wizard.nameHint")} error={nameKey && t(nameKey)}>
         <TextInput value={form.name} onChange={(e) => update({ name: e.target.value })} autoComplete="off" />
       </Field>
-      <MemoryField value={form.memoryMb} onChange={(memoryMb) => update({ memoryMb })} />
+      <MemoryField value={form.memoryMb} onChange={(memoryMb) => update({ memoryMb })} modpack={modpack} />
       <div>
         <Button variant="ghost" size="sm" icon={advanced ? ChevronDown : ChevronRight} aria-expanded={advanced} onClick={() => setAdvanced(!advanced)}>
           {t("wizard.advanced")}
@@ -191,7 +195,15 @@ export function SettingsStep({ form, update }: SettingsStepProps) {
   );
 }
 
-function MemoryField({ value, onChange }: { value: number | null; onChange: (mb: number) => void }) {
+function MemoryField({
+  value,
+  onChange,
+  modpack = false,
+}: {
+  value: number | null;
+  onChange: (mb: number) => void;
+  modpack?: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const system = useQuery({ queryKey: ["system"], queryFn: api.system });
 
@@ -199,8 +211,9 @@ function MemoryField({ value, onChange }: { value: number | null; onChange: (mb:
   if (system.isError) return <LoadError error={system.error} retry={() => void system.refetch()} />;
 
   const info = system.data;
-  const suggested = info.suggested_memory_mb.max;
-  const range = memoryRange(info.memory_total_bytes, info.suggested_memory_mb);
+  const suggestedLimits = modpack ? info.suggested_modpack_memory_mb : info.suggested_memory_mb;
+  const suggested = suggestedLimits.max;
+  const range = memoryRange(info.memory_total_bytes, suggestedLimits);
   const chosen = value ?? suggested;
   const format = (mb: number) => formatMemoryMb(mb, i18n.language);
 

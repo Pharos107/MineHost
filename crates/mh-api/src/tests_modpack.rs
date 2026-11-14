@@ -14,6 +14,12 @@ use support::{modpack_api, sample_mrpack, upload_pack, wait_job_json};
 #[tokio::test]
 async fn post_servers_modpack_creates_job_and_returns_summary() {
     let api = modpack_api();
+    let (status, vers) = api
+        .get("/api/v1/content/modrinth/projects/pack1/versions")
+        .await;
+    assert_eq!(status, StatusCode::OK, "{vers}");
+    assert_eq!(vers[0]["id"], "vp1");
+
     let (status, created) = api
         .post(
             "/api/v1/servers/modpack",

@@ -41,6 +41,8 @@ pub struct SystemDto {
     pub disk_free_bytes: Option<u64>,
     /// RAM đề xuất cho server mới (spec P1, mục 4.3).
     pub suggested_memory_mb: MemoryDto,
+    /// RAM đề xuất cho server dựng từ modpack (spec P3, mục 5.7).
+    pub suggested_modpack_memory_mb: MemoryDto,
     /// Địa chỉ IPv4 trong mạng LAN, để bạn bè vào chơi.
     pub lan_addresses: Vec<String>,
     /// Bản Java chọn được cho từng server, tăng dần.
@@ -79,6 +81,7 @@ pub async fn health() -> Json<Health> {
 pub async fn system_info(State(app): State<Arc<App>>) -> Result<Json<SystemDto>, ApiError> {
     let data_dir = app.dirs().root().display().to_string();
     let suggested = app.suggested_memory();
+    let suggested_modpack = app.suggested_modpack_memory();
     let lan_addresses = app
         .lan_addresses()
         .iter()
@@ -109,6 +112,10 @@ pub async fn system_info(State(app): State<Arc<App>>) -> Result<Json<SystemDto>,
         suggested_memory_mb: MemoryDto {
             min: suggested.min_mb(),
             max: suggested.max_mb(),
+        },
+        suggested_modpack_memory_mb: MemoryDto {
+            min: suggested_modpack.min_mb(),
+            max: suggested_modpack.max_mb(),
         },
         lan_addresses,
         java_majors: mh_core::JAVA_MAJORS.to_vec(),
