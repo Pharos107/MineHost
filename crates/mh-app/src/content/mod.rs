@@ -2,6 +2,7 @@
 
 mod catalog;
 mod install;
+mod manage;
 mod plan;
 
 use std::sync::Arc;
