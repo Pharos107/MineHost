@@ -35,10 +35,12 @@ zip.workspace = true
 e2e = []
 
 [dev-dependencies]
+sha1.workspace = true
 sha2.workspace = true
 tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tracing-subscriber.workspace = true
+wiremock.workspace = true
 
 # Cùng mã nguồn với `fake-mc` của mh-runtime; test dùng nó thay cho Java.
 [[bin]]

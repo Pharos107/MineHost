@@ -13,16 +13,17 @@ use zip::write::{SimpleFileOptions, ZipWriter};
 
 use super::content::GAME_VERSIONS;
 use crate::content::{
-    Dependency, FileHashes, ModrinthVersion, Project, ProjectLinks, SideSupport, VersionFile,
+    CatalogSource, ContentDependency, ContentFileInfo, ContentProject, ContentVersion,
+    ProjectLinks, SideSupport,
 };
 
 pub(super) fn add_e2e_modpack(
-    projects: &mut Vec<Project>,
-    versions: &mut Vec<ModrinthVersion>,
+    projects: &mut Vec<ContentProject>,
+    versions: &mut Vec<ContentVersion>,
     files: &mut HashMap<String, Vec<u8>>,
-    fabric_api: &VersionFile,
-    lithium: &VersionFile,
-    iris: &VersionFile,
+    fabric_api: &ContentFileInfo,
+    lithium: &ContentFileInfo,
+    iris: &ContentFileInfo,
 ) {
     let entries = [
         ("e2e-fabric-api", "e2e-fabric-api-0.110.0", fabric_api, None),
@@ -31,7 +32,12 @@ pub(super) fn add_e2e_modpack(
     ];
     let mut index_files = Vec::new();
     for (pid, vid, vf, server_env) in entries {
-        let bytes = files.get(&vf.url).cloned().unwrap_or_default();
+        let bytes = vf
+            .url
+            .as_deref()
+            .and_then(|u| files.get(u))
+            .cloned()
+            .unwrap_or_default();
         let url = format!(
             "https://cdn.modrinth.com/data/{pid}/versions/{vid}/{}",
             vf.filename
@@ -55,15 +61,14 @@ pub(super) fn add_e2e_modpack(
 
     let mrpack = build_mrpack_bytes(&index_files);
     let pack_url = "e2e://modrinth/e2e-fabric-pack-1.0.0/e2e-pack-1.0.0.mrpack".to_owned();
-    let pack_file = VersionFile {
-        url: pack_url.clone(),
+    let pack_file = ContentFileInfo {
+        url: Some(pack_url.clone()),
         filename: "e2e-pack-1.0.0.mrpack".to_owned(),
         size: mrpack.len() as u64,
-        hashes: FileHashes {
-            sha1: mh_store::sha1_hex(&mrpack),
-            sha512: sha512_hex(&mrpack),
-        },
-        primary: true,
+        sha1: Some(mh_store::sha1_hex(&mrpack)),
+        sha512: Some(sha512_hex(&mrpack)),
+        manual_download: false,
+        download_page_url: None,
     };
     files.insert(pack_url, mrpack);
 
@@ -143,20 +148,22 @@ pub(super) fn make_project(
     loaders: &[&str],
     client_side: SideSupport,
     server_side: SideSupport,
-) -> Project {
-    Project {
+) -> ContentProject {
+    ContentProject {
+        source: CatalogSource::Modrinth,
         id: id.to_owned(),
         slug: slug.to_owned(),
         project_type: project_type.to_owned(),
         title: title.to_owned(),
         description: description.to_owned(),
-        body: format!("# {title}\n\n{description}"),
+        body: Some(format!("# {title}\n\n{description}")),
         icon_url: None,
         downloads,
         loaders: loaders.iter().map(|s| (*s).to_owned()).collect(),
         game_versions: GAME_VERSIONS.iter().map(|s| (*s).to_owned()).collect(),
-        client_side,
-        server_side,
+        client_side: Some(client_side),
+        server_side: Some(server_side),
+        page_url: format!("https://modrinth.com/{project_type}/{slug}"),
         links: ProjectLinks {
             source_url: None,
             issues_url: None,
@@ -172,14 +179,14 @@ pub(super) fn make_version(
     version_number: &str,
     loaders: &[&str],
     date_published: OffsetDateTime,
-    file: VersionFile,
-    dependencies: Vec<Dependency>,
-) -> ModrinthVersion {
-    ModrinthVersion {
+    file: ContentFileInfo,
+    dependencies: Vec<ContentDependency>,
+) -> ContentVersion {
+    ContentVersion {
         id: id.to_owned(),
         project_id: project_id.to_owned(),
         name: format!("v{version_number}"),
-        version_number: version_number.to_owned(),
+        version_number: Some(version_number.to_owned()),
         version_type: "release".to_owned(),
         game_versions: GAME_VERSIONS.iter().map(|s| (*s).to_owned()).collect(),
         loaders: loaders.iter().map(|s| (*s).to_owned()).collect(),

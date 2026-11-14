@@ -1,6 +1,7 @@
-//! Quản lý mod/plugin: đọc danh sách, lập kế hoạch cài và tải từ Modrinth.
+//! Quản lý mod/plugin: đọc danh sách, lập kế hoạch cài và tải từ Modrinth / CurseForge.
 
 mod catalog;
+mod curseforge;
 mod install;
 mod manage;
 mod plan;
@@ -13,10 +14,12 @@ use mh_store::ContentManifest;
 pub use mh_store::{ContentFile, ContentSource, PendingContent, ProjectId};
 
 pub use catalog::{
-    ContentCatalog, Dependency, DependencyType, FileHashes, Modrinth, ModrinthCatalog,
-    ModrinthVersion, NoContentCatalog, PackFile, Project, ProjectLinks, ProjectType, SearchFilters,
-    SearchHit, SearchIndex, SearchResult, SideSupport, VersionFile, modrinth_loaders,
+    CatalogSource, ContentCatalog, ContentDependency, ContentFileInfo, ContentProject,
+    ContentSearchHit, ContentSearchResult, ContentVersion, DependencyType, Modrinth,
+    ModrinthCatalog, NoContentCatalog, PackFile, ProjectLinks, ProjectType, SearchFilters,
+    SearchIndex, SideSupport, modrinth_loaders,
 };
+pub use curseforge::{CurseForge, CurseforgeCatalog};
 pub use plan::{ContentInstallPlan, PlannedContent};
 pub(crate) use preflight::preflight_block_error;
 pub use preflight::{
@@ -42,15 +45,48 @@ impl App {
         self
     }
 
+    pub fn with_curseforge(mut self, catalog: Arc<dyn ContentCatalog>) -> Self {
+        self.curseforge_catalog = Some(catalog);
+        self
+    }
+
+    pub(crate) fn catalog_for(
+        &self,
+        source: CatalogSource,
+    ) -> Result<Arc<dyn ContentCatalog>, AppError> {
+        match source {
+            CatalogSource::Modrinth => Ok(Arc::clone(&self.content_catalog)),
+            CatalogSource::Curseforge => {
+                let key = self.effective_curseforge_key()?.ok_or_else(|| {
+                    AppError::new(
+                        ErrorCode::CurseforgeUnavailable,
+                        "chưa có CurseForge API key",
+                    )
+                })?;
+                if let Some(custom) = &self.curseforge_catalog {
+                    return Ok(Arc::clone(custom));
+                }
+                match &self.http {
+                    Some(http) => Ok(Arc::new(CurseforgeCatalog::new(
+                        Arc::clone(http),
+                        key.expose(),
+                    ))),
+                    None => Ok(Arc::new(NoContentCatalog)),
+                }
+            }
+        }
+    }
+
     /// Tìm mod/plugin/modpack trên catalog. Có `server_id` thì lọc theo loader, Minecraft và
-    /// chỉ lấy mục chạy được phía server (`server_side != unsupported`).
+    /// chỉ lấy mục chạy được phía server (`server_side != unsupported` với Modrinth).
     pub async fn search_content(
         &self,
+        source: CatalogSource,
         query: &str,
         kind: Option<ProjectType>,
         server_id: Option<ServerId>,
         page: u32,
-    ) -> Result<SearchResult, AppError> {
+    ) -> Result<ContentSearchResult, AppError> {
         if page == 0 {
             return Err(AppError::new(ErrorCode::InvalidInput, "page phải >= 1")
                 .with_params(serde_json::json!({ "field": "page" })));
@@ -74,23 +110,29 @@ impl App {
             filters.minecraft = Some(spec.game.minecraft);
             filters.server_only = true;
         }
-        self.content_catalog.search(query, &filters).await
+        self.catalog_for(source)?.search(query, &filters).await
     }
 
     /// Chi tiết một project từ nguồn nội dung.
-    pub async fn content_project(&self, project_id: &str) -> Result<Project, AppError> {
-        self.content_catalog.project(project_id).await
+    pub async fn content_project(
+        &self,
+        source: CatalogSource,
+        project_id: &str,
+    ) -> Result<ContentProject, AppError> {
+        self.catalog_for(source)?.project(project_id).await
     }
 
     /// Các phiên bản của project hợp với loader và Minecraft của server, mới nhất trước.
     pub async fn content_versions(
         &self,
+        source: CatalogSource,
         project_id: &str,
         server_id: ServerId,
-    ) -> Result<Vec<ModrinthVersion>, AppError> {
+    ) -> Result<Vec<ContentVersion>, AppError> {
+        let catalog = self.catalog_for(source)?;
         let spec = self.store.load(server_id)?;
         let _ = content_kind_for(&spec)?;
-        self.content_catalog
+        catalog
             .versions(project_id, spec.game.loader, &spec.game.minecraft)
             .await
     }
@@ -124,9 +166,11 @@ impl App {
     pub async fn plan_content_install(
         &self,
         id: ServerId,
+        source: CatalogSource,
         project_id: &str,
         version_id: Option<&str>,
     ) -> Result<ContentInstallPlan, AppError> {
+        let catalog = self.catalog_for(source)?;
         let spec = self.store.load(id)?;
         let kind = content_kind_for(&spec)?;
         let installed = {
@@ -136,12 +180,13 @@ impl App {
             blocking(move || {
                 let paths = store.paths(id);
                 let files = scanner.scan_dirs(&paths.server_dir, &paths.content_file, kind)?;
-                Ok(plan::installed_projects(&files))
+                Ok(plan::installed_projects(&files, source))
             })
             .await?
         };
         plan::build_plan(
-            self.content_catalog.as_ref(),
+            source,
+            catalog.as_ref(),
             kind,
             spec.game.loader,
             &spec.game.minecraft,

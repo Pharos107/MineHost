@@ -42,9 +42,9 @@ pub use auth::AuthStore;
 pub use backup::{BackupKind, BackupMeta, BackupRequest, BackupStarted};
 pub use backup_schedule::{BackupCandidate, BackupPlanner};
 pub use content::{
-    ClientOnlyMod, ContentCatalog, ContentInstallPlan, ContentList, MissingDependency,
-    ModrinthCatalog, NoContentCatalog, PlannedContent, PreflightReport, VersionMismatch,
-    WrongLoaderMod,
+    CatalogSource, ClientOnlyMod, ContentCatalog, ContentInstallPlan, ContentList,
+    CurseforgeCatalog, MissingDependency, ModrinthCatalog, NoContentCatalog, PlannedContent,
+    PreflightReport, VersionMismatch, WrongLoaderMod,
 };
 pub use create::{CreateRequest, Created};
 pub use curseforge::{CurseforgeKeySource, CurseforgeStatus};
@@ -132,7 +132,9 @@ pub struct App {
     metrics_hub: metrics::MetricsHub,
     online: Arc<players::OnlinePlayers>,
     player_directory: Arc<dyn PlayerDirectory>,
+    http: Option<Arc<HttpClient>>,
     content_catalog: Arc<dyn ContentCatalog>,
+    curseforge_catalog: Option<Arc<dyn ContentCatalog>>,
     content_scanner: Arc<ContentScanner>,
     content_locks: Mutex<HashMap<ServerId, Arc<tokio::sync::Mutex<()>>>>,
     /// Kết quả "thiếu dependency" của lần `preflight` gần nhất, để `ServerView` không phải quét jar.
@@ -168,9 +170,11 @@ impl App {
             save_flush_timeout: backup::DEFAULT_SAVE_FLUSH_TIMEOUT,
             metrics: MetricsConfig::default(),
         };
-        Ok(Self::with_deps(dirs, deps)?
+        let mut app = Self::with_deps(dirs, deps)?
             .with_players(Arc::new(MojangDirectory::new(Arc::clone(&http))))
-            .with_content(Arc::new(ModrinthCatalog::new(http))))
+            .with_content(Arc::new(ModrinthCatalog::new(Arc::clone(&http))));
+        app.http = Some(http);
+        Ok(app)
     }
 
     pub fn with_deps(dirs: DataDirs, deps: AppDeps) -> Result<Self, AppError> {
@@ -198,7 +202,9 @@ impl App {
             metrics_hub: metrics::MetricsHub::new(),
             online: Arc::new(players::OnlinePlayers::new()),
             player_directory: Arc::new(NoDirectory),
+            http: None,
             content_catalog: Arc::new(NoContentCatalog),
+            curseforge_catalog: None,
             content_scanner: Arc::new(ContentScanner::new()),
             content_locks: Mutex::new(HashMap::new()),
             preflight_missing: Mutex::new(HashMap::new()),

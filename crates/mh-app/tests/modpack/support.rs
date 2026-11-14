@@ -9,6 +9,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use mh_app::content::{
+    ContentFileInfo, ContentProject, ContentSearchResult, ContentVersion, PackFile, SearchFilters,
+};
 use mh_app::sources::{
     BoxFut, CatalogVersion, InstallPlan, LoaderInstall, PlannedFile, ProgressFn, ResolvedServer,
 };
@@ -22,10 +25,6 @@ use mh_java::JavaRuntime;
 use mh_net::{CancellationToken, Checksum, HostAllowlist, hosts};
 use mh_platform::DataDirs;
 use mh_providers::ServerJar;
-use mh_providers::modpack::PackFile;
-use mh_providers::modrinth::{
-    FileHashes, ModrinthVersion, Project, SearchFilters, SearchResult, VersionFile,
-};
 use mh_store::sha1_hex;
 use mh_supervisor::SupervisorConfig;
 use serde_json::{Value, json};
@@ -132,8 +131,8 @@ impl JavaSource for FakeJava {
 
 #[derive(Default)]
 pub struct PackTestCatalog {
-    pub versions: HashMap<String, ModrinthVersion>,
-    pub by_project: HashMap<String, Vec<ModrinthVersion>>,
+    pub versions: HashMap<String, ContentVersion>,
+    pub by_project: HashMap<String, Vec<ContentVersion>>,
     pub files: HashMap<String, Vec<u8>>,
     pub delay: Duration,
     pub in_flight: AtomicUsize,
@@ -150,21 +149,20 @@ impl PackTestCatalog {
         url: &str,
         mrpack: Vec<u8>,
     ) {
-        let vf = VersionFile {
-            url: url.to_owned(),
+        let vf = ContentFileInfo {
+            url: Some(url.to_owned()),
             filename: format!("{vid}.mrpack"),
             size: mrpack.len() as u64,
-            hashes: FileHashes {
-                sha1: sha1_hex(&mrpack),
-                sha512: sha512_hex(&mrpack),
-            },
-            primary: true,
+            sha1: Some(sha1_hex(&mrpack)),
+            sha512: Some(sha512_hex(&mrpack)),
+            manual_download: false,
+            download_page_url: None,
         };
-        let mv = ModrinthVersion {
+        let mv = ContentVersion {
             id: vid.to_owned(),
             project_id: pid.to_owned(),
             name: format!("Pack {vnum}"),
-            version_number: vnum.to_owned(),
+            version_number: Some(vnum.to_owned()),
             version_type: "release".to_owned(),
             game_versions: vec!["1.21.4".to_owned()],
             loaders: vec!["fabric".to_owned()],
@@ -183,11 +181,11 @@ impl ContentCatalog for PackTestCatalog {
         &'a self,
         _: &'a str,
         _: &'a SearchFilters,
-    ) -> BoxFut<'a, Result<SearchResult, AppError>> {
+    ) -> BoxFut<'a, Result<ContentSearchResult, AppError>> {
         Box::pin(async { Err(AppError::new(ErrorCode::NetworkUnavailable, "không dùng")) })
     }
 
-    fn project<'a>(&'a self, _: &'a str) -> BoxFut<'a, Result<Project, AppError>> {
+    fn project<'a>(&'a self, _: &'a str) -> BoxFut<'a, Result<ContentProject, AppError>> {
         Box::pin(async { Err(AppError::new(ErrorCode::NetworkUnavailable, "không dùng")) })
     }
 
@@ -196,11 +194,11 @@ impl ContentCatalog for PackTestCatalog {
         _: &'a str,
         _: LoaderKind,
         _: &'a McVersion,
-    ) -> BoxFut<'a, Result<Vec<ModrinthVersion>, AppError>> {
+    ) -> BoxFut<'a, Result<Vec<ContentVersion>, AppError>> {
         Box::pin(async { Ok(Vec::new()) })
     }
 
-    fn version<'a>(&'a self, id: &'a str) -> BoxFut<'a, Result<ModrinthVersion, AppError>> {
+    fn version<'a>(&'a self, id: &'a str) -> BoxFut<'a, Result<ContentVersion, AppError>> {
         Box::pin(async move {
             self.versions
                 .get(id)
@@ -211,16 +209,20 @@ impl ContentCatalog for PackTestCatalog {
 
     fn download<'a>(
         &'a self,
-        file: &'a VersionFile,
+        file: &'a ContentFileInfo,
         dest: &'a Path,
         progress: ProgressFn<'a>,
         _: &'a CancellationToken,
     ) -> BoxFut<'a, Result<(), AppError>> {
         Box::pin(async move {
+            let url = file
+                .url
+                .as_deref()
+                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, &file.filename))?;
             let bytes = self
                 .files
-                .get(&file.url)
-                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, &file.url))?;
+                .get(url)
+                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, url))?;
             std::fs::write(dest, bytes).unwrap();
             progress(bytes.len() as u64, Some(bytes.len() as u64));
             Ok(())
@@ -230,7 +232,7 @@ impl ContentCatalog for PackTestCatalog {
     fn project_versions<'a>(
         &'a self,
         project: &'a str,
-    ) -> BoxFut<'a, Result<Vec<ModrinthVersion>, AppError>> {
+    ) -> BoxFut<'a, Result<Vec<ContentVersion>, AppError>> {
         Box::pin(async move { Ok(self.by_project.get(project).cloned().unwrap_or_default()) })
     }
 

@@ -8,13 +8,13 @@ use mh_core::{ErrorCode, LoaderKind, McVersion};
 use mh_providers::modpack::PackFile;
 use time::macros::datetime;
 
-use super::pack::{
-    add_e2e_modpack, build_jar, make_project, make_version, sha512_hex, verify_bytes_checksum,
-};
+pub(super) use super::pack::build_jar;
+use super::pack::{add_e2e_modpack, make_project, make_version, sha512_hex, verify_bytes_checksum};
 use crate::AppError;
 use crate::content::{
-    ContentCatalog, Dependency, DependencyType, FileHashes, ModrinthVersion, Project,
-    SearchFilters, SearchHit, SearchResult, SideSupport, VersionFile, modrinth_loaders,
+    ContentCatalog, ContentDependency, ContentFileInfo, ContentProject, ContentSearchHit,
+    ContentSearchResult, ContentVersion, DependencyType, SearchFilters, SideSupport,
+    modrinth_loaders,
 };
 use crate::sources::{BoxFut, CancellationToken, ProgressFn};
 
@@ -22,30 +22,30 @@ pub(super) const GAME_VERSIONS: &[&str] = &["1.21.4", "1.20.4"];
 
 #[derive(Debug)]
 pub(super) struct E2eContent {
-    projects: Vec<Project>,
-    versions: Vec<ModrinthVersion>,
+    projects: Vec<ContentProject>,
+    versions: Vec<ContentVersion>,
     files: HashMap<String, Vec<u8>>,
 }
 
 impl E2eContent {
     pub(super) fn new() -> Self {
         let mut files = HashMap::new();
-        let mut register = |ver_id: &str, filename: &str, entry: &str, body: &str| -> VersionFile {
-            let bytes = build_jar(entry, body);
-            let url = format!("e2e://modrinth/{ver_id}/{filename}");
-            let file = VersionFile {
-                url: url.clone(),
-                filename: filename.to_owned(),
-                size: bytes.len() as u64,
-                hashes: FileHashes {
-                    sha1: "0".repeat(40),
-                    sha512: sha512_hex(&bytes),
-                },
-                primary: true,
+        let mut register =
+            |ver_id: &str, filename: &str, entry: &str, body: &str| -> ContentFileInfo {
+                let bytes = build_jar(entry, body);
+                let url = format!("e2e://modrinth/{ver_id}/{filename}");
+                let file = ContentFileInfo {
+                    url: Some(url.clone()),
+                    filename: filename.to_owned(),
+                    size: bytes.len() as u64,
+                    sha1: Some("0".repeat(40)),
+                    sha512: Some(sha512_hex(&bytes)),
+                    manual_download: false,
+                    download_page_url: None,
+                };
+                files.insert(url, bytes);
+                file
             };
-            files.insert(url, bytes);
-            file
-        };
 
         let fabric_api_file = register(
             "e2e-fabric-api-0.110.0",
@@ -125,7 +125,7 @@ impl E2eContent {
             ),
         ];
 
-        let fabric_dep = vec![Dependency {
+        let fabric_dep = vec![ContentDependency {
             project_id: Some("e2e-fabric-api".to_owned()),
             version_id: None,
             dependency_type: DependencyType::Required,
@@ -194,17 +194,17 @@ impl E2eContent {
         }
     }
 
-    fn find_project(&self, id_or_slug: &str) -> Result<&Project, AppError> {
+    fn find_project(&self, id_or_slug: &str) -> Result<&ContentProject, AppError> {
         self.projects
             .iter()
             .find(|p| p.id == id_or_slug || p.slug == id_or_slug)
             .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, id_or_slug))
     }
 
-    fn search_sync(&self, query: &str, filters: &SearchFilters) -> SearchResult {
+    fn search_sync(&self, query: &str, filters: &SearchFilters) -> ContentSearchResult {
         let needle = query.trim().to_ascii_lowercase();
         let expected_loaders = filters.loader.map(modrinth_loaders);
-        let mut matched: Vec<SearchHit> = self
+        let mut matched: Vec<ContentSearchHit> = self
             .projects
             .iter()
             .filter(|p| {
@@ -218,7 +218,7 @@ impl E2eContent {
                         .minecraft
                         .as_ref()
                         .is_none_or(|mc| p.game_versions.iter().any(|g| g == mc.as_str()))
-                    && (!filters.server_only || !p.server_side.is_unsupported())
+                    && (!filters.server_only || !p.server_side.is_some_and(|s| s.is_unsupported()))
                     && (needle.is_empty()
                         || p.title.to_ascii_lowercase().contains(&needle)
                         || p.slug.to_ascii_lowercase().contains(&needle)
@@ -238,7 +238,7 @@ impl E2eContent {
             .skip(filters.offset as usize)
             .take(limit as usize)
             .collect();
-        SearchResult {
+        ContentSearchResult {
             hits,
             offset: filters.offset,
             limit,
@@ -252,11 +252,11 @@ impl ContentCatalog for E2eContent {
         &'a self,
         query: &'a str,
         filters: &'a SearchFilters,
-    ) -> BoxFut<'a, Result<SearchResult, AppError>> {
+    ) -> BoxFut<'a, Result<ContentSearchResult, AppError>> {
         Box::pin(std::future::ready(Ok(self.search_sync(query, filters))))
     }
 
-    fn project<'a>(&'a self, id_or_slug: &'a str) -> BoxFut<'a, Result<Project, AppError>> {
+    fn project<'a>(&'a self, id_or_slug: &'a str) -> BoxFut<'a, Result<ContentProject, AppError>> {
         Box::pin(std::future::ready(self.find_project(id_or_slug).cloned()))
     }
 
@@ -265,11 +265,11 @@ impl ContentCatalog for E2eContent {
         project: &'a str,
         loader: LoaderKind,
         minecraft: &'a McVersion,
-    ) -> BoxFut<'a, Result<Vec<ModrinthVersion>, AppError>> {
+    ) -> BoxFut<'a, Result<Vec<ContentVersion>, AppError>> {
         Box::pin(std::future::ready((|| {
             let pid = self.find_project(project)?.id.as_str();
             let expected = modrinth_loaders(loader);
-            let mut list: Vec<ModrinthVersion> = self
+            let mut list: Vec<ContentVersion> = self
                 .versions
                 .iter()
                 .filter(|v| {
@@ -284,7 +284,7 @@ impl ContentCatalog for E2eContent {
         })()))
     }
 
-    fn version<'a>(&'a self, id: &'a str) -> BoxFut<'a, Result<ModrinthVersion, AppError>> {
+    fn version<'a>(&'a self, id: &'a str) -> BoxFut<'a, Result<ContentVersion, AppError>> {
         Box::pin(std::future::ready(
             self.versions
                 .iter()
@@ -296,7 +296,7 @@ impl ContentCatalog for E2eContent {
 
     fn download<'a>(
         &'a self,
-        file: &'a VersionFile,
+        file: &'a ContentFileInfo,
         dest: &'a Path,
         progress: ProgressFn<'a>,
         cancel: &'a CancellationToken,
@@ -305,10 +305,14 @@ impl ContentCatalog for E2eContent {
             if cancel.is_cancelled() {
                 return Err(AppError::cancelled());
             }
+            let url = file
+                .url
+                .as_deref()
+                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, &file.filename))?;
             let bytes = self
                 .files
-                .get(&file.url)
-                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, &file.url))?;
+                .get(url)
+                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, url))?;
             let size = bytes.len() as u64;
             progress(size, Some(size));
             mh_platform::fs::write_atomic(dest, bytes)?;
@@ -319,10 +323,10 @@ impl ContentCatalog for E2eContent {
     fn project_versions<'a>(
         &'a self,
         project: &'a str,
-    ) -> BoxFut<'a, Result<Vec<ModrinthVersion>, AppError>> {
+    ) -> BoxFut<'a, Result<Vec<ContentVersion>, AppError>> {
         Box::pin(std::future::ready((|| {
             let pid = self.find_project(project)?.id.as_str();
-            let mut list: Vec<ModrinthVersion> = self
+            let mut list: Vec<ContentVersion> = self
                 .versions
                 .iter()
                 .filter(|v| v.project_id == pid)
@@ -363,8 +367,9 @@ impl ContentCatalog for E2eContent {
     }
 }
 
-fn project_to_hit(p: &Project) -> SearchHit {
-    SearchHit {
+fn project_to_hit(p: &ContentProject) -> ContentSearchHit {
+    ContentSearchHit {
+        source: p.source,
         project_id: p.id.clone(),
         slug: p.slug.clone(),
         project_type: p.project_type.clone(),
@@ -373,12 +378,10 @@ fn project_to_hit(p: &Project) -> SearchHit {
         icon_url: p.icon_url.clone(),
         downloads: p.downloads,
         categories: p.loaders.clone(),
-        versions: p.game_versions.clone(),
-        client_side: p.client_side,
+        game_versions: p.game_versions.clone(),
         server_side: p.server_side,
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -411,7 +414,7 @@ mod tests {
 
         // Iris chỉ chạy client: vắng mặt khi `server_only`, nhưng có trong project/search chung.
         let iris = cat.project("e2e-iris").await.unwrap();
-        assert!(iris.server_side.is_unsupported());
+        assert!(iris.server_side.is_some_and(|s| s.is_unsupported()));
 
         let lithium_vers = cat
             .versions("e2e-lithium", LoaderKind::Fabric, &mc)
@@ -420,7 +423,7 @@ mod tests {
         assert_eq!(
             lithium_vers
                 .iter()
-                .map(|v| v.version_number.as_str())
+                .filter_map(|v| v.version_number.as_deref())
                 .collect::<Vec<_>>(),
             ["0.14.2", "0.14.0"]
         );

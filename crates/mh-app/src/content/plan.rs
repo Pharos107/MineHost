@@ -4,11 +4,11 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::Path;
 
 use mh_core::{ContentKind, ErrorCode, LoaderKind, McVersion};
-use mh_store::{ContentFile, ProjectId};
+use mh_store::ContentFile;
 
 use super::catalog::{
-    ContentCatalog, Dependency, DependencyType, ModrinthVersion, Project, VersionFile,
-    modrinth_loaders,
+    CatalogSource, ContentCatalog, ContentDependency, ContentFileInfo, ContentProject,
+    ContentVersion, DependencyType, modrinth_loaders,
 };
 use crate::AppError;
 
@@ -18,7 +18,7 @@ pub struct PlannedContent {
     pub project_name: String,
     pub version_id: String,
     pub version_number: String,
-    pub file: VersionFile,
+    pub file: ContentFileInfo,
     pub client_only: bool,
     pub replaces_existing: bool,
     pub is_dependency: bool,
@@ -26,6 +26,7 @@ pub struct PlannedContent {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContentInstallPlan {
+    pub source: CatalogSource,
     pub kind: ContentKind,
     pub items: Vec<PlannedContent>,
 }
@@ -38,14 +39,18 @@ struct QueueItem {
     is_root: bool,
 }
 
-pub(crate) fn installed_projects(files: &[ContentFile]) -> InstalledMap {
+pub(crate) fn installed_projects(files: &[ContentFile], source: CatalogSource) -> InstalledMap {
+    let want = source.to_content_source();
     let mut map: InstalledMap = HashMap::new();
     for file in files {
         let Some(rec) = file.record.as_ref() else {
             continue;
         };
-        if let Some(ProjectId::Str(pid)) = rec.project_id.as_ref() {
-            map.entry(pid.clone())
+        if rec.source != want {
+            continue;
+        }
+        if let Some(pid) = rec.project_id.as_ref() {
+            map.entry(pid.to_string())
                 .or_default()
                 .push(rec.version_id.clone());
         }
@@ -53,7 +58,9 @@ pub(crate) fn installed_projects(files: &[ContentFile]) -> InstalledMap {
     map
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) async fn build_plan(
+    source: CatalogSource,
     catalog: &dyn ContentCatalog,
     kind: ContentKind,
     loader: LoaderKind,
@@ -69,7 +76,7 @@ pub(crate) async fn build_plan(
     }]);
     let mut visited = HashSet::new();
     let mut items = Vec::new();
-    let mut incompatibles: Vec<(String, Dependency)> = Vec::new();
+    let mut incompatibles: Vec<(String, ContentDependency)> = Vec::new();
 
     while let Some(next) = queue.pop_front() {
         let is_dependency = !next.is_root;
@@ -84,7 +91,7 @@ pub(crate) async fn build_plan(
             continue;
         }
         let ver = match preloaded_ver {
-            Some(v) if is_compatible(&v, &project.id, loader, mc) => v,
+            Some(v) if is_compatible(source, &v, &project.id, loader, mc) => v,
             Some(_) => return Err(incompatible(&project.title)),
             None => catalog
                 .versions(&project.id, loader, mc)
@@ -109,25 +116,29 @@ pub(crate) async fn build_plan(
         }
         items.push(PlannedContent {
             replaces_existing: installed.contains_key(&project.id),
-            client_only: project.server_side.is_unsupported(),
+            client_only: project.server_side.is_some_and(|s| s.is_unsupported()),
             project_id: project.id,
             project_name: project.title,
             version_id: ver.id,
-            version_number: ver.version_number,
+            version_number: ver.version_number.unwrap_or(ver.name),
             file,
             is_dependency,
         });
     }
 
     check_incompatibilities(&items, &incompatibles, installed)?;
-    Ok(ContentInstallPlan { kind, items })
+    Ok(ContentInstallPlan {
+        source,
+        kind,
+        items,
+    })
 }
 
 async fn resolve_target(
     catalog: &dyn ContentCatalog,
     next: QueueItem,
     visited: &HashSet<String>,
-) -> Result<Option<(Project, Option<ModrinthVersion>)>, AppError> {
+) -> Result<Option<(ContentProject, Option<ContentVersion>)>, AppError> {
     match (next.project_id, next.version_id) {
         (Some(pid), vid) => {
             if visited.contains(&pid) {
@@ -155,14 +166,29 @@ async fn resolve_target(
     }
 }
 
-fn is_compatible(ver: &ModrinthVersion, pid: &str, loader: LoaderKind, mc: &McVersion) -> bool {
-    let expected = modrinth_loaders(loader);
-    ver.project_id == pid
-        && ver.game_versions.iter().any(|g| g == mc.as_str())
-        && ver.loaders.iter().any(|l| expected.contains(&l.as_str()))
+fn is_compatible(
+    source: CatalogSource,
+    ver: &ContentVersion,
+    pid: &str,
+    loader: LoaderKind,
+    mc: &McVersion,
+) -> bool {
+    if ver.project_id != pid || !ver.game_versions.iter().any(|g| g == mc.as_str()) {
+        return false;
+    }
+    match source {
+        CatalogSource::Modrinth => {
+            let expected = modrinth_loaders(loader);
+            ver.loaders.iter().any(|l| expected.contains(&l.as_str()))
+        }
+        CatalogSource::Curseforge => {
+            mh_providers::curseforge::mod_loader_type(loader).is_some()
+                && (ver.loaders.is_empty() || ver.loaders.iter().any(|l| l == loader.as_str()))
+        }
+    }
 }
 
-fn primary_jar(ver: &ModrinthVersion, name: &str) -> Result<VersionFile, AppError> {
+fn primary_jar(ver: &ContentVersion, name: &str) -> Result<ContentFileInfo, AppError> {
     let file = ver
         .primary_file()
         .ok_or_else(|| incompatible(name))?
@@ -179,7 +205,7 @@ fn primary_jar(ver: &ModrinthVersion, name: &str) -> Result<VersionFile, AppErro
 
 fn check_incompatibilities(
     items: &[PlannedContent],
-    constraints: &[(String, Dependency)],
+    constraints: &[(String, ContentDependency)],
     installed: &InstalledMap,
 ) -> Result<(), AppError> {
     let planned_pids: HashSet<&str> = items.iter().map(|i| i.project_id.as_str()).collect();
@@ -204,7 +230,7 @@ fn check_incompatibilities(
     Ok(())
 }
 
-fn matches_dep(dep: &Dependency, pid: &str, vid: Option<&str>) -> bool {
+fn matches_dep(dep: &ContentDependency, pid: &str, vid: Option<&str>) -> bool {
     let pid_ok = dep.project_id.as_deref().is_none_or(|p| p == pid);
     let vid_ok = dep.version_id.as_deref().is_none_or(|v| vid == Some(v));
     (dep.project_id.is_some() || dep.version_id.is_some()) && pid_ok && vid_ok

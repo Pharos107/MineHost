@@ -700,6 +700,10 @@
     "unsupported": "Loại server này không hỗ trợ cài mod hoặc plugin.",
     "add": "Thêm",
     "addDialog": {
+      "sourceLabel": "Nguồn tải",
+      "sourceModrinth": "Modrinth",
+      "sourceCurseforge": "CurseForge",
+      "curseforgeUnavailableHint": "CurseForge chưa sẵn sàng vì chưa cấu hình API key trong Cài đặt.",
       "loadMore": "Xem thêm",
       "noResults": "Không tìm thấy kết quả",
       "noResultsHint": "Thử từ khóa khác phù hợp với phiên bản và loader của server.",
@@ -709,6 +713,9 @@
       "dependencies_one": "Dependency cài kèm ({{count}})",
       "dependencies_other": "Dependency cài kèm ({{count}})",
       "replacesExisting": "Thay bản cũ",
+      "manualDownload": "Cần tải tay",
+      "manualDownloadHint": "Một số file bị tác giả chặn tải tự động qua API. MineHost vẫn cài các file còn lại và ghi nhớ mục cần bạn tải tay ở trang tải.",
+      "openDownloadPage": "Mở trang tải",
       "clientOnlyHint": "Mod chỉ chạy ở client sẽ được cài ở trạng thái tắt; bạn có thể tự bật lại nếu muốn.",
       "back": "Quay lại",
       "install": "Cài",
@@ -723,6 +730,7 @@
       "openPage": "Mở trang mod",
       "addTitle": "Thêm mod",
       "searchPlaceholder": "Tìm mod trên Modrinth…",
+      "searchPlaceholderCurseforge": "Tìm mod trên CurseForge…",
       "mainItem": "Mod sẽ cài"
     },
     "plugins": {
@@ -733,6 +741,7 @@
       "openPage": "Mở trang plugin",
       "addTitle": "Thêm plugin",
       "searchPlaceholder": "Tìm plugin trên Modrinth…",
+      "searchPlaceholderCurseforge": "Tìm plugin trên CurseForge…",
       "mainItem": "Plugin sẽ cài"
     }
   }

@@ -6,12 +6,13 @@ use std::sync::Arc;
 use axum::Json;
 use axum::extract::{Extension, Multipart, State};
 use axum::http::StatusCode;
+use mh_app::content::CatalogSource;
 use mh_app::{App, ModpackRequest, ModpackSourceInput};
 use mh_core::{ErrorCode, GamePort, MemoryLimits, ServerName};
 use serde::Deserialize;
 use utoipa::ToSchema;
 
-use crate::content::check_source;
+use crate::content::parse_source;
 use crate::dto::{CreatedDto, MemoryDto};
 use crate::error::{ApiError, ApiJson, ErrorBody};
 use crate::files::{self, TempUploadGuard, UploadLimit};
@@ -41,7 +42,15 @@ pub async fn create(
     State(app): State<Arc<App>>,
     ApiJson(body): ApiJson<CreateModpackBody>,
 ) -> ApiResult<(StatusCode, Json<CreatedDto>)> {
-    check_source(&body.source)?;
+    match parse_source(&body.source)? {
+        CatalogSource::Modrinth => {}
+        CatalogSource::Curseforge => {
+            return Err(ApiError::new(
+                StatusCode::SERVICE_UNAVAILABLE,
+                ErrorCode::CurseforgeUnavailable,
+            ));
+        }
+    }
     let project_id = body.project_id.trim();
     if project_id.is_empty() {
         return Err(ApiError::invalid("project_id"));

@@ -8,8 +8,8 @@ use std::time::Duration;
 use axum::body::Body;
 use axum::http::{Method, Request, StatusCode, header};
 use mh_app::content::{
-    ContentCatalog, FileHashes, ModrinthVersion, PackFile, Project, SearchFilters, SearchResult,
-    VersionFile,
+    ContentCatalog, ContentFileInfo, ContentProject, ContentSearchResult, ContentVersion, PackFile,
+    SearchFilters,
 };
 use mh_app::sources::{
     BoxFut, CancellationToken, CatalogVersion, InstallPlan, LoaderInstall, PlannedFile, ProgressFn,
@@ -97,7 +97,7 @@ impl ServerCatalog for PackServerCatalog {
 }
 
 struct PackModCatalog {
-    versions: Vec<ModrinthVersion>,
+    versions: Vec<ContentVersion>,
     files: HashMap<String, Vec<u8>>,
 }
 
@@ -112,24 +112,23 @@ impl PackModCatalog {
         files.insert(mod_url.to_owned(), mod_bytes);
         files.insert(pack_url.to_owned(), mrpack.clone());
 
-        let ver = ModrinthVersion {
+        let ver = ContentVersion {
             id: "vp1".to_owned(),
             project_id: "pack1".to_owned(),
             name: "v1.0.0".to_owned(),
-            version_number: "1.0.0".to_owned(),
+            version_number: Some("1.0.0".to_owned()),
             version_type: "release".to_owned(),
             game_versions: vec!["1.21.4".to_owned()],
             loaders: vec!["fabric".to_owned()],
             date_published: datetime!(2025-01-10 0:00 UTC),
-            files: vec![VersionFile {
-                url: pack_url.to_owned(),
+            files: vec![ContentFileInfo {
+                url: Some(pack_url.to_owned()),
                 filename: "pack.mrpack".to_owned(),
                 size: mrpack.len() as u64,
-                hashes: FileHashes {
-                    sha1: "0".repeat(40),
-                    sha512: "0".repeat(128),
-                },
-                primary: true,
+                sha1: Some("0".repeat(40)),
+                sha512: Some("0".repeat(128)),
+                manual_download: false,
+                download_page_url: None,
             }],
             dependencies: Vec::new(),
         };
@@ -145,11 +144,11 @@ impl ContentCatalog for PackModCatalog {
         &'a self,
         _: &'a str,
         _: &'a SearchFilters,
-    ) -> BoxFut<'a, Result<SearchResult, AppError>> {
+    ) -> BoxFut<'a, Result<ContentSearchResult, AppError>> {
         Box::pin(async { Err(AppError::new(ErrorCode::NetworkUnavailable, "unused")) })
     }
 
-    fn project<'a>(&'a self, _: &'a str) -> BoxFut<'a, Result<Project, AppError>> {
+    fn project<'a>(&'a self, _: &'a str) -> BoxFut<'a, Result<ContentProject, AppError>> {
         Box::pin(async { Err(AppError::new(ErrorCode::NetworkUnavailable, "unused")) })
     }
 
@@ -158,11 +157,11 @@ impl ContentCatalog for PackModCatalog {
         _: &'a str,
         _: LoaderKind,
         _: &'a McVersion,
-    ) -> BoxFut<'a, Result<Vec<ModrinthVersion>, AppError>> {
+    ) -> BoxFut<'a, Result<Vec<ContentVersion>, AppError>> {
         Box::pin(async { Ok(Vec::new()) })
     }
 
-    fn version<'a>(&'a self, id: &'a str) -> BoxFut<'a, Result<ModrinthVersion, AppError>> {
+    fn version<'a>(&'a self, id: &'a str) -> BoxFut<'a, Result<ContentVersion, AppError>> {
         Box::pin(async move {
             self.versions
                 .iter()
@@ -174,16 +173,20 @@ impl ContentCatalog for PackModCatalog {
 
     fn download<'a>(
         &'a self,
-        file: &'a VersionFile,
+        file: &'a ContentFileInfo,
         dest: &'a Path,
         _: ProgressFn<'a>,
         _: &'a CancellationToken,
     ) -> BoxFut<'a, Result<(), AppError>> {
         Box::pin(async move {
+            let url = file
+                .url
+                .as_deref()
+                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, &file.filename))?;
             let bytes = self
                 .files
-                .get(&file.url)
-                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, &file.url))?;
+                .get(url)
+                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, url))?;
             std::fs::write(dest, bytes).unwrap();
             Ok(())
         })
@@ -192,7 +195,7 @@ impl ContentCatalog for PackModCatalog {
     fn project_versions<'a>(
         &'a self,
         pid: &'a str,
-    ) -> BoxFut<'a, Result<Vec<ModrinthVersion>, AppError>> {
+    ) -> BoxFut<'a, Result<Vec<ContentVersion>, AppError>> {
         Box::pin(async move {
             Ok(self
                 .versions

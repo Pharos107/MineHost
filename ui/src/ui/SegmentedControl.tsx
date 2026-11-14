@@ -7,6 +7,8 @@ export interface Segment<V extends string> {
   value: V;
   label: string;
   icon?: LucideIcon;
+  disabled?: boolean;
+  title?: string;
 }
 
 interface SegmentedControlProps<V extends string> {
@@ -21,14 +23,16 @@ interface SegmentedControlProps<V extends string> {
 export function SegmentedControl<V extends string>({ label, value, options, onChange }: SegmentedControlProps<V>) {
   return (
     <div className={styles.group} role="radiogroup" aria-label={label}>
-      {options.map(({ value: option, label: text, icon: Icon }) => (
+      {options.map(({ value: option, label: text, icon: Icon, disabled, title }) => (
         <button
           key={option}
           type="button"
           role="radio"
           aria-checked={option === value}
+          disabled={disabled}
+          title={title}
           className={cx(styles.segment, option === value && styles.active)}
-          onClick={() => onChange(option)}
+          onClick={() => !disabled && onChange(option)}
         >
           {Icon && <Icon size={16} aria-hidden />}
           {text}

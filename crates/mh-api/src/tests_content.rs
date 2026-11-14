@@ -15,7 +15,7 @@ use tokio::sync::Notify;
 
 use super::PORT;
 use catalog::store_zip;
-use support::{content_api, create_with_loader, upload_jar, wait_job};
+use support::{content_api, content_api_with_cf, create_with_loader, upload_jar, wait_job};
 
 #[tokio::test]
 async fn server_dto_reports_content_kind() {
@@ -354,4 +354,85 @@ fn openapi_lists_content_routes() {
     ] {
         assert!(spec.paths.paths.contains_key(path), "thiếu {path}");
     }
+}
+
+#[tokio::test]
+async fn curseforge_routes_cover_search_project_versions_plan_and_pending() {
+    let api = content_api_with_cf(None, true);
+    let fabric = create_with_loader(&api, "Fabric CF", "fabric", 25565).await;
+
+    let (status, search) = api
+        .get(&format!(
+            "/api/v1/content/search?source=curseforge&server_id={fabric}"
+        ))
+        .await;
+    assert_eq!(status, StatusCode::OK, "{search}");
+    assert_eq!(search["hits"][0]["source"], "curseforge");
+    assert_eq!(search["hits"][0]["server_side"], Value::Null);
+
+    let (status, proj) = api.get("/api/v1/content/curseforge/projects/238222").await;
+    assert_eq!(status, StatusCode::OK, "{proj}");
+    assert_eq!(proj["source"], "curseforge");
+    assert_eq!(proj["body"], Value::Null);
+    assert_eq!(proj["server_side"], Value::Null);
+
+    let (status, vers) = api
+        .get(&format!(
+            "/api/v1/content/curseforge/projects/238222/versions?server_id={fabric}"
+        ))
+        .await;
+    assert_eq!(status, StatusCode::OK, "{vers}");
+    assert_eq!(vers[0]["version_number"], Value::Null);
+
+    let (status, plan) = api
+        .post(
+            &format!("/api/v1/servers/{fabric}/content/plan"),
+            Some(json!({ "source": "curseforge", "project_id": "238222" })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK, "{plan}");
+    assert_eq!(plan["items"].as_array().unwrap().len(), 2);
+    assert_eq!(plan["items"][0]["manual_download"], false);
+
+    let (status, job) = api
+        .post(
+            &format!("/api/v1/servers/{fabric}/content"),
+            Some(json!({ "source": "curseforge", "project_id": "238222" })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::ACCEPTED, "{job}");
+    wait_job(&api, job["job_id"].as_u64().unwrap()).await;
+
+    let (status, rplan) = api
+        .post(
+            &format!("/api/v1/servers/{fabric}/content/plan"),
+            Some(json!({ "source": "curseforge", "project_id": "777001" })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK, "{rplan}");
+    assert_eq!(rplan["items"][0]["manual_download"], true);
+    assert!(
+        rplan["items"][0]["download_page_url"]
+            .as_str()
+            .unwrap()
+            .contains("/download/7770001")
+    );
+
+    let (status, rjob) = api
+        .post(
+            &format!("/api/v1/servers/{fabric}/content"),
+            Some(json!({ "source": "curseforge", "project_id": "777001" })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::ACCEPTED, "{rjob}");
+    wait_job(&api, rjob["job_id"].as_u64().unwrap()).await;
+
+    let (status, list) = api.get(&format!("/api/v1/servers/{fabric}/content")).await;
+    assert_eq!(status, StatusCode::OK, "{list}");
+    assert_eq!(list["files"].as_array().unwrap().len(), 2);
+    assert_eq!(list["files"][0]["source"], "curseforge");
+    let pending = list["pending"].as_array().unwrap();
+    assert_eq!(pending.len(), 1);
+    assert_eq!(pending[0]["project_id"], 777001);
+    assert_eq!(pending[0]["file_id"], 7770001);
 }

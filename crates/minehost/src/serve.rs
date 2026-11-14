@@ -160,14 +160,15 @@ fn e2e_app(
         "chế độ e2e: không gọi mạng; Paper giả 1.21.4 và 1.20.4; Java là binary trong biến môi trường"
     );
     let deps = mh_app::e2e::deps(java);
-    let app = App::with_deps(dirs, deps)
+    let mut app = App::with_deps(dirs, deps)
         .context("không khởi tạo được MineHost")?
         .with_players(mh_app::e2e::players())
-        .with_content(mh_app::e2e::content());
-    Ok(match cf_key {
-        Some(key) => app.with_curseforge_key(key),
-        None => app,
-    })
+        .with_content(mh_app::e2e::content())
+        .with_curseforge(mh_app::e2e::curseforge());
+    if let Some(key) = cf_key.or_else(mh_app::e2e::curseforge_key) {
+        app = app.with_curseforge_key(key);
+    }
+    Ok(app)
 }
 
 pub fn open_browser(url: &str) {

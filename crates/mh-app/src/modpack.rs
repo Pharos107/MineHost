@@ -17,7 +17,7 @@ use tokio::task::JoinSet;
 
 mod finish;
 
-use crate::content::ModrinthVersion;
+use crate::content::{CatalogSource, ContentCatalog, ContentFileInfo, ContentVersion};
 use crate::jobs::{JobContext, JobKind, JobStep};
 use crate::{App, AppError, Created, Installing, lock};
 use finish::{
@@ -124,11 +124,12 @@ impl App {
         ctx.step(JobStep::CheckDisk, 1, 8);
         self.check_disk()?;
 
+        let catalog = self.catalog_for(CatalogSource::Modrinth)?;
         let (mrpack_path, meta) = self
-            .obtain_mrpack(ctx, id, &req.source, &mut cleanup)
+            .obtain_mrpack(ctx, id, catalog.as_ref(), &req.source, &mut cleanup)
             .await?;
 
-        let hosts = self.content_catalog.pack_hosts();
+        let hosts = catalog.pack_hosts();
         let plan_path = mrpack_path.clone();
         let plan = ctx
             .cancellable(crate::files::blocking(move || {
@@ -150,7 +151,7 @@ impl App {
             .await?;
 
         let root = SafeRoot::new(&paths.server_dir)?;
-        self.download_pack_files(ctx, &root, &plan.files, step_packs, step_count)
+        self.download_pack_files(ctx, &catalog, &root, &plan.files, step_packs, step_count)
             .await?;
         self.apply_pack_overrides(
             ctx,
@@ -231,6 +232,7 @@ impl App {
         &self,
         ctx: &JobContext,
         id: ServerId,
+        catalog: &dyn ContentCatalog,
         source: &ModpackSourceInput,
         cleanup: &mut TempFileCleanup,
     ) -> Result<(PathBuf, ModpackMeta), AppError> {
@@ -268,13 +270,13 @@ impl App {
                     8,
                 );
                 let (ver, file) = self
-                    .resolve_modrinth_mrpack(ctx, project_id, version_id.as_deref())
+                    .resolve_modrinth_mrpack(ctx, catalog, project_id, version_id.as_deref())
                     .await?;
                 let stage_path = self.dirs.cache().join(format!("modpack-{id}.mrpack"));
                 cleanup.0 = Some(stage_path.clone());
                 let _permit = ctx.download_permit().await?;
                 let mut progress = |done: u64, total: Option<u64>| ctx.bytes(done, total);
-                self.content_catalog
+                catalog
                     .download(&file, &stage_path, &mut progress, &ctx.cancel)
                     .await?;
                 ctx.check_cancel()?;
@@ -284,7 +286,7 @@ impl App {
                         source: ModpackSource::Modrinth,
                         project_id: ContentId::parse(project_id).ok(),
                         version_id: ContentId::parse(&ver.id).ok(),
-                        version_name: sanitize_upstream(&ver.version_number),
+                        version_name: ver.version_number.as_deref().and_then(sanitize_upstream),
                     },
                 ))
             }
@@ -294,14 +296,15 @@ impl App {
     async fn resolve_modrinth_mrpack(
         &self,
         ctx: &JobContext,
+        catalog: &dyn ContentCatalog,
         project_id: &str,
         version_id: Option<&str>,
-    ) -> Result<(ModrinthVersion, mh_providers::modrinth::VersionFile), AppError> {
+    ) -> Result<(ContentVersion, ContentFileInfo), AppError> {
         let ver = match version_id {
-            Some(vid) => ctx.cancellable(self.content_catalog.version(vid)).await?,
+            Some(vid) => ctx.cancellable(catalog.version(vid)).await?,
             None => {
                 let list = ctx
-                    .cancellable(self.content_catalog.project_versions(project_id))
+                    .cancellable(catalog.project_versions(project_id))
                     .await?;
                 list.into_iter()
                     .find(|v| pick_mrpack_file(v).is_some())
@@ -335,6 +338,7 @@ impl App {
     async fn download_pack_files(
         &self,
         ctx: &JobContext,
+        catalog: &Arc<dyn ContentCatalog>,
         root: &SafeRoot,
         files: &[PackFile],
         step_idx: u8,
@@ -366,7 +370,7 @@ impl App {
         let mut set = JoinSet::new();
         for (file, dest) in targets {
             let sem = Arc::clone(&sem);
-            let catalog = Arc::clone(&self.content_catalog);
+            let catalog = Arc::clone(catalog);
             let cancel = child_cancel.clone();
             set.spawn(async move {
                 let _permit = tokio::select! {
@@ -449,14 +453,11 @@ fn validate_request(req: &ModpackRequest) -> Result<(), AppError> {
     }
 }
 
-fn pick_mrpack_file(ver: &ModrinthVersion) -> Option<&mh_providers::modrinth::VersionFile> {
+fn pick_mrpack_file(ver: &ContentVersion) -> Option<&ContentFileInfo> {
     let is_mrpack = |name: &str| {
         Path::new(name)
             .extension()
             .is_some_and(|e| e.eq_ignore_ascii_case("mrpack"))
     };
-    ver.files
-        .iter()
-        .find(|f| f.primary && is_mrpack(&f.filename))
-        .or_else(|| ver.files.iter().find(|f| is_mrpack(&f.filename)))
+    ver.files.iter().find(|f| is_mrpack(&f.filename))
 }

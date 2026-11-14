@@ -17,6 +17,7 @@
 //! để test Rust lấy đường dẫn qua `CARGO_BIN_EXE`. Playwright nên dùng `fake-mc` của `mh-runtime`.
 
 mod content;
+mod curseforge;
 mod loader;
 mod pack;
 
@@ -246,6 +247,16 @@ impl E2eJava {
 /// Nguồn Modrinth giả cho chế độ e2e (spec P3, mục 5.9). Không gọi mạng.
 pub fn content() -> Arc<dyn crate::ContentCatalog> {
     Arc::new(content::E2eContent::new())
+}
+
+/// Nguồn CurseForge giả cho chế độ e2e: có mod kèm dependency và mod cấm phân phối.
+pub fn curseforge() -> Arc<dyn crate::ContentCatalog> {
+    Arc::new(curseforge::E2eCurseforge::new())
+}
+
+/// Key CurseForge giả dùng trong chế độ e2e để giao diện không báo thiếu key.
+pub fn curseforge_key() -> Option<mh_core::CurseforgeKey> {
+    mh_core::CurseforgeKey::parse("e2e-curseforge-key").ok()
 }
 
 /// Tra người chơi không gọi Mojang: mọi tên đều có tài khoản, UUID tính như offline-mode,

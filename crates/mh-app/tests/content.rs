@@ -13,7 +13,8 @@ use content_support::{
     sha512_hex, test_app,
 };
 use mh_app::content::{
-    ContentCatalog, DependencyType, FileHashes, Modrinth, ModrinthCatalog, SideSupport, VersionFile,
+    CatalogSource, ContentCatalog, ContentFileInfo, DependencyType, Modrinth, ModrinthCatalog,
+    SideSupport,
 };
 use mh_app::jobs::JobKind;
 use mh_app::{App, AppDeps, CreateRequest, JobState, MetricsConfig};
@@ -102,14 +103,19 @@ async fn installs_two_level_deps_and_skips_optional_embedded() {
     let (_tmp, app) = test_app(Arc::clone(&cat) as Arc<dyn ContentCatalog>);
     let id = make_server(&app, LoaderKind::Fabric);
 
-    let plan = app.plan_content_install(id, "mod-a", None).await.unwrap();
+    let plan = app
+        .plan_content_install(id, CatalogSource::Modrinth, "mod-a", None)
+        .await
+        .unwrap();
     assert_eq!(cat.downloads.load(Ordering::SeqCst), 0);
     let ids: Vec<_> = plan.items.iter().map(|i| i.version_id.as_str()).collect();
     assert_eq!(ids, vec!["vA", "vB-pin", "vC"]);
     assert!(!plan.items[0].is_dependency);
     assert!(plan.items[1].is_dependency);
 
-    let job_id = app.install_content(id, "mod-a", None).unwrap();
+    let job_id = app
+        .install_content(id, CatalogSource::Modrinth, "mod-a", None)
+        .unwrap();
     // Không kiểm từng bước trung gian: kênh `watch` chỉ giữ giá trị mới nhất, máy nhanh sẽ bỏ qua
     // vài bước. Số file đã tải mới là thứ quan sát được chắc chắn.
     let snap = finish_job(&app, job_id).await;
@@ -159,7 +165,9 @@ async fn circular_dependencies_terminate_and_install_both() {
     let (_tmp, app) = test_app(Arc::new(cat));
     let id = make_server(&app, LoaderKind::Fabric);
 
-    let job = app.install_content(id, "slug-a", None).unwrap();
+    let job = app
+        .install_content(id, CatalogSource::Modrinth, "slug-a", None)
+        .unwrap();
     assert_eq!(finish_job(&app, job).await.state, JobState::Succeeded);
     let list = app.content(id).await.unwrap();
     assert_eq!(list.files.len(), 2);
@@ -219,22 +227,23 @@ async fn rejects_incompatible_loader_conflicts_and_skips_installed_dep() {
     let (_tmp, app) = test_app(Arc::new(cat));
     let id = make_server(&app, LoaderKind::Fabric);
 
+    let src = CatalogSource::Modrinth;
     assert_eq!(
-        app.plan_content_install(id, "BAD", None)
+        app.plan_content_install(id, src, "BAD", None)
             .await
             .unwrap_err()
             .code,
         ErrorCode::ContentIncompatible
     );
     assert_eq!(
-        app.plan_content_install(id, "BAD", Some("vBad"))
+        app.plan_content_install(id, src, "BAD", Some("vBad"))
             .await
             .unwrap_err()
             .code,
         ErrorCode::ContentIncompatible
     );
     assert_eq!(
-        app.plan_content_install(id, "CON", Some("vConPlan"))
+        app.plan_content_install(id, src, "CON", Some("vConPlan"))
             .await
             .unwrap_err()
             .code,
@@ -242,17 +251,13 @@ async fn rejects_incompatible_loader_conflicts_and_skips_installed_dep() {
     );
 
     // Cài B trước, rồi A bỏ qua B; CON incompatible với B đang cài -> CONTENT_INCOMPATIBLE.
-    assert_eq!(
-        finish_job(&app, app.install_content(id, "B", None).unwrap())
-            .await
-            .state,
-        JobState::Succeeded
-    );
-    let plan_a = app.plan_content_install(id, "A", None).await.unwrap();
+    let job_b = app.install_content(id, src, "B", None).unwrap();
+    assert_eq!(finish_job(&app, job_b).await.state, JobState::Succeeded);
+    let plan_a = app.plan_content_install(id, src, "A", None).await.unwrap();
     assert_eq!(plan_a.items.len(), 1);
     assert_eq!(plan_a.items[0].project_id, "A");
     assert_eq!(
-        app.plan_content_install(id, "CON", Some("vConInstalled"))
+        app.plan_content_install(id, src, "CON", Some("vConInstalled"))
             .await
             .unwrap_err()
             .code,
@@ -321,9 +326,10 @@ async fn replace_client_only_and_midway_failure_behavior() {
     let (_tmp, app) = test_app(Arc::new(cat));
     let id = make_server(&app, LoaderKind::Fabric);
 
+    let src = CatalogSource::Modrinth;
     // Lỗi tải giữa chừng: không để lại file nào trong mods/.
     let bad_job = app
-        .install_content(id, "A", Some("vFailRoot".to_owned()))
+        .install_content(id, src, "A", Some("vFailRoot".to_owned()))
         .unwrap();
     assert!(matches!(
         finish_job(&app, bad_job).await.state,
@@ -337,33 +343,21 @@ async fn replace_client_only_and_midway_failure_behavior() {
     assert!(!paths.content_file.exists());
 
     // Cài v1 rồi thay bằng v2 -> bản cũ vào thùng rác.
-    assert_eq!(
-        finish_job(
-            &app,
-            app.install_content(id, "A", Some("vA1".to_owned()))
-                .unwrap()
-        )
-        .await
-        .state,
-        JobState::Succeeded
-    );
-    assert_eq!(
-        finish_job(
-            &app,
-            app.install_content(id, "A", Some("vA2".to_owned()))
-                .unwrap()
-        )
-        .await
-        .state,
-        JobState::Succeeded
-    );
+    let job_a1 = app
+        .install_content(id, src, "A", Some("vA1".to_owned()))
+        .unwrap();
+    assert_eq!(finish_job(&app, job_a1).await.state, JobState::Succeeded);
+    let job_a2 = app
+        .install_content(id, src, "A", Some("vA2".to_owned()))
+        .unwrap();
+    assert_eq!(finish_job(&app, job_a2).await.state, JobState::Succeeded);
     assert!(!paths.server_dir.join("mods/a-1.0.jar").exists());
     assert!(paths.server_dir.join("mods/a-2.0.jar").exists());
     assert!(app.dirs().trash().join(id.to_string()).exists());
 
     // Hai lần cài đồng thời trên cùng server được khóa tuần tự, không ghi đè mất `content.toml`.
-    let j1 = app.install_content(id, "CLI", None).unwrap();
-    let j2 = app.install_content(id, "JAR", None).unwrap();
+    let j1 = app.install_content(id, src, "CLI", None).unwrap();
+    let j2 = app.install_content(id, src, "JAR", None).unwrap();
     assert_eq!(finish_job(&app, j1).await.state, JobState::Succeeded);
     assert_eq!(finish_job(&app, j2).await.state, JobState::Succeeded);
     let list = app.content(id).await.unwrap();
@@ -412,7 +406,7 @@ async fn running_server_blocks_install_with_server_busy() {
     }
 
     let err = app
-        .install_content(created.server_id, "P", None)
+        .install_content(created.server_id, CatalogSource::Modrinth, "P", None)
         .unwrap_err();
     assert_eq!(err.code, ErrorCode::ServerBusy);
 
@@ -443,7 +437,7 @@ async fn offline_default_errors_and_real_modrinth_catalog_uses_hash_cache() {
     let offline_id = make_server(&offline_app, LoaderKind::Fabric);
     assert_eq!(
         offline_app
-            .plan_content_install(offline_id, "sodium", None)
+            .plan_content_install(offline_id, CatalogSource::Modrinth, "sodium", None)
             .await
             .unwrap_err()
             .code,
@@ -475,15 +469,14 @@ async fn offline_default_errors_and_real_modrinth_catalog_uses_hash_cache() {
     let modrinth =
         Modrinth::with_base_url(Arc::clone(&http), format!("http://{addr}")).with_hosts(hosts);
     let real_cat = ModrinthCatalog::new(http).with_modrinth(modrinth, hosts);
-    let file = VersionFile {
-        url: format!("http://{addr}/mod.jar"),
+    let file = ContentFileInfo {
+        url: Some(format!("http://{addr}/mod.jar")),
         filename: "mod.jar".to_owned(),
         size: body.len() as u64,
-        hashes: FileHashes {
-            sha1: "0".repeat(40),
-            sha512: sha512_hex(&body),
-        },
-        primary: true,
+        sha1: Some("0".repeat(40)),
+        sha512: Some(sha512_hex(&body)),
+        manual_download: false,
+        download_page_url: None,
     };
     let cancel = CancellationToken::new();
     let mut noop = |_: u64, _: Option<u64>| {};
