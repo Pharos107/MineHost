@@ -803,15 +803,17 @@ export interface components {
         ContentVersionDto: {
             /** @description RFC 3339. */
             date_published: string;
+            download_page_url?: string | null;
             file_name?: string | null;
             /** Format: int64 */
             file_size?: number | null;
             game_versions: string[];
             id: string;
             loaders: string[];
+            manual_download: boolean;
             name: string;
             project_id: string;
-            version_number: string;
+            version_number?: string | null;
             version_type: string;
         };
         CrashDto: {
@@ -1021,10 +1023,12 @@ export interface components {
         };
         PlannedContentDto: {
             client_only: boolean;
+            download_page_url?: string | null;
             file_name: string;
             /** Format: int64 */
             file_size: number;
             is_dependency: boolean;
+            manual_download: boolean;
             project_id: string;
             project_name: string;
             replaces_existing: boolean;
@@ -1090,8 +1094,8 @@ export interface components {
             step_index: number;
         };
         ProjectDto: {
-            body: string;
-            client_side: components["schemas"]["SideSupportDto"];
+            body?: string | null;
+            client_side?: components["schemas"]["SideSupportDto"] | null;
             description: string;
             /** Format: int64 */
             downloads: number;
@@ -1101,7 +1105,7 @@ export interface components {
             links: components["schemas"]["ProjectLinksDto"];
             loaders: string[];
             project_id: string;
-            server_side: components["schemas"]["SideSupportDto"];
+            server_side?: components["schemas"]["SideSupportDto"] | null;
             slug: string;
             source: string;
             title: string;
@@ -1138,7 +1142,7 @@ export interface components {
             icon_url?: string | null;
             kind: string;
             project_id: string;
-            server_side: components["schemas"]["SideSupportDto"];
+            server_side?: components["schemas"]["SideSupportDto"] | null;
             slug: string;
             source: string;
             title: string;

@@ -3183,16 +3183,22 @@
           "id",
           "project_id",
           "name",
-          "version_number",
           "version_type",
           "game_versions",
           "loaders",
-          "date_published"
+          "date_published",
+          "manual_download"
         ],
         "properties": {
           "date_published": {
             "type": "string",
             "description": "RFC 3339."
+          },
+          "download_page_url": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "file_name": {
             "type": [
@@ -3223,6 +3229,9 @@
               "type": "string"
             }
           },
+          "manual_download": {
+            "type": "boolean"
+          },
           "name": {
             "type": "string"
           },
@@ -3230,7 +3239,10 @@
             "type": "string"
           },
           "version_number": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "version_type": {
             "type": "string"
@@ -4005,11 +4017,18 @@
           "file_size",
           "client_only",
           "replaces_existing",
-          "is_dependency"
+          "is_dependency",
+          "manual_download"
         ],
         "properties": {
           "client_only": {
             "type": "boolean"
+          },
+          "download_page_url": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "file_name": {
             "type": "string"
@@ -4020,6 +4039,9 @@
             "minimum": 0
           },
           "is_dependency": {
+            "type": "boolean"
+          },
+          "manual_download": {
             "type": "boolean"
           },
           "project_id": {
@@ -4278,20 +4300,27 @@
           "kind",
           "title",
           "description",
-          "body",
           "downloads",
           "loaders",
           "game_versions",
-          "client_side",
-          "server_side",
           "links"
         ],
         "properties": {
           "body": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "client_side": {
-            "$ref": "#/components/schemas/SideSupportDto"
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SideSupportDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "description": {
             "type": "string"
@@ -4329,7 +4358,14 @@
             "type": "string"
           },
           "server_side": {
-            "$ref": "#/components/schemas/SideSupportDto"
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SideSupportDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "slug": {
             "type": "string"
@@ -4445,8 +4481,7 @@
           "description",
           "downloads",
           "categories",
-          "game_versions",
-          "server_side"
+          "game_versions"
         ],
         "properties": {
           "categories": {
@@ -4482,7 +4517,15 @@
             "type": "string"
           },
           "server_side": {
-            "$ref": "#/components/schemas/SideSupportDto"
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SideSupportDto",
+                "description": "Chỉ Modrinth trả thông tin này; CurseForge để `null`."
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "slug": {
             "type": "string"
