@@ -10,6 +10,7 @@
 //! servers/<id>/.running        có mặt khi server đang bật; controller chết thì còn lại
 //! ```
 
+mod content;
 mod error;
 mod players;
 mod world;
@@ -23,6 +24,10 @@ use serde::Serialize;
 use time::OffsetDateTime;
 use time::macros::format_description;
 
+pub use content::{
+    CONTENT_FILE, CONTENT_SCHEMA, ContentFile, ContentManifest, ContentMetaError, ContentRecord,
+    ContentScanner, ContentSource, PendingContent, ProjectId, scan_content,
+};
 pub use error::StoreError;
 pub use players::{
     BanEntry, JsonExtra, OpEntry, PlayerFiles, PlayerRef, UserCacheEntry, WhitelistEntry,
@@ -43,6 +48,7 @@ pub struct ServerStore {
 pub struct ServerPaths {
     pub root: PathBuf,
     pub instance_file: PathBuf,
+    pub content_file: PathBuf,
     pub server_dir: PathBuf,
     pub logs_dir: PathBuf,
     pub running_marker: PathBuf,
@@ -87,6 +93,7 @@ impl ServerStore {
         let root = self.servers_dir.join(id.to_string());
         ServerPaths {
             instance_file: root.join(INSTANCE_FILE),
+            content_file: root.join(CONTENT_FILE),
             server_dir: root.join("server"),
             logs_dir: root.join("logs"),
             running_marker: root.join(RUNNING_MARKER),

@@ -103,6 +103,14 @@ impl ContentKind {
             Self::Plugins => "plugins",
         }
     }
+
+    /// Thư mục trong `server/` chứa nội dung đang tắt.
+    pub const fn disabled_dir(self) -> &'static str {
+        match self {
+            Self::Mods => "mods-disabled",
+            Self::Plugins => "plugins-disabled",
+        }
+    }
 }
 
 impl LoaderKind {
@@ -341,6 +349,8 @@ mod tests {
         assert!(LoaderKind::Quilt.is_mod_loader());
         assert!(!LoaderKind::Purpur.is_mod_loader());
         assert_eq!(ContentKind::Plugins.dir(), "plugins");
+        assert_eq!(ContentKind::Mods.disabled_dir(), "mods-disabled");
+        assert_eq!(ContentKind::Plugins.disabled_dir(), "plugins-disabled");
     }
 
     #[test]
