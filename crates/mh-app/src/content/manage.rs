@@ -38,12 +38,15 @@ impl App {
         enabled: bool,
     ) -> Result<(), AppError> {
         validate_jar_name(file_name)?;
-        let mutex = self.content_lock(id);
-        let _guard = mutex.lock().await;
-        let (_, kind) = self.ensure_content_idle(id)?;
-        let (store, name) = (self.store.clone(), file_name.to_owned());
-        let changed = blocking(move || toggle_sync(&store, id, kind, &name, enabled)).await?;
+        let changed = {
+            let mutex = self.content_lock(id);
+            let _guard = mutex.lock().await;
+            let (_, kind) = self.ensure_content_idle(id)?;
+            let (store, name) = (self.store.clone(), file_name.to_owned());
+            blocking(move || toggle_sync(&store, id, kind, &name, enabled)).await?
+        };
         if changed {
+            self.refresh_preflight(id).await;
             self.notify_changed(id);
         }
         Ok(())
@@ -52,11 +55,15 @@ impl App {
     /// Gỡ một mod/plugin: chuyển file `.jar` vào thùng rác và bỏ bản ghi tương ứng khỏi `content.toml`.
     pub async fn remove_content(&self, id: ServerId, file_name: &str) -> Result<(), AppError> {
         validate_jar_name(file_name)?;
-        let mutex = self.content_lock(id);
-        let _guard = mutex.lock().await;
-        let (_, kind) = self.ensure_content_idle(id)?;
-        let (store, trash, name) = (self.store.clone(), self.dirs.trash(), file_name.to_owned());
-        blocking(move || remove_sync(&store, &trash, id, kind, &name)).await?;
+        {
+            let mutex = self.content_lock(id);
+            let _guard = mutex.lock().await;
+            let (_, kind) = self.ensure_content_idle(id)?;
+            let (store, trash, name) =
+                (self.store.clone(), self.dirs.trash(), file_name.to_owned());
+            blocking(move || remove_sync(&store, &trash, id, kind, &name)).await?;
+        }
+        self.refresh_preflight(id).await;
         self.notify_changed(id);
         Ok(())
     }
@@ -69,15 +76,18 @@ impl App {
         source_path: &Path,
     ) -> Result<ContentFile, AppError> {
         validate_jar_name(file_name)?;
-        let mutex = self.content_lock(id);
-        let _guard = mutex.lock().await;
-        let (_, kind) = self.ensure_content_idle(id)?;
-        let (store, name, src) = (
-            self.store.clone(),
-            file_name.to_owned(),
-            source_path.to_path_buf(),
-        );
-        let uploaded = blocking(move || upload_sync(&store, id, kind, &name, &src)).await?;
+        let uploaded = {
+            let mutex = self.content_lock(id);
+            let _guard = mutex.lock().await;
+            let (_, kind) = self.ensure_content_idle(id)?;
+            let (store, name, src) = (
+                self.store.clone(),
+                file_name.to_owned(),
+                source_path.to_path_buf(),
+            );
+            blocking(move || upload_sync(&store, id, kind, &name, &src)).await?
+        };
+        self.refresh_preflight(id).await;
         self.notify_changed(id);
         Ok(uploaded)
     }

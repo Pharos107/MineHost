@@ -80,43 +80,46 @@ impl App {
         let mutex = self.content_lock(id);
         let _guard = mutex.lock().await;
         let (store, scanner) = (self.store.clone(), Arc::clone(&self.content_scanner));
-        blocking(move || {
+        let report = blocking(move || {
             let paths = store.paths(id);
             let files = scanner.scan_dirs(&paths.server_dir, &paths.content_file, kind)?;
             let manifest = ContentManifest::load(&paths.content_file)?;
             Ok(build_report(spec.game.loader, &files, manifest.pending))
         })
-        .await
+        .await?;
+        crate::lock(&self.preflight_missing).insert(id, !report.missing_deps.is_empty());
+        Ok(report)
     }
 
-    /// Kiểm tra nhanh trạng thái chặn bật để điền `ServerView.preflight_blocking` (không ghi đĩa).
+    /// Chạy lại `preflight` sau khi mod thay đổi để cờ trong `ServerView` không cũ. Lỗi chỉ ghi log:
+    /// thao tác chính đã xong, cờ sai tạm thời không đáng làm hỏng nó.
+    pub(crate) async fn refresh_preflight(&self, id: ServerId) {
+        if let Err(err) = self.preflight(id).await {
+            tracing::warn!(server = %id, %err, "không cập nhật được preflight sau khi đổi mod");
+        }
+    }
+
+    /// Điền `ServerView.preflight_blocking` mà không quét jar: hàm này chạy đồng bộ mỗi lần lấy
+    /// danh sách server, quét (và tính SHA-1) hàng trăm jar ở đây sẽ chặn luồng async. File
+    /// CurseForge chờ tải chỉ cần đọc `content.toml`; phần thiếu dependency lấy từ lần `preflight`
+    /// gần nhất (trang server gọi nó khi mở và sau mỗi thay đổi), chưa chạy lần nào thì coi là không chặn.
     pub(crate) fn has_preflight_blocking(&self, spec: &InstanceSpec) -> bool {
-        let Some(kind) = spec.game.loader.content_kind() else {
+        if spec.game.loader.content_kind().is_none() {
             return false;
-        };
+        }
         let paths = self.store.paths(spec.id);
-        let manifest = match ContentManifest::load(&paths.content_file) {
-            Ok(m) => m,
+        let pending = match ContentManifest::load(&paths.content_file) {
+            Ok(m) => !m.pending.is_empty(),
             Err(err) => {
                 tracing::warn!(server = %spec.id, %err, "không đọc được content.toml khi kiểm tra preflight");
-                return false;
+                false
             }
         };
-        if !manifest.pending.is_empty() {
-            return true;
-        }
-        let files = match self.content_scanner.scan_readonly(
-            &paths.server_dir,
-            &paths.content_file,
-            kind,
-        ) {
-            Ok(f) => f,
-            Err(err) => {
-                tracing::warn!(server = %spec.id, %err, "không quét được mod khi kiểm tra preflight");
-                return false;
-            }
-        };
-        !check_dependencies(&files).0.is_empty()
+        pending
+            || crate::lock(&self.preflight_missing)
+                .get(&spec.id)
+                .copied()
+                .unwrap_or(false)
     }
 }
 

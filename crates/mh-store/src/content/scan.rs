@@ -149,26 +149,6 @@ impl ContentScanner {
         content_file: &Path,
         kind: ContentKind,
     ) -> Result<Vec<ContentFile>, StoreError> {
-        self.scan_dirs_inner(server_dir, content_file, kind, true)
-    }
-
-    /// Quét như `scan_dirs` nhưng không ghi lại `content.toml` (dùng cho đọc trạng thái tổng quan).
-    pub fn scan_readonly(
-        &self,
-        server_dir: &Path,
-        content_file: &Path,
-        kind: ContentKind,
-    ) -> Result<Vec<ContentFile>, StoreError> {
-        self.scan_dirs_inner(server_dir, content_file, kind, false)
-    }
-
-    fn scan_dirs_inner(
-        &self,
-        server_dir: &Path,
-        content_file: &Path,
-        kind: ContentKind,
-        save_manifest: bool,
-    ) -> Result<Vec<ContentFile>, StoreError> {
         let mut jars = self.scan_disk_jars(server_dir, kind)?;
         jars.sort_by(|a, b| {
             a.file_name
@@ -180,7 +160,7 @@ impl ContentScanner {
 
         let mut manifest = ContentManifest::load(content_file)?;
         let (files, changed) = reconcile_records(jars, &mut manifest);
-        if save_manifest && changed {
+        if changed {
             manifest.save(content_file)?;
         }
         Ok(files)
