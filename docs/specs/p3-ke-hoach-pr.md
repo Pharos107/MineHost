@@ -7,7 +7,7 @@ Hai bản phát hành (spec mục 11): nhóm A–D ra `v0.4.0` (PR-25), nhóm E�
 
 ## Tiến độ
 
-Cập nhật 2026-11-15, sau khi merge #86. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-15, sau khi merge #87. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -32,7 +32,7 @@ chính PR ấy.
 | 18 | Route mod và tìm kiếm | Đã merge | [#85](https://github.com/Pharos107/MineHost/pull/85) |
 | 19 | Trang Mod hoặc Plugin | Đã merge | [#86](https://github.com/Pharos107/MineHost/pull/86) |
 | 20 | Tìm và cài mod | Chưa bắt đầu | |
-| 21 | Kiểm tra trước khi bật | Chưa bắt đầu | |
+| 21 | Kiểm tra trước khi bật | Đã merge | [#87](https://github.com/Pharos107/MineHost/pull/87) |
 | 22–25 | Nhóm D · Modpack Modrinth, `v0.4.0` | Chưa bắt đầu | |
 | 26–30 | Nhóm E · CurseForge | Chưa bắt đầu | |
 | 31–34 | Nhóm F · Cập nhật và đổi phiên bản | Chưa bắt đầu | |
