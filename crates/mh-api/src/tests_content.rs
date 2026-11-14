@@ -2,6 +2,8 @@
 
 #[path = "tests_content_catalog.rs"]
 mod catalog;
+#[path = "tests_content_pending.rs"]
+mod pending;
 #[path = "tests_preflight.rs"]
 mod preflight;
 #[path = "tests_content_support.rs"]
@@ -356,6 +358,7 @@ fn openapi_lists_content_routes() {
         "/api/v1/servers/{id}/content",
         "/api/v1/servers/{id}/content/plan",
         "/api/v1/servers/{id}/content/upload",
+        "/api/v1/servers/{id}/content/pending/upload",
         "/api/v1/servers/{id}/content/{file}",
     ] {
         assert!(spec.paths.paths.contains_key(path), "thiếu {path}");

@@ -22,6 +22,7 @@ pub use catalog::{
 };
 pub(crate) use curseforge::parse_cf_id;
 pub use curseforge::{CurseForge, CurseforgeCatalog};
+pub use manage::PendingUploadResult;
 pub use modrinth::ModrinthCatalog;
 pub use plan::{ContentInstallPlan, PlannedContent};
 pub(crate) use preflight::preflight_block_error;

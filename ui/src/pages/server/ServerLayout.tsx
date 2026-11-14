@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Outlet, useNavigate, useOutletContext, useParams } from "react-router";
+import { Outlet, useMatch, useNavigate, useOutletContext, useParams } from "react-router";
 
 import { api, errorMessage, type Server } from "../../api/client";
 import { SERVERS_KEY } from "../../api/live";
@@ -47,6 +47,7 @@ export function ServerLayout() {
 
 function ServerView({ server }: { server: Server }) {
   const ready = server.state !== "installing" && server.state !== "broken";
+  const onContentPage = useMatch("/servers/:id/content") !== null;
 
   return (
     <Stack gap={5}>
@@ -61,7 +62,7 @@ function ServerView({ server }: { server: Server }) {
         actions={ready && <ServerActions server={server} />}
       />
       <ServerNotices server={server} />
-      <PreflightBanner server={server} />
+      <PreflightBanner server={server} onContentPage={onContentPage} />
       {ready && <Outlet context={server} />}
       {server.state === "broken" && <DeleteServer server={server} />}
     </Stack>

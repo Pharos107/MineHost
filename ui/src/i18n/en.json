@@ -378,6 +378,7 @@
     "CURSEFORGE_UNAVAILABLE": "CurseForge is unavailable: there is no API key or the key was rejected. See CurseForge in Settings.",
     "CURSEFORGE_FILES_PENDING": "Some CurseForge files must be downloaded by hand. Open the Mods page to download and drop them in.",
     "UPLOAD_HASH_MISMATCH": "The uploaded file does not match the expected file. Download the exact version from the mod page.",
+    "UPLOAD_HASH_MISMATCH_EXPECTED": "The uploaded file does not match the expected hash — need {{expected}}. Download the exact version from the mod page.",
     "MODPACK_INVALID": "The modpack file is invalid or damaged.",
     "DOWNLOAD_HOST_NOT_ALLOWED": "A file points to a site that is not allowed, so MineHost did not download it.",
     "UPSTREAM_RATE_LIMITED": "The source site is rate limiting requests. Try again in {{retry_after_s}} seconds."
@@ -694,6 +695,19 @@
     "uploaded_one": "Uploaded {{count}} file.",
     "uploaded_other": "Uploaded {{count}} files.",
     "uploadInvalid": "The file is not a valid .jar or is damaged.",
+    "pending": {
+      "title_one": "{{count}} CurseForge file requires manual download",
+      "title_other": "{{count}} CurseForge files require manual download",
+      "description": "The author disabled automatic API downloads. Open each page, download the exact version, and drop the files below.",
+      "openPage": "Open download page",
+      "waiting": "Pending",
+      "ready": "Ready",
+      "dropLabel": "Choose CurseForge files",
+      "dropHint": "or drop one or more downloaded .jar files here to verify their SHA-1.",
+      "uploading": "Checking {{names}}",
+      "allDone": "All manual CurseForge files are ready. You can start the server now.",
+      "startWithout": "Start without these mods"
+    },
     "remove": "Remove",
     "removeTitle": "Remove {{name}}?",
     "removeBody": "The file {{file}} is moved to MineHost's trash, so you can get it back later.",

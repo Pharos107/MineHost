@@ -78,6 +78,8 @@ pub struct ContentRecord {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PendingContent {
     pub path: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     pub project_id: u64,
     pub file_id: u64,
     pub sha1: String,

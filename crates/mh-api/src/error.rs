@@ -109,6 +109,15 @@ fn status_for(code: ErrorCode) -> StatusCode {
     }
 }
 
+impl From<AppError> for ErrorBody {
+    fn from(err: AppError) -> Self {
+        Self {
+            code: err.code.as_str().to_owned(),
+            params: err.params,
+        }
+    }
+}
+
 impl From<AppError> for ApiError {
     fn from(err: AppError) -> Self {
         let status = status_for(err.code);

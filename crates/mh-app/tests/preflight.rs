@@ -226,6 +226,7 @@ async fn pending_blocks_start_and_vanilla_skips_preflight() {
         file: vec![],
         pending: vec![PendingContent {
             path: "mods/manual-cf.jar".to_owned(),
+            name: None,
             project_id: 111,
             file_id: 222,
             sha1: "abc".to_owned(),

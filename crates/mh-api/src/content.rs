@@ -234,6 +234,65 @@ pub async fn upload(
     Ok(Json(uploaded.into()))
 }
 
+#[utoipa::path(post, path = "/api/v1/servers/{id}/content/pending/upload", tag = "content",
+    description = "multipart/form-data, một hoặc nhiều phần `file` (.jar ≤ 512 MiB) khớp SHA-1 các mục CurseForge đang chờ.",
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, body = PendingUploadResultDto),
+        (status = 400, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody),
+        (status = 413, body = ErrorBody),
+    ))]
+pub async fn upload_pending(
+    State(app): State<Arc<App>>,
+    Extension(UploadLimit(max_bytes)): Extension<UploadLimit>,
+    IdPath(id): IdPath,
+    mut multipart: Multipart,
+) -> ApiResult<Json<PendingUploadResultDto>> {
+    app.check_content_idle(id)?;
+    let mut guards: Vec<(String, TempUploadGuard)> = Vec::new();
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(files::from_multipart)?
+    {
+        if field.name() != Some("file") {
+            files::drain_field(field).await?;
+            continue;
+        }
+        let name = safe_field_name(field.file_name())?;
+        let guard = files::stream_to_temp(&app, "content-upload", "jar", field, max_bytes).await?;
+        guards.push((name, guard));
+    }
+    if guards.is_empty() {
+        return Err(ApiError::invalid("file"));
+    }
+    let items = guards
+        .iter()
+        .filter_map(|(name, guard)| Some((name.clone(), guard.path()?.to_path_buf())))
+        .collect();
+    let outcomes = app.upload_pending_batch(id, items).await?;
+    let results = outcomes
+        .into_iter()
+        .map(|item| match item.outcome {
+            Ok(installed) => PendingUploadItemDto {
+                file_name: item.file_name,
+                ok: true,
+                installed: Some(installed.into()),
+                error: None,
+            },
+            Err(err) => PendingUploadItemDto {
+                file_name: item.file_name,
+                ok: false,
+                installed: None,
+                error: Some(err.into()),
+            },
+        })
+        .collect();
+    Ok(Json(PendingUploadResultDto { results }))
+}
+
 #[utoipa::path(patch, path = "/api/v1/servers/{id}/content/{file}", tag = "content",
     params(("id" = String, Path), ("file" = String, Path)), request_body = ToggleContentBody,
     responses(
@@ -301,18 +360,25 @@ fn validate_install_body(
     Ok((source, project_id, version_id))
 }
 
-fn valid_jar_field_name(raw: Option<&str>) -> ApiResult<String> {
+fn safe_field_name(raw: Option<&str>) -> ApiResult<String> {
     let Some(name) = raw.filter(|n| !n.is_empty()) else {
         return Err(ApiError::invalid("file"));
     };
-    let bad = name == "."
-        || name == ".."
-        || name.chars().any(|c| matches!(c, '/' | '\\' | '\0' | ':'))
-        || !Path::new(name)
-            .extension()
-            .is_some_and(|e| e.eq_ignore_ascii_case("jar"));
+    let bad =
+        name == "." || name == ".." || name.chars().any(|c| matches!(c, '/' | '\\' | '\0' | ':'));
     if bad {
         return Err(ApiError::invalid("file"));
     }
     Ok(name.to_owned())
+}
+
+fn valid_jar_field_name(raw: Option<&str>) -> ApiResult<String> {
+    let name = safe_field_name(raw)?;
+    if !Path::new(&name)
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("jar"))
+    {
+        return Err(ApiError::invalid("file"));
+    }
+    Ok(name)
 }

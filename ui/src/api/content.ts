@@ -11,6 +11,9 @@ export type ContentProject = components["schemas"]["ProjectDto"];
 export type ContentVersion = components["schemas"]["ContentVersionDto"];
 export type ContentPlan = components["schemas"]["ContentPlanDto"];
 export type PlannedContent = components["schemas"]["PlannedContentDto"];
+export type PendingContent = components["schemas"]["PendingContentDto"];
+export type PendingUploadItem = components["schemas"]["PendingUploadItemDto"];
+export type PendingUploadResult = components["schemas"]["PendingUploadResultDto"];
 export type ContentInstallBody = components["schemas"]["ContentInstallBody"];
 export type CreateModpackBody = components["schemas"]["CreateModpackBody"];
 export type JobStarted = components["schemas"]["JobStartedDto"];
@@ -66,6 +69,11 @@ export const contentApi = {
     const form = new FormData();
     form.append("file", file, file.name);
     return request<InstalledContent>("POST", `${serverPath(serverId)}/content/upload`, form);
+  },
+  uploadPending: (serverId: string, files: File[]) => {
+    const form = new FormData();
+    for (const file of files) form.append("file", file, file.name);
+    return request<PendingUploadResult>("POST", `${serverPath(serverId)}/content/pending/upload`, form);
   },
 };
 

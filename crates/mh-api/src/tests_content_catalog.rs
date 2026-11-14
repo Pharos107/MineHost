@@ -155,16 +155,17 @@ impl FakeModCatalog {
         );
         files.insert(fapi_url, dep_jar);
         files.insert(jei_url, jei_jar);
-        let restricted_file = file_info(
+        let mut restricted_file = file_info(
             None,
             "restricted.jar",
-            2048,
+            130,
             true,
             Some(
                 "https://www.curseforge.com/minecraft/mc-mods/restricted/download/7770001"
                     .to_owned(),
             ),
         );
+        restricted_file.sha1 = Some("17aaaa502727fbdee5268c640fc15915acab2e63".to_owned());
 
         let projects = vec![
             project(

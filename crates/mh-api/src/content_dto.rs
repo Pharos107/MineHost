@@ -11,6 +11,7 @@ use time::format_description::well_known::Rfc3339;
 use utoipa::ToSchema;
 
 use crate::dto::ContentKindDto;
+use crate::error::ErrorBody;
 
 pub(crate) const SOURCE_MODRINTH: &str = CatalogSource::Modrinth.as_str();
 
@@ -261,6 +262,7 @@ impl From<ContentFile> for InstalledContentDto {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PendingContentDto {
     pub path: String,
+    pub name: String,
     pub file_name: String,
     pub project_id: u64,
     pub file_id: u64,
@@ -275,8 +277,13 @@ impl From<PendingContent> for PendingContentDto {
             .and_then(|n| n.to_str())
             .unwrap_or(&p.path)
             .to_owned();
+        let name = p
+            .name
+            .filter(|n| !n.trim().is_empty())
+            .unwrap_or_else(|| file_name.clone());
         Self {
             path: p.path,
+            name,
             file_name,
             project_id: p.project_id,
             file_id: p.file_id,
@@ -361,4 +368,20 @@ impl From<ContentInstallPlan> for ContentPlanDto {
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ToggleContentBody {
     pub enabled: bool,
+}
+
+/// Kết quả tải lên từng file trong vùng kéo thả mục CurseForge đang chờ.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PendingUploadItemDto {
+    pub file_name: String,
+    pub ok: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub installed: Option<InstalledContentDto>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorBody>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PendingUploadResultDto {
+    pub results: Vec<PendingUploadItemDto>,
 }

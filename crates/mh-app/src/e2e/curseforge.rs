@@ -13,6 +13,7 @@ use time::macros::datetime;
 
 use super::content::build_jar;
 use super::pack::{add_e2e_cf_modpacks, cf_project, cf_version, download_e2e_pack_file};
+use super::stored_zip::build_stored_jar;
 use crate::AppError;
 use crate::content::{
     CatalogSource, CfResolvedFiles, ContentCatalog, ContentDependency, ContentFileInfo,
@@ -61,6 +62,10 @@ impl E2eCurseforge {
             "Fabric API (CF)",
         );
         let cf_jei_file = register("5800001", "cf-jei-19.21.0.jar", "jei", "Just Enough Items");
+        let restricted_bytes = build_stored_jar(
+            "fabric.mod.json",
+            br#"{"schemaVersion":1,"id":"restricted-mod","version":"1.0.0","name":"Restricted Mod","environment":"*"}"#,
+        );
         let cf_fapi_bytes = cf_fapi_file
             .url
             .as_deref()
@@ -70,8 +75,8 @@ impl E2eCurseforge {
         let restricted_file = ContentFileInfo {
             url: None,
             filename: "cf-restricted-1.0.0.jar".to_owned(),
-            size: 4096,
-            sha1: Some("b".repeat(40)),
+            size: restricted_bytes.len() as u64,
+            sha1: Some(mh_store::sha1_hex(&restricted_bytes)),
             sha512: None,
             manual_download: true,
             download_page_url: Some(
@@ -438,5 +443,19 @@ mod tests {
             .unwrap();
         assert!(restricted[0].files[0].manual_download);
         assert!(restricted[0].files[0].download_page_url.is_some());
+
+        let tmp = tempfile::tempdir().unwrap();
+        let jar_path = tmp.path().join("restricted.jar");
+        let jar_bytes = build_stored_jar(
+            "fabric.mod.json",
+            br#"{"schemaVersion":1,"id":"restricted-mod","version":"1.0.0","name":"Restricted Mod","environment":"*"}"#,
+        );
+        std::fs::write(&jar_path, &jar_bytes).unwrap();
+        let info = mh_store::inspect_jar_file(&jar_path).unwrap();
+        assert_eq!(
+            restricted[0].files[0].sha1.as_deref(),
+            Some(info.sha1.as_str())
+        );
+        assert_eq!(info.meta.unwrap().id, "restricted-mod");
     }
 }

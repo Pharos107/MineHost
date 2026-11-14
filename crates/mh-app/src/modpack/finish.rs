@@ -174,6 +174,8 @@ pub(super) fn write_content_manifest(
         .iter()
         .map(|b| PendingContent {
             path: b.path.clone(),
+            // Manifest CurseForge chỉ có id, không có tên mod; UI dùng tên file thay thế.
+            name: None,
             project_id: b.project_id,
             file_id: b.file_id,
             sha1: b.sha1.clone(),

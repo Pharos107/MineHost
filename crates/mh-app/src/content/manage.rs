@@ -7,9 +7,10 @@ use std::path::{Path, PathBuf};
 use mh_core::{ContentKind, ErrorCode, ServerId};
 use mh_platform::SafeRoot;
 use mh_store::{
-    ContentFile, ContentManifest, ContentMetaError, ContentRecord, ContentSource, ServerStore,
-    inspect_jar_file,
+    ContentFile, ContentManifest, ContentMetaError, ContentRecord, ContentSource, PendingContent,
+    ProjectId, ServerStore, inspect_jar_file,
 };
+use serde_json::json;
 use time::OffsetDateTime;
 use ulid::Ulid;
 
@@ -19,6 +20,13 @@ use crate::{App, AppError};
 struct PartGuard {
     path: PathBuf,
     committed: bool,
+}
+
+/// Kết quả tải lên một file trong chế độ khớp mục CurseForge đang chờ.
+#[derive(Debug)]
+pub struct PendingUploadResult {
+    pub file_name: String,
+    pub outcome: Result<ContentFile, AppError>,
 }
 
 impl Drop for PartGuard {
@@ -90,6 +98,46 @@ impl App {
         self.refresh_preflight(id).await;
         self.notify_changed(id);
         Ok(uploaded)
+    }
+
+    /// Tải lên một file cho mục CurseForge đang chờ: bắt buộc khớp SHA-1 một mục `[[pending]]`.
+    pub async fn upload_pending_content(
+        &self,
+        id: ServerId,
+        file_name: &str,
+        source_path: &Path,
+    ) -> Result<ContentFile, AppError> {
+        validate_jar_name(file_name)?;
+        let uploaded = {
+            let mutex = self.content_lock(id);
+            let _guard = mutex.lock().await;
+            let (_, kind) = self.ensure_content_idle(id)?;
+            let (store, src) = (self.store.clone(), source_path.to_path_buf());
+            blocking(move || upload_pending_sync(&store, id, kind, &src)).await?
+        };
+        self.refresh_preflight(id).await;
+        self.notify_changed(id);
+        Ok(uploaded)
+    }
+
+    /// Nhận nhiều file cho vùng kéo thả mục CurseForge đang chờ; trả kết quả riêng từng file.
+    pub async fn upload_pending_batch(
+        &self,
+        id: ServerId,
+        items: Vec<(String, PathBuf)>,
+    ) -> Result<Vec<PendingUploadResult>, AppError> {
+        let results = {
+            let mutex = self.content_lock(id);
+            let _guard = mutex.lock().await;
+            let (_, kind) = self.ensure_content_idle(id)?;
+            let store = self.store.clone();
+            blocking(move || Ok(upload_pending_batch_sync(&store, id, kind, items))).await?
+        };
+        if results.iter().any(|r| r.outcome.is_ok()) {
+            self.refresh_preflight(id).await;
+            self.notify_changed(id);
+        }
+        Ok(results)
     }
 }
 
@@ -231,6 +279,103 @@ fn upload_sync(
     })
 }
 
+fn upload_pending_batch_sync(
+    store: &ServerStore,
+    id: ServerId,
+    kind: ContentKind,
+    items: Vec<(String, PathBuf)>,
+) -> Vec<PendingUploadResult> {
+    items
+        .into_iter()
+        .map(|(file_name, source_path)| {
+            let outcome = validate_jar_name(&file_name)
+                .and_then(|()| upload_pending_sync(store, id, kind, &source_path));
+            PendingUploadResult { file_name, outcome }
+        })
+        .collect()
+}
+
+fn upload_pending_sync(
+    store: &ServerStore,
+    id: ServerId,
+    kind: ContentKind,
+    source_path: &Path,
+) -> Result<ContentFile, AppError> {
+    let (size, info) = inspect_upload_source(source_path)?;
+    let paths = store.paths(id);
+    let mut manifest = ContentManifest::load(&paths.content_file)?;
+    let Some(idx) = manifest
+        .pending
+        .iter()
+        .position(|p| p.sha1.eq_ignore_ascii_case(&info.sha1))
+    else {
+        return Err(hash_mismatch_error(&manifest.pending));
+    };
+    let matched = manifest.pending.remove(idx);
+    let target_name = pending_jar_name(&matched.path)
+        .ok_or_else(|| AppError::new(ErrorCode::ConfigInvalid, "đường dẫn mục chờ không hợp lệ"))?;
+
+    fs::create_dir_all(&paths.server_dir).map_err(|e| io_err(&paths.server_dir, e))?;
+    let root = SafeRoot::new(&paths.server_dir)?;
+    let dest = root.join(&matched.path)?;
+    if fs::symlink_metadata(dest.as_path()).is_ok() {
+        return Err(exists(&matched.path));
+    }
+    if let Some(parent) = dest.as_path().parent() {
+        fs::create_dir_all(parent).map_err(|e| io_err(parent, e))?;
+    }
+    move_file_into_place(source_path, dest.as_path())?;
+
+    let client_only = info.meta.as_ref().is_ok_and(|m| m.side.is_client_only());
+    let record = ContentRecord {
+        path: matched.path.clone(),
+        sha1: info.sha1.clone(),
+        source: ContentSource::Curseforge,
+        project_id: Some(ProjectId::Int(matched.project_id)),
+        version_id: Some(matched.file_id.to_string()),
+        client_only,
+        from_modpack: false,
+        installed_at: OffsetDateTime::now_utc(),
+        extra: Default::default(),
+    };
+    persist_upload_record(&mut manifest, &paths.content_file, dest.as_path(), &record)?;
+    let enabled = !matched
+        .path
+        .starts_with(&format!("{}/", kind.disabled_dir()));
+    Ok(ContentFile {
+        file_name: target_name,
+        path: matched.path,
+        enabled,
+        size,
+        sha1: info.sha1,
+        formats: info.formats,
+        meta: info.meta,
+        record: Some(record),
+        manual: false,
+    })
+}
+
+fn hash_mismatch_error(pending: &[PendingContent]) -> AppError {
+    let expected_files: Vec<String> = pending
+        .iter()
+        .filter_map(|p| {
+            Path::new(&p.path)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .map(str::to_owned)
+        })
+        .collect();
+    let expected = expected_files.join(", ");
+    AppError::new(
+        ErrorCode::UploadHashMismatch,
+        "file tải lên không khớp SHA-1 của mục chờ nào",
+    )
+    .with_params(json!({
+        "expected": expected,
+        "expected_files": expected_files,
+    }))
+}
+
 fn inspect_upload_source(source_path: &Path) -> Result<(u64, mh_store::JarInfo), AppError> {
     let meta = fs::symlink_metadata(source_path).map_err(|e| io_err(source_path, e))?;
     if !meta.is_file() {
@@ -260,7 +405,6 @@ fn save_upload_record(
     manifest
         .pending
         .retain(|p| !p.sha1.eq_ignore_ascii_case(&info.sha1));
-    manifest.file.retain(|rec| rec.path != rel);
     let record = ContentRecord {
         path: rel.to_owned(),
         sha1: info.sha1.clone(),
@@ -272,12 +416,23 @@ fn save_upload_record(
         installed_at: OffsetDateTime::now_utc(),
         extra: Default::default(),
     };
+    persist_upload_record(manifest, content_file, dest, &record)?;
+    Ok(record)
+}
+
+fn persist_upload_record(
+    manifest: &mut ContentManifest,
+    content_file: &Path,
+    dest: &Path,
+    record: &ContentRecord,
+) -> Result<(), AppError> {
+    manifest.file.retain(|rec| rec.path != record.path);
     manifest.file.push(record.clone());
     if let Err(err) = manifest.save(content_file) {
         let _ = fs::remove_file(dest);
         return Err(err.into());
     }
-    Ok(record)
+    Ok(())
 }
 
 fn pending_jar_name(pending_path: &str) -> Option<String> {

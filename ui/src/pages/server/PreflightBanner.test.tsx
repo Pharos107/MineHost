@@ -21,7 +21,7 @@ function server(patch: Partial<Server> = {}): Server {
   };
 }
 
-function renderBanner(s: Server, preflight: Preflight) {
+function renderBanner(s: Server, preflight: Preflight, onContentPage = false) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     void init;
     if (url.endsWith("/preflight")) return Response.json(preflight);
@@ -32,7 +32,7 @@ function renderBanner(s: Server, preflight: Preflight) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <PreflightBanner server={s} />
+      <PreflightBanner server={s} onContentPage={onContentPage} />
     </QueryClientProvider>,
   );
   return fetchMock;
@@ -97,5 +97,33 @@ describe("PreflightBanner", () => {
       client_only: [],
     });
     expect(runningFetch).toHaveBeenCalledTimes(0);
+  });
+
+  it("ẩn phần pending trên trang Mod để tránh lặp với hộp tải tay", async () => {
+    const fetchMock = renderBanner(
+      server(),
+      {
+        missing_deps: [],
+        version_mismatches: [],
+        wrong_loader: [],
+        pending: [
+          {
+            path: "mods/optifine.jar",
+            name: "OptiFine",
+            file_name: "optifine.jar",
+            project_id: 238222,
+            file_id: 4912345,
+            sha1: "a".repeat(40),
+            page_url: "https://example.invalid/optifine",
+          },
+        ],
+        client_only: [],
+      },
+      true,
+    );
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByText(/optifine\.jar/)).toBeNull();
   });
 });

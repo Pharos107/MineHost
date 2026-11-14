@@ -5,7 +5,7 @@ import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Server } from "../../../api/client";
-import type { InstalledContent, ServerContent } from "../../../api/content";
+import type { InstalledContent, PendingContent, ServerContent } from "../../../api/content";
 import { ContentPage } from "./ContentPage";
 
 const stoppedFabric: Server = {
@@ -240,5 +240,87 @@ describe("ContentPage", () => {
 
     renderPage({ ...stoppedFabric, loader: "vanilla", content_kind: null });
     expect(screen.getByText("Loại server này không hỗ trợ cài mod hoặc plugin.")).toBeTruthy();
+  });
+
+  it("hiện hộp chờ CurseForge, báo UPLOAD_HASH_MISMATCH, chuyển Đã có và bật không cần chờ", async () => {
+    let pending: PendingContent[] = [
+      {
+        path: "mods/cf-restricted-1.0.0.jar",
+        name: "Restricted Mod",
+        file_name: "cf-restricted-1.0.0.jar",
+        project_id: 999001,
+        file_id: 5800999,
+        sha1: "a".repeat(40),
+        page_url: "https://www.curseforge.com/minecraft/mc-mods/restricted/download/5800999",
+      },
+    ];
+    let files: InstalledContent[] = [];
+    const fetchMock = mockFetch((url, init) => {
+      if (url === "/api/v1/servers/A/content") {
+        return Response.json({ kind: "mods", files, pending });
+      }
+      if (url === "/api/v1/servers/A/content/pending/upload" && init?.method === "POST") {
+        const installed: InstalledContent = {
+          file_name: "cf-restricted-1.0.0.jar",
+          name: "Restricted Mod",
+          version: "1.0.0",
+          enabled: true,
+          size: 256,
+          source: "curseforge",
+          manual: false,
+          client_only: false,
+          project_id: "999001",
+          version_id: "5800999",
+          from_modpack: false,
+          icon_url: null,
+        };
+        pending = [];
+        files = [installed];
+        return Response.json({
+          results: [
+            {
+              file_name: "wrong.jar",
+              ok: false,
+              installed: null,
+              error: { code: "UPLOAD_HASH_MISMATCH", params: { expected: "cf-restricted-1.0.0.jar" } },
+            },
+            {
+              file_name: "downloaded.jar",
+              ok: true,
+              installed,
+              error: null,
+            },
+          ],
+        });
+      }
+      if (url === "/api/v1/servers/A/actions/start" && init?.method === "POST") {
+        return new Response(null, { status: 204 });
+      }
+      return undefined;
+    });
+
+    renderPage();
+    expect(await screen.findByText("Restricted Mod")).toBeTruthy();
+    expect(screen.getByText("Chờ")).toBeTruthy();
+    const link = screen.getByRole("link", { name: "Mở trang tải" });
+    expect(link.getAttribute("href")).toContain("/download/5800999");
+
+    // Bấm "Bật mà không có các mod này" trước khi thả file -> gửi ignore_preflight=true.
+    await userEvent.click(screen.getByRole("button", { name: "Bật mà không có các mod này" }));
+    await waitFor(() => {
+      const startCall = fetchMock.mock.calls.find(([url]) => url === "/api/v1/servers/A/actions/start");
+      expect(startCall).toBeTruthy();
+      expect(JSON.parse(String(startCall?.[1]?.body))).toEqual({ ignore_preflight: true });
+    });
+
+    // Kéo thả nhiều file: một sai (UPLOAD_HASH_MISMATCH kèm tên đúng), một đúng (chuyển Đã có).
+    const input = screen.getByLabelText("Chọn file CurseForge") as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(["w"], "wrong.jar"), new File(["r"], "downloaded.jar")] },
+    });
+
+    expect(await screen.findByText(/wrong\.jar:.*cf-restricted-1\.0\.0\.jar/)).toBeTruthy();
+    expect(await screen.findByText("Đã có")).toBeTruthy();
+    expect(screen.getByText(/Đã có đủ các file CurseForge/)).toBeTruthy();
   });
 });
