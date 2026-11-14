@@ -1,21 +1,24 @@
 import type { TFunction } from "i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Package, RotateCw, Trash2 } from "lucide-react";
+import { ExternalLink, Package, Plus, RotateCw, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router";
 
 import { errorMessage } from "../../../api/client";
 import { contentApi, contentKey, type InstalledContent } from "../../../api/content";
 import { Avatar, Badge, Button, ConfirmDialog, DataTable, EmptyState, Notice, Stack, Switch, type Column, type RowAction } from "../../../ui";
 import { useServer } from "../ServerLayout";
 import { contentSourceKind, isContentLocked, modrinthProjectUrl } from "./content";
+import { ContentAddDialog } from "./ContentAddDialog";
 import { ContentUpload } from "./ContentUpload";
 
-/** Trang Mod hoặc Plugin (spec P3, mục 6.3): liệt kê, lọc, tải lên, bật/tắt và gỡ vào thùng rác. */
+/** Trang Mod hoặc Plugin (spec P3, mục 6.3): liệt kê, lọc, thêm, tải lên, bật/tắt và gỡ vào thùng rác. */
 export function ContentPage() {
   const { t } = useTranslation();
   const server = useServer();
   const kind = server.content_kind ?? null;
+  const [params, setParams] = useSearchParams();
   const queryClient = useQueryClient();
   const list = useQuery({
     queryKey: contentKey(server.id),
@@ -42,6 +45,18 @@ export function ContentPage() {
   }
 
   const locked = isContentLocked(server);
+  const addOpen = !locked && params.get("add") === "1";
+  const setAddOpen = (open: boolean) => {
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (open) next.set("add", "1");
+        else next.delete("add");
+        return next;
+      },
+      { replace: true },
+    );
+  };
   const busyFile = toggle.isPending ? toggle.variables.file : null;
   const columns = buildColumns(t, locked, busyFile, (item, enabled) => toggle.mutate({ file: item.file_name, enabled }));
   const actions: RowAction<InstalledContent>[] = [
@@ -66,6 +81,11 @@ export function ContentPage() {
   return (
     <Stack gap={4}>
       {locked && <Notice tone="info">{t(`content.${kind}.runningHint`)}</Notice>}
+      <Stack direction="row" gap={2} wrap>
+        <Button variant="primary" icon={Plus} disabled={locked} onClick={() => setAddOpen(true)}>
+          {t("content.add")}
+        </Button>
+      </Stack>
       <ContentUpload serverId={server.id} locked={locked} onDone={refresh} />
       {toggle.isError && <Notice tone="danger">{errorMessage(t, toggle.error)}</Notice>}
       {list.isError ? (
@@ -102,6 +122,13 @@ export function ContentPage() {
           remove.reset();
         }}
         onConfirm={() => removing && remove.mutate(removing)}
+      />
+      <ContentAddDialog
+        open={addOpen}
+        server={server}
+        kind={kind}
+        onClose={() => setAddOpen(false)}
+        onInstalled={refresh}
       />
     </Stack>
   );

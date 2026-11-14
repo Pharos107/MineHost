@@ -321,7 +321,8 @@
     },
     "openMenu": "Mở menu",
     "closeMenu": "Đóng menu",
-    "morePlayers": "và {{count}} người nữa"
+    "morePlayers": "và {{count}} người nữa",
+    "downloads": "{{value}} lượt tải"
   },
   "serverState": {
     "installing": "Đang cài",
@@ -671,19 +672,42 @@
     "removeTitle": "Gỡ {{name}}?",
     "removeBody": "File {{file}} được chuyển vào thùng rác của MineHost, bạn có thể tự lấy lại sau.",
     "unsupported": "Loại server này không hỗ trợ cài mod hoặc plugin.",
+    "add": "Thêm",
+    "addDialog": {
+      "loadMore": "Xem thêm",
+      "noResults": "Không tìm thấy kết quả",
+      "noResultsHint": "Thử từ khóa khác phù hợp với phiên bản và loader của server.",
+      "version": "Phiên bản",
+      "planning": "Đang kiểm tra các file cần cài…",
+      "planTitle": "Danh sách sẽ cài",
+      "dependencies_one": "Dependency cài kèm ({{count}})",
+      "dependencies_other": "Dependency cài kèm ({{count}})",
+      "replacesExisting": "Thay bản cũ",
+      "clientOnlyHint": "Mod chỉ chạy ở client sẽ được cài ở trạng thái tắt; bạn có thể tự bật lại nếu muốn.",
+      "back": "Quay lại",
+      "install": "Cài",
+      "failedTitle": "Không cài được",
+      "cancelledTitle": "Đã hủy cài đặt."
+    },
     "mods": {
       "table": "Danh sách mod",
       "runningHint": "Server đang chạy: tắt server trước khi bật, tắt, tải lên hoặc gỡ mod.",
       "empty": "Chưa có mod nào",
       "emptyHint": "Tải file .jar lên ở trên hoặc chép vào thư mục mods/ của server.",
-      "openPage": "Mở trang mod"
+      "openPage": "Mở trang mod",
+      "addTitle": "Thêm mod",
+      "searchPlaceholder": "Tìm mod trên Modrinth…",
+      "mainItem": "Mod sẽ cài"
     },
     "plugins": {
       "table": "Danh sách plugin",
       "runningHint": "Server đang chạy: tắt server trước khi bật, tắt, tải lên hoặc gỡ plugin.",
       "empty": "Chưa có plugin nào",
       "emptyHint": "Tải file .jar lên ở trên hoặc chép vào thư mục plugins/ của server.",
-      "openPage": "Mở trang plugin"
+      "openPage": "Mở trang plugin",
+      "addTitle": "Thêm plugin",
+      "searchPlaceholder": "Tìm plugin trên Modrinth…",
+      "mainItem": "Plugin sẽ cài"
     }
   }
 }

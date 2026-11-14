@@ -218,6 +218,7 @@ describe("ContentPage", () => {
     renderPage({ ...stoppedFabric, state: "running" });
 
     expect(await screen.findByText(/Server đang chạy: tắt server trước/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Thêm" })).toHaveProperty("disabled", true);
     expect(screen.getByRole("button", { name: "Tải lên .jar" })).toHaveProperty("disabled", true);
     expect(await screen.findByRole("switch", { name: "Bật Lithium" })).toHaveProperty("disabled", true);
 
