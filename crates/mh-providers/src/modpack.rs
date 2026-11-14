@@ -2,19 +2,22 @@
 //! qua `SafeRoot` với giới hạn chống zip bomb (spec P3, mục 3.5, 3.7, 5.4, 8).
 
 use std::fs::{self, File};
-use std::io::{self, BufReader, Read, Write};
+use std::io::{BufReader, Read};
 use std::path::Path;
 
-use mh_core::{
-    LoaderKind, LoaderVersion, McVersion, MrpackIndex, MrpackRuntime, validate_mrpack_path,
-};
+use mh_core::{LoaderKind, LoaderVersion, McVersion, MrpackIndex, MrpackRuntime};
 use mh_net::{Checksum, HostAllowlist, hosts};
-use mh_platform::{PlatformError, SafePath, SafeRoot};
+use mh_platform::SafeRoot;
 use zip::ZipArchive;
-use zip::read::ZipFile;
 use zip::result::ZipError;
 
+mod archive;
+
 use crate::ProviderError;
+use archive::{
+    add_within_limit, extract_overrides, is_symlink_or_special, is_unix_dir, map_read_io,
+    validate_archive_path, zip_err,
+};
 
 pub const MAX_INDEX_BYTES: u64 = 16 * 1024 * 1024;
 pub const MAX_TOTAL_BYTES: u64 = 8 * 1024 * 1024 * 1024;
@@ -76,8 +79,85 @@ pub struct PackPlan {
 
 struct OverrideEntry {
     index: usize,
-    target: SafePath,
+    rel: String,
     is_dir: bool,
+}
+
+/// Lập kế hoạch cài `.mrpack` (chỉ đọc index và quét metadata overrides, không ghi đĩa).
+pub fn plan_mrpack(archive_path: &Path) -> Result<PackPlan, ProviderError> {
+    plan_mrpack_with(archive_path, hosts::MODRINTH, PackLimits::default())
+}
+
+/// Lập kế hoạch cài `.mrpack` với danh sách host và giới hạn chống zip bomb cho trước.
+pub fn plan_mrpack_with(
+    archive_path: &Path,
+    hosts: HostAllowlist,
+    limits: PackLimits,
+) -> Result<PackPlan, ProviderError> {
+    let mut archive = open_mrpack(archive_path, limits)?;
+    let (index, runtime) = read_index(&mut archive, archive_path, limits)?;
+    let (files, skipped_client, index_bytes, index_count) =
+        plan_index_files(index.files, hosts, limits)?;
+    // Quét trước để bắt zip bomb / tên file không hợp lệ trước khi tải loader hay file.
+    let _ = scan_overrides(&mut archive, archive_path, limits, index_count, index_bytes)?;
+
+    Ok(PackPlan {
+        name: index.name,
+        version_id: index.version_id,
+        loader: runtime.loader,
+        minecraft: runtime.minecraft,
+        loader_version: runtime.loader_version,
+        files,
+        skipped_client,
+        blocked: Vec::new(),
+    })
+}
+
+/// Giải nén `overrides/` rồi `server-overrides/` vào `dest_dir` qua `SafeRoot` với giới hạn mặc định.
+pub fn extract_mrpack_overrides(archive_path: &Path, dest_dir: &Path) -> Result<(), ProviderError> {
+    extract_mrpack_overrides_with(archive_path, dest_dir, PackLimits::default())
+}
+
+/// Giải nén `overrides/` rồi `server-overrides/` vào `dest_dir` sau khi tải xong index (spec P3, mục 3.4).
+pub fn extract_mrpack_overrides_with(
+    archive_path: &Path,
+    dest_dir: &Path,
+    limits: PackLimits,
+) -> Result<(), ProviderError> {
+    let mut archive = open_mrpack(archive_path, limits)?;
+    let (index, _) = read_index(&mut archive, archive_path, limits)?;
+    let index_count = index.files.len();
+    if index_count > limits.max_files {
+        return Err(ProviderError::modpack_invalid(
+            "số lượng file trong modpack vượt giới hạn",
+        ));
+    }
+    let index_bytes = index
+        .files
+        .iter()
+        .filter(|f| !f.is_client_only())
+        .try_fold(0u64, |sum, f| {
+            add_within_limit(
+                sum,
+                f.file_size,
+                limits.max_total_bytes,
+                "tổng kích thước modpack vượt giới hạn",
+            )
+        })?;
+    let (overrides, server_overrides) =
+        scan_overrides(&mut archive, archive_path, limits, index_count, index_bytes)?;
+
+    fs::create_dir_all(dest_dir).map_err(|e| ProviderError::io(dest_dir, e))?;
+    let root = SafeRoot::new(dest_dir)?;
+    extract_overrides(
+        &mut archive,
+        archive_path,
+        &root,
+        overrides,
+        server_overrides,
+        limits,
+        index_bytes,
+    )
 }
 
 /// Đọc `.mrpack` với danh sách host Modrinth và giới hạn chống zip bomb mặc định.
@@ -90,47 +170,16 @@ pub fn read_mrpack(archive_path: &Path, dest_dir: &Path) -> Result<PackPlan, Pro
     )
 }
 
-/// Đọc `.mrpack`, giải nén `overrides/` rồi `server-overrides/` vào `dest_dir` qua `SafeRoot`.
+/// Đọc `.mrpack`, lập kế hoạch và giải nén `overrides/` rồi `server-overrides/` vào `dest_dir`.
 pub fn read_mrpack_with(
     archive_path: &Path,
     dest_dir: &Path,
     hosts: HostAllowlist,
     limits: PackLimits,
 ) -> Result<PackPlan, ProviderError> {
-    let mut archive = open_mrpack(archive_path, limits)?;
-    let (index, runtime) = read_index(&mut archive, archive_path, limits)?;
-    fs::create_dir_all(dest_dir).map_err(|e| ProviderError::io(dest_dir, e))?;
-    let root = SafeRoot::new(dest_dir)?;
-
-    let (files, skipped_client, index_bytes, index_count) =
-        plan_index_files(index.files, &root, hosts, limits)?;
-    let (overrides, server_overrides) = scan_overrides(
-        &mut archive,
-        archive_path,
-        &root,
-        limits,
-        index_count,
-        index_bytes,
-    )?;
-    extract_overrides(
-        &mut archive,
-        archive_path,
-        overrides,
-        server_overrides,
-        limits,
-        index_bytes,
-    )?;
-
-    Ok(PackPlan {
-        name: index.name,
-        version_id: index.version_id,
-        loader: runtime.loader,
-        minecraft: runtime.minecraft,
-        loader_version: runtime.loader_version,
-        files,
-        skipped_client,
-        blocked: Vec::new(),
-    })
+    let plan = plan_mrpack_with(archive_path, hosts, limits)?;
+    extract_mrpack_overrides_with(archive_path, dest_dir, limits)?;
+    Ok(plan)
 }
 
 fn open_mrpack(
@@ -193,7 +242,6 @@ fn read_index(
 
 fn plan_index_files(
     entries: Vec<mh_core::MrpackFile>,
-    root: &SafeRoot,
     hosts: HostAllowlist,
     limits: PackLimits,
 ) -> Result<(Vec<PackFile>, Vec<String>, u64, usize), ProviderError> {
@@ -208,7 +256,7 @@ fn plan_index_files(
     let mut planned_bytes = 0u64;
 
     for item in entries {
-        safe_join(root, &item.path)?;
+        validate_archive_path(&item.path)?;
         if item.is_client_only() {
             skipped_client.push(item.path);
             continue;
@@ -250,7 +298,6 @@ fn plan_index_files(
 fn scan_overrides(
     archive: &mut ZipArchive<BufReader<File>>,
     archive_path: &Path,
-    root: &SafeRoot,
     limits: PackLimits,
     mut total_files: usize,
     mut declared_bytes: u64,
@@ -259,8 +306,7 @@ fn scan_overrides(
     let mut server_overrides = Vec::new();
 
     for index in 0..archive.len() {
-        let Some((is_server, item, size)) =
-            inspect_override_entry(archive, index, archive_path, root)?
+        let Some((is_server, item, size)) = inspect_override_entry(archive, index, archive_path)?
         else {
             continue;
         };
@@ -291,7 +337,6 @@ fn inspect_override_entry(
     archive: &mut ZipArchive<BufReader<File>>,
     index: usize,
     archive_path: &Path,
-    root: &SafeRoot,
 ) -> Result<Option<(bool, OverrideEntry, u64)>, ProviderError> {
     let (name, is_dir, skip_special, size) = {
         let entry = archive
@@ -312,7 +357,7 @@ fn inspect_override_entry(
     } else {
         &name
     };
-    validate_mrpack_path(raw_check).map_err(|e| ProviderError::modpack_invalid(e.to_string()))?;
+    validate_archive_path(raw_check)?;
     if skip_special {
         tracing::debug!(%name, "bỏ qua symlink hoặc file đặc biệt trong modpack");
         return Ok(None);
@@ -336,130 +381,13 @@ fn inspect_override_entry(
     if rel.is_empty() {
         return Ok(None);
     }
-    let target = safe_join(root, rel)?;
     Ok(Some((
         is_server,
         OverrideEntry {
             index,
-            target,
+            rel: rel.to_owned(),
             is_dir,
         },
         size,
     )))
-}
-
-fn extract_overrides(
-    archive: &mut ZipArchive<BufReader<File>>,
-    archive_path: &Path,
-    overrides: Vec<OverrideEntry>,
-    server_overrides: Vec<OverrideEntry>,
-    limits: PackLimits,
-    mut actual_bytes: u64,
-) -> Result<(), ProviderError> {
-    let mut buf = vec![0u8; COPY_BUF_BYTES];
-    // Luôn giải nén `overrides/` trước rồi mới tới `server-overrides/` để ghi đè đúng thứ tự.
-    for item in overrides.into_iter().chain(server_overrides) {
-        if item.is_dir {
-            fs::create_dir_all(item.target.as_path())
-                .map_err(|e| ProviderError::io(item.target.as_path(), e))?;
-            continue;
-        }
-        if let Some(parent) = item.target.as_path().parent() {
-            fs::create_dir_all(parent).map_err(|e| ProviderError::io(parent, e))?;
-        }
-        let mut entry = archive
-            .by_index(item.index)
-            .map_err(|e| zip_err(archive_path, e))?;
-        let mut out = File::create(item.target.as_path())
-            .map_err(|e| ProviderError::io(item.target.as_path(), e))?;
-        copy_bounded(
-            &mut entry,
-            &mut out,
-            archive_path,
-            item.target.as_path(),
-            &mut buf,
-            &mut actual_bytes,
-            limits.max_total_bytes,
-        )?;
-    }
-    Ok(())
-}
-
-fn copy_bounded(
-    entry: &mut ZipFile<'_, BufReader<File>>,
-    out: &mut File,
-    archive_path: &Path,
-    target: &Path,
-    buf: &mut [u8],
-    actual_bytes: &mut u64,
-    max_total: u64,
-) -> Result<(), ProviderError> {
-    let remaining = max_total.saturating_sub(*actual_bytes);
-    let mut limited = entry.take(remaining.saturating_add(1));
-    loop {
-        let n = limited
-            .read(buf)
-            .map_err(|e| map_read_io(archive_path, e))?;
-        if n == 0 {
-            return Ok(());
-        }
-        *actual_bytes = add_within_limit(
-            *actual_bytes,
-            n as u64,
-            max_total,
-            "kích thước giải nén thực tế vượt giới hạn",
-        )?;
-        out.write_all(&buf[..n])
-            .map_err(|e| ProviderError::io(target, e))?;
-    }
-}
-
-fn add_within_limit(total: u64, delta: u64, max: u64, msg: &str) -> Result<u64, ProviderError> {
-    total
-        .checked_add(delta)
-        .filter(|&sum| sum <= max)
-        .ok_or_else(|| ProviderError::modpack_invalid(msg))
-}
-
-fn safe_join(root: &SafeRoot, rel: &str) -> Result<SafePath, ProviderError> {
-    root.join(rel).map_err(|e| match e {
-        PlatformError::PathOutsideRoot(_) | PlatformError::InvalidPath(_) => {
-            ProviderError::modpack_invalid(e.to_string())
-        }
-        other => ProviderError::Platform(other),
-    })
-}
-
-fn is_unix_dir<R: Read + ?Sized>(entry: &ZipFile<'_, R>) -> bool {
-    entry
-        .unix_mode()
-        .is_some_and(|mode| (mode & 0o170000) == 0o040000)
-}
-
-fn is_symlink_or_special<R: Read + ?Sized>(entry: &ZipFile<'_, R>) -> bool {
-    if entry.is_symlink() {
-        return true;
-    }
-    entry.unix_mode().is_some_and(|mode| {
-        let kind = mode & 0o170000;
-        kind != 0 && kind != 0o100000 && kind != 0o040000
-    })
-}
-
-fn zip_err(path: &Path, err: ZipError) -> ProviderError {
-    match err {
-        ZipError::Io(e) => map_read_io(path, e),
-        other => ProviderError::modpack_invalid(other.to_string()),
-    }
-}
-
-fn map_read_io(path: &Path, err: io::Error) -> ProviderError {
-    if matches!(
-        err.kind(),
-        io::ErrorKind::InvalidData | io::ErrorKind::UnexpectedEof
-    ) {
-        ProviderError::modpack_invalid(err.to_string())
-    } else {
-        ProviderError::io(path, err)
-    }
 }

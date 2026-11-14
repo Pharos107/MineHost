@@ -182,7 +182,10 @@
       "copy_files": "Copying server folder",
       "run_installer": "Installing {{loader}}",
       "resolve_content": "Resolving mod dependencies",
-      "download_content": "Downloading {{name}}"
+      "download_content": "Downloading {{name}}",
+      "download_modpack": "Downloading modpack {{name}}",
+      "download_pack_file": "Downloading pack file ({{index}}/{{total}}): {{name}}",
+      "apply_overrides": "Applying modpack overrides"
     }
   },
   "server": {
@@ -393,6 +396,7 @@
     "cancel": "Cancel",
     "kinds": {
       "create_server": "Create server",
+      "create_modpack": "Install modpack",
       "backup": "Backup",
       "restore": "Restore",
       "import_server": "Import server",

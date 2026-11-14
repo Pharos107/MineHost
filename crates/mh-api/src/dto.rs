@@ -140,9 +140,9 @@ impl From<ServerView> for ServerDto {
         };
         if let Some(info) = view.installing {
             dto.name = Some(info.name.to_string());
-            dto.loader = Some(info.loader.to_string());
-            dto.content_kind = info.loader.content_kind().map(Into::into);
-            dto.minecraft = Some(info.minecraft.to_string());
+            dto.loader = info.loader.map(|l| l.to_string());
+            dto.content_kind = info.loader.and_then(|l| l.content_kind()).map(Into::into);
+            dto.minecraft = info.minecraft.map(|m| m.to_string());
             dto.port = Some(info.port.get());
             dto.job_id = info.job_id;
         }
@@ -371,6 +371,10 @@ pub struct JobDto {
     /// Có khi `state` là `failed`.
     pub error: Option<ErrorBody>,
     pub progress: Option<ProgressDto>,
+    /// Kết quả tóm tắt tùy theo loại Job (ví dụ thống kê modpack đã cài).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[schema(value_type = Option<Object>)]
+    pub result: Option<serde_json::Value>,
     /// RFC 3339, lúc Job được tạo.
     pub started_at: String,
     /// RFC 3339, lúc Job sang trạng thái kết thúc. Không có khi còn chạy.
@@ -402,6 +406,7 @@ impl From<JobSnapshot> for JobDto {
             state,
             error,
             progress: job.progress.map(progress_dto),
+            result: job.result,
             started_at: rfc3339(job.started_at).unwrap_or_default(),
             finished_at: job.finished_at.and_then(rfc3339),
         }

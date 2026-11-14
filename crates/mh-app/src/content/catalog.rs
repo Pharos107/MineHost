@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use mh_core::{ErrorCode, LoaderKind, McVersion};
 use mh_net::{Checksum, Download, HostAllowlist, HttpClient, hosts};
+pub use mh_providers::modpack::PackFile;
 pub use mh_providers::modrinth::{
     DependencyType, Modrinth, ProjectLinks, ProjectType, SearchFilters, SearchIndex, SideSupport,
     modrinth_loaders,
@@ -168,6 +169,39 @@ pub trait ContentCatalog: Send + Sync + 'static {
         progress: ProgressFn<'a>,
         cancel: &'a CancellationToken,
     ) -> BoxFut<'a, Result<(), AppError>>;
+
+    fn project_versions<'a>(
+        &'a self,
+        project: &'a str,
+    ) -> BoxFut<'a, Result<Vec<ContentVersion>, AppError>> {
+        let _ = project;
+        Box::pin(async {
+            Err(AppError::new(
+                ErrorCode::NetworkUnavailable,
+                "chưa cấu hình nguồn danh sách phiên bản modpack",
+            ))
+        })
+    }
+
+    fn download_pack_file<'a>(
+        &'a self,
+        file: &'a PackFile,
+        dest: &'a Path,
+        progress: ProgressFn<'a>,
+        cancel: &'a CancellationToken,
+    ) -> BoxFut<'a, Result<(), AppError>> {
+        let _ = (file, dest, progress, cancel);
+        Box::pin(async {
+            Err(AppError::new(
+                ErrorCode::NetworkUnavailable,
+                "chưa cấu hình nguồn tải file modpack",
+            ))
+        })
+    }
+
+    fn pack_hosts(&self) -> HostAllowlist {
+        hosts::MODRINTH
+    }
 }
 
 /// Nguồn Modrinth thật: tra API và tải file qua `HttpClient` (có cache theo hash).
@@ -240,6 +274,54 @@ impl ContentCatalog for ModrinthCatalog {
         cancel: &'a CancellationToken,
     ) -> BoxFut<'a, Result<(), AppError>> {
         download_with_hosts(&self.http, &self.hosts, file, dest, progress, cancel)
+    }
+
+    fn project_versions<'a>(
+        &'a self,
+        project: &'a str,
+    ) -> BoxFut<'a, Result<Vec<ContentVersion>, AppError>> {
+        Box::pin(async move {
+            let list = self.modrinth.project_versions(project).await?;
+            Ok(list.into_iter().map(modrinth_version).collect())
+        })
+    }
+
+    fn download_pack_file<'a>(
+        &'a self,
+        file: &'a PackFile,
+        dest: &'a Path,
+        progress: ProgressFn<'a>,
+        cancel: &'a CancellationToken,
+    ) -> BoxFut<'a, Result<(), AppError>> {
+        Box::pin(async move {
+            let mut last_err = AppError::new(
+                ErrorCode::ModpackInvalid,
+                format!("file `{}` trong modpack không có URL tải", file.path),
+            );
+            for url in &file.urls {
+                let req = Download {
+                    url,
+                    checksum: &file.checksum,
+                    dest,
+                    size: Some(file.size),
+                    allowed_hosts: Some(&self.hosts),
+                };
+                match self.http.download(req, &mut *progress, cancel).await {
+                    Ok(()) => return Ok(()),
+                    Err(e) => {
+                        last_err = AppError::from(e);
+                        if cancel.is_cancelled() {
+                            return Err(last_err);
+                        }
+                    }
+                }
+            }
+            Err(last_err)
+        })
+    }
+
+    fn pack_hosts(&self) -> HostAllowlist {
+        self.hosts
     }
 }
 

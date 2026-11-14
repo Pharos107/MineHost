@@ -16,8 +16,8 @@ pub use mh_store::{ContentFile, ContentSource, PendingContent, ProjectId};
 pub use catalog::{
     CatalogSource, ContentCatalog, ContentDependency, ContentFileInfo, ContentProject,
     ContentSearchHit, ContentSearchResult, ContentVersion, DependencyType, Modrinth,
-    ModrinthCatalog, NoContentCatalog, ProjectLinks, ProjectType, SearchFilters, SearchIndex,
-    SideSupport, modrinth_loaders,
+    ModrinthCatalog, NoContentCatalog, PackFile, ProjectLinks, ProjectType, SearchFilters,
+    SearchIndex, SideSupport, modrinth_loaders,
 };
 pub use curseforge::{CurseForge, CurseforgeCatalog};
 pub use plan::{ContentInstallPlan, PlannedContent};

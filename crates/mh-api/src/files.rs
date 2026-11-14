@@ -1,6 +1,8 @@
 //! Route tệp (spec P2, mục 5.8). Gốc là thư mục `server/` của một server.
 
+use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use axum::Json;
 use axum::body::Body;
@@ -14,6 +16,7 @@ use mh_app::{App, FileEntry, FileKind};
 use mh_core::ErrorCode;
 use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
+use tokio::io::AsyncWriteExt;
 use tokio_util::io::ReaderStream;
 use utoipa::ToSchema;
 
@@ -310,6 +313,61 @@ pub(crate) fn from_multipart(err: MultipartError) -> ApiError {
         return ApiError::new(StatusCode::PAYLOAD_TOO_LARGE, ErrorCode::FileTooLarge);
     }
     ApiError::invalid("file")
+}
+
+static UPLOAD_SEQ: AtomicU64 = AtomicU64::new(0);
+
+pub(crate) struct TempUploadGuard(Option<PathBuf>);
+
+impl TempUploadGuard {
+    pub(crate) fn path(&self) -> Option<&std::path::Path> {
+        self.0.as_deref()
+    }
+
+    pub(crate) fn disarm(mut self) -> Option<PathBuf> {
+        self.0.take()
+    }
+}
+
+impl Drop for TempUploadGuard {
+    fn drop(&mut self) {
+        if let Some(path) = self.0.take() {
+            let _ = std::fs::remove_file(path);
+        }
+    }
+}
+
+pub(crate) async fn stream_to_temp(
+    app: &App,
+    prefix: &str,
+    ext: &str,
+    mut field: Field<'_>,
+    max_bytes: u64,
+) -> ApiResult<TempUploadGuard> {
+    let cache_dir = app.dirs().cache();
+    tokio::fs::create_dir_all(&cache_dir)
+        .await
+        .map_err(ApiError::internal)?;
+    let seq = UPLOAD_SEQ.fetch_add(1, Ordering::Relaxed);
+    let temp_path = cache_dir.join(format!(".{prefix}-{}-{seq}.{ext}.part", std::process::id()));
+    let guard = TempUploadGuard(Some(temp_path.clone()));
+    let mut file = tokio::fs::File::create(&temp_path)
+        .await
+        .map_err(ApiError::internal)?;
+    let mut total = 0u64;
+    while let Some(chunk) = field.chunk().await.map_err(from_multipart)? {
+        total = total.saturating_add(chunk.len() as u64);
+        if total > max_bytes {
+            return Err(ApiError::new(
+                StatusCode::PAYLOAD_TOO_LARGE,
+                ErrorCode::FileTooLarge,
+            ));
+        }
+        file.write_all(&chunk).await.map_err(ApiError::internal)?;
+    }
+    file.flush().await.map_err(ApiError::internal)?;
+    drop(file);
+    Ok(guard)
 }
 
 fn if_match(headers: &HeaderMap) -> Option<String> {

@@ -961,6 +961,120 @@
         }
       }
     },
+    "/api/v1/servers/modpack": {
+      "post": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateModpackBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Job cài modpack đã chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/modpack/upload": {
+      "post": {
+        "tags": [
+          "servers"
+        ],
+        "description": "multipart/form-data, một file .mrpack tối đa 512 MiB kèm trường name (tùy chọn memory_mb, port).",
+        "operationId": "upload",
+        "responses": {
+          "202": {
+            "description": "Job cài modpack đã chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}": {
       "get": {
         "tags": [
@@ -3295,6 +3409,50 @@
           }
         }
       },
+      "CreateModpackBody": {
+        "type": "object",
+        "required": [
+          "source",
+          "project_id",
+          "name"
+        ],
+        "properties": {
+          "memory_mb": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MemoryDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "port": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "description": "`modrinth`."
+          },
+          "version_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "CreateServerBody": {
         "type": "object",
         "required": [
@@ -3718,6 +3876,13 @@
                 "type": "null"
               }
             ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Kết quả tóm tắt tùy theo loại Job (ví dụ thống kê modpack đã cài)."
           },
           "server_id": {
             "type": [

@@ -30,7 +30,7 @@ pub use error::{ErrorCode, InvalidValue};
 pub use ids::{GamePort, ServerId, ServerName};
 pub use instance::{InstanceError, InstanceSpec};
 pub use launch::{ArgsFilePath, ArgsOs, Launch};
-pub use memory::{MemoryLimits, memory_limit_mb, suggest_memory_mb};
+pub use memory::{MemoryLimits, memory_limit_mb, suggest_memory_mb, suggest_modpack_memory_mb};
 pub use mod_meta::{
     ModDependency, ModMeta, ModMetaError, ModMetaFormat, ModSide, matches_version_req,
     parse_mod_meta,

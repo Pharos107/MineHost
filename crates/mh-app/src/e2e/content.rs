@@ -2,20 +2,19 @@
 
 use std::cmp::Reverse;
 use std::collections::HashMap;
-use std::io::{Cursor, Write};
 use std::path::Path;
 
 use mh_core::{ErrorCode, LoaderKind, McVersion};
-use sha2::{Digest, Sha512};
-use time::OffsetDateTime;
+use mh_providers::modpack::PackFile;
 use time::macros::datetime;
-use zip::write::SimpleFileOptions;
 
+pub(super) use super::pack::build_jar;
+use super::pack::{add_e2e_modpack, make_project, make_version, sha512_hex, verify_bytes_checksum};
 use crate::AppError;
 use crate::content::{
-    CatalogSource, ContentCatalog, ContentDependency, ContentFileInfo, ContentProject,
-    ContentSearchHit, ContentSearchResult, ContentVersion, DependencyType, ProjectLinks,
-    SearchFilters, SideSupport, modrinth_loaders,
+    ContentCatalog, ContentDependency, ContentFileInfo, ContentProject, ContentSearchHit,
+    ContentSearchResult, ContentVersion, DependencyType, SearchFilters, SideSupport,
+    modrinth_loaders,
 };
 use crate::sources::{BoxFut, CancellationToken, ProgressFn};
 
@@ -79,7 +78,7 @@ impl E2eContent {
             "name: LuckPerms\nversion: 5.4.0\nmain: me.lucko.luckperms.LP\n",
         );
 
-        let projects = vec![
+        let mut projects = vec![
             make_project(
                 "e2e-fabric-api",
                 "fabric-api",
@@ -131,14 +130,14 @@ impl E2eContent {
             version_id: None,
             dependency_type: DependencyType::Required,
         }];
-        let versions = vec![
+        let mut versions = vec![
             make_version(
                 "e2e-fabric-api-0.110.0",
                 "e2e-fabric-api",
                 "0.110.0",
                 &["fabric"],
                 datetime!(2024-12-10 0:00 UTC),
-                fabric_api_file,
+                fabric_api_file.clone(),
                 Vec::new(),
             ),
             make_version(
@@ -147,7 +146,7 @@ impl E2eContent {
                 "0.14.2",
                 &["fabric"],
                 datetime!(2024-12-12 0:00 UTC),
-                lithium_new_file,
+                lithium_new_file.clone(),
                 fabric_dep.clone(),
             ),
             make_version(
@@ -165,7 +164,7 @@ impl E2eContent {
                 "1.8.0",
                 &["fabric"],
                 datetime!(2024-12-08 0:00 UTC),
-                iris_file,
+                iris_file.clone(),
                 Vec::new(),
             ),
             make_version(
@@ -174,10 +173,19 @@ impl E2eContent {
                 "5.4.0",
                 &["paper", "purpur", "spigot", "bukkit"],
                 datetime!(2024-12-09 0:00 UTC),
-                luckperms_file,
+                luckperms_file.clone(),
                 Vec::new(),
             ),
         ];
+
+        add_e2e_modpack(
+            &mut projects,
+            &mut versions,
+            &mut files,
+            &fabric_api_file,
+            &lithium_new_file,
+            &iris_file,
+        );
 
         Self {
             projects,
@@ -311,64 +319,51 @@ impl ContentCatalog for E2eContent {
             Ok(())
         })()))
     }
-}
 
-#[allow(clippy::too_many_arguments)]
-fn make_project(
-    id: &str,
-    slug: &str,
-    project_type: &str,
-    title: &str,
-    description: &str,
-    downloads: u64,
-    loaders: &[&str],
-    client_side: SideSupport,
-    server_side: SideSupport,
-) -> ContentProject {
-    ContentProject {
-        source: CatalogSource::Modrinth,
-        id: id.to_owned(),
-        slug: slug.to_owned(),
-        project_type: project_type.to_owned(),
-        title: title.to_owned(),
-        description: description.to_owned(),
-        body: Some(format!("# {title}\n\n{description}")),
-        icon_url: None,
-        downloads,
-        loaders: loaders.iter().map(|s| (*s).to_owned()).collect(),
-        game_versions: GAME_VERSIONS.iter().map(|s| (*s).to_owned()).collect(),
-        client_side: Some(client_side),
-        server_side: Some(server_side),
-        page_url: format!("https://modrinth.com/{project_type}/{slug}"),
-        links: ProjectLinks {
-            source_url: None,
-            issues_url: None,
-            wiki_url: None,
-            discord_url: None,
-        },
+    fn project_versions<'a>(
+        &'a self,
+        project: &'a str,
+    ) -> BoxFut<'a, Result<Vec<ContentVersion>, AppError>> {
+        Box::pin(std::future::ready((|| {
+            let pid = self.find_project(project)?.id.as_str();
+            let mut list: Vec<ContentVersion> = self
+                .versions
+                .iter()
+                .filter(|v| v.project_id == pid)
+                .cloned()
+                .collect();
+            list.sort_by_key(|v| Reverse(v.date_published));
+            Ok(list)
+        })()))
     }
-}
 
-fn make_version(
-    id: &str,
-    project_id: &str,
-    version_number: &str,
-    loaders: &[&str],
-    date_published: OffsetDateTime,
-    file: ContentFileInfo,
-    dependencies: Vec<ContentDependency>,
-) -> ContentVersion {
-    ContentVersion {
-        id: id.to_owned(),
-        project_id: project_id.to_owned(),
-        name: format!("v{version_number}"),
-        version_number: Some(version_number.to_owned()),
-        version_type: "release".to_owned(),
-        game_versions: GAME_VERSIONS.iter().map(|s| (*s).to_owned()).collect(),
-        loaders: loaders.iter().map(|s| (*s).to_owned()).collect(),
-        date_published,
-        files: vec![file],
-        dependencies,
+    fn download_pack_file<'a>(
+        &'a self,
+        file: &'a PackFile,
+        dest: &'a Path,
+        progress: ProgressFn<'a>,
+        cancel: &'a CancellationToken,
+    ) -> BoxFut<'a, Result<(), AppError>> {
+        Box::pin(std::future::ready((|| {
+            if cancel.is_cancelled() {
+                return Err(AppError::cancelled());
+            }
+            let bytes = file
+                .urls
+                .iter()
+                .find_map(|url| self.files.get(url))
+                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, &file.path))?;
+            if !verify_bytes_checksum(bytes, &file.checksum) {
+                return Err(AppError::new(
+                    ErrorCode::ChecksumMismatch,
+                    format!("sai checksum file `{}`", file.path),
+                ));
+            }
+            let size = bytes.len() as u64;
+            progress(size, Some(size));
+            mh_platform::fs::write_atomic(dest, bytes)?;
+            Ok(())
+        })()))
     }
 }
 
@@ -387,27 +382,6 @@ fn project_to_hit(p: &ContentProject) -> ContentSearchHit {
         server_side: p.server_side,
     }
 }
-
-pub(super) fn build_jar(entry_name: &str, content: &str) -> Vec<u8> {
-    let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
-    if zip
-        .start_file(entry_name, SimpleFileOptions::default())
-        .is_ok()
-        && zip.write_all(content.as_bytes()).is_ok()
-        && let Ok(cur) = zip.finish()
-    {
-        return cur.into_inner();
-    }
-    Vec::new()
-}
-
-fn sha512_hex(bytes: &[u8]) -> String {
-    Sha512::digest(bytes)
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

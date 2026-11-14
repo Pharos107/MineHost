@@ -19,6 +19,7 @@ mod launcher;
 mod lifecycle;
 mod loader_install;
 mod metrics;
+mod modpack;
 mod players;
 mod restart_schedule;
 mod restore;
@@ -53,6 +54,7 @@ pub use import::{Detected, ImportRequest};
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};
 pub use metrics::{MetricSample, MetricsConfig, MetricsEvent, ServerMetrics};
 pub use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
+pub use modpack::{ModpackRequest, ModpackSourceInput, ModpackSummary};
 pub use players::{
     ActionDone, MojangDirectory, NoDirectory, PlayerDirectory, PlayerProfile, PlayerRequest,
     PlayerView, PlayersView,
@@ -104,8 +106,8 @@ pub enum AppEvent {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Installing {
     pub name: ServerName,
-    pub loader: LoaderKind,
-    pub minecraft: McVersion,
+    pub loader: Option<LoaderKind>,
+    pub minecraft: Option<McVersion>,
     pub port: GamePort,
     pub job_id: Option<JobId>,
 }
@@ -233,6 +235,10 @@ impl App {
 
     pub fn suggested_memory(&self) -> mh_core::MemoryLimits {
         mh_core::suggest_memory_mb(self.total_memory_mb)
+    }
+
+    pub fn suggested_modpack_memory(&self) -> mh_core::MemoryLimits {
+        mh_core::suggest_modpack_memory_mb(self.total_memory_mb)
     }
 
     pub async fn catalog_versions(

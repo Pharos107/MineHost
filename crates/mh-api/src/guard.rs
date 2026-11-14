@@ -146,6 +146,9 @@ fn is_upload_path(path: &str) -> bool {
     let Some(rest) = path.strip_prefix("/api/v1/servers/") else {
         return false;
     };
+    if rest == "modpack/upload" {
+        return true;
+    }
     let Some((_, tail)) = rest.split_once('/') else {
         return false;
     };
@@ -182,6 +185,8 @@ mod tests {
         assert!(!is_upload_path(&format!(
             "/api/v1/servers/{id}/content/upload/extra"
         )));
+        assert!(is_upload_path("/api/v1/servers/modpack/upload"));
+        assert!(!is_upload_path("/api/v1/servers/modpack/upload/extra"));
         assert!(!is_upload_path("/api/v1/servers/files/upload"));
     }
 }

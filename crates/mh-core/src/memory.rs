@@ -77,10 +77,21 @@ pub const fn memory_limit_mb(max_heap_mb: u32) -> u64 {
 /// `max` = 1/4 RAM máy, làm tròn xuống bội số 512, kẹp trong 1024..=8192; `min` = `min(1024, max)`.
 /// Trên 8 GB Paper ít khi cần thêm cho vài người chơi, còn GC chậm đi khi heap quá lớn.
 pub fn suggest_memory_mb(total_mb: u64) -> MemoryLimits {
+    suggest_memory_scaled(total_mb, 4, 1024, 8192)
+}
+
+/// Đề xuất RAM cho server dựng từ modpack (spec P3, mục 5.7).
+///
+/// `max` = 1/2 RAM máy, làm tròn xuống bội số 512, kẹp trong 4096..=10240; `min` = `min(1024, max)`.
+pub fn suggest_modpack_memory_mb(total_mb: u64) -> MemoryLimits {
+    suggest_memory_scaled(total_mb, 2, 4096, 10240)
+}
+
+fn suggest_memory_scaled(total_mb: u64, divisor: u64, low: u64, high: u64) -> MemoryLimits {
     const STEP: u64 = 512;
-    let quarter = total_mb / 4 / STEP * STEP;
-    // Đã kẹp trong 1024..=8192 nên ép sang u32 không mất dữ liệu.
-    let max = quarter.clamp(1024, 8192) as u32;
+    let scaled = total_mb / divisor / STEP * STEP;
+    // Đã kẹp trong `low..=high` (<= 10240) nên ép sang u32 không mất dữ liệu.
+    let max = scaled.clamp(low, high) as u32;
     MemoryLimits {
         min: max.min(1024),
         max,
@@ -105,6 +116,17 @@ mod tests {
             let m = suggest_memory_mb(gb * 1024);
             assert_eq!((m.min_mb(), m.max_mb()), (1024, max), "{gb} GB");
         }
+    }
+
+    #[test]
+    fn modpack_suggestion_for_common_machines() {
+        let cases = [(4, 4096), (8, 4096), (16, 8192), (32, 10240), (64, 10240)];
+        for (gb, max) in cases {
+            let m = suggest_modpack_memory_mb(gb * 1024);
+            assert_eq!((m.min_mb(), m.max_mb()), (1024, max), "{gb} GB");
+        }
+        assert_eq!(suggest_modpack_memory_mb(12 * 1024 - 100).max_mb(), 5632);
+        assert_eq!(suggest_modpack_memory_mb(0).max_mb(), 4096);
     }
 
     #[test]
