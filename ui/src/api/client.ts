@@ -70,7 +70,8 @@ export async function request<T>(
   extraHeaders: Record<string, string> = {},
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json", ...extraHeaders };
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  const isForm = typeof FormData !== "undefined" && body instanceof FormData;
+  if (body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   if (method !== "GET") Object.assign(headers, mutationHeaders());
 
   let response: Response;
@@ -78,7 +79,7 @@ export async function request<T>(
     response = await fetch(`/api/v1${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     });
   } catch {
     throw new ApiError("NETWORK", {}, 0);

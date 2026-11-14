@@ -6,6 +6,7 @@ import {
   House,
   LayoutDashboard,
   ListChecks,
+  Package,
   Server as ServerIcon,
   Settings,
   SlidersHorizontal,
@@ -104,6 +105,9 @@ function ServerNav({ id }: { id: string }) {
       <NavSection title={server.data ? serverName(server.data) : undefined}>
         <NavItem to={base} end icon={LayoutDashboard} label={t("nav.overview")} />
         <NavItem to={`${base}/console`} icon={Terminal} label={t("nav.console")} />
+        {server.data?.content_kind && (
+          <NavItem to={`${base}/content`} icon={Package} label={t(`nav.content.${server.data.content_kind}`)} />
+        )}
         <NavItem to={`${base}/files`} icon={FolderOpen} label={t("nav.files")} />
         <NavItem to={`${base}/players`} icon={Users} label={t("nav.players")} />
         <NavItem to={`${base}/backups`} icon={Archive} label={t("nav.backups")} />

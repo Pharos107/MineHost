@@ -1,13 +1,18 @@
+import type { LucideIcon } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 
 import styles from "./Avatar.module.css";
 import { cx } from "./cx";
 
 interface AvatarProps {
-  /** Tên người chơi; chữ cái đầu hiện khi chưa có ảnh, và là nhãn cho trình đọc màn hình. */
+  /** Tên người chơi hoặc mod; chữ cái đầu (hoặc icon) hiện khi chưa có ảnh, và là nhãn cho trình đọc màn hình. */
   name: string;
   /** Ảnh skin 64×64 (hoặc 64×32 kiểu cũ). Lấy phần mặt và lớp mũ. Không có hoặc tải lỗi thì hiện chữ. */
   skinUrl?: string | null;
+  /** Ảnh thường (biểu tượng mod, plugin, dự án). Lỗi tải thì quay về `icon` hoặc chữ cái đầu. */
+  imageUrl?: string | null;
+  /** Biểu tượng thay thế khi không có ảnh. */
+  icon?: LucideIcon;
   size?: "sm" | "md" | "lg";
 }
 
@@ -16,11 +21,15 @@ interface Loaded {
   hat: boolean;
 }
 
-/** Đầu skin Minecraft của người chơi (spec P2, mục 6.12). */
-export function Avatar({ name, skinUrl, size = "md" }: AvatarProps) {
+const ICON_SIZE = { sm: 14, md: 16, lg: 24 } as const;
+
+/** Đầu skin Minecraft hoặc biểu tượng đại diện (spec P2, mục 6.12; spec P3, mục 6.3). */
+export function Avatar({ name, skinUrl, imageUrl, icon: Icon, size = "md" }: AvatarProps) {
   // Nhớ URL đã tải được, để đổi người (đổi URL) thì quay về chữ cái cho tới khi ảnh mới tải xong.
   const [loaded, setLoaded] = useState<Loaded | null>(null);
+  const [failedImage, setFailedImage] = useState<string | null>(null);
   const ready = Boolean(skinUrl) && loaded?.url === skinUrl;
+  const showImage = !skinUrl && Boolean(imageUrl) && failedImage !== imageUrl;
   const skin = { "--skin": `url("${skinUrl ?? ""}")` } as CSSProperties;
 
   return (
@@ -33,6 +42,10 @@ export function Avatar({ name, skinUrl, size = "md" }: AvatarProps) {
           <span className={styles.face} style={skin} aria-hidden />
           {loaded?.hat && <span className={cx(styles.face, styles.hat)} style={skin} aria-hidden />}
         </>
+      ) : showImage && imageUrl ? (
+        <img className={styles.image} src={imageUrl} alt="" onError={() => setFailedImage(imageUrl)} />
+      ) : Icon ? (
+        <Icon size={ICON_SIZE[size]} aria-hidden />
       ) : (
         <span aria-hidden>{name.slice(0, 1).toUpperCase()}</span>
       )}

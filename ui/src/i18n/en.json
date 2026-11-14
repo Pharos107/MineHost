@@ -14,6 +14,10 @@
     "allServers": "All servers",
     "overview": "Overview",
     "console": "Console",
+    "content": {
+      "mods": "Mods",
+      "plugins": "Plugins"
+    },
     "files": "Files",
     "players": "Players",
     "backups": "Backups",
@@ -643,5 +647,43 @@
     "count": "{{count}} / {{max}}",
     "starting": "Waiting for the server to start",
     "openConsole": "Open console"
+  },
+  "content": {
+    "name": "Name",
+    "version": "Version",
+    "source": "Source",
+    "enabled": "Enabled",
+    "toggleLabel": "Enable {{name}}",
+    "clientOnly": "Client only",
+    "sources": {
+      "modrinth": "Modrinth",
+      "curseforge": "CurseForge",
+      "modpack": "Modpack",
+      "manual": "Manual"
+    },
+    "upload": "Upload .jar",
+    "uploadHint": "or drop .jar files here, up to 512 MiB. Only upload files from trusted sources because mods and plugins run arbitrary code.",
+    "uploading": "Uploading {{names}}",
+    "uploaded_one": "Uploaded {{count}} file.",
+    "uploaded_other": "Uploaded {{count}} files.",
+    "uploadInvalid": "The file is not a valid .jar or is damaged.",
+    "remove": "Remove",
+    "removeTitle": "Remove {{name}}?",
+    "removeBody": "The file {{file}} is moved to MineHost's trash, so you can get it back later.",
+    "unsupported": "This server type does not support mods or plugins.",
+    "mods": {
+      "table": "Installed mods",
+      "runningHint": "The server is running: stop it before enabling, disabling, uploading, or removing mods.",
+      "empty": "No mods yet",
+      "emptyHint": "Upload a .jar file above or place one in the server's mods/ folder.",
+      "openPage": "Open mod page"
+    },
+    "plugins": {
+      "table": "Installed plugins",
+      "runningHint": "The server is running: stop it before enabling, disabling, uploading, or removing plugins.",
+      "empty": "No plugins yet",
+      "emptyHint": "Upload a .jar file above or place one in the server's plugins/ folder.",
+      "openPage": "Open plugin page"
+    }
   }
 }

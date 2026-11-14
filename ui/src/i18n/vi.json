@@ -14,6 +14,10 @@
     "allServers": "Tất cả máy chủ",
     "overview": "Tổng quan",
     "console": "Console",
+    "content": {
+      "mods": "Mod",
+      "plugins": "Plugin"
+    },
     "files": "Tệp",
     "players": "Người chơi",
     "backups": "Sao lưu",
@@ -643,5 +647,43 @@
     "count": "{{count}} / {{max}}",
     "starting": "Chờ server bật xong",
     "openConsole": "Mở console"
+  },
+  "content": {
+    "name": "Tên",
+    "version": "Phiên bản",
+    "source": "Nguồn",
+    "enabled": "Bật",
+    "toggleLabel": "Bật {{name}}",
+    "clientOnly": "Chỉ chạy ở client",
+    "sources": {
+      "modrinth": "Modrinth",
+      "curseforge": "CurseForge",
+      "modpack": "Modpack",
+      "manual": "Thêm tay"
+    },
+    "upload": "Tải lên .jar",
+    "uploadHint": "hoặc kéo thả file .jar vào đây, tối đa 512 MiB. Chỉ tải file từ nguồn tin cậy vì mod/plugin chạy code tùy ý.",
+    "uploading": "Đang tải lên {{names}}",
+    "uploaded_one": "Đã tải lên {{count}} file.",
+    "uploaded_other": "Đã tải lên {{count}} file.",
+    "uploadInvalid": "File không phải .jar hợp lệ hoặc bị hỏng.",
+    "remove": "Gỡ",
+    "removeTitle": "Gỡ {{name}}?",
+    "removeBody": "File {{file}} được chuyển vào thùng rác của MineHost, bạn có thể tự lấy lại sau.",
+    "unsupported": "Loại server này không hỗ trợ cài mod hoặc plugin.",
+    "mods": {
+      "table": "Danh sách mod",
+      "runningHint": "Server đang chạy: tắt server trước khi bật, tắt, tải lên hoặc gỡ mod.",
+      "empty": "Chưa có mod nào",
+      "emptyHint": "Tải file .jar lên ở trên hoặc chép vào thư mục mods/ của server.",
+      "openPage": "Mở trang mod"
+    },
+    "plugins": {
+      "table": "Danh sách plugin",
+      "runningHint": "Server đang chạy: tắt server trước khi bật, tắt, tải lên hoặc gỡ plugin.",
+      "empty": "Chưa có plugin nào",
+      "emptyHint": "Tải file .jar lên ở trên hoặc chép vào thư mục plugins/ của server.",
+      "openPage": "Mở trang plugin"
+    }
   }
 }
