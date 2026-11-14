@@ -11,14 +11,25 @@ vi.mock("./pages/server/ConsoleTab", () => ({
   ConsoleTab: ({ server }: { server: Server }) => <p>console của {server.name}</p>,
 }));
 
-const server: Server = { id: "01JB", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, preflight_blocking: false };
+const server: Server = {
+  id: "01JB",
+  name: "Survival",
+  state: "running",
+  content_kind: "mods",
+  eula_accepted: true,
+  restart_pending: false,
+  slow_start: false,
+  ignored_jvm_args: false,
+  preflight_blocking: false,
+};
 
-function renderAt(path: string) {
+function renderAt(path: string, currentServer: Server = server) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string) => {
-      if (url === "/api/v1/servers") return Response.json([server]);
-      if (url === "/api/v1/servers/01JB") return Response.json(server);
+      if (url === "/api/v1/servers") return Response.json([currentServer]);
+      if (url === "/api/v1/servers/01JB") return Response.json(currentServer);
+      if (url === "/api/v1/servers/01JB/content") return Response.json({ kind: currentServer.content_kind ?? "mods", files: [], pending: [] });
       if (url === "/api/v1/system") return Response.json({ lan_addresses: [] });
       return Response.json({ code: "NOT_FOUND", params: {} }, { status: 404 });
     }),
@@ -66,5 +77,24 @@ describe("AppRoutes", () => {
     renderAt("/new");
     expect(await screen.findByRole("heading", { level: 1, name: "Tạo server" })).toBeTruthy();
     expect(screen.queryByRole("navigation", { name: "Điều hướng chính" })).toBeNull();
+  });
+
+  it("thanh bên hiện Mod khi content_kind = mods và mở trang Mod", async () => {
+    renderAt("/servers/01JB/content");
+    expect(await screen.findByText("Chưa có mod nào")).toBeTruthy();
+    const nav = screen.getByRole("navigation", { name: "Điều hướng chính" });
+    expect(within(nav).getByRole("link", { name: "Mod" }).getAttribute("aria-current")).toBe("page");
+  });
+
+  it("thanh bên hiện Plugin khi content_kind = plugins", async () => {
+    renderAt("/servers/01JB", { ...server, content_kind: "plugins" });
+    expect(await screen.findByRole("link", { name: "Plugin" })).toBeTruthy();
+  });
+
+  it("thanh bên ẩn mục Mod/Plugin với Vanilla", async () => {
+    renderAt("/servers/01JB", { ...server, content_kind: null });
+    await screen.findByRole("heading", { level: 1, name: "Survival" });
+    expect(screen.queryByRole("link", { name: "Mod" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Plugin" })).toBeNull();
   });
 });
