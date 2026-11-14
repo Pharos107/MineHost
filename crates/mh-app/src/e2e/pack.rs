@@ -196,11 +196,14 @@ pub(super) fn make_version(
     }
 }
 
+/// Jar giả có bytes cố định trên mọi máy (không nén, mốc thời gian cố định): test E2E ghi sẵn hash
+/// của nó trong `.mrpack` dựng tay (`ui/e2e/modpack.spec.ts`), nên bytes đổi theo giờ là test hỏng.
 pub(super) fn build_jar(entry_name: &str, content: &str) -> Vec<u8> {
+    let options = SimpleFileOptions::default()
+        .compression_method(CompressionMethod::Stored)
+        .last_modified_time(zip::DateTime::default());
     let mut zip = ZipWriter::new(Cursor::new(Vec::new()));
-    if zip
-        .start_file(entry_name, SimpleFileOptions::default())
-        .is_ok()
+    if zip.start_file(entry_name, options).is_ok()
         && zip.write_all(content.as_bytes()).is_ok()
         && let Ok(cur) = zip.finish()
     {
@@ -220,6 +223,33 @@ pub(super) fn sha512_hex(bytes: &[u8]) -> String {
 mod tests {
     use crate::content::ContentCatalog;
     use crate::e2e::content::E2eContent;
+
+    /// Hash của jar `fabric-api` giả được ghi cứng trong `ui/e2e/modpack.spec.ts` (test kéo thả
+    /// `.mrpack`). Đổi nội dung jar giả thì phải sửa cả hai chỗ.
+    #[tokio::test]
+    async fn fake_fabric_api_jar_bytes_are_stable() {
+        let cat = E2eContent::new();
+        let vers = cat.project_versions("e2e-fabric-api").await.unwrap();
+        let file = &vers[0].files[0];
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("fabric-api.jar");
+        let cancel = crate::sources::CancellationToken::new();
+        cat.download(file, &path, &mut |_, _| {}, &cancel)
+            .await
+            .unwrap();
+        let bytes = std::fs::read(&path).unwrap();
+        use sha1::Digest as _;
+        let sha1: String = sha1::Sha1::digest(&bytes)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        assert_eq!(bytes.len(), 223);
+        assert_eq!(sha1, "f59ecf18223ba86ae1e5407a5d3152a55ade48db");
+        assert_eq!(
+            super::sha512_hex(&bytes),
+            "88b8d16393f6645ca4316c533f2a35995052fa4dc6e64a59e9a0b1490c6584cea1a4a2a107bdd14e597420e0b2420eec35a897d4d5b82d5c86786a936a7737ad"
+        );
+    }
 
     #[tokio::test]
     async fn e2e_content_provides_valid_mrpack_and_cdn_files() {

@@ -109,6 +109,8 @@ test("cài modpack từ nguồn giả tới trang server và thấy tóm tắt",
 });
 
 test("cài modpack từ file .mrpack kéo thả", async ({ page }) => {
+  // Hash của jar fabric-api giả trong chế độ e2e; giữ khớp với test `fake_fabric_api_jar_bytes_are_stable`
+  // (crates/mh-app/src/e2e/pack.rs). Jar giả được dựng tất định nên hash giống nhau trên mọi máy.
   const indexJson = JSON.stringify({
     formatVersion: 1,
     game: "minecraft",
@@ -122,14 +124,14 @@ test("cài modpack từ file .mrpack kéo thả", async ({ page }) => {
       {
         path: "mods/fabric-api-0.110.0.jar",
         hashes: {
-          sha1: "cba93682f3036776499d3a0d106aa629da92c354",
+          sha1: "f59ecf18223ba86ae1e5407a5d3152a55ade48db",
           sha512:
-            "0cc822bbbe1dbf359096b1b5ed2034fcb040bcc6019d1dd2c170dd3e9fe80c60d61f3b81c618cb5e5bda7b1ee84df24275fa1f5ae19b7b0756b7d033231a4917",
+            "88b8d16393f6645ca4316c533f2a35995052fa4dc6e64a59e9a0b1490c6584cea1a4a2a107bdd14e597420e0b2420eec35a897d4d5b82d5c86786a936a7737ad",
         },
         downloads: [
           "https://cdn.modrinth.com/data/e2e-fabric-api/versions/e2e-fabric-api-0.110.0/fabric-api-0.110.0.jar",
         ],
-        fileSize: 214,
+        fileSize: 223,
       },
     ],
   });
