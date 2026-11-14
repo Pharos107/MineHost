@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "id": "iris",
+  "version": "1.8.14-beta.1+mc1.21.1",
+  "name": "Iris",
+  "description": "A modern shaders mod for Minecraft intended to be compatible with existing OptiFine shader packs",
+  "authors": [
+    "coderbot",
+    "IMS212",
+    "Justsnoopy30",
+    "FoundationGames"
+  ],
+  "contact": {
+    "homepage": "https://github.com/IrisShaders/Iris",
+    "sources": "https://github.com/IrisShaders/Iris.git",
+    "issues": "https://github.com/IrisShaders/Iris/issues"
+  },
+  "license": "LGPL-3.0-only",
+  "icon": "iris-logo.png",
+  "environment": "client",
+  "entrypoints": {
+    "modmenu": [
+      "net.irisshaders.iris.compat.modmenu.ModMenuIntegration"
+    ],
+    "sodium:config_api_user": [
+      "net.irisshaders.iris.compat.sodium.config.IrisConfig"
+    ]
+  },
+  "mixins": [
+    "mixins.iris.json",
+    "mixins.iris.fabric.json",
+    "iris-batched-entity-rendering.mixins.json",
+    "mixins.iris.fantastic.json",
+    "mixins.iris.vertexformat.json",
+    "mixins.iris.bettermipmaps.json",
+    "mixins.iris.compat.sodium.json",
+    "mixins.iris.compat.dh.json",
+    "mixins.iris.fixes.maxfpscrash.json"
+  ],
+  "accessWidener": "iris.accesswidener",
+  "depends": {
+    "fabricloader": "\u003e\u003d0.12.3",
+    "minecraft": [
+      "1.21.1"
+    ],
+    "sodium": [
+      "0.8.x"
+    ]
+  },
+  "breaks": {
+    "embeddium": "*",
+    "iris-explorer": "*",
+    "originsenhanced": "\u003c\u003d1.3.2",
+    "colormatic": "\u003c\u003d3.0.0",
+    "bedrockwaters": "\u003c\u003d1.6.0",
+    "batchedentityrendering": "*",
+    "canvas": "*",
+    "optifabric": "*",
+    "worldeditcui": "\u003c1.18.1",
+    "physicsmod": "\u003c\u003d3.0.13",
+    "distanthorizons": "\u003c\u003d2.1.99",
+    "immersive_portals": "\u003c\u003d1.4.2"
+  },
+  "custom": {
+    "sodium:options": {
+      "mixin.features.render.world.sky": false
+    },
+    "mc-publish": {
+      "loaders": [
+        "fabric",
+        "quilt"
+      ]
+    }
+  },
+  "jars": [
+    {
+      "file": "META-INF/jars/antlr4-runtime-4.13.1.jar"
+    },
+    {
+      "file": "META-INF/jars/fabric-api-base-0.4.42+6573ed8c19.jar"
+    },
+    {
+      "file": "META-INF/jars/fabric-key-binding-api-v1-1.0.47+0af3f5a719.jar"
+    },
+    {
+      "file": "META-INF/jars/glsl-transformer-3.0.0-pre3.jar"
+    },
+    {
+      "file": "META-INF/jars/jcpp-1.4.14.jar"
+    }
+  ]
+}

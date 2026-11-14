@@ -13,6 +13,7 @@ pub mod ids;
 pub mod instance;
 pub mod launch;
 pub mod memory;
+pub mod mod_meta;
 pub mod players;
 pub mod properties;
 pub mod schedule;
@@ -27,6 +28,10 @@ pub use ids::{GamePort, ServerId, ServerName};
 pub use instance::{InstanceError, InstanceSpec};
 pub use launch::{ArgsFilePath, ArgsOs, Launch};
 pub use memory::{MemoryLimits, memory_limit_mb, suggest_memory_mb};
+pub use mod_meta::{
+    ModDependency, ModMeta, ModMetaError, ModMetaFormat, ModSide, matches_version_req,
+    parse_mod_meta,
+};
 pub use players::{
     FreezeAttribute, PlayerAction, PlayerCommandError, PlayerLogEvent, PlayerName,
     UnsupportedVersion, command, freeze_attributes, offline_uuid, parse_log_line,
