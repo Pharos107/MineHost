@@ -131,7 +131,7 @@ pub(super) fn rename_sync(root: &SafeRoot, from: &str, to: &str) -> Result<(), A
     fs::rename(src.as_path(), dest.as_path()).map_err(|err| io_err(src.as_path(), err))
 }
 
-pub(super) fn delete_sync(
+pub(crate) fn delete_sync(
     store: &ServerStore,
     trash: &Path,
     id: ServerId,

@@ -17,7 +17,9 @@ use toml::Table;
 
 use crate::StoreError;
 
-pub use scan::{ContentFile, ContentMetaError, ContentScanner, scan_content};
+pub use scan::{
+    ContentFile, ContentMetaError, ContentScanner, JarInfo, inspect_jar_file, scan_content,
+};
 
 pub const CONTENT_FILE: &str = "content.toml";
 pub const CONTENT_SCHEMA: u32 = 1;

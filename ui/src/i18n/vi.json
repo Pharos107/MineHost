@@ -176,7 +176,9 @@
       "unpack": "Giải nén bản sao lưu",
       "swap": "Thay world",
       "copy_files": "Chép thư mục server",
-      "run_installer": "Cài {{loader}}"
+      "run_installer": "Cài {{loader}}",
+      "resolve_content": "Đọc thông tin mod",
+      "download_content": "Tải {{name}}"
     }
   },
   "server": {
@@ -388,7 +390,8 @@
       "backup": "Sao lưu",
       "restore": "Khôi phục",
       "import_server": "Nhập server",
-      "install_java": "Tải Java"
+      "install_java": "Tải Java",
+      "install_content": "Cài mod"
     },
     "states": {
       "running": "Đang chạy",

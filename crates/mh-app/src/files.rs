@@ -6,6 +6,8 @@
 
 mod disk;
 
+pub(crate) use disk::delete_sync;
+
 use std::path::{Path, PathBuf};
 
 use mh_core::{ErrorCode, ServerId};
@@ -214,7 +216,7 @@ impl Drop for PartGuard {
     }
 }
 
-fn validate_file_name(name: &str) -> Result<(), AppError> {
+pub(crate) fn validate_file_name(name: &str) -> Result<(), AppError> {
     // Một thành phần thôi: `a/b` sẽ ghi ra ngoài thư mục người dùng đã chọn.
     let bad = name.is_empty()
         || name == "."
@@ -289,7 +291,7 @@ pub(super) fn plat(err: PlatformError) -> AppError {
     }
 }
 
-async fn blocking<T: Send + 'static>(
+pub(crate) async fn blocking<T: Send + 'static>(
     work: impl FnOnce() -> Result<T, AppError> + Send + 'static,
 ) -> Result<T, AppError> {
     match tokio::task::spawn_blocking(work).await {
@@ -313,7 +315,7 @@ pub(super) fn changed() -> AppError {
     AppError::new(ErrorCode::FileChanged, "nội dung đã đổi kể từ lúc đọc")
 }
 
-pub(super) fn exists(path: &str) -> AppError {
+pub(crate) fn exists(path: &str) -> AppError {
     AppError::new(ErrorCode::FileExists, format!("đã có `{path}`"))
 }
 
