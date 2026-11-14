@@ -196,12 +196,15 @@ pub(super) fn make_version(
     }
 }
 
-/// Jar giả có bytes cố định trên mọi máy (không nén, mốc thời gian cố định): test E2E ghi sẵn hash
-/// của nó trong `.mrpack` dựng tay (`ui/e2e/modpack.spec.ts`), nên bytes đổi theo giờ là test hỏng.
+/// Jar giả có bytes cố định trên mọi máy: test E2E ghi sẵn hash của nó trong `.mrpack` dựng tay
+/// (`ui/e2e/modpack.spec.ts`). Phải cố định cả cách nén, mốc thời gian lẫn hệ điều hành ghi trong
+/// zip (crate `zip` mặc định ghi DOS trên Windows, Unix trên Linux, làm bytes khác nhau).
 pub(super) fn build_jar(entry_name: &str, content: &str) -> Vec<u8> {
     let options = SimpleFileOptions::default()
         .compression_method(CompressionMethod::Stored)
-        .last_modified_time(zip::DateTime::default());
+        .last_modified_time(zip::DateTime::default())
+        .system(zip::System::Unix)
+        .unix_permissions(0o644);
     let mut zip = ZipWriter::new(Cursor::new(Vec::new()));
     if zip.start_file(entry_name, options).is_ok()
         && zip.write_all(content.as_bytes()).is_ok()
@@ -244,10 +247,10 @@ mod tests {
             .map(|b| format!("{b:02x}"))
             .collect();
         assert_eq!(bytes.len(), 223);
-        assert_eq!(sha1, "f59ecf18223ba86ae1e5407a5d3152a55ade48db");
+        assert_eq!(sha1, "a4128590aebddb6984d71ac0d89e56c4df143f0f");
         assert_eq!(
             super::sha512_hex(&bytes),
-            "88b8d16393f6645ca4316c533f2a35995052fa4dc6e64a59e9a0b1490c6584cea1a4a2a107bdd14e597420e0b2420eec35a897d4d5b82d5c86786a936a7737ad"
+            "6305d5c3619594eec9264dbcc5987847402722871548ed6af51ca84b750daa7b405818b21c3dadcdb5dcbedafde01dc1ce6b402fed75392809a6687ad45fa4ba"
         );
     }
 

@@ -124,9 +124,9 @@ test("cài modpack từ file .mrpack kéo thả", async ({ page }) => {
       {
         path: "mods/fabric-api-0.110.0.jar",
         hashes: {
-          sha1: "f59ecf18223ba86ae1e5407a5d3152a55ade48db",
+          sha1: "a4128590aebddb6984d71ac0d89e56c4df143f0f",
           sha512:
-            "88b8d16393f6645ca4316c533f2a35995052fa4dc6e64a59e9a0b1490c6584cea1a4a2a107bdd14e597420e0b2420eec35a897d4d5b82d5c86786a936a7737ad",
+            "6305d5c3619594eec9264dbcc5987847402722871548ed6af51ca84b750daa7b405818b21c3dadcdb5dcbedafde01dc1ce6b402fed75392809a6687ad45fa4ba",
         },
         downloads: [
           "https://cdn.modrinth.com/data/e2e-fabric-api/versions/e2e-fabric-api-0.110.0/fabric-api-0.110.0.jar",
