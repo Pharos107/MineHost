@@ -1,3 +1,8 @@
+//! Nguồn mod giả và tiện ích dùng chung cho các test nội dung.
+//!
+//! Mỗi file test chỉ dùng một phần các hàm ở đây, nên tắt cảnh báo hàm không dùng.
+#![allow(dead_code)]
+
 use std::collections::{HashMap, HashSet};
 use std::io::{Cursor, Write};
 use std::path::{Path, PathBuf};

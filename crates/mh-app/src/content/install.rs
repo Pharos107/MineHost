@@ -1,6 +1,6 @@
 //! Job cài mod/plugin: tải vào thư mục tạm rồi mới thay vào `mods/` hoặc `plugins/`.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -173,9 +173,9 @@ fn apply_staged(
     let mut manifest = ContentManifest::load(&paths.content_file)?;
 
     let replaced_pids: HashSet<&str> = staged.iter().map(|s| s.project_id.as_str()).collect();
-    let to_trash = collect_replaced(&scanned, &safe_root, kind, &replaced_pids)?;
+    let (to_trash, was_enabled) = collect_replaced(&scanned, &safe_root, kind, &replaced_pids)?;
     let trash_set: HashSet<&Path> = to_trash.iter().map(|(_, p)| p.as_path()).collect();
-    let dests = prepare_dests(&safe_root, kind, &staged, &trash_set)?;
+    let dests = prepare_dests(&safe_root, kind, &staged, &trash_set, &was_enabled)?;
 
     for (rel, _) in &to_trash {
         delete_sync(store, trash, id, rel)?;
@@ -208,13 +208,17 @@ fn apply_staged(
     Ok(())
 }
 
+/// File bản cũ sẽ vào thùng rác (đường dẫn tương đối, tuyệt đối) và project nào đang bật.
+type Replaced = (Vec<(String, PathBuf)>, HashMap<String, bool>);
+
 fn collect_replaced(
     scanned: &[mh_store::ContentFile],
     safe_root: &SafeRoot,
     kind: ContentKind,
     replaced_pids: &HashSet<&str>,
-) -> Result<Vec<(String, PathBuf)>, AppError> {
+) -> Result<Replaced, AppError> {
     let mut to_trash = Vec::new();
+    let mut was_enabled = HashMap::new();
     for file in scanned {
         let Some(ProjectId::Str(pid)) = file.record.as_ref().and_then(|r| r.project_id.as_ref())
         else {
@@ -229,9 +233,10 @@ fn collect_replaced(
             let rel = format!("{dir}/{}", file.file_name);
             let abs = safe_root.join(&rel)?.into_path_buf();
             to_trash.push((rel, abs));
+            *was_enabled.entry(pid.clone()).or_insert(false) |= file.enabled;
         }
     }
-    Ok(to_trash)
+    Ok((to_trash, was_enabled))
 }
 
 fn prepare_dests(
@@ -239,13 +244,20 @@ fn prepare_dests(
     kind: ContentKind,
     staged: &[StagedFile],
     trash_set: &HashSet<&Path>,
+    was_enabled: &HashMap<String, bool>,
 ) -> Result<Vec<mh_platform::SafePath>, AppError> {
     let mut dests = Vec::with_capacity(staged.len());
     for s in staged {
-        let dir = if s.client_only {
-            kind.disabled_dir()
-        } else {
+        // Cập nhật giữ lựa chọn bật/tắt của bản cũ: không tắt lại mod người dùng đã tự bật,
+        // không bật lại mod họ đã tắt (spec P3, mục 3.5). Mod mới thì theo luật chỉ chạy client.
+        let enabled = was_enabled
+            .get(&s.project_id)
+            .copied()
+            .unwrap_or(!s.client_only);
+        let dir = if enabled {
             kind.dir()
+        } else {
+            kind.disabled_dir()
         };
         let dest = safe_root.join(&format!("{dir}/{}", s.file_name))?;
         if dest.as_path().exists() && !trash_set.contains(dest.as_path()) {
