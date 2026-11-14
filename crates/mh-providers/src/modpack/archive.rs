@@ -1,4 +1,4 @@
-//! Hỗ trợ đọc/giải nén an toàn các entry trong archive `.mrpack`.
+//! Hỗ trợ đọc/giải nén an toàn các entry trong archive modpack (`.mrpack` và `.zip`).
 
 use std::fs::{self, File};
 use std::io::{self, BufReader, Read, Write};
@@ -14,19 +14,183 @@ use zip::result::ZipError;
 use super::{COPY_BUF_BYTES, OverrideEntry, PackLimits};
 use crate::ProviderError;
 
-pub(super) fn extract_overrides(
+pub(super) struct RawZipEntry {
+    pub index: usize,
+    pub name: String,
+    pub is_dir: bool,
+    pub skip_special: bool,
+    pub size: u64,
+}
+
+pub(super) fn open_pack_archive(
+    path: &Path,
+    limits: PackLimits,
+) -> Result<ZipArchive<BufReader<File>>, ProviderError> {
+    let file = File::open(path).map_err(|e| ProviderError::io(path, e))?;
+    let archive = ZipArchive::new(BufReader::new(file)).map_err(|e| zip_err(path, e))?;
+    // Chặn archive chứa hàng trăm nghìn mục thư mục hoặc mục bị bỏ qua để tránh treo vòng lặp.
+    let entry_cap = limits.max_files.saturating_mul(4).max(1024);
+    if archive.len() > entry_cap {
+        return Err(ProviderError::modpack_invalid(
+            "modpack chứa quá nhiều mục trong zip",
+        ));
+    }
+    Ok(archive)
+}
+
+pub(super) fn read_json_entry(
     archive: &mut ZipArchive<BufReader<File>>,
     archive_path: &Path,
-    root: &SafeRoot,
-    overrides: Vec<OverrideEntry>,
-    server_overrides: Vec<OverrideEntry>,
+    entry_name: &str,
+    max_bytes: u64,
+) -> Result<String, ProviderError> {
+    let entry = match archive.by_name(entry_name) {
+        Ok(entry) => entry,
+        Err(ZipError::FileNotFound) => {
+            return Err(ProviderError::modpack_invalid(format!(
+                "thiếu {entry_name}"
+            )));
+        }
+        Err(e) => return Err(zip_err(archive_path, e)),
+    };
+    if entry.is_dir() || is_unix_dir(&entry) || is_symlink_or_special(&entry) {
+        return Err(ProviderError::modpack_invalid(format!(
+            "{entry_name} không phải file thường"
+        )));
+    }
+    if entry.size() > max_bytes {
+        return Err(ProviderError::modpack_invalid(format!(
+            "{entry_name} vượt quá giới hạn kích thước"
+        )));
+    }
+    let mut buf = Vec::new();
+    entry
+        .take(max_bytes.saturating_add(1))
+        .read_to_end(&mut buf)
+        .map_err(|e| map_read_io(archive_path, e))?;
+    if buf.len() as u64 > max_bytes {
+        return Err(ProviderError::modpack_invalid(format!(
+            "{entry_name} vượt quá giới hạn kích thước"
+        )));
+    }
+    String::from_utf8(buf)
+        .map_err(|_| ProviderError::modpack_invalid(format!("{entry_name} không phải UTF-8")))
+}
+
+pub(super) fn read_entry_meta(
+    archive: &mut ZipArchive<BufReader<File>>,
+    index: usize,
+    archive_path: &Path,
+) -> Result<RawZipEntry, ProviderError> {
+    let (name, is_dir, skip_special, size) = {
+        let entry = archive
+            .by_index_raw(index)
+            .map_err(|e| zip_err(archive_path, e))?;
+        let name = entry
+            .name()
+            .map_err(|e| zip_err(archive_path, e))?
+            .into_owned();
+        let is_dir = entry.is_dir() || is_unix_dir(&entry);
+        (name, is_dir, is_symlink_or_special(&entry), entry.size())
+    };
+    let raw_check = if is_dir {
+        name.strip_suffix('/').unwrap_or(&name)
+    } else {
+        &name
+    };
+    validate_archive_path(raw_check)?;
+    Ok(RawZipEntry {
+        index,
+        name,
+        is_dir,
+        skip_special,
+        size,
+    })
+}
+
+pub(super) fn scan_prefixed_layers(
+    archive: &mut ZipArchive<BufReader<File>>,
+    archive_path: &Path,
+    ignore_name: Option<&str>,
+    prefixes: &[&str],
+    limits: PackLimits,
+    total_files: &mut usize,
+    declared_bytes: &mut u64,
+) -> Result<Vec<Vec<OverrideEntry>>, ProviderError> {
+    let mut layers: Vec<Vec<OverrideEntry>> = (0..prefixes.len()).map(|_| Vec::new()).collect();
+    for index in 0..archive.len() {
+        let meta = read_entry_meta(archive, index, archive_path)?;
+        if ignore_name == Some(meta.name.as_str()) {
+            continue;
+        }
+        if meta.skip_special {
+            tracing::debug!(name = %meta.name, "bỏ qua symlink hoặc file đặc biệt trong modpack");
+            continue;
+        }
+        let Some((layer_idx, rel)) = prefixes
+            .iter()
+            .enumerate()
+            .find_map(|(i, p)| meta.name.strip_prefix(p).map(|rel| (i, rel)))
+        else {
+            continue;
+        };
+        let rel = if meta.is_dir {
+            rel.strip_suffix('/').unwrap_or(rel)
+        } else {
+            rel
+        };
+        if rel.is_empty() {
+            continue;
+        }
+        count_within_limits(meta.is_dir, meta.size, limits, total_files, declared_bytes)?;
+        layers[layer_idx].push(OverrideEntry {
+            index,
+            rel: rel.to_owned(),
+            is_dir: meta.is_dir,
+        });
+    }
+    Ok(layers)
+}
+
+pub(super) fn count_within_limits(
+    is_dir: bool,
+    size: u64,
+    limits: PackLimits,
+    total_files: &mut usize,
+    declared_bytes: &mut u64,
+) -> Result<(), ProviderError> {
+    if is_dir {
+        return Ok(());
+    }
+    *total_files = total_files
+        .checked_add(1)
+        .filter(|&n| n <= limits.max_files)
+        .ok_or_else(|| {
+            ProviderError::modpack_invalid("số lượng file trong modpack vượt giới hạn")
+        })?;
+    *declared_bytes = add_within_limit(
+        *declared_bytes,
+        size,
+        limits.max_total_bytes,
+        "tổng kích thước modpack vượt giới hạn",
+    )?;
+    Ok(())
+}
+
+pub(super) fn extract_entries(
+    archive: &mut ZipArchive<BufReader<File>>,
+    archive_path: &Path,
+    dest_dir: &Path,
+    entries: impl IntoIterator<Item = OverrideEntry>,
     limits: PackLimits,
     mut actual_bytes: u64,
 ) -> Result<(), ProviderError> {
+    fs::create_dir_all(dest_dir).map_err(|e| ProviderError::io(dest_dir, e))?;
+    let root = SafeRoot::new(dest_dir)?;
     let mut buf = vec![0u8; COPY_BUF_BYTES];
-    // Luôn giải nén `overrides/` trước rồi mới tới `server-overrides/` để ghi đè đúng thứ tự.
-    for item in overrides.into_iter().chain(server_overrides) {
-        let target = safe_join(root, &item.rel)?;
+
+    for item in entries {
+        let target = safe_join(&root, &item.rel)?;
         if item.is_dir {
             fs::create_dir_all(target.as_path())
                 .map_err(|e| ProviderError::io(target.as_path(), e))?;

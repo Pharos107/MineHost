@@ -29,6 +29,7 @@ const SEARCH_TTL: Duration = Duration::from_secs(10 * 60);
 const MOD_TTL: Duration = Duration::from_secs(60 * 60);
 const DEFAULT_PAGE_SIZE: u32 = 20;
 const MAX_PAGE_SIZE: u32 = 50;
+const BATCH_LIMIT: usize = 100;
 const HASH_ALGO_SHA1: u32 = 1;
 
 #[derive(Clone)]
@@ -72,6 +73,12 @@ struct FilesByIdRequest<'a> {
     file_ids: &'a [u64],
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ModsByIdRequest<'a> {
+    mod_ids: &'a [u64],
+}
+
 impl CurseForge {
     pub fn new(http: Arc<HttpClient>, api_key: impl Into<String>) -> Self {
         Self::with_base_url(http, api_key, API_BASE)
@@ -95,6 +102,10 @@ impl CurseForge {
     pub fn with_hosts(mut self, hosts: HostAllowlist) -> Self {
         self.hosts = hosts;
         self
+    }
+
+    pub fn hosts(&self) -> HostAllowlist {
+        self.hosts
     }
 
     pub async fn search(
@@ -165,17 +176,30 @@ impl CurseForge {
         loader: LoaderKind,
         mc: &McVersion,
     ) -> Result<Vec<ModFile>, ProviderError> {
+        let Some(loader_type) = mod_loader_type(loader) else {
+            return Ok(Vec::new());
+        };
+        self.fetch_mod_files(mod_id, Some((loader_type, mc))).await
+    }
+
+    /// Toàn bộ danh sách file của một project (dùng cho modpack không lọc theo loader).
+    pub async fn all_files(&self, mod_id: u64) -> Result<Vec<ModFile>, ProviderError> {
+        self.fetch_mod_files(mod_id, None).await
+    }
+
+    async fn fetch_mod_files(
+        &self,
+        mod_id: u64,
+        filter: Option<(u32, &McVersion)>,
+    ) -> Result<Vec<ModFile>, ProviderError> {
         let key = self.require_key()?;
         if mod_id == 0 {
             return Err(not_found("0"));
         }
-        let Some(loader_type) = mod_loader_type(loader) else {
-            return Ok(Vec::new());
-        };
         let mod_info = self.mod_info(mod_id).await?;
         let id_str = mod_id.to_string();
         let mut url = crate::endpoint(SOURCE, &self.base_url, &["mods", &id_str, "files"])?;
-        {
+        if let Some((loader_type, mc)) = filter {
             let mut qp = url.query_pairs_mut();
             qp.append_pair("gameVersion", mc.as_str());
             qp.append_pair("modLoaderType", &loader_type.to_string());
@@ -198,17 +222,44 @@ impl CurseForge {
             return Ok(Vec::new());
         }
         let url = crate::endpoint(SOURCE, &self.base_url, &["mods", "files"])?;
-        let req = FilesByIdRequest { file_ids: ids };
-        let env: DataEnvelope<Vec<RawFile>> = self
-            .http
-            .post_json_with_headers(url.as_str(), &req, &[(API_KEY_HEADER, key)])
-            .await
-            .map_err(|e| map_net_err(e, ""))?;
-        Ok(env
-            .data
-            .into_iter()
-            .filter_map(|raw| keep_valid(&self.hosts, raw, None))
-            .collect())
+        let mut out = Vec::with_capacity(ids.len());
+        for chunk in ids.chunks(BATCH_LIMIT) {
+            let req = FilesByIdRequest { file_ids: chunk };
+            let env: DataEnvelope<Vec<RawFile>> = self
+                .http
+                .post_json_with_headers(url.as_str(), &req, &[(API_KEY_HEADER, key)])
+                .await
+                .map_err(|e| map_net_err(e, ""))?;
+            out.extend(
+                env.data
+                    .into_iter()
+                    .filter_map(|raw| keep_valid(&self.hosts, raw, None)),
+            );
+        }
+        Ok(out)
+    }
+
+    /// Lấy hàng loạt thông tin project (từng lô để biết `allowModDistribution` và `slug`).
+    pub async fn mods_by_id(&self, ids: &[u64]) -> Result<Vec<ModInfo>, ProviderError> {
+        let key = self.require_key()?;
+        let mut unique: Vec<u64> = ids.iter().copied().filter(|&id| id != 0).collect();
+        unique.sort_unstable();
+        unique.dedup();
+        if unique.is_empty() {
+            return Ok(Vec::new());
+        }
+        let url = crate::endpoint(SOURCE, &self.base_url, &["mods"])?;
+        let mut out = Vec::with_capacity(unique.len());
+        for chunk in unique.chunks(BATCH_LIMIT) {
+            let req = ModsByIdRequest { mod_ids: chunk };
+            let env: DataEnvelope<Vec<ModInfo>> = self
+                .http
+                .post_json_with_headers(url.as_str(), &req, &[(API_KEY_HEADER, key)])
+                .await
+                .map_err(|e| map_net_err(e, ""))?;
+            out.extend(env.data);
+        }
+        Ok(out)
     }
 
     fn require_key(&self) -> Result<&str, ProviderError> {
