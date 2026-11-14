@@ -1328,6 +1328,7 @@ dependencies = [
  "tokio-util",
  "tower",
  "tracing",
+ "tracing-subscriber",
  "utoipa",
 ]
 
@@ -1355,6 +1356,7 @@ dependencies = [
  "tokio",
  "toml",
  "tracing",
+ "tracing-subscriber",
  "ulid",
  "zip",
 ]

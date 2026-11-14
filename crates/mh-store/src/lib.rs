@@ -13,6 +13,7 @@
 mod content;
 mod error;
 mod players;
+mod secrets;
 mod world;
 
 use std::fs;
@@ -33,6 +34,7 @@ pub use error::StoreError;
 pub use players::{
     BanEntry, JsonExtra, OpEntry, PlayerFiles, PlayerRef, UserCacheEntry, WhitelistEntry,
 };
+pub use secrets::{SECRETS_FILE, Secrets};
 pub use world::world_spawn;
 
 const INSTANCE_FILE: &str = "instance.toml";

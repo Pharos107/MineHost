@@ -5,6 +5,7 @@ mod auth;
 mod backups;
 mod content;
 mod content_dto;
+mod curseforge;
 mod dto;
 mod error;
 mod files;
@@ -73,6 +74,9 @@ pub use lan::{LanState, lan_listener};
         auth::delete_password,
         access::get_access,
         access::put_access,
+        curseforge::get_curseforge,
+        curseforge::put_curseforge,
+        curseforge::delete_curseforge,
         files::list,
         files::delete_file,
         files::read,
@@ -101,6 +105,9 @@ pub use lan::{LanState, lan_listener};
         auth::ClearPasswordBody,
         access::AccessDto,
         access::AccessBody,
+        curseforge::CurseforgeKeySourceDto,
+        curseforge::CurseforgeSettingsDto,
+        curseforge::CurseforgeKeyBody,
         system::Health,
         system::SystemDto,
         system::DiskDto,
@@ -315,6 +322,12 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
             "/settings/access",
             get(access::get_access).put(access::put_access),
         )
+        .route(
+            "/settings/curseforge",
+            get(curseforge::get_curseforge)
+                .put(curseforge::put_curseforge)
+                .delete(curseforge::delete_curseforge),
+        )
         .route("/ws", get(ws::upgrade))
         .fallback(error::api_not_found)
         .layer(axum::middleware::from_fn_with_state(
@@ -330,3 +343,5 @@ mod access_tests;
 mod auth_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_curseforge;
