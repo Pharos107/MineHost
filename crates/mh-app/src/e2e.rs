@@ -20,6 +20,7 @@ mod content;
 mod curseforge;
 mod loader;
 mod pack;
+mod stored_zip;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
