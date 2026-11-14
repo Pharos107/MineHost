@@ -8,6 +8,7 @@
 pub mod backup_schedule;
 pub mod console;
 pub mod crash;
+pub mod curseforge;
 pub mod error;
 pub mod ids;
 pub mod instance;
@@ -24,6 +25,7 @@ pub mod version;
 pub use backup_schedule::{BackupSchedule, check_keep, next_run};
 pub use console::{ConsoleLine, ConsoleStream};
 pub use crash::{CrashHint, diagnose};
+pub use curseforge::CurseforgeKey;
 pub use error::{ErrorCode, InvalidValue};
 pub use ids::{GamePort, ServerId, ServerName};
 pub use instance::{InstanceError, InstanceSpec};
