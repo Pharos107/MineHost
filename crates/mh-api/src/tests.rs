@@ -486,3 +486,6 @@ mod tests_backups;
 
 #[path = "tests_players.rs"]
 mod tests_players;
+
+#[path = "tests_content.rs"]
+mod tests_content;

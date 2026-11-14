@@ -116,6 +116,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/content/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/{source}/projects/{pid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["project"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/{source}/projects/{pid}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["versions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -354,6 +402,71 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put?: never;
+        post: operations["install"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/content/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["plan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/content/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description multipart/form-data, một file .jar tối đa 512 MiB. */
+        post: operations["upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/content/{file}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["remove"];
+        options?: never;
+        head?: never;
+        patch: operations["toggle"];
         trace?: never;
     };
     "/api/v1/servers/{id}/eula": {
@@ -637,6 +750,33 @@ export interface components {
             stream: components["schemas"]["StreamDto"];
             text: string;
         };
+        ContentInstallBody: {
+            project_id: string;
+            source: string;
+            version_id?: string | null;
+        };
+        /** @enum {string} */
+        ContentKindDto: "mods" | "plugins";
+        ContentPlanDto: {
+            items: components["schemas"]["PlannedContentDto"][];
+            kind: components["schemas"]["ContentKindDto"];
+        };
+        /** @enum {string} */
+        ContentSourceDto: "modrinth" | "curseforge" | "modpack" | "upload";
+        ContentVersionDto: {
+            /** @description RFC 3339. */
+            date_published: string;
+            file_name?: string | null;
+            /** Format: int64 */
+            file_size?: number | null;
+            game_versions: string[];
+            id: string;
+            loaders: string[];
+            name: string;
+            project_id: string;
+            version_number: string;
+            version_type: string;
+        };
         CrashDto: {
             /** Format: int32 */
             exit_code?: number | null;
@@ -726,6 +866,22 @@ export interface components {
             /** @description Đường dẫn tuyệt đối tới thư mục server trên máy chạy MineHost. */
             path: string;
         };
+        InstalledContentDto: {
+            client_only: boolean;
+            enabled: boolean;
+            file_name: string;
+            from_modpack: boolean;
+            icon_url?: string | null;
+            /** @description `true` khi người dùng chép trực tiếp vào thư mục mà chưa có bản ghi nguồn. */
+            manual: boolean;
+            name: string;
+            project_id?: string | null;
+            /** Format: int64 */
+            size: number;
+            source?: components["schemas"]["ContentSourceDto"] | null;
+            version?: string | null;
+            version_id?: string | null;
+        };
         JobDto: {
             error?: components["schemas"]["ErrorBody"] | null;
             /** @description RFC 3339, lúc Job sang trạng thái kết thúc. Không có khi còn chạy. */
@@ -802,6 +958,28 @@ export interface components {
             restart_at?: string[] | null;
             restart_on_crash?: boolean | null;
         };
+        PendingContentDto: {
+            /** Format: int64 */
+            file_id: number;
+            file_name: string;
+            page_url: string;
+            path: string;
+            /** Format: int64 */
+            project_id: number;
+            sha1: string;
+        };
+        PlannedContentDto: {
+            client_only: boolean;
+            file_name: string;
+            /** Format: int64 */
+            file_size: number;
+            is_dependency: boolean;
+            project_id: string;
+            project_name: string;
+            replaces_existing: boolean;
+            version_id: string;
+            version_number: string;
+        };
         PlayerActionBody: {
             action: components["schemas"]["PlayerActionKind"];
             /** @description `kick`, `ban`: tối đa 200 ký tự, có thể bỏ trống. */
@@ -852,6 +1030,30 @@ export interface components {
             /** Format: int32 */
             step_index: number;
         };
+        ProjectDto: {
+            body: string;
+            client_side: components["schemas"]["SideSupportDto"];
+            description: string;
+            /** Format: int64 */
+            downloads: number;
+            game_versions: string[];
+            icon_url?: string | null;
+            kind: string;
+            links: components["schemas"]["ProjectLinksDto"];
+            loaders: string[];
+            project_id: string;
+            server_side: components["schemas"]["SideSupportDto"];
+            slug: string;
+            source: string;
+            title: string;
+        };
+        ProjectLinksDto: {
+            discord?: string | null;
+            issues?: string | null;
+            page: string;
+            source?: string | null;
+            wiki?: string | null;
+        };
         PropertiesDto: {
             /** @description Theo thứ tự trong file. */
             properties: components["schemas"]["PropertyDto"][];
@@ -868,6 +1070,34 @@ export interface components {
             /** @description Phải là `true`: người dùng đã tích "Tôi hiểu" trong hộp thoại. */
             confirm: boolean;
         };
+        SearchHitDto: {
+            categories: string[];
+            description: string;
+            /** Format: int64 */
+            downloads: number;
+            game_versions: string[];
+            icon_url?: string | null;
+            kind: string;
+            project_id: string;
+            server_side: components["schemas"]["SideSupportDto"];
+            slug: string;
+            source: string;
+            title: string;
+        };
+        SearchResultDto: {
+            hits: components["schemas"]["SearchHitDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            page_size: number;
+            /** Format: int32 */
+            total: number;
+        };
+        ServerContentDto: {
+            files: components["schemas"]["InstalledContentDto"][];
+            kind: components["schemas"]["ContentKindDto"];
+            pending: components["schemas"]["PendingContentDto"][];
+        };
         /** @description Một server trong danh sách. Server đang cài hoặc bị hỏng chỉ có một phần thông tin. */
         ServerDto: {
             autostart?: boolean | null;
@@ -876,6 +1106,7 @@ export interface components {
             broken?: Record<string, never> | null;
             /** Format: int32 */
             build?: number | null;
+            content_kind?: components["schemas"]["ContentKindDto"] | null;
             crash?: components["schemas"]["CrashDto"] | null;
             /** @description RFC 3339. */
             created_at?: string | null;
@@ -927,6 +1158,8 @@ export interface components {
             logged_in: boolean;
             password_set: boolean;
         };
+        /** @enum {string} */
+        SideSupportDto: "required" | "optional" | "unsupported" | "unknown";
         /** @enum {string} */
         StateDto: "installing" | "stopped" | "starting" | "running" | "stopping" | "crashed" | "broken";
         /** @enum {string} */
@@ -981,6 +1214,9 @@ export interface components {
             /** Format: int64 */
             size: number;
             text: string;
+        };
+        ToggleContentBody: {
+            enabled: boolean;
         };
         TrashedDto: {
             /** @description Thư mục trong thùng rác, để người dùng tự lấy lại. */
@@ -1263,6 +1499,192 @@ export interface operations {
                 };
             };
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    search: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nguồn tìm kiếm; mặc định `modrinth`. */
+                source: string | null;
+                /** @description `mod`, `plugin` hoặc `modpack`. */
+                kind: string | null;
+                q: string | null;
+                /** @description Lọc theo loader, Minecraft của server và `server_side != unsupported`. */
+                server_id: string | null;
+                /** @description Trang (từ 1), mỗi trang 20 kết quả. */
+                page: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResultDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    project: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source: string;
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    versions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source: string;
+                pid: string;
+                server_id: string | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentVersionDto"][];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1926,6 +2348,313 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerContentDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    install: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentInstallBody"];
+            };
+        };
+        responses: {
+            /** @description Job cài mod/plugin đã chạy */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStartedDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    plan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentInstallBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentPlanDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstalledContentDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                file: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã chuyển vào thùng rác */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    toggle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                file: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToggleContentBody"];
+            };
+        };
+        responses: {
+            /** @description Đã cập nhật trạng thái */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
             };
             409: {
                 headers: {

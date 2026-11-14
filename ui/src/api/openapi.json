@@ -325,6 +325,302 @@
         }
       }
     },
+    "/api/v1/content/search": {
+      "get": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "search",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "description": "Nguồn tìm kiếm; mặc định `modrinth`.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "description": "`mod`, `plugin` hoặc `modpack`.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "server_id",
+            "in": "path",
+            "description": "Lọc theo loader, Minecraft của server và `server_side != unsupported`.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "path",
+            "description": "Trang (từ 1), mỗi trang 20 kết quả.",
+            "required": true,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/content/{source}/projects/{pid}": {
+      "get": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "project",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/content/{source}/projects/{pid}/versions": {
+      "get": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "versions",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContentVersionDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health": {
       "get": {
         "tags": [
@@ -1205,6 +1501,401 @@
         "responses": {
           "204": {
             "description": "Đã gửi lệnh"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/content": {
+      "get": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerContentDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "install",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentInstallBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Job cài mod/plugin đã chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStartedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/content/plan": {
+      "post": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "plan",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentInstallBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentPlanDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/content/upload": {
+      "post": {
+        "tags": [
+          "content"
+        ],
+        "description": "multipart/form-data, một file .jar tối đa 512 MiB.",
+        "operationId": "upload",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstalledContentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/content/{file}": {
+      "delete": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "remove",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "file",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Đã chuyển vào thùng rác"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "toggle",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "file",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleContentBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Đã cập nhật trạng thái"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           },
           "409": {
             "content": {
@@ -2235,6 +2926,121 @@
           }
         }
       },
+      "ContentInstallBody": {
+        "type": "object",
+        "required": [
+          "source",
+          "project_id"
+        ],
+        "properties": {
+          "project_id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "version_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ContentKindDto": {
+        "type": "string",
+        "enum": [
+          "mods",
+          "plugins"
+        ]
+      },
+      "ContentPlanDto": {
+        "type": "object",
+        "required": [
+          "kind",
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlannedContentDto"
+            }
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ContentKindDto"
+          }
+        }
+      },
+      "ContentSourceDto": {
+        "type": "string",
+        "enum": [
+          "modrinth",
+          "curseforge",
+          "modpack",
+          "upload"
+        ]
+      },
+      "ContentVersionDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "name",
+          "version_number",
+          "version_type",
+          "game_versions",
+          "loaders",
+          "date_published"
+        ],
+        "properties": {
+          "date_published": {
+            "type": "string",
+            "description": "RFC 3339."
+          },
+          "file_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "file_size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "game_versions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "loaders": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "version_number": {
+            "type": "string"
+          },
+          "version_type": {
+            "type": "string"
+          }
+        }
+      },
       "CrashDto": {
         "type": "object",
         "required": [
@@ -2553,6 +3359,78 @@
           }
         }
       },
+      "InstalledContentDto": {
+        "type": "object",
+        "required": [
+          "file_name",
+          "name",
+          "enabled",
+          "size",
+          "manual",
+          "client_only",
+          "from_modpack"
+        ],
+        "properties": {
+          "client_only": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "from_modpack": {
+            "type": "boolean"
+          },
+          "icon_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "manual": {
+            "type": "boolean",
+            "description": "`true` khi người dùng chép trực tiếp vào thư mục mà chưa có bản ghi nguồn."
+          },
+          "name": {
+            "type": "string"
+          },
+          "project_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "source": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ContentSourceDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "JobDto": {
         "type": "object",
         "required": [
@@ -2832,6 +3710,86 @@
           }
         }
       },
+      "PendingContentDto": {
+        "type": "object",
+        "required": [
+          "path",
+          "file_name",
+          "project_id",
+          "file_id",
+          "sha1",
+          "page_url"
+        ],
+        "properties": {
+          "file_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "page_url": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "project_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "sha1": {
+            "type": "string"
+          }
+        }
+      },
+      "PlannedContentDto": {
+        "type": "object",
+        "required": [
+          "project_id",
+          "project_name",
+          "version_id",
+          "version_number",
+          "file_name",
+          "file_size",
+          "client_only",
+          "replaces_existing",
+          "is_dependency"
+        ],
+        "properties": {
+          "client_only": {
+            "type": "boolean"
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "file_size": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "is_dependency": {
+            "type": "boolean"
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "project_name": {
+            "type": "string"
+          },
+          "replaces_existing": {
+            "type": "boolean"
+          },
+          "version_id": {
+            "type": "string"
+          },
+          "version_number": {
+            "type": "string"
+          }
+        }
+      },
       "PlayerActionBody": {
         "type": "object",
         "required": [
@@ -3019,6 +3977,114 @@
           }
         }
       },
+      "ProjectDto": {
+        "type": "object",
+        "required": [
+          "source",
+          "project_id",
+          "slug",
+          "kind",
+          "title",
+          "description",
+          "body",
+          "downloads",
+          "loaders",
+          "game_versions",
+          "client_side",
+          "server_side",
+          "links"
+        ],
+        "properties": {
+          "body": {
+            "type": "string"
+          },
+          "client_side": {
+            "$ref": "#/components/schemas/SideSupportDto"
+          },
+          "description": {
+            "type": "string"
+          },
+          "downloads": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "game_versions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "icon_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "type": "string"
+          },
+          "links": {
+            "$ref": "#/components/schemas/ProjectLinksDto"
+          },
+          "loaders": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "server_side": {
+            "$ref": "#/components/schemas/SideSupportDto"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "ProjectLinksDto": {
+        "type": "object",
+        "required": [
+          "page"
+        ],
+        "properties": {
+          "discord": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "issues": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "page": {
+            "type": "string"
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "wiki": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "PropertiesDto": {
         "type": "object",
         "required": [
@@ -3076,6 +4142,124 @@
           }
         }
       },
+      "SearchHitDto": {
+        "type": "object",
+        "required": [
+          "source",
+          "project_id",
+          "slug",
+          "kind",
+          "title",
+          "description",
+          "downloads",
+          "categories",
+          "game_versions",
+          "server_side"
+        ],
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "downloads": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "game_versions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "icon_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "type": "string"
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "server_side": {
+            "$ref": "#/components/schemas/SideSupportDto"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "SearchResultDto": {
+        "type": "object",
+        "required": [
+          "hits",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchHitDto"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "ServerContentDto": {
+        "type": "object",
+        "required": [
+          "kind",
+          "files",
+          "pending"
+        ],
+        "properties": {
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InstalledContentDto"
+            }
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ContentKindDto"
+          },
+          "pending": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingContentDto"
+            }
+          }
+        }
+      },
       "ServerDto": {
         "type": "object",
         "description": "Một server trong danh sách. Server đang cài hoặc bị hỏng chỉ có một phần thông tin.",
@@ -3118,6 +4302,17 @@
             ],
             "format": "int32",
             "minimum": 0
+          },
+          "content_kind": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ContentKindDto",
+                "description": "`mods`, `plugins`, hoặc `null` với Vanilla / server hỏng."
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "crash": {
             "oneOf": [
@@ -3303,6 +4498,15 @@
           }
         }
       },
+      "SideSupportDto": {
+        "type": "string",
+        "enum": [
+          "required",
+          "optional",
+          "unsupported",
+          "unknown"
+        ]
+      },
       "StateDto": {
         "type": "string",
         "enum": [
@@ -3458,6 +4662,17 @@
           },
           "text": {
             "type": "string"
+          }
+        }
+      },
+      "ToggleContentBody": {
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
           }
         }
       },

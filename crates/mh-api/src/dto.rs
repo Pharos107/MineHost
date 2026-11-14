@@ -2,7 +2,7 @@
 
 use mh_app::jobs::{JobProgress, JobSnapshot, JobState};
 use mh_app::{CatalogVersion, MetricSample, ServerMetrics, ServerView};
-use mh_core::{ConsoleLine, ConsoleStream, ServerState};
+use mh_core::{ConsoleLine, ConsoleStream, ContentKind, ServerState};
 use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use utoipa::ToSchema;
@@ -49,6 +49,22 @@ pub struct CrashDto {
     pub last_lines: Vec<String>,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ContentKindDto {
+    Mods,
+    Plugins,
+}
+
+impl From<ContentKind> for ContentKindDto {
+    fn from(kind: ContentKind) -> Self {
+        match kind {
+            ContentKind::Mods => Self::Mods,
+            ContentKind::Plugins => Self::Plugins,
+        }
+    }
+}
+
 /// Một server trong danh sách. Server đang cài hoặc bị hỏng chỉ có một phần thông tin.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ServerDto {
@@ -56,6 +72,8 @@ pub struct ServerDto {
     pub state: StateDto,
     pub name: Option<String>,
     pub loader: Option<String>,
+    /// `mods`, `plugins`, hoặc `null` với Vanilla / server hỏng.
+    pub content_kind: Option<ContentKindDto>,
     pub minecraft: Option<String>,
     pub build: Option<u32>,
     /// Bản mod loader; chỉ có với Fabric, Quilt, Forge, NeoForge.
@@ -95,6 +113,7 @@ impl From<ServerView> for ServerDto {
             state: view.state.into(),
             name: None,
             loader: None,
+            content_kind: None,
             minecraft: None,
             build: None,
             loader_version: None,
@@ -119,6 +138,7 @@ impl From<ServerView> for ServerDto {
         if let Some(info) = view.installing {
             dto.name = Some(info.name.to_string());
             dto.loader = Some(info.loader.to_string());
+            dto.content_kind = info.loader.content_kind().map(Into::into);
             dto.minecraft = Some(info.minecraft.to_string());
             dto.port = Some(info.port.get());
             dto.job_id = info.job_id;
@@ -126,6 +146,7 @@ impl From<ServerView> for ServerDto {
         if let Some(spec) = view.spec {
             dto.name = Some(spec.name.to_string());
             dto.loader = Some(spec.game.loader.to_string());
+            dto.content_kind = spec.game.loader.content_kind().map(Into::into);
             dto.minecraft = Some(spec.game.minecraft.to_string());
             dto.build = spec.game.build;
             dto.loader_version = spec.game.loader_version.as_ref().map(ToString::to_string);

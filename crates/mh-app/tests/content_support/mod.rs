@@ -11,8 +11,8 @@ use std::sync::atomic::AtomicUsize;
 use std::time::Duration;
 
 use mh_app::content::{
-    ContentCatalog, Dependency, DependencyType, FileHashes, ModrinthVersion, Project, SideSupport,
-    VersionFile,
+    ContentCatalog, Dependency, DependencyType, FileHashes, ModrinthVersion, Project,
+    SearchFilters, SearchResult, SideSupport, VersionFile,
 };
 use mh_app::sources::{BoxFut, CatalogVersion, ProgressFn, ResolvedServer};
 use mh_app::{App, AppDeps, AppError, JavaSource, JobState, MetricsConfig, ServerCatalog};
@@ -176,6 +176,21 @@ impl FakeModCatalog {
 }
 
 impl ContentCatalog for FakeModCatalog {
+    fn search<'a>(
+        &'a self,
+        _query: &'a str,
+        filters: &'a SearchFilters,
+    ) -> BoxFut<'a, Result<SearchResult, AppError>> {
+        Box::pin(async move {
+            Ok(SearchResult {
+                hits: Vec::new(),
+                offset: filters.offset,
+                limit: filters.limit,
+                total_hits: 0,
+            })
+        })
+    }
+
     fn project<'a>(&'a self, id_or_slug: &'a str) -> BoxFut<'a, Result<Project, AppError>> {
         Box::pin(async move {
             self.projects

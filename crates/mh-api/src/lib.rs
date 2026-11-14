@@ -3,6 +3,8 @@
 mod access;
 mod auth;
 mod backups;
+mod content;
+mod content_dto;
 mod dto;
 mod error;
 mod files;
@@ -78,6 +80,15 @@ pub use lan::{LanState, lan_listener};
         files::upload,
         files::mkdir,
         files::rename_file,
+        content::search,
+        content::project,
+        content::versions,
+        content::list,
+        content::plan,
+        content::install,
+        content::upload,
+        content::toggle,
+        content::remove,
     ),
     components(schemas(
         error::ErrorBody,
@@ -92,6 +103,7 @@ pub use lan::{LanState, lan_listener};
         system::SystemDto,
         system::DiskDto,
         dto::ServerDto,
+        dto::ContentKindDto,
         dto::StateDto,
         dto::MemoryDto,
         dto::CrashDto,
@@ -135,6 +147,20 @@ pub use lan::{LanState, lan_listener};
         files::EtagDto,
         files::MkdirBody,
         files::RenameBody,
+        content::SideSupportDto,
+        content::SearchHitDto,
+        content::SearchResultDto,
+        content::ProjectLinksDto,
+        content::ProjectDto,
+        content::ContentVersionDto,
+        content::ContentSourceDto,
+        content::InstalledContentDto,
+        content::PendingContentDto,
+        content::ServerContentDto,
+        content::ContentInstallBody,
+        content::PlannedContentDto,
+        content::ContentPlanDto,
+        content::ToggleContentBody,
     ))
 )]
 struct ApiDoc;
@@ -248,6 +274,32 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         .route(
             "/catalog/{loader}/{minecraft}/loader-versions",
             get(jobs::loader_versions),
+        )
+        .route("/content/search", get(content::search))
+        .route("/content/{source}/projects/{pid}", get(content::project))
+        .route(
+            "/content/{source}/projects/{pid}/versions",
+            get(content::versions),
+        )
+        .route(
+            "/servers/{id}/content",
+            get(content::list).post(content::install),
+        )
+        .route("/servers/{id}/content/plan", post(content::plan))
+        .route(
+            "/servers/{id}/content/upload",
+            post(content::upload)
+                .layer(DefaultBodyLimit::max(files::upload_body_limit(
+                    upload_max_bytes,
+                )))
+                .layer(axum::middleware::from_fn_with_state(
+                    upload_max_bytes,
+                    files::inject_upload_limit,
+                )),
+        )
+        .route(
+            "/servers/{id}/content/{file}",
+            axum::routing::patch(content::toggle).delete(content::remove),
         )
         .route("/app/shutdown", post(jobs::shutdown))
         .route(
