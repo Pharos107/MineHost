@@ -18,6 +18,7 @@ const stoppedFabric: Server = {
   restart_pending: false,
   slow_start: false,
   ignored_jvm_args: false,
+  preflight_blocking: false,
 };
 
 const sampleFiles: InstalledContent[] = [
