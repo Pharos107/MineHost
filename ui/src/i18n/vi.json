@@ -754,7 +754,6 @@
     "searchTitle": "Tìm modpack",
     "searchPlaceholder": "Tìm modpack trên Modrinth…",
     "curseforgeNoKey": "CurseForge chưa sẵn sàng vì chưa cấu hình API key trong Cài đặt.",
-    "curseforgeSoon": "Modpack CurseForge sắp có.",
     "noResults": "Không tìm thấy modpack nào",
     "noResultsHint": "Thử từ khóa khác hoặc tải lên file .mrpack có sẵn ở trên.",
     "version": "Phiên bản modpack",

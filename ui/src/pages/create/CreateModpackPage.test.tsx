@@ -138,9 +138,15 @@ describe("CreateModpackPage", () => {
       }),
     );
     renderModpackPage();
-    const cfRadios = await screen.findAllByRole("radio", { name: "CurseForge" });
-    expect(cfRadios[1]).toHaveProperty("disabled", true);
-    expect(await screen.findByText("Modpack CurseForge sắp có.")).toBeTruthy();
+    // Có key: chọn được CurseForge và tìm kiếm gửi đúng nguồn.
+    const cfWithKey = (await screen.findAllByRole("radio", { name: "CurseForge" }))[1];
+    if (!cfWithKey) throw new Error("thiếu nút CurseForge");
+    await vi.waitFor(() => expect(cfWithKey).toHaveProperty("disabled", false));
+    await userEvent.click(cfWithKey);
+    await vi.waitFor(() => {
+      const calls = (fetch as unknown as { mock: { calls: [string][] } }).mock.calls.map(([u]) => u);
+      expect(calls.some((u) => u.startsWith("/api/v1/content/search") && u.includes("source=curseforge"))).toBe(true);
+    });
   });
 
   it("tìm pack, xem thêm, chọn bản, gửi đúng body và hiện tóm tắt sau khi cài xong", async () => {
