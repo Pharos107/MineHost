@@ -284,8 +284,8 @@ fn move_file_into_place(source: &Path, dest: &Path) -> Result<(), AppError> {
 }
 
 fn is_cross_device(err: &io::Error) -> bool {
-    // Windows ERROR_NOT_SAME_DEVICE và POSIX EXDEV đều mang mã 17.
-    err.kind() == io::ErrorKind::CrossesDevices || err.raw_os_error() == Some(17)
+    // Thư viện chuẩn ánh xạ cả `EXDEV` (Linux) lẫn `ERROR_NOT_SAME_DEVICE` (Windows) về kiểu này.
+    err.kind() == io::ErrorKind::CrossesDevices
 }
 
 fn copy_and_remove(source: &Path, dest: &Path) -> Result<(), AppError> {
