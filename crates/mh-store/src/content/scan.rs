@@ -93,6 +93,11 @@ pub fn inspect_jar_file(path: &Path) -> Result<JarInfo, StoreError> {
     })
 }
 
+/// Tính SHA-1 dạng hex chữ thường cho dữ liệu trong RAM.
+pub fn sha1_hex(bytes: &[u8]) -> String {
+    to_hex(&Sha1::digest(bytes))
+}
+
 struct ScannedJar {
     file_name: String,
     path: String,

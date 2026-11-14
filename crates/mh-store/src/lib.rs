@@ -27,7 +27,7 @@ use time::macros::format_description;
 pub use content::{
     CONTENT_FILE, CONTENT_SCHEMA, ContentFile, ContentManifest, ContentMetaError, ContentRecord,
     ContentScanner, ContentSource, JarInfo, PendingContent, ProjectId, inspect_jar_file,
-    scan_content,
+    scan_content, sha1_hex,
 };
 pub use error::StoreError;
 pub use players::{

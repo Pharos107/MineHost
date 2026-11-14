@@ -27,6 +27,7 @@ pub type JobId = u64;
 #[serde(rename_all = "snake_case")]
 pub enum JobKind {
     CreateServer,
+    CreateModpack,
     ImportServer,
     Backup,
     Restore,
@@ -68,6 +69,15 @@ pub enum JobStep {
     DownloadContent {
         name: String,
     },
+    DownloadModpack {
+        name: String,
+    },
+    DownloadPackFile {
+        name: String,
+        index: usize,
+        total: usize,
+    },
+    ApplyOverrides,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -99,6 +109,9 @@ pub struct JobSnapshot {
     pub server_id: Option<ServerId>,
     pub state: JobState,
     pub progress: Option<JobProgress>,
+    /// Kết quả tóm tắt tùy theo loại Job (ví dụ thống kê modpack đã cài).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub result: Option<serde_json::Value>,
     /// Lúc `spawn`, UTC.
     pub started_at: OffsetDateTime,
     /// Lúc sang trạng thái kết thúc. `None` khi Job còn chạy.
@@ -156,6 +169,11 @@ impl JobContext {
         if changed {
             self.publish();
         }
+    }
+
+    pub fn set_result(&self, value: serde_json::Value) {
+        self.status.send_modify(|s| s.result = Some(value));
+        self.publish();
     }
 
     fn publish(&self) {
@@ -290,6 +308,7 @@ fn running_snapshot(id: JobId, kind: JobKind, server_id: Option<ServerId>) -> Jo
         server_id,
         state: JobState::Running,
         progress: None,
+        result: None,
         started_at: OffsetDateTime::now_utc(),
         finished_at: None,
     }

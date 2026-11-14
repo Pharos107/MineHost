@@ -19,7 +19,10 @@ pub use error::ProviderError;
 pub use fabric::Fabric;
 pub use forge::Forge;
 pub use loader::{InstallPlan, InstallerRun, LoaderRelease, PlannedFile};
-pub use modpack::{BlockedPackFile, PackFile, PackLimits, PackPlan, read_mrpack, read_mrpack_with};
+pub use modpack::{
+    BlockedPackFile, PackFile, PackLimits, PackPlan, extract_mrpack_overrides,
+    extract_mrpack_overrides_with, plan_mrpack, plan_mrpack_with, read_mrpack, read_mrpack_with,
+};
 pub use modrinth::Modrinth;
 pub use mojang::{Mojang, Profile, Release, ServerJar, VersionDetail};
 pub use neoforge::NeoForge;

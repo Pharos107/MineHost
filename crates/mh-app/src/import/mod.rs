@@ -59,8 +59,8 @@ impl App {
             id,
             Installing {
                 name: req.name.clone(),
-                loader: plan.loader,
-                minecraft: plan.minecraft.clone(),
+                loader: Some(plan.loader),
+                minecraft: Some(plan.minecraft.clone()),
                 port: plan.port,
                 job_id: None,
             },

@@ -14,7 +14,7 @@ pub use mh_store::{ContentFile, ContentSource, PendingContent, ProjectId};
 
 pub use catalog::{
     ContentCatalog, Dependency, DependencyType, FileHashes, Modrinth, ModrinthCatalog,
-    ModrinthVersion, NoContentCatalog, Project, ProjectLinks, ProjectType, SearchFilters,
+    ModrinthVersion, NoContentCatalog, PackFile, Project, ProjectLinks, ProjectType, SearchFilters,
     SearchHit, SearchIndex, SearchResult, SideSupport, VersionFile, modrinth_loaders,
 };
 pub use plan::{ContentInstallPlan, PlannedContent};
