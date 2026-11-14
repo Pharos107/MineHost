@@ -4,6 +4,7 @@ mod catalog;
 mod install;
 mod manage;
 mod plan;
+mod preflight;
 
 use std::sync::Arc;
 
@@ -17,6 +18,10 @@ pub use catalog::{
     SearchHit, SearchIndex, SearchResult, SideSupport, VersionFile, modrinth_loaders,
 };
 pub use plan::{ContentInstallPlan, PlannedContent};
+pub(crate) use preflight::preflight_block_error;
+pub use preflight::{
+    ClientOnlyMod, MissingDependency, PreflightReport, VersionMismatch, WrongLoaderMod,
+};
 
 use crate::files::blocking;
 use crate::{App, AppError, lock};

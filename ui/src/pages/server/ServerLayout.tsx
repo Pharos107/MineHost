@@ -8,6 +8,7 @@ import { SERVERS_KEY } from "../../api/live";
 import { Button, CopyField, Notice, PageHeader, Spinner, Stack, StatusBadge } from "../../ui";
 import { serverName } from "../ServerListPage";
 import { DeleteServer } from "./DeleteServer";
+import { PreflightBanner } from "./PreflightBanner";
 import { ServerActions } from "./ServerActions";
 import { ServerNotices } from "./ServerNotices";
 
@@ -60,6 +61,7 @@ function ServerView({ server }: { server: Server }) {
         actions={ready && <ServerActions server={server} />}
       />
       <ServerNotices server={server} />
+      <PreflightBanner server={server} />
       {ready && <Outlet context={server} />}
       {server.state === "broken" && <DeleteServer server={server} />}
     </Stack>

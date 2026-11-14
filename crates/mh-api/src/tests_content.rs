@@ -2,6 +2,8 @@
 
 #[path = "tests_content_catalog.rs"]
 mod catalog;
+#[path = "tests_preflight.rs"]
+mod preflight;
 #[path = "tests_content_support.rs"]
 mod support;
 

@@ -16,6 +16,7 @@ const server: Server = {
   restart_pending: false,
   slow_start: false,
   ignored_jvm_args: false,
+  preflight_blocking: false,
 };
 
 describe("cài đặt server", () => {

@@ -4,7 +4,7 @@ import type { Server } from "../api/client";
 import { matchesState, playAddress } from "./serverFilters";
 
 function server(patch: Partial<Server>): Server {
-  return { id: "01JB", name: "Survival", state: "stopped", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, ...patch };
+  return { id: "01JB", name: "Survival", state: "stopped", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, preflight_blocking: false, ...patch };
 }
 
 describe("lọc server theo trạng thái", () => {

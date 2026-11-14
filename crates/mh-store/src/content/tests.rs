@@ -2,7 +2,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
-use mh_core::{ContentKind, ErrorCode, ModSide};
+use mh_core::{ContentKind, ErrorCode, ModMetaFormat, ModSide};
 use sha1::{Digest, Sha1};
 use time::macros::datetime;
 use zip::write::SimpleFileOptions;
@@ -272,17 +272,29 @@ fn respects_metadata_priority_and_size_limit() {
     let files = scan_content(root, ContentKind::Mods).unwrap();
     let both = files.iter().find(|f| f.file_name == "both.jar").unwrap();
     assert_eq!(both.meta.as_ref().unwrap().id, "from-quilt");
+    assert_eq!(
+        both.formats,
+        vec![ModMetaFormat::QuiltModJson, ModMetaFormat::FabricModJson]
+    );
     let forge_both = files
         .iter()
         .find(|f| f.file_name == "forge-both.jar")
         .unwrap();
     assert_eq!(forge_both.meta.as_ref().unwrap().id, "new-neoforge");
+    assert_eq!(
+        forge_both.formats,
+        vec![ModMetaFormat::NeoForgeModsToml, ModMetaFormat::ModsToml]
+    );
 
     let huge = files.iter().find(|f| f.file_name == "huge.jar").unwrap();
     assert_eq!(huge.meta, Err(ContentMetaError::MetadataTooLarge));
 
     let plugin_files = scan_content(root, ContentKind::Plugins).unwrap();
     assert_eq!(plugin_files[0].meta.as_ref().unwrap().id, "PaperName");
+    assert_eq!(
+        plugin_files[0].formats,
+        vec![ModMetaFormat::PaperPluginYml, ModMetaFormat::PluginYml]
+    );
 }
 
 #[test]

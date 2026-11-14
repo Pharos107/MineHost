@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Server } from "../../api/client";
 import { GameSettingsTab } from "./GameSettingsTab";
 
-const server: Server = { id: "01JB", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false };
+const server: Server = { id: "01JB", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, preflight_blocking: false };
 const properties = [
   { key: "server-port", value: "25565" },
   { key: "difficulty", value: "easy" },

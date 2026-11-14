@@ -88,6 +88,7 @@ impl App {
         let total = u8::try_from(plan.items.len().saturating_add(3)).unwrap_or(u8::MAX);
         ctx.step(JobStep::PrepareFiles, total, total);
         self.commit_staged(id, plan.kind, staged).await?;
+        self.refresh_preflight(id).await;
         self.notify_changed(id);
         Ok(())
     }
