@@ -696,6 +696,10 @@
     "unsupported": "This server type does not support mods or plugins.",
     "add": "Add",
     "addDialog": {
+      "sourceLabel": "Source",
+      "sourceModrinth": "Modrinth",
+      "sourceCurseforge": "CurseForge",
+      "curseforgeUnavailableHint": "CurseForge is unavailable because no API key is configured in Settings.",
       "loadMore": "Load more",
       "noResults": "No results found",
       "noResultsHint": "Try a different search matching this server's loader and Minecraft version.",
@@ -705,6 +709,9 @@
       "dependencies_one": "Required dependency ({{count}})",
       "dependencies_other": "Required dependencies ({{count}})",
       "replacesExisting": "Replaces existing",
+      "manualDownload": "Manual download",
+      "manualDownloadHint": "Some files cannot be downloaded automatically via the API. MineHost will install the remaining files and save the manual downloads for you to fetch from their download pages.",
+      "openDownloadPage": "Open download page",
       "clientOnlyHint": "Client-only mods are installed disabled; you can turn them on yourself if needed.",
       "back": "Back",
       "install": "Install",
@@ -719,6 +726,7 @@
       "openPage": "Open mod page",
       "addTitle": "Add mod",
       "searchPlaceholder": "Search mods on Modrinth…",
+      "searchPlaceholderCurseforge": "Search mods on CurseForge…",
       "mainItem": "Selected mod"
     },
     "plugins": {
@@ -729,6 +737,7 @@
       "openPage": "Open plugin page",
       "addTitle": "Add plugin",
       "searchPlaceholder": "Search plugins on Modrinth…",
+      "searchPlaceholderCurseforge": "Search plugins on CurseForge…",
       "mainItem": "Selected plugin"
     }
   }

@@ -69,7 +69,10 @@ export function hitVersion(gameVersions: string[], serverMinecraft?: string | nu
   return gameVersions[0];
 }
 
-export function versionOptionLabel(version: Pick<ContentVersion, "version_number" | "version_type">): string {
-  if (version.version_type === "release") return version.version_number;
-  return `${version.version_number} (${version.version_type})`;
+export function versionOptionLabel(
+  version: Pick<ContentVersion, "version_number" | "version_type"> & { name?: string },
+): string {
+  const num = version.version_number ?? version.name ?? "";
+  if (version.version_type === "release") return num;
+  return `${num} (${version.version_type})`;
 }

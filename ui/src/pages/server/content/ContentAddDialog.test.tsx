@@ -77,6 +77,8 @@ const lithiumVersions: ContentVersion[] = [
     date_published: "2024-12-12T00:00:00Z",
     file_name: "lithium-0.14.2.jar",
     file_size: 650_000,
+    manual_download: false,
+    download_page_url: null,
   },
   {
     id: "lithium-0.14.0",
@@ -89,6 +91,8 @@ const lithiumVersions: ContentVersion[] = [
     date_published: "2024-12-05T00:00:00Z",
     file_name: "lithium-0.14.0.jar",
     file_size: 620_000,
+    manual_download: false,
+    download_page_url: null,
   },
 ];
 
@@ -105,6 +109,8 @@ const samplePlan: ContentPlan = {
       client_only: true,
       replaces_existing: true,
       is_dependency: false,
+      manual_download: false,
+      download_page_url: null,
     },
     {
       project_id: "fabric-api",
@@ -116,6 +122,8 @@ const samplePlan: ContentPlan = {
       client_only: false,
       replaces_existing: false,
       is_dependency: true,
+      manual_download: false,
+      download_page_url: null,
     },
   ],
 };
@@ -167,6 +175,9 @@ describe("ContentAddDialog", () => {
   it("tìm mod, xem thêm trang, chọn bản, xem dependency và cài đặt tới khi xong", async () => {
     let installed: InstalledContent[] = [];
     const fetchMock = mockFetch((url, init) => {
+      if (url === "/api/v1/settings/curseforge") {
+        return Response.json({ available: false, source: "none" });
+      }
       if (url === "/api/v1/servers/A/content" && (!init?.method || init.method === "GET")) {
         return Response.json({ kind: "mods", files: installed, pending: [] });
       }
@@ -334,5 +345,113 @@ describe("ContentAddDialog", () => {
     installError = "SERVER_BUSY";
     await user.click(within(dialog).getByRole("button", { name: "Cài" }));
     expect(await within(dialog).findByText(/Server đang bận/)).toBeTruthy();
+  });
+
+  it("làm mờ nút CurseForge kèm lý do khi chưa cấu hình API key", async () => {
+    mockFetch((url) => {
+      if (url === "/api/v1/servers/A/content") return Response.json({ kind: "mods", files: [], pending: [] });
+      if (url === "/api/v1/settings/curseforge") return Response.json({ available: false, source: "none" });
+      if (url.startsWith("/api/v1/content/search")) return Response.json({ hits: [lithiumHit], page: 1, page_size: 20, total: 1 });
+      return undefined;
+    });
+
+    renderPage(stoppedFabric, "/servers/A/content?add=1");
+    const dialog = await screen.findByRole("dialog");
+
+    expect(await within(dialog).findByText(/chưa cấu hình API key/)).toBeTruthy();
+    const cfRadio = within(dialog).getByRole("radio", { name: "CurseForge" });
+    expect(cfRadio).toHaveProperty("disabled", true);
+    expect(within(dialog).getByRole("radio", { name: "Modrinth" })).toHaveProperty("disabled", false);
+  });
+
+  it("chuyển sang CurseForge khi có key, hiện file tải tay kèm link và gửi đúng source", async () => {
+    const cfHit: SearchHit = {
+      source: "curseforge",
+      project_id: "999001",
+      slug: "restricted-mod",
+      kind: "mod",
+      title: "Restricted Mod",
+      description: "Mod chặn phân phối qua API.",
+      icon_url: null,
+      downloads: 42_000,
+      categories: [],
+      game_versions: [],
+      server_side: null,
+    };
+    const cfVersion: ContentVersion = {
+      id: "5800999",
+      project_id: "999001",
+      name: "1.0.0",
+      version_number: null,
+      version_type: "release",
+      game_versions: ["1.21.4"],
+      loaders: ["fabric"],
+      date_published: "2024-12-12T00:00:00Z",
+      file_name: "cf-restricted-1.0.0.jar",
+      file_size: 4096,
+      manual_download: true,
+      download_page_url: "https://www.curseforge.com/minecraft/mc-mods/restricted-mod/download/5800999",
+    };
+
+    const fetchMock = mockFetch((url, init) => {
+      if (url === "/api/v1/servers/A/content" && (!init?.method || init.method === "GET")) {
+        return Response.json({ kind: "mods", files: [], pending: [] });
+      }
+      if (url === "/api/v1/settings/curseforge") return Response.json({ available: true, source: "user" });
+      if (url.startsWith("/api/v1/content/search")) {
+        const source = new URL(url, "http://localhost").searchParams.get("source");
+        return Response.json({ hits: source === "curseforge" ? [cfHit] : [lithiumHit], page: 1, page_size: 20, total: 1 });
+      }
+      if (url === "/api/v1/content/curseforge/projects/999001/versions?server_id=A") return Response.json([cfVersion]);
+      if (url === "/api/v1/servers/A/content/plan" && init?.method === "POST") {
+        return Response.json({
+          kind: "mods",
+          items: [
+            {
+              project_id: "999001",
+              project_name: "Restricted Mod",
+              version_id: "5800999",
+              version_number: "1.0.0",
+              file_name: "cf-restricted-1.0.0.jar",
+              file_size: 4096,
+              client_only: false,
+              replaces_existing: false,
+              is_dependency: false,
+              manual_download: true,
+              download_page_url: "https://www.curseforge.com/minecraft/mc-mods/restricted-mod/download/5800999",
+            },
+          ],
+        } satisfies ContentPlan);
+      }
+      if (url === "/api/v1/servers/A/content" && init?.method === "POST") return Response.json({ job_id: 12 }, { status: 202 });
+      if (url === "/api/v1/jobs/12") return Response.json(runningJob);
+      return undefined;
+    });
+
+    const user = userEvent.setup();
+    renderPage(stoppedFabric, "/servers/A/content?add=1");
+    const dialog = await screen.findByRole("dialog");
+
+    const cfRadio = within(dialog).getByRole("radio", { name: "CurseForge" });
+    await waitFor(() => expect(cfRadio).toHaveProperty("disabled", false));
+    await user.click(cfRadio);
+
+    expect(within(dialog).getByRole("searchbox", { name: "Tìm mod trên CurseForge…" })).toBeTruthy();
+    await user.click(await within(dialog).findByRole("button", { name: /Restricted Mod/ }));
+
+    expect(await within(dialog).findByText("Cần tải tay")).toBeTruthy();
+    expect(within(dialog).getByText(/chặn tải tự động qua API/)).toBeTruthy();
+    const link = within(dialog).getByRole("link", { name: "Mở trang tải" });
+    expect(link.getAttribute("href")).toBe("https://www.curseforge.com/minecraft/mc-mods/restricted-mod/download/5800999");
+
+    await user.click(within(dialog).getByRole("button", { name: "Cài" }));
+    await waitFor(() => {
+      const post = fetchMock.mock.calls.find(([u, i]) => u === "/api/v1/servers/A/content" && i?.method === "POST");
+      expect(JSON.parse(String(post?.[1]?.body))).toEqual({
+        source: "curseforge",
+        project_id: "999001",
+        version_id: "5800999",
+      });
+    });
   });
 });

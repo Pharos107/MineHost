@@ -12,6 +12,7 @@ import {
   type SearchHit,
 } from "../../../api/content";
 import { useJob } from "../../../api/live";
+import { CURSEFORGE_KEY, settingsApi } from "../../../api/settings";
 import { formatBytes } from "../../../format";
 import { jobPercent, jobStepLabel } from "../../../jobs";
 import {
@@ -28,11 +29,14 @@ import {
   ProgressBar,
   ProjectCard,
   SearchInput,
+  SegmentedControl,
   Select,
   Spinner,
   Stack,
 } from "../../../ui";
 import { hitLoaders, hitVersion, searchKindFor, versionOptionLabel } from "./content";
+
+type CatalogSource = "modrinth" | "curseforge";
 
 interface ContentAddDialogProps {
   open: boolean;
@@ -42,14 +46,16 @@ interface ContentAddDialogProps {
   onInstalled: () => void;
 }
 
-/** Hộp thoại tìm kiếm, xem dependency và cài mod/plugin từ Modrinth (spec P3, mục 6.3). */
+/** Hộp thoại tìm kiếm, xem dependency và cài mod/plugin từ Modrinth hoặc CurseForge (spec P3, mục 6.3). */
 export function ContentAddDialog({ open, server, kind, onClose, onInstalled }: ContentAddDialogProps) {
   const { t } = useTranslation();
+  const [source, setSource] = useState<CatalogSource>("modrinth");
   const [selected, setSelected] = useState<SearchHit | null>(null);
   const [jobId, setJobId] = useState<number | null>(null);
   const [installing, setInstalling] = useState(false);
 
   function close() {
+    setSource("modrinth");
     setSelected(null);
     setJobId(null);
     setInstalling(false);
@@ -70,7 +76,7 @@ export function ContentAddDialog({ open, server, kind, onClose, onInstalled }: C
         />
       ) : selected !== null ? (
         <PlanStep
-          key={selected.project_id}
+          key={`${selected.source}:${selected.project_id}`}
           server={server}
           kind={kind}
           project={selected}
@@ -82,7 +88,14 @@ export function ContentAddDialog({ open, server, kind, onClose, onInstalled }: C
           }}
         />
       ) : (
-        <SearchStep server={server} kind={kind} onSelect={setSelected} onClose={close} />
+        <SearchStep
+          server={server}
+          kind={kind}
+          source={source}
+          onSourceChange={setSource}
+          onSelect={setSelected}
+          onClose={close}
+        />
       )}
     </Dialog>
   );
@@ -91,11 +104,13 @@ export function ContentAddDialog({ open, server, kind, onClose, onInstalled }: C
 interface SearchStepProps {
   server: Server;
   kind: ContentKind;
+  source: CatalogSource;
+  onSourceChange: (source: CatalogSource) => void;
   onSelect: (hit: SearchHit) => void;
   onClose: () => void;
 }
 
-function SearchStep({ server, kind, onSelect, onClose }: SearchStepProps) {
+function SearchStep({ server, kind, source, onSourceChange, onSelect, onClose }: SearchStepProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [submitted, setSubmitted] = useState("");
@@ -107,10 +122,24 @@ function SearchStep({ server, kind, onSelect, onClose }: SearchStepProps) {
   }, [query]);
 
   const searchKind = searchKindFor(kind);
+  const showSourceSwitch = kind === "mods";
+
+  const cfSettings = useQuery({
+    queryKey: CURSEFORGE_KEY,
+    queryFn: settingsApi.curseforge,
+    enabled: showSourceSwitch,
+  });
+  const cfAvailable = Boolean(cfSettings.data?.available);
+  const activeSource: CatalogSource = showSourceSwitch ? source : "modrinth";
+  const searchLabel =
+    activeSource === "curseforge"
+      ? t(`content.${kind}.searchPlaceholderCurseforge`)
+      : t(`content.${kind}.searchPlaceholder`);
+
   const search = useInfiniteQuery({
-    queryKey: ["content-search", server.id, searchKind, submitted],
+    queryKey: ["content-search", server.id, activeSource, searchKind, submitted],
     queryFn: ({ pageParam }) =>
-      contentApi.search({ source: "modrinth", kind: searchKind, q: submitted, serverId: server.id, page: pageParam }),
+      contentApi.search({ source: activeSource, kind: searchKind, q: submitted, serverId: server.id, page: pageParam }),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page * last.page_size < last.total ? last.page + 1 : undefined),
   });
@@ -120,13 +149,37 @@ function SearchStep({ server, kind, onSelect, onClose }: SearchStepProps) {
   return (
     <>
       <DialogBody>
+        {showSourceSwitch && (
+          <>
+            <SegmentedControl
+              label={t("content.addDialog.sourceLabel")}
+              value={activeSource}
+              onChange={(next) => {
+                if (next === "curseforge" && !cfAvailable) return;
+                onSourceChange(next);
+              }}
+              options={[
+                { value: "modrinth", label: t("content.addDialog.sourceModrinth") },
+                {
+                  value: "curseforge",
+                  label: t("content.addDialog.sourceCurseforge"),
+                  disabled: !cfAvailable,
+                  title: cfAvailable ? undefined : t("content.addDialog.curseforgeUnavailableHint"),
+                },
+              ]}
+            />
+            {!cfSettings.isPending && !cfAvailable && (
+              <Notice tone="info">{t("content.addDialog.curseforgeUnavailableHint")}</Notice>
+            )}
+          </>
+        )}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             setSubmitted(query.trim());
           }}
         >
-          <SearchInput value={query} onChange={setQuery} label={t(`content.${kind}.searchPlaceholder`)} autoFocus />
+          <SearchInput value={query} onChange={setQuery} label={searchLabel} autoFocus />
         </form>
         {search.isPending ? (
           <Spinner label={t("ui.loading")} />
@@ -147,7 +200,7 @@ function SearchStep({ server, kind, onSelect, onClose }: SearchStepProps) {
           <Stack gap={2}>
             {hits.map((hit) => (
               <ProjectCard
-                key={hit.project_id}
+                key={`${hit.source}:${hit.project_id}`}
                 title={hit.title}
                 description={hit.description}
                 iconUrl={hit.icon_url}
@@ -190,16 +243,16 @@ function PlanStep({ server, kind, project, onBack, onPendingChange, onStarted }:
   const [versionId, setVersionId] = useState<string | null>(null);
 
   const versions = useQuery({
-    queryKey: ["content-versions", "modrinth", project.project_id, server.id],
-    queryFn: () => contentApi.versions("modrinth", project.project_id, server.id),
+    queryKey: ["content-versions", project.source, project.project_id, server.id],
+    queryFn: () => contentApi.versions(project.source, project.project_id, server.id),
   });
   const activeVersionId = versionId ?? versions.data?.[0]?.id ?? null;
 
   const plan = useQuery({
-    queryKey: ["content-plan", server.id, "modrinth", project.project_id, activeVersionId],
+    queryKey: ["content-plan", server.id, project.source, project.project_id, activeVersionId],
     queryFn: () =>
       contentApi.plan(server.id, {
-        source: "modrinth",
+        source: project.source,
         project_id: project.project_id,
         version_id: activeVersionId,
       }),
@@ -209,7 +262,7 @@ function PlanStep({ server, kind, project, onBack, onPendingChange, onStarted }:
   const install = useMutation({
     mutationFn: () =>
       contentApi.install(server.id, {
-        source: "modrinth",
+        source: project.source,
         project_id: project.project_id,
         version_id: activeVersionId,
       }),
@@ -275,6 +328,7 @@ function PlanDetails({ plan, kind }: { plan: ContentPlan; kind: ContentKind }) {
   const mainItems = plan.items.filter((item) => !item.is_dependency);
   const depItems = plan.items.filter((item) => item.is_dependency);
   const hasClientOnly = plan.items.some((item) => item.client_only);
+  const hasManualDownload = plan.items.some((item) => item.manual_download);
 
   const renderItem = (item: PlannedContent) => (
     <Stack direction="row" gap={2} align="center" wrap key={item.project_id}>
@@ -282,7 +336,13 @@ function PlanDetails({ plan, kind }: { plan: ContentPlan; kind: ContentKind }) {
       <Badge>{item.version_number}</Badge>
       <span>{formatBytes(item.file_size, i18n.language)}</span>
       {item.client_only && <Badge tone="warning">{t("content.clientOnly")}</Badge>}
+      {item.manual_download && <Badge tone="warning">{t("content.addDialog.manualDownload")}</Badge>}
       {item.replaces_existing && <Badge tone="info">{t("content.addDialog.replacesExisting")}</Badge>}
+      {item.manual_download && item.download_page_url && (
+        <a href={item.download_page_url} target="_blank" rel="noreferrer">
+          {t("content.addDialog.openDownloadPage")}
+        </a>
+      )}
     </Stack>
   );
 
@@ -299,6 +359,7 @@ function PlanDetails({ plan, kind }: { plan: ContentPlan; kind: ContentKind }) {
         />
       </Card>
       {hasClientOnly && <Notice tone="info">{t("content.addDialog.clientOnlyHint")}</Notice>}
+      {hasManualDownload && <Notice tone="warning">{t("content.addDialog.manualDownloadHint")}</Notice>}
     </Stack>
   );
 }

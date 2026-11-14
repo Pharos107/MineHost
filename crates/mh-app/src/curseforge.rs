@@ -66,8 +66,7 @@ impl App {
         Ok(fallback_status(self.curseforge_builtin.is_some()))
     }
 
-    /// Key hiệu lực cho provider CurseForge (PR-27): key người dùng nếu có, không thì key nhúng.
-    #[allow(dead_code)]
+    /// Key hiệu lực cho provider CurseForge: key người dùng nếu có, không thì key nhúng.
     pub(crate) fn effective_curseforge_key(&self) -> Result<Option<CurseforgeKey>, AppError> {
         let user_key = self.load_user_curseforge_key()?;
         Ok(user_key.or_else(|| self.curseforge_builtin.clone()))

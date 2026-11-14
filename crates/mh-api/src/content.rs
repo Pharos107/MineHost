@@ -11,7 +11,7 @@ use axum::extract::{Extension, FromRequestParts, Multipart, Path as AxumPath, Qu
 use axum::http::StatusCode;
 use axum::http::request::Parts;
 use mh_app::App;
-use mh_app::content::{CONTENT_PAGE_SIZE, ProjectType, SearchResult};
+use mh_app::content::{CONTENT_PAGE_SIZE, CatalogSource, ContentSearchResult, ProjectType};
 use mh_core::{ErrorCode, ServerId};
 use tokio::io::AsyncWriteExt;
 
@@ -61,7 +61,7 @@ pub async fn search(
     State(app): State<Arc<App>>,
     Query(query): Query<SearchQuery>,
 ) -> ApiResult<Json<SearchResultDto>> {
-    check_source(query.source.as_deref().unwrap_or(SOURCE_MODRINTH))?;
+    let source = parse_source(query.source.as_deref().unwrap_or(SOURCE_MODRINTH))?;
     let kind = query.kind.as_deref().map(parse_kind).transpose()?;
     let server_id = query
         .server_id
@@ -72,8 +72,14 @@ pub async fn search(
     if page == 0 {
         return Err(ApiError::invalid("page"));
     }
-    let result: SearchResult = app
-        .search_content(query.q.as_deref().unwrap_or(""), kind, server_id, page)
+    let result: ContentSearchResult = app
+        .search_content(
+            source,
+            query.q.as_deref().unwrap_or(""),
+            kind,
+            server_id,
+            page,
+        )
         .await?;
     Ok(Json(SearchResultDto {
         hits: result.hits.into_iter().map(Into::into).collect(),
@@ -96,12 +102,12 @@ pub async fn project(
     State(app): State<Arc<App>>,
     AxumPath((source, pid)): AxumPath<(String, String)>,
 ) -> ApiResult<Json<ProjectDto>> {
-    check_source(&source)?;
+    let source = parse_source(&source)?;
     let pid = pid.trim();
     if pid.is_empty() {
         return Err(ApiError::invalid("pid"));
     }
-    Ok(Json(app.content_project(pid).await?.into()))
+    Ok(Json(app.content_project(source, pid).await?.into()))
 }
 
 #[utoipa::path(get, path = "/api/v1/content/{source}/projects/{pid}/versions", tag = "content",
@@ -119,7 +125,7 @@ pub async fn versions(
     AxumPath((source, pid)): AxumPath<(String, String)>,
     Query(query): Query<VersionsQuery>,
 ) -> ApiResult<Json<Vec<ContentVersionDto>>> {
-    check_source(&source)?;
+    let source = parse_source(&source)?;
     let pid = pid.trim();
     if pid.is_empty() {
         return Err(ApiError::invalid("pid"));
@@ -129,7 +135,7 @@ pub async fn versions(
         .as_deref()
         .ok_or_else(|| ApiError::invalid("server_id"))?;
     let server_id = ServerId::parse(raw_id).map_err(|_| ApiError::invalid("server_id"))?;
-    let list = app.content_versions(pid, server_id).await?;
+    let list = app.content_versions(source, pid, server_id).await?;
     Ok(Json(list.into_iter().map(Into::into).collect()))
 }
 
@@ -162,9 +168,9 @@ pub async fn plan(
     IdPath(id): IdPath,
     ApiJson(body): ApiJson<ContentInstallBody>,
 ) -> ApiResult<Json<ContentPlanDto>> {
-    let (project_id, version_id) = validate_install_body(&body)?;
+    let (source, project_id, version_id) = validate_install_body(&body)?;
     let plan = app
-        .plan_content_install(id, project_id, version_id.as_deref())
+        .plan_content_install(id, source, project_id, version_id.as_deref())
         .await?;
     Ok(Json(plan.into()))
 }
@@ -183,8 +189,8 @@ pub async fn install(
     IdPath(id): IdPath,
     ApiJson(body): ApiJson<ContentInstallBody>,
 ) -> ApiResult<(StatusCode, Json<JobStartedDto>)> {
-    let (project_id, version_id) = validate_install_body(&body)?;
-    let job_id = app.install_content(id, project_id, version_id)?;
+    let (source, project_id, version_id) = validate_install_body(&body)?;
+    let job_id = app.install_content(id, source, project_id, version_id)?;
     Ok((StatusCode::ACCEPTED, Json(JobStartedDto { job_id })))
 }
 
@@ -262,15 +268,8 @@ pub async fn remove(
     Ok(StatusCode::NO_CONTENT)
 }
 
-fn check_source(source: &str) -> ApiResult<()> {
-    match source {
-        SOURCE_MODRINTH => Ok(()),
-        "curseforge" => Err(ApiError::new(
-            StatusCode::SERVICE_UNAVAILABLE,
-            ErrorCode::CurseforgeUnavailable,
-        )),
-        _ => Err(ApiError::invalid("source")),
-    }
+fn parse_source(source: &str) -> ApiResult<CatalogSource> {
+    CatalogSource::parse(source).ok_or_else(|| ApiError::invalid("source"))
 }
 
 fn parse_kind(raw: &str) -> ApiResult<ProjectType> {
@@ -282,8 +281,10 @@ fn parse_kind(raw: &str) -> ApiResult<ProjectType> {
     }
 }
 
-fn validate_install_body(body: &ContentInstallBody) -> ApiResult<(&str, Option<String>)> {
-    check_source(&body.source)?;
+fn validate_install_body(
+    body: &ContentInstallBody,
+) -> ApiResult<(CatalogSource, &str, Option<String>)> {
+    let source = parse_source(&body.source)?;
     let project_id = body.project_id.trim();
     if project_id.is_empty() {
         return Err(ApiError::invalid("project_id"));
@@ -298,7 +299,7 @@ fn validate_install_body(body: &ContentInstallBody) -> ApiResult<(&str, Option<S
         }
         None => None,
     };
-    Ok((project_id, version_id))
+    Ok((source, project_id, version_id))
 }
 
 fn valid_jar_field_name(raw: Option<&str>) -> ApiResult<String> {

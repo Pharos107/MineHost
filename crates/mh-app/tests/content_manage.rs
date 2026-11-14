@@ -9,7 +9,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use content_support::{FakeModCatalog, WAIT, build_jar, finish_job, make_server, test_app};
-use mh_app::content::{ContentCatalog, SideSupport};
+use mh_app::content::{CatalogSource, ContentCatalog, SideSupport};
 use mh_app::{App, AppEvent, CreateRequest, JobState};
 use mh_core::{ErrorCode, LoaderKind, McVersion, ServerId, ServerName, ServerState};
 use mh_store::{ContentManifest, ContentSource, PendingContent, ServerStore};
@@ -30,7 +30,9 @@ fn find_trashed_file(trash_dir: &Path, id: ServerId, rel: &str) -> Option<PathBu
 }
 
 async fn install_from_fake(app: &Arc<App>, id: ServerId, project: &str) {
-    let job = app.install_content(id, project, None).unwrap();
+    let job = app
+        .install_content(id, CatalogSource::Modrinth, project, None)
+        .unwrap();
     assert_eq!(finish_job(app, job).await.state, JobState::Succeeded);
 }
 

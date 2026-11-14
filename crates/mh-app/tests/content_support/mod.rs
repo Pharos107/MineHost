@@ -11,8 +11,8 @@ use std::sync::atomic::AtomicUsize;
 use std::time::Duration;
 
 use mh_app::content::{
-    ContentCatalog, Dependency, DependencyType, FileHashes, ModrinthVersion, Project,
-    SearchFilters, SearchResult, SideSupport, VersionFile,
+    CatalogSource, ContentCatalog, ContentDependency, ContentFileInfo, ContentProject,
+    ContentSearchResult, ContentVersion, DependencyType, SearchFilters, SideSupport,
 };
 use mh_app::sources::{BoxFut, CatalogVersion, ProgressFn, ResolvedServer};
 use mh_app::{App, AppDeps, AppError, JavaSource, JobState, MetricsConfig, ServerCatalog};
@@ -101,9 +101,9 @@ impl JavaSource for FakeJava {
 
 #[derive(Default)]
 pub struct FakeModCatalog {
-    pub projects: HashMap<String, Project>,
-    pub versions: HashMap<String, ModrinthVersion>,
-    pub by_project: HashMap<String, Vec<ModrinthVersion>>,
+    pub projects: HashMap<String, ContentProject>,
+    pub versions: HashMap<String, ContentVersion>,
+    pub by_project: HashMap<String, Vec<ContentVersion>>,
     pub files: HashMap<String, Vec<u8>>,
     pub fail_urls: HashSet<String>,
     pub downloads: AtomicUsize,
@@ -111,19 +111,21 @@ pub struct FakeModCatalog {
 
 impl FakeModCatalog {
     pub fn add_project(&mut self, id: &str, slug: &str, title: &str, server_side: SideSupport) {
-        let p = Project {
+        let p = ContentProject {
+            source: CatalogSource::Modrinth,
             id: id.to_owned(),
             slug: slug.to_owned(),
             project_type: "mod".to_owned(),
             title: title.to_owned(),
             description: String::new(),
-            body: String::new(),
+            body: Some(String::new()),
             icon_url: None,
             downloads: 1,
             loaders: vec!["fabric".to_owned()],
             game_versions: vec!["1.21.4".to_owned()],
-            client_side: SideSupport::Required,
-            server_side,
+            client_side: Some(SideSupport::Required),
+            server_side: Some(server_side),
+            page_url: format!("https://modrinth.com/mod/{slug}"),
             links: ProjectLinks {
                 source_url: None,
                 issues_url: None,
@@ -141,28 +143,27 @@ impl FakeModCatalog {
         project_id: &str,
         filename: &str,
         loaders: &[&str],
-        deps: Vec<Dependency>,
+        deps: Vec<ContentDependency>,
         bytes: Vec<u8>,
     ) {
         let url = format!("https://cdn.modrinth.com/{id}/{filename}");
-        let ver = ModrinthVersion {
+        let ver = ContentVersion {
             id: id.to_owned(),
             project_id: project_id.to_owned(),
             name: id.to_owned(),
-            version_number: id.to_owned(),
+            version_number: Some(id.to_owned()),
             version_type: "release".to_owned(),
             game_versions: vec!["1.21.4".to_owned()],
             loaders: loaders.iter().map(|s| (*s).to_owned()).collect(),
             date_published: datetime!(2026-11-01 00:00 UTC),
-            files: vec![VersionFile {
-                url: url.clone(),
+            files: vec![ContentFileInfo {
+                url: Some(url.clone()),
                 filename: filename.to_owned(),
                 size: bytes.len() as u64,
-                hashes: FileHashes {
-                    sha1: "0".repeat(40),
-                    sha512: sha512_hex(&bytes),
-                },
-                primary: true,
+                sha1: Some("0".repeat(40)),
+                sha512: Some(sha512_hex(&bytes)),
+                manual_download: false,
+                download_page_url: None,
             }],
             dependencies: deps,
         };
@@ -180,9 +181,9 @@ impl ContentCatalog for FakeModCatalog {
         &'a self,
         _query: &'a str,
         filters: &'a SearchFilters,
-    ) -> BoxFut<'a, Result<SearchResult, AppError>> {
+    ) -> BoxFut<'a, Result<ContentSearchResult, AppError>> {
         Box::pin(async move {
-            Ok(SearchResult {
+            Ok(ContentSearchResult {
                 hits: Vec::new(),
                 offset: filters.offset,
                 limit: filters.limit,
@@ -191,7 +192,7 @@ impl ContentCatalog for FakeModCatalog {
         })
     }
 
-    fn project<'a>(&'a self, id_or_slug: &'a str) -> BoxFut<'a, Result<Project, AppError>> {
+    fn project<'a>(&'a self, id_or_slug: &'a str) -> BoxFut<'a, Result<ContentProject, AppError>> {
         Box::pin(async move {
             self.projects
                 .get(id_or_slug)
@@ -205,7 +206,7 @@ impl ContentCatalog for FakeModCatalog {
         project: &'a str,
         loader: LoaderKind,
         mc: &'a McVersion,
-    ) -> BoxFut<'a, Result<Vec<ModrinthVersion>, AppError>> {
+    ) -> BoxFut<'a, Result<Vec<ContentVersion>, AppError>> {
         Box::pin(async move {
             let expected = modrinth_loaders(loader);
             let list = self
@@ -225,7 +226,7 @@ impl ContentCatalog for FakeModCatalog {
         })
     }
 
-    fn version<'a>(&'a self, id: &'a str) -> BoxFut<'a, Result<ModrinthVersion, AppError>> {
+    fn version<'a>(&'a self, id: &'a str) -> BoxFut<'a, Result<ContentVersion, AppError>> {
         Box::pin(async move {
             self.versions
                 .get(id)
@@ -236,7 +237,7 @@ impl ContentCatalog for FakeModCatalog {
 
     fn download<'a>(
         &'a self,
-        file: &'a VersionFile,
+        file: &'a ContentFileInfo,
         dest: &'a Path,
         progress: ProgressFn<'a>,
         _: &'a CancellationToken,
@@ -244,13 +245,17 @@ impl ContentCatalog for FakeModCatalog {
         Box::pin(async move {
             self.downloads
                 .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            if self.fail_urls.contains(&file.url) {
+            let url = file
+                .url
+                .as_deref()
+                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, &file.filename))?;
+            if self.fail_urls.contains(url) {
                 return Err(AppError::new(ErrorCode::DownloadFailed, "lỗi tải giả lập"));
             }
             let bytes = self
                 .files
-                .get(&file.url)
-                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, &file.url))?;
+                .get(url)
+                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, url))?;
             std::fs::write(dest, bytes).unwrap();
             progress(bytes.len() as u64, Some(bytes.len() as u64));
             Ok(())
@@ -282,8 +287,8 @@ pub fn build_jar(fabric_env: Option<&str>, marker: &str) -> Vec<u8> {
     zip.finish().unwrap().into_inner()
 }
 
-pub fn dep(pid: &str, vid: Option<&str>, kind: DependencyType) -> Dependency {
-    Dependency {
+pub fn dep(pid: &str, vid: Option<&str>, kind: DependencyType) -> ContentDependency {
+    ContentDependency {
         project_id: Some(pid.to_owned()),
         version_id: vid.map(str::to_owned),
         dependency_type: kind,
