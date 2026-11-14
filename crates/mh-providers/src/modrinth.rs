@@ -9,7 +9,6 @@ use mh_core::{LoaderKind, McVersion};
 use mh_net::{Checksum, HostAllowlist, HttpClient, NetError, hosts};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
-use url::Url;
 
 use crate::ProviderError;
 
@@ -122,7 +121,7 @@ pub struct SearchHit {
     pub project_type: String,
     pub title: String,
     pub description: String,
-    #[serde(default, deserialize_with = "non_empty_opt")]
+    #[serde(default, deserialize_with = "crate::non_empty_opt")]
     pub icon_url: Option<String>,
     pub downloads: u64,
     #[serde(default)]
@@ -135,13 +134,13 @@ pub struct SearchHit {
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct ProjectLinks {
-    #[serde(default, deserialize_with = "non_empty_opt")]
+    #[serde(default, deserialize_with = "crate::non_empty_opt")]
     pub source_url: Option<String>,
-    #[serde(default, deserialize_with = "non_empty_opt")]
+    #[serde(default, deserialize_with = "crate::non_empty_opt")]
     pub issues_url: Option<String>,
-    #[serde(default, deserialize_with = "non_empty_opt")]
+    #[serde(default, deserialize_with = "crate::non_empty_opt")]
     pub wiki_url: Option<String>,
-    #[serde(default, deserialize_with = "non_empty_opt")]
+    #[serde(default, deserialize_with = "crate::non_empty_opt")]
     pub discord_url: Option<String>,
 }
 
@@ -153,7 +152,7 @@ pub struct Project {
     pub title: String,
     pub description: String,
     pub body: String,
-    #[serde(default, deserialize_with = "non_empty_opt")]
+    #[serde(default, deserialize_with = "crate::non_empty_opt")]
     pub icon_url: Option<String>,
     pub downloads: u64,
     #[serde(default)]
@@ -269,7 +268,7 @@ impl Modrinth {
         query: &str,
         filters: &SearchFilters,
     ) -> Result<SearchResult, ProviderError> {
-        let mut url = endpoint(&self.base_url, &["search"])?;
+        let mut url = crate::endpoint(SOURCE, &self.base_url, &["search"])?;
         let facets = build_facets(filters);
         let limit = if filters.limit == 0 {
             DEFAULT_LIMIT
@@ -297,7 +296,7 @@ impl Modrinth {
         if id_or_slug.trim().is_empty() {
             return Err(not_found(id_or_slug));
         }
-        let url = endpoint(&self.base_url, &["project", id_or_slug])?;
+        let url = crate::endpoint(SOURCE, &self.base_url, &["project", id_or_slug])?;
         self.get_json(url.as_str(), PROJECT_TTL, id_or_slug).await
     }
 
@@ -319,7 +318,7 @@ impl Modrinth {
             .map_err(|_| ProviderError::invalid(SOURCE, "không tạo được tham số loaders"))?;
         let mc_json = serde_json::to_string(&[mc.as_str()])
             .map_err(|_| ProviderError::invalid(SOURCE, "không tạo được tham số game_versions"))?;
-        let mut url = endpoint(&self.base_url, &["project", project, "version"])?;
+        let mut url = crate::endpoint(SOURCE, &self.base_url, &["project", project, "version"])?;
         {
             let mut qp = url.query_pairs_mut();
             qp.append_pair("loaders", &loaders_json);
@@ -340,7 +339,7 @@ impl Modrinth {
         if id.trim().is_empty() {
             return Err(not_found(id));
         }
-        let url = endpoint(&self.base_url, &["version", id])?;
+        let url = crate::endpoint(SOURCE, &self.base_url, &["version", id])?;
         let mut ver: ModrinthVersion = self.get_json(url.as_str(), Duration::ZERO, id).await?;
         validate_version(&self.hosts, &mut ver)?;
         Ok(ver)
@@ -355,7 +354,7 @@ impl Modrinth {
             return Ok(HashMap::new());
         }
         let refs: Vec<&str> = hashes.iter().map(AsRef::as_ref).collect();
-        let url = endpoint(&self.base_url, &["version_files"])?;
+        let url = crate::endpoint(SOURCE, &self.base_url, &["version_files"])?;
         let req = HashLookupRequest {
             hashes: &refs,
             algorithm: "sha1",
@@ -458,21 +457,6 @@ fn validate_version(hosts: &HostAllowlist, ver: &mut ModrinthVersion) -> Result<
     Ok(())
 }
 
-fn endpoint(base: &str, segments: &[&str]) -> Result<Url, ProviderError> {
-    let mut url =
-        Url::parse(base).map_err(|_| ProviderError::invalid(SOURCE, "base URL không hợp lệ"))?;
-    {
-        let mut path = url
-            .path_segments_mut()
-            .map_err(|()| ProviderError::invalid(SOURCE, "base URL không hỗ trợ path"))?;
-        path.pop_if_empty();
-        for seg in segments {
-            path.push(seg);
-        }
-    }
-    Ok(url)
-}
-
 fn map_net_err(err: NetError, id: &str) -> ProviderError {
     match err {
         NetError::Status { status: 404, .. } => not_found(id),
@@ -485,9 +469,4 @@ fn not_found(id: &str) -> ProviderError {
         source_name: SOURCE,
         id: id.to_owned(),
     }
-}
-
-fn non_empty_opt<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Option<String>, D::Error> {
-    let opt = Option::<String>::deserialize(d)?;
-    Ok(opt.filter(|s| !s.trim().is_empty()))
 }

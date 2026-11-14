@@ -413,3 +413,58 @@ async fn post_json_handles_429_like_get() {
     assert_eq!(err.code(), ErrorCode::UpstreamRateLimited);
     assert_eq!(err.params()["retry_after_s"], 30);
 }
+
+#[tokio::test]
+async fn json_with_headers_sends_headers_and_separates_cache() {
+    use wiremock::matchers::body_json;
+
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/auth"))
+        .and(header("x-api-key", "good-key"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("[1]"))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/auth"))
+        .and(header("x-api-key", "bad-key"))
+        .respond_with(ResponseTemplate::new(403))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(path("/auth-post"))
+        .and(header("x-api-key", "good-key"))
+        .and(body_json(serde_json::json!({ "ids": [1, 2] })))
+        .respond_with(ResponseTemplate::new(200).set_body_string("[2]"))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let tmp = tempfile::tempdir().unwrap();
+    let http = client(&tmp);
+    let get_url = format!("{}/auth", server.uri());
+
+    let ok = http
+        .get_json_with_headers::<Vec<u8>>(&get_url, TTL, &[("x-api-key", "good-key")])
+        .await
+        .unwrap();
+    assert_eq!(ok.value, [1]);
+    // Key khác không ăn nhầm cache của key đúng.
+    let err = http
+        .get_json_with_headers::<Vec<u8>>(&get_url, TTL, &[("x-api-key", "bad-key")])
+        .await
+        .unwrap_err();
+    assert_eq!(err.code(), ErrorCode::NetworkUnavailable);
+
+    let post_url = format!("{}/auth-post", server.uri());
+    let posted: Vec<u8> = http
+        .post_json_with_headers(
+            &post_url,
+            &serde_json::json!({ "ids": [1, 2] }),
+            &[("x-api-key", "good-key")],
+        )
+        .await
+        .unwrap();
+    assert_eq!(posted, [2]);
+}
