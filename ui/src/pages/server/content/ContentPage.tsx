@@ -7,6 +7,7 @@ import { useSearchParams } from "react-router";
 
 import { errorMessage } from "../../../api/client";
 import { contentApi, contentKey, type InstalledContent } from "../../../api/content";
+import { SERVERS_KEY } from "../../../api/live";
 import { Avatar, Badge, Button, ConfirmDialog, DataTable, EmptyState, Notice, Stack, Switch, type Column, type RowAction } from "../../../ui";
 import { useServer } from "../ServerLayout";
 import { contentSourceKind, isContentLocked, modrinthProjectUrl } from "./content";
@@ -25,7 +26,11 @@ export function ContentPage() {
     queryFn: () => contentApi.list(server.id),
     enabled: kind !== null,
   });
-  const refresh = useCallback(() => void queryClient.invalidateQueries({ queryKey: contentKey(server.id) }), [queryClient, server.id]);
+  // Đổi mod thì kết quả kiểm tra trước khi bật cũng đổi: làm mới cả băng cảnh báo, không chờ WebSocket.
+  const refresh = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: contentKey(server.id) });
+    void queryClient.invalidateQueries({ queryKey: [...SERVERS_KEY, server.id, "preflight"] });
+  }, [queryClient, server.id]);
 
   const [removing, setRemoving] = useState<InstalledContent | null>(null);
   const toggle = useMutation({
