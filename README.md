@@ -66,6 +66,23 @@ Bạn bè không vào được:
   rồi mở địa chỉ hiện ra, ví dụ `http://192.168.1.5:7878`, trên máy kia. Giao diện qua LAN dùng HTTP
   không mã hóa, nên chỉ bật trên mạng nhà bạn tin tưởng.
 
+## Mod, plugin và modpack
+
+- **Server có mod**: ở bước đầu của **Tạo server**, chọn **Server có mod** rồi chọn Fabric, NeoForge,
+  Forge hoặc Quilt. MineHost tải Java và installer chính thức của loader rồi cài giúp bạn.
+- **Cài mod hoặc plugin**: mở mục **Mod** (hoặc **Plugin** với Paper, Purpur) của server, bấm **Thêm**,
+  tìm trên Modrinth hoặc CurseForge. MineHost cài kèm các mod bắt buộc phải có và cho bạn xem danh sách
+  trước khi cài. Mod chỉ chạy ở máy người chơi (ví dụ shader, minimap) được tự tắt; bạn bật lại được.
+  Bạn cũng có thể **Tải lên** file `.jar` có sẵn. Mod là chương trình chạy trên máy bạn: chỉ cài từ nguồn
+  bạn tin tưởng.
+- **Từ modpack**: chọn **Từ modpack** khi tạo server, tìm pack trên Modrinth hoặc CurseForge, hoặc kéo
+  thả file `.mrpack` / `.zip`. MineHost dựng server đúng loader và phiên bản của pack.
+- **CurseForge**: bản phát hành có sẵn key của MineHost. Bản tự build từ mã nguồn thì nhập key của bạn ở
+  **Cài đặt → CurseForge**. Vài mod trên CurseForge không cho tải tự động: MineHost liệt kê chúng kèm
+  link trang tải; bạn tải về rồi kéo vào trang **Mod**, MineHost kiểm tra đúng file mới nhận.
+- **Trước khi bật**, MineHost kiểm tra mod thiếu mod phụ thuộc hoặc sai loader và báo ngay đầu trang
+  server; bấm **Vẫn bật** nếu bạn biết mình đang làm gì.
+
 ## Dữ liệu
 
 | Hệ điều hành | Thư mục |
