@@ -5,18 +5,22 @@ import { useTranslation } from "react-i18next";
 import { api, errorMessage, type Preflight, type Server } from "../../api/client";
 import { Button, Notice, Stack } from "../../ui";
 
-function hasAnyIssues(data: Preflight): boolean {
+function hasAnyIssues(data: Preflight, onContentPage: boolean): boolean {
   return (
     data.missing_deps.length > 0 ||
-    data.pending.length > 0 ||
+    (!onContentPage && data.pending.length > 0) ||
     data.version_mismatches.length > 0 ||
     data.wrong_loader.length > 0 ||
     data.client_only.length > 0
   );
 }
 
-/** Băng cảnh báo ở đầu trang server khi thiếu dependency, chờ tải CurseForge hoặc có lưu ý mod. */
-export function PreflightBanner({ server }: { server: Server }) {
+/**
+ * Băng cảnh báo ở đầu trang server khi thiếu dependency, chờ tải CurseForge hoặc có lưu ý mod.
+ * Ở trang Mod, mục chờ đã có hộp `ContentPendingBox` đầy đủ ngay bên dưới nên bỏ phần pending ở đây
+ * để tránh lặp cùng thông tin.
+ */
+export function PreflightBanner({ server, onContentPage = false }: { server: Server; onContentPage?: boolean }) {
   const { t } = useTranslation();
   const canStart = server.state === "stopped" || server.state === "crashed";
   const enabled = canStart && server.content_kind != null;
@@ -31,10 +35,11 @@ export function PreflightBanner({ server }: { server: Server }) {
     mutationFn: () => api.action(server.id, "start", { ignore_preflight: true }),
   });
 
-  if (!enabled || !query.data || !hasAnyIssues(query.data)) return null;
+  if (!enabled || !query.data || !hasAnyIssues(query.data, onContentPage)) return null;
 
   const data = query.data;
-  const blocking = data.missing_deps.length > 0 || data.pending.length > 0;
+  const pending = onContentPage ? [] : data.pending;
+  const blocking = data.missing_deps.length > 0 || pending.length > 0;
 
   return (
     <Stack gap={2}>
@@ -64,7 +69,7 @@ export function PreflightBanner({ server }: { server: Server }) {
               })}
             </li>
           ))}
-          {data.pending.map((p) => (
+          {pending.map((p) => (
             <li key={`pend:${p.path}`}>{t("preflight.pendingItem", { file: p.file_name })}</li>
           ))}
           {data.version_mismatches.map((m) => (

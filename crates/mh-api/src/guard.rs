@@ -149,7 +149,10 @@ fn is_upload_path(path: &str) -> bool {
     let Some((_, tail)) = rest.split_once('/') else {
         return false;
     };
-    matches!(tail, "files/upload" | "content/upload")
+    matches!(
+        tail,
+        "files/upload" | "content/upload" | "content/pending/upload"
+    )
 }
 
 fn mime_is(headers: &HeaderMap, expected: &str) -> bool {
@@ -172,6 +175,9 @@ mod tests {
         )));
         assert!(is_upload_path(&format!(
             "/api/v1/servers/{id}/content/upload"
+        )));
+        assert!(is_upload_path(&format!(
+            "/api/v1/servers/{id}/content/pending/upload"
         )));
         assert!(!is_upload_path(&format!(
             "/api/v1/servers/{id}/files/mkdir"

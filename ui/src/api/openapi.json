@@ -1651,6 +1651,72 @@
         }
       }
     },
+    "/api/v1/servers/{id}/content/pending/upload": {
+      "post": {
+        "tags": [
+          "content"
+        ],
+        "description": "multipart/form-data, một hoặc nhiều phần `file` (.jar ≤ 512 MiB) khớp SHA-1 các mục CurseForge đang chờ.",
+        "operationId": "upload_pending",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingUploadResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}/content/plan": {
       "post": {
         "tags": [
@@ -3975,6 +4041,7 @@
         "type": "object",
         "required": [
           "path",
+          "name",
           "file_name",
           "project_id",
           "file_id",
@@ -3990,6 +4057,9 @@
           "file_name": {
             "type": "string"
           },
+          "name": {
+            "type": "string"
+          },
           "page_url": {
             "type": "string"
           },
@@ -4003,6 +4073,56 @@
           },
           "sha1": {
             "type": "string"
+          }
+        }
+      },
+      "PendingUploadItemDto": {
+        "type": "object",
+        "description": "Kết quả tải lên từng file trong vùng kéo thả mục CurseForge đang chờ.",
+        "required": [
+          "file_name",
+          "ok"
+        ],
+        "properties": {
+          "error": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "installed": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/InstalledContentDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PendingUploadResultDto": {
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingUploadItemDto"
+            }
           }
         }
       },

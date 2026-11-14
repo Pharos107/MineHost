@@ -39,6 +39,7 @@ async fn content_list_returns_files_and_pending_and_rejects_vanilla() {
     let mut manifest = ContentManifest::default();
     manifest.pending.push(PendingContent {
         path: "mods/cf.jar".to_owned(),
+        name: None,
         project_id: 99,
         file_id: 1,
         sha1: "a".repeat(40),

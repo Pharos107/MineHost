@@ -12,7 +12,7 @@ use content_support::{FakeModCatalog, WAIT, build_jar, finish_job, make_server, 
 use mh_app::content::{CatalogSource, ContentCatalog, SideSupport};
 use mh_app::{App, AppEvent, CreateRequest, JobState};
 use mh_core::{ErrorCode, LoaderKind, McVersion, ServerId, ServerName, ServerState};
-use mh_store::{ContentManifest, ContentSource, PendingContent, ServerStore};
+use mh_store::{ContentManifest, ContentSource, PendingContent, ProjectId, ServerStore};
 
 fn server_paths(app: &App, id: ServerId) -> mh_store::ServerPaths {
     ServerStore::new(app.dirs().servers(), app.dirs().trash()).paths(id)
@@ -34,6 +34,18 @@ async fn install_from_fake(app: &Arc<App>, id: ServerId, project: &str) {
         .install_content(id, CatalogSource::Modrinth, project, None)
         .unwrap();
     assert_eq!(finish_job(app, job).await.state, JobState::Succeeded);
+}
+
+fn pending_entry(file: &str, name: &str, pid: u64, fid: u64, sha1: String) -> PendingContent {
+    PendingContent {
+        path: format!("mods/{file}"),
+        name: Some(name.to_owned()),
+        project_id: pid,
+        file_id: fid,
+        sha1,
+        page_url: format!("https://www.curseforge.com/minecraft/mc-mods/{name}/download/{fid}"),
+        extra: Default::default(),
+    }
 }
 
 #[tokio::test]
@@ -258,15 +270,13 @@ async fn upload_content_creates_record_clears_pending_and_rejects_corrupt_jar() 
     let pending_sha1 = mh_store::inspect_jar_file(&pending_src).unwrap().sha1;
 
     let mut manifest = ContentManifest::load(&paths.content_file).unwrap();
-    manifest.pending.push(PendingContent {
-        path: "mods/optifine.jar".to_owned(),
-        project_id: 238222,
-        file_id: 4912345,
-        sha1: pending_sha1.clone(),
-        page_url: "https://www.curseforge.com/minecraft/mc-mods/optifine/download/4912345"
-            .to_owned(),
-        extra: Default::default(),
-    });
+    manifest.pending.push(pending_entry(
+        "optifine.jar",
+        "OptiFine",
+        238222,
+        4912345,
+        pending_sha1.clone(),
+    ));
     manifest.save(&paths.content_file).unwrap();
 
     let resolved = app
@@ -377,6 +387,108 @@ async fn running_server_blocks_toggle_remove_and_upload_with_server_busy() {
     app.stop(created.server_id).await.unwrap();
     let deadline = tokio::time::Instant::now() + WAIT;
     while app.get(created.server_id).unwrap().state.has_process() {
+        assert!(tokio::time::Instant::now() < deadline);
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+}
+
+#[tokio::test]
+async fn upload_pending_strict_mode_checks_hash_records_curseforge_and_batches() {
+    let (tmp, app) = test_app(Arc::new(FakeModCatalog::default()));
+    let id = make_server(&app, LoaderKind::Fabric);
+    app.accept_eula(id).unwrap();
+    let paths = server_paths(&app, id);
+
+    let first_bytes = build_jar(None, "FIRST_PENDING");
+    let first_src = tmp.path().join("first-download (1).jar");
+    std::fs::write(&first_src, &first_bytes).unwrap();
+    let first_sha1 = mh_store::inspect_jar_file(&first_src).unwrap().sha1;
+
+    let second_bytes = build_jar(None, "SECOND_PENDING");
+    let second_probe = tmp.path().join("second-probe.jar");
+    std::fs::write(&second_probe, &second_bytes).unwrap();
+    let second_sha1 = mh_store::inspect_jar_file(&second_probe).unwrap().sha1;
+
+    let mut manifest = ContentManifest::load(&paths.content_file).unwrap();
+    manifest.pending.extend([
+        pending_entry("optifine.jar", "OptiFine", 238222, 4912345, first_sha1),
+        pending_entry("restricted.jar", "Restricted", 777001, 7770001, second_sha1),
+    ]);
+    manifest.save(&paths.content_file).unwrap();
+
+    // Khi còn mục chờ thì start bị CURSEFORGE_FILES_PENDING chặn.
+    assert_eq!(
+        app.start(id).await.unwrap_err().code,
+        ErrorCode::CurseforgeFilesPending
+    );
+
+    // File sai hash bị từ chối kèm tên file đúng đang chờ, không ghi vào mods/.
+    let wrong_src = tmp.path().join("wrong.jar");
+    std::fs::write(&wrong_src, build_jar(None, "WRONG")).unwrap();
+    let wrong_err = app
+        .upload_pending_content(id, "wrong.jar", &wrong_src)
+        .await
+        .unwrap_err();
+    assert_eq!(wrong_err.code, ErrorCode::UploadHashMismatch);
+    assert_eq!(
+        wrong_err.params["expected"],
+        serde_json::json!("optifine.jar, restricted.jar")
+    );
+    assert!(!paths.server_dir.join("mods/wrong.jar").exists());
+    assert!(!paths.server_dir.join("mods/optifine.jar").exists());
+
+    // Batch nhiều file: một file đúng khớp thứ hai, một file sai -> kết quả riêng từng file.
+    let second_src = tmp.path().join("UserRenamed.jar");
+    std::fs::write(&second_src, &second_bytes).unwrap();
+    let wrong_batch_src = tmp.path().join("also-wrong.jar");
+    std::fs::write(&wrong_batch_src, build_jar(None, "WRONG_2")).unwrap();
+    let batch = app
+        .upload_pending_batch(
+            id,
+            vec![
+                ("also-wrong.jar".to_owned(), wrong_batch_src),
+                ("UserRenamed.jar".to_owned(), second_src),
+            ],
+        )
+        .await
+        .unwrap();
+    assert_eq!(batch.len(), 2);
+    assert_eq!(batch[0].file_name, "also-wrong.jar");
+    let batch_err = batch[0].outcome.as_ref().unwrap_err();
+    assert_eq!(batch_err.code, ErrorCode::UploadHashMismatch);
+    assert_eq!(
+        batch_err.params["expected"],
+        serde_json::json!("optifine.jar, restricted.jar")
+    );
+    let ok = batch[1].outcome.as_ref().unwrap();
+    assert_eq!(ok.file_name, "restricted.jar");
+    assert_eq!(ok.path, "mods/restricted.jar");
+    let rec = ok.record.as_ref().unwrap();
+    assert_eq!(rec.source, ContentSource::Curseforge);
+    assert_eq!(rec.project_id, Some(ProjectId::Int(777001)));
+    assert_eq!(rec.version_id.as_deref(), Some("7770001"));
+
+    // Nạp nốt mục chờ cuối cùng -> hết chờ, start không còn bị chặn.
+    let resolved = app
+        .upload_pending_content(id, "first-download (1).jar", &first_src)
+        .await
+        .unwrap();
+    assert_eq!(resolved.file_name, "optifine.jar");
+    assert_eq!(
+        resolved.record.as_ref().map(|r| r.source),
+        Some(ContentSource::Curseforge)
+    );
+    assert!(app.content(id).await.unwrap().pending.is_empty());
+    assert!(!app.preflight(id).await.unwrap().is_blocking());
+
+    app.start(id).await.unwrap();
+    let deadline = tokio::time::Instant::now() + WAIT;
+    while app.get(id).unwrap().state != ServerState::Running {
+        assert!(tokio::time::Instant::now() < deadline);
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    app.stop(id).await.unwrap();
+    while app.get(id).unwrap().state.has_process() {
         assert!(tokio::time::Instant::now() < deadline);
         tokio::time::sleep(Duration::from_millis(20)).await;
     }

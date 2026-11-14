@@ -20,6 +20,7 @@ pub use catalog::{
     SideSupport, modrinth_loaders,
 };
 pub use curseforge::{CurseForge, CurseforgeCatalog};
+pub use manage::PendingUploadResult;
 pub use plan::{ContentInstallPlan, PlannedContent};
 pub(crate) use preflight::preflight_block_error;
 pub use preflight::{

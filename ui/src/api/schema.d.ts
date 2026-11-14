@@ -420,6 +420,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/content/pending/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description multipart/form-data, một hoặc nhiều phần `file` (.jar ≤ 512 MiB) khớp SHA-1 các mục CurseForge đang chờ. */
+        post: operations["upload_pending"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}/content/plan": {
         parameters: {
             query?: never;
@@ -1015,11 +1032,22 @@ export interface components {
             /** Format: int64 */
             file_id: number;
             file_name: string;
+            name: string;
             page_url: string;
             path: string;
             /** Format: int64 */
             project_id: number;
             sha1: string;
+        };
+        /** @description Kết quả tải lên từng file trong vùng kéo thả mục CurseForge đang chờ. */
+        PendingUploadItemDto: {
+            error?: components["schemas"]["ErrorBody"] | null;
+            file_name: string;
+            installed?: components["schemas"]["InstalledContentDto"] | null;
+            ok: boolean;
+        };
+        PendingUploadResultDto: {
+            results: components["schemas"]["PendingUploadItemDto"][];
         };
         PlannedContentDto: {
             client_only: boolean;
@@ -2528,6 +2556,59 @@ export interface operations {
                 };
             };
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    upload_pending: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingUploadResultDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };

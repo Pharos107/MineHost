@@ -12,6 +12,7 @@ import { Avatar, Badge, Button, ConfirmDialog, DataTable, EmptyState, Notice, St
 import { useServer } from "../ServerLayout";
 import { contentSourceKind, isContentLocked, modrinthProjectUrl } from "./content";
 import { ContentAddDialog } from "./ContentAddDialog";
+import { ContentPendingBox } from "./ContentPendingBox";
 import { ContentUpload } from "./ContentUpload";
 
 /** Trang Mod hoặc Plugin (spec P3, mục 6.3): liệt kê, lọc, thêm, tải lên, bật/tắt và gỡ vào thùng rác. */
@@ -29,6 +30,7 @@ export function ContentPage() {
   // Đổi mod thì kết quả kiểm tra trước khi bật cũng đổi: làm mới cả băng cảnh báo, không chờ WebSocket.
   const refresh = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: contentKey(server.id) });
+    void queryClient.invalidateQueries({ queryKey: [...SERVERS_KEY, server.id] });
     void queryClient.invalidateQueries({ queryKey: [...SERVERS_KEY, server.id, "preflight"] });
   }, [queryClient, server.id]);
 
@@ -86,6 +88,13 @@ export function ContentPage() {
   return (
     <Stack gap={4}>
       {locked && <Notice tone="info">{t(`content.${kind}.runningHint`)}</Notice>}
+      <ContentPendingBox
+        key={server.id}
+        server={server}
+        pending={list.data?.pending ?? []}
+        locked={locked}
+        onDone={refresh}
+      />
       <Stack direction="row" gap={2} wrap>
         <Button variant="primary" icon={Plus} disabled={locked} onClick={() => setAddOpen(true)}>
           {t("content.add")}

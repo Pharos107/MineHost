@@ -375,6 +375,7 @@
     "CURSEFORGE_UNAVAILABLE": "Chưa dùng được CurseForge: chưa có key hoặc key bị từ chối. Xem mục CurseForge trong Cài đặt.",
     "CURSEFORGE_FILES_PENDING": "Còn file từ CurseForge cần tự tải. Mở trang Mod để tải và kéo file vào.",
     "UPLOAD_HASH_MISMATCH": "File vừa tải lên không khớp file cần. Hãy tải đúng phiên bản từ trang mod.",
+    "UPLOAD_HASH_MISMATCH_EXPECTED": "File vừa tải lên không khớp hash — cần file {{expected}}. Hãy tải đúng phiên bản từ trang mod.",
     "MODPACK_INVALID": "File modpack không hợp lệ hoặc bị hỏng.",
     "DOWNLOAD_HOST_NOT_ALLOWED": "Có file cần tải từ một trang không được phép, nên MineHost không tải.",
     "UPSTREAM_RATE_LIMITED": "Trang nguồn đang giới hạn số lần truy cập. Thử lại sau {{retry_after_s}} giây."
@@ -690,6 +691,19 @@
     "uploaded_one": "Đã tải lên {{count}} file.",
     "uploaded_other": "Đã tải lên {{count}} file.",
     "uploadInvalid": "File không phải .jar hợp lệ hoặc bị hỏng.",
+    "pending": {
+      "title_one": "Cần tải tay {{count}} file CurseForge",
+      "title_other": "Cần tải tay {{count}} file CurseForge",
+      "description": "Tác giả không cho phép tải tự động qua API. Mở từng trang để tải đúng phiên bản rồi kéo thả tất cả vào vùng bên dưới.",
+      "openPage": "Mở trang tải",
+      "waiting": "Chờ",
+      "ready": "Đã có",
+      "dropLabel": "Chọn file CurseForge",
+      "dropHint": "hoặc kéo thả một hoặc nhiều file .jar vừa tải vào đây để đối chiếu SHA-1.",
+      "uploading": "Đang đối chiếu {{names}}",
+      "allDone": "Đã có đủ các file CurseForge cần tải tay. Bạn có thể bật server ngay.",
+      "startWithout": "Bật mà không có các mod này"
+    },
     "remove": "Gỡ",
     "removeTitle": "Gỡ {{name}}?",
     "removeBody": "File {{file}} được chuyển vào thùng rác của MineHost, bạn có thể tự lấy lại sau.",

@@ -92,6 +92,7 @@ pub use lan::{LanState, lan_listener};
         content::plan,
         content::install,
         content::upload,
+        content::upload_pending,
         content::toggle,
         content::remove,
         preflight::get,
@@ -170,6 +171,8 @@ pub use lan::{LanState, lan_listener};
         content::PlannedContentDto,
         content::ContentPlanDto,
         content::ToggleContentBody,
+        content::PendingUploadItemDto,
+        content::PendingUploadResultDto,
         preflight::StartActionBody,
         preflight::MissingDepDto,
         preflight::VersionMismatchDto,
@@ -305,6 +308,17 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         .route(
             "/servers/{id}/content/upload",
             post(content::upload)
+                .layer(DefaultBodyLimit::max(files::upload_body_limit(
+                    upload_max_bytes,
+                )))
+                .layer(axum::middleware::from_fn_with_state(
+                    upload_max_bytes,
+                    files::inject_upload_limit,
+                )),
+        )
+        .route(
+            "/servers/{id}/content/pending/upload",
+            post(content::upload_pending)
                 .layer(DefaultBodyLimit::max(files::upload_body_limit(
                     upload_max_bytes,
                 )))

@@ -346,6 +346,7 @@ fn reconciles_renames_deletes_and_toggles_preserving_extra_keys() {
         ],
         pending: vec![PendingContent {
             path: "mods/pending.jar".into(),
+            name: None,
             project_id: 99,
             file_id: 88,
             sha1: "deadbeef".into(),

@@ -180,6 +180,7 @@ impl App {
 fn build_pending(kind: ContentKind, item: &PlannedContent) -> Result<PendingContent, AppError> {
     Ok(PendingContent {
         path: format!("{}/{}", kind.dir(), item.file.filename),
+        name: Some(item.project_name.clone()),
         project_id: parse_cf_id(&item.project_id, "project_id")?,
         file_id: parse_cf_id(&item.version_id, "version_id")?,
         sha1: item.file.sha1.clone().unwrap_or_default(),
