@@ -9,8 +9,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use content_support::{
-    FakeJava, FakeModCatalog, FakeServerCatalog, WAIT, build_jar, collect_steps, dep, finish_job,
-    make_server, sha512_hex, test_app,
+    FakeJava, FakeModCatalog, FakeServerCatalog, WAIT, build_jar, dep, finish_job, make_server,
+    sha512_hex, test_app,
 };
 use mh_app::content::{
     ContentCatalog, DependencyType, FileHashes, Modrinth, ModrinthCatalog, SideSupport, VersionFile,
@@ -110,12 +110,12 @@ async fn installs_two_level_deps_and_skips_optional_embedded() {
     assert!(plan.items[1].is_dependency);
 
     let job_id = app.install_content(id, "mod-a", None).unwrap();
-    let (snap, steps) = collect_steps(&app, job_id).await;
+    // Không kiểm từng bước trung gian: kênh `watch` chỉ giữ giá trị mới nhất, máy nhanh sẽ bỏ qua
+    // vài bước. Số file đã tải mới là thứ quan sát được chắc chắn.
+    let snap = finish_job(&app, job_id).await;
     assert_eq!(snap.kind, JobKind::InstallContent);
     assert_eq!(snap.state, JobState::Succeeded);
-    assert!(steps.iter().any(|s| s == "resolve_content"));
-    assert!(steps.iter().any(|s| s == "download_content"));
-    assert!(steps.iter().any(|s| s == "prepare_files"));
+    assert_eq!(cat.downloads.load(Ordering::SeqCst), 3);
 
     let list = app.content(id).await.unwrap();
     assert_eq!(list.files.len(), 3);
