@@ -7,7 +7,7 @@ Hai bản phát hành (spec mục 11): nhóm A–D ra `v0.4.0` (PR-25), nhóm E�
 
 ## Tiến độ
 
-Cập nhật 2026-11-15, sau khi merge #91. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-15, sau khi merge #92. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -39,7 +39,7 @@ chính PR ấy.
 | 25 | Phát hành `v0.4.0` | Chưa bắt đầu | |
 | 26 | Key CurseForge | Đã merge | [#89](https://github.com/Pharos107/MineHost/pull/89) |
 | 27 | CurseForge | Đã merge | [#91](https://github.com/Pharos107/MineHost/pull/91) |
-| 28 | Cài mod từ CurseForge | Chưa bắt đầu | |
+| 28 | Cài mod từ CurseForge | Đã merge | [#92](https://github.com/Pharos107/MineHost/pull/92) |
 | 29 | Modpack CurseForge | Chưa bắt đầu | |
 | 30 | Tải tay file CurseForge | Chưa bắt đầu | |
 | 31–34 | Nhóm F · Cập nhật và đổi phiên bản | Chưa bắt đầu | |
