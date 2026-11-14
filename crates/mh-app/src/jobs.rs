@@ -31,6 +31,7 @@ pub enum JobKind {
     Backup,
     Restore,
     InstallJava,
+    InstallContent,
 }
 
 /// Bước đang làm. UI dịch theo `kind`, ví dụ "Tải Java 21 (48/61 MB)".
@@ -62,6 +63,10 @@ pub enum JobStep {
     /// Chạy installer của mod loader (spec P3, mục 3.1).
     RunInstaller {
         loader: String,
+    },
+    ResolveContent,
+    DownloadContent {
+        name: String,
     },
 }
 

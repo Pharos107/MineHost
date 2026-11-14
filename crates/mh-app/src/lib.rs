@@ -6,6 +6,7 @@
 mod auth;
 mod backup;
 mod backup_schedule;
+pub mod content;
 mod create;
 #[cfg(feature = "e2e")]
 pub mod e2e;
@@ -32,12 +33,16 @@ use mh_java::JavaManager;
 use mh_net::{FreeSpaceFn, HttpClient, NetConfig};
 use mh_platform::{DataDirs, SystemInfo};
 use mh_runtime::ProcessRuntime;
-use mh_store::ServerStore;
+use mh_store::{ContentScanner, ServerStore};
 use mh_supervisor::SupervisorConfig;
 
 pub use auth::AuthStore;
 pub use backup::{BackupKind, BackupMeta, BackupRequest, BackupStarted};
 pub use backup_schedule::{BackupCandidate, BackupPlanner};
+pub use content::{
+    ContentCatalog, ContentInstallPlan, ContentList, ModrinthCatalog, NoContentCatalog,
+    PlannedContent,
+};
 pub use create::{CreateRequest, Created};
 pub use error::AppError;
 pub use files::{FileEntry, FileKind, TEXT_LIMIT, TextFile};
@@ -122,6 +127,9 @@ pub struct App {
     metrics_hub: metrics::MetricsHub,
     online: Arc<players::OnlinePlayers>,
     player_directory: Arc<dyn PlayerDirectory>,
+    content_catalog: Arc<dyn ContentCatalog>,
+    content_scanner: Arc<ContentScanner>,
+    content_locks: Mutex<HashMap<ServerId, Arc<tokio::sync::Mutex<()>>>>,
     shutdown: tokio::sync::Notify,
     events: tokio::sync::broadcast::Sender<AppEvent>,
 }
@@ -151,7 +159,9 @@ impl App {
             save_flush_timeout: backup::DEFAULT_SAVE_FLUSH_TIMEOUT,
             metrics: MetricsConfig::default(),
         };
-        Ok(Self::with_deps(dirs, deps)?.with_players(Arc::new(MojangDirectory::new(http))))
+        Ok(Self::with_deps(dirs, deps)?
+            .with_players(Arc::new(MojangDirectory::new(Arc::clone(&http))))
+            .with_content(Arc::new(ModrinthCatalog::new(http))))
     }
 
     pub fn with_deps(dirs: DataDirs, deps: AppDeps) -> Result<Self, AppError> {
@@ -179,6 +189,9 @@ impl App {
             metrics_hub: metrics::MetricsHub::new(),
             online: Arc::new(players::OnlinePlayers::new()),
             player_directory: Arc::new(NoDirectory),
+            content_catalog: Arc::new(NoContentCatalog),
+            content_scanner: Arc::new(ContentScanner::new()),
+            content_locks: Mutex::new(HashMap::new()),
             shutdown: tokio::sync::Notify::new(),
             events: tokio::sync::broadcast::channel(256).0,
         })

@@ -72,6 +72,22 @@ struct CachedJar {
     meta: Result<ModMeta, ContentMetaError>,
 }
 
+/// Thông tin SHA-1 và metadata đọc từ một file `.jar`.
+#[derive(Debug, Clone)]
+pub struct JarInfo {
+    pub sha1: String,
+    pub meta: Result<ModMeta, ContentMetaError>,
+}
+
+/// Tính SHA-1 và đọc metadata của một file `.jar` tại `path`.
+pub fn inspect_jar_file(path: &Path) -> Result<JarInfo, StoreError> {
+    let jar = inspect_jar(path)?;
+    Ok(JarInfo {
+        sha1: jar.sha1,
+        meta: jar.meta,
+    })
+}
+
 struct ScannedJar {
     file_name: String,
     path: String,

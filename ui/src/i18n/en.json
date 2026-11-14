@@ -176,7 +176,9 @@
       "unpack": "Unpacking the backup",
       "swap": "Replacing the world",
       "copy_files": "Copying server folder",
-      "run_installer": "Installing {{loader}}"
+      "run_installer": "Installing {{loader}}",
+      "resolve_content": "Resolving mod dependencies",
+      "download_content": "Downloading {{name}}"
     }
   },
   "server": {
@@ -388,7 +390,8 @@
       "backup": "Backup",
       "restore": "Restore",
       "import_server": "Import server",
-      "install_java": "Install Java"
+      "install_java": "Install Java",
+      "install_content": "Install mod"
     },
     "states": {
       "running": "Running",
