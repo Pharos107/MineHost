@@ -352,3 +352,64 @@ async fn checked_json_rejects_wrong_hash() {
         .unwrap_err();
     assert_eq!(err.code(), ErrorCode::ChecksumMismatch);
 }
+
+#[tokio::test]
+async fn post_json_sends_body_and_user_agent() {
+    use wiremock::matchers::body_json;
+
+    let server = MockServer::start().await;
+    let payload = serde_json::json!({ "hashes": ["abc"], "algorithm": "sha1" });
+    Mock::given(method("POST"))
+        .and(path("/lookup"))
+        .and(header("user-agent", USER_AGENT))
+        .and(header("content-type", "application/json"))
+        .and(body_json(&payload))
+        .respond_with(ResponseTemplate::new(200).set_body_string(r#"{"ok":true}"#))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let tmp = tempfile::tempdir().unwrap();
+
+    let got: serde_json::Value = client(&tmp)
+        .post_json(&format!("{}/lookup", server.uri()), &payload)
+        .await
+        .unwrap();
+    assert_eq!(got["ok"], true);
+}
+
+#[tokio::test]
+async fn post_json_handles_429_like_get() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/retry"))
+        .respond_with(ResponseTemplate::new(429).insert_header("X-Ratelimit-Reset", "0"))
+        .up_to_n_times(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(path("/retry"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("[42]"))
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(path("/blocked"))
+        .respond_with(ResponseTemplate::new(429).insert_header("Retry-After", "30"))
+        .mount(&server)
+        .await;
+    let tmp = tempfile::tempdir().unwrap();
+    let http = client(&tmp);
+    let body = serde_json::json!({});
+
+    let got: Vec<u8> = http
+        .post_json(&format!("{}/retry", server.uri()), &body)
+        .await
+        .unwrap();
+    assert_eq!(got, [42]);
+
+    let err = http
+        .post_json::<_, Vec<u8>>(&format!("{}/blocked", server.uri()), &body)
+        .await
+        .unwrap_err();
+    assert_eq!(err.code(), ErrorCode::UpstreamRateLimited);
+    assert_eq!(err.params()["retry_after_s"], 30);
+}
