@@ -26,6 +26,13 @@ pub enum ProviderError {
         version: String,
     },
 
+    /// Project hoặc file không còn trên Modrinth hay CurseForge (spec P3, mục 4.4).
+    #[error("{source_name} không có nội dung {id}")]
+    ContentNotFound {
+        source_name: &'static str,
+        id: String,
+    },
+
     /// API trả dữ liệu thiếu hoặc sai (thường là API đổi cấu trúc); chi tiết nằm trong log.
     #[error("dữ liệu từ {source_name} không hợp lệ: {reason}")]
     Invalid {
@@ -60,6 +67,7 @@ impl ProviderError {
             Self::Platform(e) => e.code(),
             Self::Io { .. } => ErrorCode::Internal,
             Self::VersionNotFound { .. } => ErrorCode::VersionNotFound,
+            Self::ContentNotFound { .. } => ErrorCode::ContentNotFound,
             Self::Invalid { .. } => ErrorCode::NetworkUnavailable,
             Self::PlayerNotFound(_) => ErrorCode::PlayerNotFound,
             // Người gọi phải khớp biến thể này để lấy skin mặc định, không dựa vào mã HTTP.
