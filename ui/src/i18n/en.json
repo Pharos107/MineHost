@@ -754,7 +754,6 @@
     "searchTitle": "Search modpacks",
     "searchPlaceholder": "Search modpacks on Modrinth…",
     "curseforgeNoKey": "CurseForge is unavailable because no API key is configured in Settings.",
-    "curseforgeSoon": "CurseForge modpacks are coming soon.",
     "noResults": "No modpacks found",
     "noResultsHint": "Try a different keyword or upload a .mrpack file above.",
     "version": "Modpack version",

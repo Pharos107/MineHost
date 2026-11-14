@@ -9,7 +9,9 @@ use mh_providers::modpack::PackFile;
 use time::macros::datetime;
 
 pub(super) use super::pack::build_jar;
-use super::pack::{add_e2e_modpack, make_project, make_version, sha512_hex, verify_bytes_checksum};
+use super::pack::{
+    add_e2e_modpack, download_e2e_pack_file, make_project, make_version, sha512_hex,
+};
 use crate::AppError;
 use crate::content::{
     ContentCatalog, ContentDependency, ContentFileInfo, ContentProject, ContentSearchHit,
@@ -344,26 +346,13 @@ impl ContentCatalog for E2eContent {
         progress: ProgressFn<'a>,
         cancel: &'a CancellationToken,
     ) -> BoxFut<'a, Result<(), AppError>> {
-        Box::pin(std::future::ready((|| {
-            if cancel.is_cancelled() {
-                return Err(AppError::cancelled());
-            }
-            let bytes = file
-                .urls
-                .iter()
-                .find_map(|url| self.files.get(url))
-                .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, &file.path))?;
-            if !verify_bytes_checksum(bytes, &file.checksum) {
-                return Err(AppError::new(
-                    ErrorCode::ChecksumMismatch,
-                    format!("sai checksum file `{}`", file.path),
-                ));
-            }
-            let size = bytes.len() as u64;
-            progress(size, Some(size));
-            mh_platform::fs::write_atomic(dest, bytes)?;
-            Ok(())
-        })()))
+        Box::pin(std::future::ready(download_e2e_pack_file(
+            &self.files,
+            file,
+            dest,
+            progress,
+            cancel,
+        )))
     }
 }
 

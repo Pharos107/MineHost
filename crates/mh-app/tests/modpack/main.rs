@@ -305,7 +305,7 @@ async fn modrinth_catalog_rerun_reuses_cache_without_redownloading() {
 }
 
 #[tokio::test]
-async fn suggested_ram_and_uploaded_mrpack_and_zip_rejection() {
+async fn suggested_ram_and_uploaded_mrpack_and_bad_ext_rejection() {
     for (host_gb, expected_max) in [(8u64, 4096u32), (16, 8192), (32, 10240)] {
         let mut cat = PackTestCatalog::default();
         let mrpack = make_mrpack("RAM Pack", &[], &[]);
@@ -365,21 +365,21 @@ async fn suggested_ram_and_uploaded_mrpack_and_zip_rejection() {
         ModpackSource::File
     );
 
-    let bad_zip = tmp.path().join("cf.zip");
-    std::fs::write(&bad_zip, b"not-a-mrpack").unwrap();
+    let bad_ext = tmp.path().join("cf.tar");
+    std::fs::write(&bad_ext, b"not-a-mrpack").unwrap();
     let err = app
         .create_from_modpack(ModpackRequest {
             source: ModpackSourceInput::UploadedFile {
-                path: bad_zip.clone(),
-                original_name: "cf.zip".to_owned(),
+                path: bad_ext.clone(),
+                original_name: "cf.tar".to_owned(),
             },
-            name: ServerName::parse("Zip lỗi").unwrap(),
+            name: ServerName::parse("Tar lỗi").unwrap(),
             memory_mb: None,
             port: Some(GamePort::new(25567).unwrap()),
         })
         .unwrap_err();
     assert_eq!(err.code, ErrorCode::ModpackInvalid);
-    assert!(!bad_zip.exists());
+    assert!(!bad_ext.exists());
 
     let corrupt_pack = tmp.path().join("corrupt.mrpack");
     std::fs::write(&corrupt_pack, b"not-a-zip").unwrap();

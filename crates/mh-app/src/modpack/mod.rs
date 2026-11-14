@@ -1,6 +1,6 @@
-//! Job `create_from_modpack` (spec P3, mục 3.4, 3.5, 4.1, 4.2, 5.7):
-//! lập kế hoạch từ `.mrpack` → cài Java & loader → tải song song tối đa 6 file
-//! → áp `overrides/` + `server-overrides/` → ghi `content.toml` và `[modpack]` trong `instance.toml`.
+//! Job `create_from_modpack` (spec P3, mục 3.4, 3.5, 3.6, 4.1, 4.2, 5.7):
+//! hỗ trợ `.mrpack` Modrinth, modpack CurseForge (API + server pack + `.zip`), tải song song
+//! tối đa 6 file → áp overrides → tắt mod client-only → ghi `content.toml` và `[modpack]`.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -15,20 +15,23 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
+mod curseforge;
 mod finish;
 
-use crate::content::{CatalogSource, ContentCatalog, ContentFileInfo, ContentVersion};
+use crate::content::{CatalogSource, ContentCatalog, ContentFileInfo, ContentVersion, parse_cf_id};
 use crate::jobs::{JobContext, JobKind, JobStep};
 use crate::{App, AppError, Created, Installing, lock};
-use finish::{
-    build_modpack_section, drain_downloads, file_label, sanitize_upstream, write_content_manifest,
-};
+use finish::{drain_downloads, file_label, sanitize_upstream};
 
 const PACK_DOWNLOAD_CONCURRENCY: usize = 6;
 
 #[derive(Debug, Clone)]
 pub enum ModpackSourceInput {
     Modrinth {
+        project_id: String,
+        version_id: Option<String>,
+    },
+    Curseforge {
         project_id: String,
         version_id: Option<String>,
     },
@@ -54,14 +57,22 @@ pub struct ModpackSummary {
     pub pending_curseforge: Vec<String>,
 }
 
-struct ModpackMeta {
-    source: ModpackSource,
-    project_id: Option<ContentId>,
-    version_id: Option<ContentId>,
-    version_name: Option<UpstreamText>,
+#[derive(Clone)]
+pub(super) struct PackTarget {
+    pub id: ServerId,
+    pub name: ServerName,
+    pub memory: MemoryLimits,
+    pub port: GamePort,
 }
 
-struct TempFileCleanup(Option<PathBuf>);
+pub(super) struct ModpackMeta {
+    pub source: ModpackSource,
+    pub project_id: Option<ContentId>,
+    pub version_id: Option<ContentId>,
+    pub version_name: Option<UpstreamText>,
+}
+
+pub(super) struct TempFileCleanup(pub Option<PathBuf>);
 
 impl Drop for TempFileCleanup {
     fn drop(&mut self) {
@@ -72,9 +83,9 @@ impl Drop for TempFileCleanup {
 }
 
 impl App {
-    /// Tạo server từ modpack Modrinth hoặc file `.mrpack` tải lên; trả ngay ID server và Job.
+    /// Tạo server từ modpack Modrinth, CurseForge hoặc file `.mrpack`/`.zip` tải lên.
     pub fn create_from_modpack(self: &Arc<Self>, req: ModpackRequest) -> Result<Created, AppError> {
-        validate_request(&req)?;
+        self.validate_pack_request(&req)?;
         let port = self.resolve_new_port(req.port)?;
         let memory = req
             .memory_mb
@@ -91,10 +102,16 @@ impl App {
             },
         );
         let app = Arc::clone(self);
+        let target = PackTarget {
+            id,
+            name: req.name.clone(),
+            memory,
+            port,
+        };
         let job_id = self
             .jobs
             .spawn(JobKind::CreateModpack, Some(id), move |ctx| async move {
-                let result = app.install_modpack(&ctx, id, &req, memory, port).await;
+                let result = app.install_modpack(&ctx, target, &req).await;
                 app.finish_install(id, result.is_ok(), "đã cài server từ modpack");
                 result
             });
@@ -111,22 +128,40 @@ impl App {
     async fn install_modpack(
         &self,
         ctx: &JobContext,
-        id: ServerId,
+        target: PackTarget,
         req: &ModpackRequest,
-        memory: MemoryLimits,
-        port: GamePort,
     ) -> Result<(), AppError> {
         let mut cleanup = match &req.source {
             ModpackSourceInput::UploadedFile { path, .. } => TempFileCleanup(Some(path.clone())),
-            ModpackSourceInput::Modrinth { .. } => TempFileCleanup(None),
+            _ => TempFileCleanup(None),
         };
 
         ctx.step(JobStep::CheckDisk, 1, 8);
         self.check_disk()?;
 
+        match &req.source {
+            ModpackSourceInput::Curseforge {
+                project_id,
+                version_id,
+            } => {
+                return self
+                    .install_curseforge_api(ctx, target, project_id, version_id.as_deref())
+                    .await;
+            }
+            ModpackSourceInput::UploadedFile {
+                path,
+                original_name,
+            } if has_ext(original_name, "zip") => {
+                return self
+                    .install_curseforge_zip(ctx, target, path, original_name)
+                    .await;
+            }
+            _ => {}
+        }
+
         let catalog = self.catalog_for(CatalogSource::Modrinth)?;
         let (mrpack_path, meta) = self
-            .obtain_mrpack(ctx, id, catalog.as_ref(), &req.source, &mut cleanup)
+            .obtain_mrpack(ctx, target.id, catalog.as_ref(), &req.source, &mut cleanup)
             .await?;
 
         let hosts = catalog.pack_hosts();
@@ -139,7 +174,7 @@ impl App {
 
         let planned_bytes: u64 = plan.files.iter().map(|f| f.size).sum();
         self.check_disk_for(planned_bytes)?;
-        self.update_installing_runtime(id, &plan);
+        self.update_installing_runtime(target.id, &plan);
 
         let (step_count, step_packs) = if plan.loader.is_mod_loader() {
             (9, 7)
@@ -147,7 +182,7 @@ impl App {
             (8, 6)
         };
         let (paths, game) = self
-            .install_pack_runtime(ctx, id, &plan, 3, step_count)
+            .install_pack_runtime(ctx, target.id, &plan, 3, step_count)
             .await?;
 
         let root = SafeRoot::new(&paths.server_dir)?;
@@ -163,29 +198,11 @@ impl App {
         .await?;
 
         ctx.step(JobStep::PrepareFiles, step_count, step_count);
-        let installed_mods = self.record_modpack_content(&paths, &plan).await?;
-        let modpack = build_modpack_section(&plan, meta)?;
-        self.write_server_spec(
-            &paths.server_dir,
-            id,
-            req.name.clone(),
-            game,
-            memory,
-            port,
-            Some(modpack),
-        )?;
-        let summary = ModpackSummary {
-            installed_mods,
-            skipped_client: plan.skipped_client,
-            pending_curseforge: Vec::new(),
-        };
-        if let Ok(value) = serde_json::to_value(&summary) {
-            ctx.set_result(value);
-        }
-        Ok(())
+        self.finalize_modpack(ctx, target, game, &paths, plan, meta)
+            .await
     }
 
-    async fn install_pack_runtime(
+    pub(super) async fn install_pack_runtime(
         &self,
         ctx: &JobContext,
         id: ServerId,
@@ -290,6 +307,10 @@ impl App {
                     },
                 ))
             }
+            ModpackSourceInput::Curseforge { .. } => Err(AppError::new(
+                ErrorCode::Internal,
+                "nguồn CurseForge đi nhánh riêng",
+            )),
         }
     }
 
@@ -327,7 +348,7 @@ impl App {
         Ok((ver, file))
     }
 
-    fn update_installing_runtime(&self, id: ServerId, plan: &PackPlan) {
+    pub(super) fn update_installing_runtime(&self, id: ServerId, plan: &PackPlan) {
         if let Some(info) = lock(&self.installing).get_mut(&id) {
             info.loader = Some(plan.loader);
             info.minecraft = Some(plan.minecraft.clone());
@@ -335,7 +356,7 @@ impl App {
         self.notify_changed(id);
     }
 
-    async fn download_pack_files(
+    pub(super) async fn download_pack_files(
         &self,
         ctx: &JobContext,
         catalog: &Arc<dyn ContentCatalog>,
@@ -402,62 +423,57 @@ impl App {
         .await
     }
 
-    async fn record_modpack_content(
-        &self,
-        paths: &mh_store::ServerPaths,
-        plan: &PackPlan,
-    ) -> Result<usize, AppError> {
-        let server_dir = paths.server_dir.clone();
-        let content_file = paths.content_file.clone();
-        let files = plan.files.clone();
-        let scanner = Arc::clone(&self.content_scanner);
-        crate::files::blocking(move || {
-            write_content_manifest(&scanner, &server_dir, &content_file, &files)
-        })
-        .await
+    fn validate_pack_request(&self, req: &ModpackRequest) -> Result<(), AppError> {
+        match &req.source {
+            ModpackSourceInput::Modrinth {
+                project_id,
+                version_id,
+            } => {
+                if project_id.trim().is_empty()
+                    || version_id.as_ref().is_some_and(|v| v.trim().is_empty())
+                {
+                    return Err(AppError::new(
+                        ErrorCode::InvalidInput,
+                        "project_id hoặc version_id Modrinth không được rỗng",
+                    ));
+                }
+                Ok(())
+            }
+            ModpackSourceInput::Curseforge {
+                project_id,
+                version_id,
+            } => {
+                // Kiểm tra key trước để thiếu key luôn trả `CURSEFORGE_UNAVAILABLE`.
+                let _ = self.catalog_for(CatalogSource::Curseforge)?;
+                parse_cf_id(project_id.trim(), "project_id")?;
+                if let Some(v) = version_id {
+                    parse_cf_id(v.trim(), "version_id")?;
+                }
+                Ok(())
+            }
+            ModpackSourceInput::UploadedFile {
+                path,
+                original_name,
+            } => {
+                if has_ext(original_name, "mrpack") || has_ext(original_name, "zip") {
+                    return Ok(());
+                }
+                let _ = fs::remove_file(path);
+                Err(AppError::new(
+                    ErrorCode::ModpackInvalid,
+                    "chỉ hỗ trợ file modpack .mrpack hoặc .zip",
+                ))
+            }
+        }
     }
 }
 
-fn validate_request(req: &ModpackRequest) -> Result<(), AppError> {
-    match &req.source {
-        ModpackSourceInput::Modrinth {
-            project_id,
-            version_id,
-        } => {
-            if project_id.trim().is_empty()
-                || version_id.as_ref().is_some_and(|v| v.trim().is_empty())
-            {
-                return Err(AppError::new(
-                    ErrorCode::InvalidInput,
-                    "project_id hoặc version_id Modrinth không được rỗng",
-                ));
-            }
-            Ok(())
-        }
-        ModpackSourceInput::UploadedFile {
-            path,
-            original_name,
-        } => {
-            let lower = original_name.to_ascii_lowercase();
-            if lower.ends_with(".mrpack") {
-                return Ok(());
-            }
-            let _ = fs::remove_file(path);
-            let msg = if lower.ends_with(".zip") {
-                "định dạng CurseForge .zip chưa được hỗ trợ ở phiên bản này (chỉ nhận .mrpack)"
-            } else {
-                "chỉ hỗ trợ file modpack .mrpack"
-            };
-            Err(AppError::new(ErrorCode::ModpackInvalid, msg))
-        }
-    }
+fn has_ext(name: &str, ext: &str) -> bool {
+    Path::new(name)
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case(ext))
 }
 
 fn pick_mrpack_file(ver: &ContentVersion) -> Option<&ContentFileInfo> {
-    let is_mrpack = |name: &str| {
-        Path::new(name)
-            .extension()
-            .is_some_and(|e| e.eq_ignore_ascii_case("mrpack"))
-    };
-    ver.files.iter().find(|f| is_mrpack(&f.filename))
+    ver.files.iter().find(|f| has_ext(&f.filename, "mrpack"))
 }

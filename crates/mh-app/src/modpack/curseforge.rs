@@ -1,0 +1,309 @@
+//! Nhánh cài modpack CurseForge (qua API hoặc file `.zip` tải lên, spec P3 mục 3.5, 3.6, 5.7).
+
+use std::path::Path;
+use std::sync::Arc;
+
+use mh_core::instance::{ContentId, ModpackSource};
+use mh_core::{CfManifest, CfRuntime, ErrorCode};
+use mh_platform::SafeRoot;
+use mh_providers::modpack::PackPlan;
+use mh_providers::{
+    extract_curseforge_overrides_with, extract_curseforge_server_pack_with,
+    inspect_curseforge_pack_with,
+};
+
+use super::finish::sanitize_upstream;
+use super::{ModpackMeta, PackTarget, TempFileCleanup};
+use crate::content::{CatalogSource, ContentCatalog, ContentFileInfo, ContentVersion};
+use crate::files::blocking;
+use crate::jobs::{JobContext, JobStep};
+use crate::{App, AppError};
+
+struct CfPackSpec {
+    manifest: CfManifest,
+    runtime: CfRuntime,
+    meta: ModpackMeta,
+}
+
+impl App {
+    pub(super) async fn install_curseforge_api(
+        &self,
+        ctx: &JobContext,
+        target: PackTarget,
+        project_id: &str,
+        version_id: Option<&str>,
+    ) -> Result<(), AppError> {
+        let catalog = self.catalog_for(CatalogSource::Curseforge)?;
+        ctx.step(
+            JobStep::DownloadModpack {
+                name: project_id.to_owned(),
+            },
+            2,
+            9,
+        );
+        let (ver, file) =
+            resolve_cf_pack_version(ctx, catalog.as_ref(), project_id, version_id).await?;
+        let stage_pack = self.dirs.cache().join(format!("modpack-{}.zip", target.id));
+        let _cleanup = TempFileCleanup(Some(stage_pack.clone()));
+        {
+            let _permit = ctx.download_permit().await?;
+            let mut progress = |done: u64, total: Option<u64>| ctx.bytes(done, total);
+            catalog
+                .download(&file, &stage_pack, &mut progress, &ctx.cancel)
+                .await?;
+        }
+        ctx.check_cancel()?;
+
+        let (manifest, runtime) = inspect_pack_blocking(ctx, &stage_pack).await?;
+        let meta = ModpackMeta {
+            source: ModpackSource::Curseforge,
+            project_id: ContentId::parse(project_id).ok(),
+            version_id: ContentId::parse(&ver.id).ok(),
+            version_name: sanitize_upstream(&manifest.version)
+                .or_else(|| sanitize_upstream(&ver.name)),
+        };
+        let spec = CfPackSpec {
+            manifest,
+            runtime,
+            meta,
+        };
+
+        if let Some(sp_file) = ctx
+            .cancellable(catalog.curseforge_server_pack(&ver.id))
+            .await?
+        {
+            if !sp_file.manual_download && sp_file.url.is_some() {
+                return self
+                    .install_cf_server_pack(ctx, target, catalog.as_ref(), &sp_file, spec)
+                    .await;
+            }
+            tracing::info!(
+                project_id,
+                version_id = %ver.id,
+                "server pack CurseForge cấm phân phối hoặc thiếu downloadUrl, quay về dựng từ manifest"
+            );
+        }
+
+        self.install_cf_from_manifest(ctx, target, Some(catalog), &stage_pack, spec)
+            .await
+    }
+
+    pub(super) async fn install_curseforge_zip(
+        &self,
+        ctx: &JobContext,
+        target: PackTarget,
+        zip_path: &Path,
+        original_name: &str,
+    ) -> Result<(), AppError> {
+        ctx.step(
+            JobStep::DownloadModpack {
+                name: original_name.to_owned(),
+            },
+            2,
+            9,
+        );
+        let (manifest, runtime) = inspect_pack_blocking(ctx, zip_path).await?;
+        let catalog = if manifest.files.is_empty() {
+            None
+        } else {
+            Some(self.catalog_for(CatalogSource::Curseforge)?)
+        };
+        let meta = ModpackMeta {
+            source: ModpackSource::File,
+            project_id: None,
+            version_id: None,
+            version_name: sanitize_upstream(&manifest.version),
+        };
+        let spec = CfPackSpec {
+            manifest,
+            runtime,
+            meta,
+        };
+        self.install_cf_from_manifest(ctx, target, catalog, zip_path, spec)
+            .await
+    }
+
+    async fn install_cf_server_pack(
+        &self,
+        ctx: &JobContext,
+        target: PackTarget,
+        catalog: &dyn ContentCatalog,
+        sp_file: &ContentFileInfo,
+        spec: CfPackSpec,
+    ) -> Result<(), AppError> {
+        self.check_disk_for(sp_file.size)?;
+        let stage_sp = self
+            .dirs
+            .cache()
+            .join(format!("modpack-{}-server.zip", target.id));
+        let _cleanup_sp = TempFileCleanup(Some(stage_sp.clone()));
+        {
+            let _permit = ctx.download_permit().await?;
+            let mut progress = |done: u64, total: Option<u64>| ctx.bytes(done, total);
+            catalog
+                .download(sp_file, &stage_sp, &mut progress, &ctx.cancel)
+                .await?;
+        }
+        ctx.check_cancel()?;
+
+        let plan = empty_cf_plan(&spec.manifest, spec.runtime);
+        self.update_installing_runtime(target.id, &plan);
+        let (step_count, step_apply) = if plan.loader.is_mod_loader() {
+            (8, 7)
+        } else {
+            (7, 6)
+        };
+        let (paths, game) = self
+            .install_pack_runtime(ctx, target.id, &plan, 3, step_count)
+            .await?;
+
+        ctx.step(JobStep::ApplyOverrides, step_apply, step_count);
+        let dest_dir = paths.server_dir.clone();
+        let sp_path = stage_sp.clone();
+        let skipped = ctx
+            .cancellable(blocking(move || {
+                extract_curseforge_server_pack_with(
+                    &sp_path,
+                    &dest_dir,
+                    mh_providers::PackLimits::default(),
+                )
+                .map_err(AppError::from)
+            }))
+            .await?;
+        tracing::info!(
+            server = %target.id,
+            skipped_count = skipped.len(),
+            "đã giải nén server pack CurseForge và bỏ các file khởi chạy/installer"
+        );
+
+        ctx.step(JobStep::PrepareFiles, step_count, step_count);
+        self.finalize_modpack(ctx, target, game, &paths, plan, spec.meta)
+            .await
+    }
+
+    async fn install_cf_from_manifest(
+        &self,
+        ctx: &JobContext,
+        target: PackTarget,
+        catalog: Option<Arc<dyn ContentCatalog>>,
+        pack_path: &Path,
+        spec: CfPackSpec,
+    ) -> Result<(), AppError> {
+        let (files, blocked) = match catalog.as_ref() {
+            Some(cat) if !spec.manifest.files.is_empty() => {
+                ctx.step(JobStep::ResolveContent, 2, 9);
+                ctx.cancellable(cat.resolve_curseforge_files(&spec.manifest.files))
+                    .await?
+            }
+            _ => (Vec::new(), Vec::new()),
+        };
+        let planned_bytes: u64 = files.iter().map(|f| f.size).sum();
+        self.check_disk_for(planned_bytes)?;
+
+        let mut plan = empty_cf_plan(&spec.manifest, spec.runtime);
+        plan.files = files;
+        plan.blocked = blocked;
+        self.update_installing_runtime(target.id, &plan);
+
+        let (step_count, step_packs) = if plan.loader.is_mod_loader() {
+            (9, 7)
+        } else {
+            (8, 6)
+        };
+        let (paths, game) = self
+            .install_pack_runtime(ctx, target.id, &plan, 3, step_count)
+            .await?;
+
+        if !plan.files.is_empty() {
+            let cat = catalog.as_ref().ok_or_else(|| {
+                AppError::new(
+                    ErrorCode::CurseforgeUnavailable,
+                    "chưa có catalog CurseForge để tải modpack",
+                )
+            })?;
+            let root = SafeRoot::new(&paths.server_dir)?;
+            self.download_pack_files(ctx, cat, &root, &plan.files, step_packs, step_count)
+                .await?;
+        }
+
+        ctx.step(JobStep::ApplyOverrides, step_packs + 1, step_count);
+        let override_src = pack_path.to_path_buf();
+        let override_dst = paths.server_dir.clone();
+        ctx.cancellable(blocking(move || {
+            extract_curseforge_overrides_with(
+                &override_src,
+                &override_dst,
+                mh_providers::PackLimits::default(),
+            )
+            .map_err(AppError::from)
+        }))
+        .await?;
+
+        ctx.step(JobStep::PrepareFiles, step_count, step_count);
+        self.finalize_modpack(ctx, target, game, &paths, plan, spec.meta)
+            .await
+    }
+}
+
+async fn inspect_pack_blocking(
+    ctx: &JobContext,
+    pack_path: &Path,
+) -> Result<(CfManifest, CfRuntime), AppError> {
+    let path = pack_path.to_path_buf();
+    ctx.cancellable(blocking(move || {
+        let manifest = inspect_curseforge_pack_with(&path, mh_providers::PackLimits::default())?;
+        let runtime = manifest
+            .resolve_runtime()
+            .map_err(|e| AppError::new(ErrorCode::ModpackInvalid, e.to_string()))?;
+        Ok((manifest, runtime))
+    }))
+    .await
+}
+
+async fn resolve_cf_pack_version(
+    ctx: &JobContext,
+    catalog: &dyn ContentCatalog,
+    project_id: &str,
+    version_id: Option<&str>,
+) -> Result<(ContentVersion, ContentFileInfo), AppError> {
+    let ver = match version_id {
+        Some(vid) => ctx.cancellable(catalog.version(vid)).await?,
+        None => {
+            let list = ctx
+                .cancellable(catalog.project_versions(project_id))
+                .await?;
+            list.into_iter()
+                .find(|v| !v.files.is_empty())
+                .ok_or_else(|| {
+                    AppError::new(
+                        ErrorCode::ModpackInvalid,
+                        "project CurseForge không có phiên bản nào để tải",
+                    )
+                })?
+        }
+    };
+    let file = ver
+        .files
+        .first()
+        .ok_or_else(|| {
+            AppError::new(
+                ErrorCode::ModpackInvalid,
+                format!("phiên bản `{}` không có file .zip", ver.id),
+            )
+        })?
+        .clone();
+    Ok((ver, file))
+}
+
+fn empty_cf_plan(manifest: &CfManifest, runtime: CfRuntime) -> PackPlan {
+    PackPlan {
+        name: manifest.name.clone(),
+        version_id: manifest.version.clone(),
+        loader: runtime.loader,
+        minecraft: runtime.minecraft,
+        loader_version: runtime.loader_version,
+        files: Vec::new(),
+        skipped_client: Vec::new(),
+        blocked: Vec::new(),
+    }
+}

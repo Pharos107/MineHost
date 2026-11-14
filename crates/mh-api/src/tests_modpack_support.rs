@@ -24,7 +24,7 @@ use time::macros::datetime;
 
 use super::super::{FakeJava, HOST, ORIGIN, PORT, TestApi, send};
 
-struct PackServerCatalog;
+pub(super) struct PackServerCatalog;
 
 impl ServerCatalog for PackServerCatalog {
     fn versions(&self, _: LoaderKind) -> BoxFut<'_, Result<Vec<CatalogVersion>, AppError>> {
@@ -225,22 +225,32 @@ impl ContentCatalog for PackModCatalog {
     }
 }
 
+pub(super) fn sample_cf_zip() -> Vec<u8> {
+    let manifest = json!({
+        "minecraft": {
+            "version": "1.21.4",
+            "modLoaders": [{ "id": "fabric-0.16.9", "primary": true }]
+        },
+        "name": "CF Stub Pack",
+        "version": "1.0.0",
+        "files": [
+            { "projectID": 306612, "fileID": 5800000, "required": true },
+            { "projectID": 999001, "fileID": 5800999, "required": true }
+        ],
+        "overrides": "overrides"
+    });
+    store_zip(&[
+        ("manifest.json", manifest.to_string().as_bytes()),
+        ("overrides/config/cf.cfg", b"ok"),
+    ])
+}
+
 pub(super) fn modpack_api() -> TestApi {
     let tmp = tempfile::tempdir().unwrap();
     let dirs = DataDirs::resolve(Some(tmp.path().to_path_buf())).unwrap();
     dirs.ensure().unwrap();
-    let deps = AppDeps {
-        catalog: Arc::new(PackServerCatalog),
-        java: Arc::new(FakeJava),
-        port_free: Arc::new(|_| true),
-        free_space: Arc::new(|_| Some(50 * 1024 * 1024 * 1024)),
-        total_memory_mb: 16 * 1024,
-        supervisor: mh_supervisor::SupervisorConfig::default(),
-        save_flush_timeout: Duration::from_secs(60),
-        metrics: mh_app::MetricsConfig::default(),
-    };
     let app = Arc::new(
-        App::with_deps(dirs, deps)
+        App::with_deps(dirs, pack_deps())
             .unwrap()
             .with_content(Arc::new(PackModCatalog::sample())),
     );
@@ -249,6 +259,19 @@ pub(super) fn modpack_api() -> TestApi {
         _tmp: tmp,
         app,
         router,
+    }
+}
+
+pub(super) fn pack_deps() -> AppDeps {
+    AppDeps {
+        catalog: Arc::new(PackServerCatalog),
+        java: Arc::new(FakeJava),
+        port_free: Arc::new(|_| true),
+        free_space: Arc::new(|_| Some(50 * 1024 * 1024 * 1024)),
+        total_memory_mb: 16 * 1024,
+        supervisor: mh_supervisor::SupervisorConfig::default(),
+        save_flush_timeout: Duration::from_secs(60),
+        metrics: mh_app::MetricsConfig::default(),
     }
 }
 
@@ -331,7 +354,7 @@ pub(super) fn sample_mrpack(name: &str, mod_url: &str, mod_len: u64) -> Vec<u8> 
     ])
 }
 
-fn store_zip(entries: &[(&str, &[u8])]) -> Vec<u8> {
+pub(super) fn store_zip(entries: &[(&str, &[u8])]) -> Vec<u8> {
     let mut out = Vec::new();
     let mut dir = Vec::new();
     for &(name, data) in entries {

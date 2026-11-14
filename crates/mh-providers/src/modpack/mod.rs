@@ -1,22 +1,25 @@
-//! Đọc gói modpack `.mrpack` của Modrinth và giải nén `overrides/` + `server-overrides/`
-//! qua `SafeRoot` với giới hạn chống zip bomb (spec P3, mục 3.5, 3.7, 5.4, 8).
+//! Đọc gói modpack `.mrpack` (Modrinth) và `.zip` (CurseForge), giải nén overrides
+//! qua `SafeRoot` với giới hạn chống zip bomb (spec P3, mục 3.5, 3.6, 3.7, 5.4, 8).
 
-use std::fs::{self, File};
-use std::io::{BufReader, Read};
 use std::path::Path;
 
 use mh_core::{LoaderKind, LoaderVersion, McVersion, MrpackIndex, MrpackRuntime};
 use mh_net::{Checksum, HostAllowlist, hosts};
-use mh_platform::SafeRoot;
-use zip::ZipArchive;
-use zip::result::ZipError;
 
 mod archive;
+mod curseforge;
 
 use crate::ProviderError;
 use archive::{
-    add_within_limit, extract_overrides, is_symlink_or_special, is_unix_dir, map_read_io,
-    validate_archive_path, zip_err,
+    add_within_limit, extract_entries, open_pack_archive, read_json_entry, scan_prefixed_layers,
+    validate_archive_path,
+};
+
+pub use curseforge::{
+    extract_curseforge_overrides, extract_curseforge_overrides_with,
+    extract_curseforge_server_pack, extract_curseforge_server_pack_with, inspect_curseforge_pack,
+    inspect_curseforge_pack_with, plan_curseforge_pack, plan_curseforge_pack_with,
+    resolve_curseforge_files, skipped_server_pack_reason,
 };
 
 pub const MAX_INDEX_BYTES: u64 = 16 * 1024 * 1024;
@@ -52,9 +55,11 @@ pub struct PackFile {
     pub sha1: String,
     pub size: u64,
     pub hosts: HostAllowlist,
+    /// Cặp `(project_id, file_id)` khi đọc từ manifest CurseForge, để ghi `content.toml`.
+    pub cf_ids: Option<(u64, u64)>,
 }
 
-/// File không thể tự tải qua API (dành cho CurseForge ở PR-29; `.mrpack` luôn để trống).
+/// File không thể tự tải qua API (CurseForge cấm phân phối hoặc thiếu `downloadUrl`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BlockedPackFile {
     pub path: String,
@@ -64,7 +69,7 @@ pub struct BlockedPackFile {
     pub page_url: String,
 }
 
-/// Kế hoạch cài modpack sau khi đã giải nén phần overrides vào thư mục đích.
+/// Kế hoạch cài modpack sau khi đọc index/manifest (chưa tải file hay giải nén overrides).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PackPlan {
     pub name: String,
@@ -94,12 +99,20 @@ pub fn plan_mrpack_with(
     hosts: HostAllowlist,
     limits: PackLimits,
 ) -> Result<PackPlan, ProviderError> {
-    let mut archive = open_mrpack(archive_path, limits)?;
+    let mut archive = open_pack_archive(archive_path, limits)?;
     let (index, runtime) = read_index(&mut archive, archive_path, limits)?;
-    let (files, skipped_client, index_bytes, index_count) =
+    let (files, skipped_client, mut index_bytes, mut index_count) =
         plan_index_files(index.files, hosts, limits)?;
     // Quét trước để bắt zip bomb / tên file không hợp lệ trước khi tải loader hay file.
-    let _ = scan_overrides(&mut archive, archive_path, limits, index_count, index_bytes)?;
+    let _ = scan_prefixed_layers(
+        &mut archive,
+        archive_path,
+        Some(INDEX_NAME),
+        &["overrides/", "server-overrides/"],
+        limits,
+        &mut index_count,
+        &mut index_bytes,
+    )?;
 
     Ok(PackPlan {
         name: index.name,
@@ -124,9 +137,9 @@ pub fn extract_mrpack_overrides_with(
     dest_dir: &Path,
     limits: PackLimits,
 ) -> Result<(), ProviderError> {
-    let mut archive = open_mrpack(archive_path, limits)?;
+    let mut archive = open_pack_archive(archive_path, limits)?;
     let (index, _) = read_index(&mut archive, archive_path, limits)?;
-    let index_count = index.files.len();
+    let mut index_count = index.files.len();
     if index_count > limits.max_files {
         return Err(ProviderError::modpack_invalid(
             "số lượng file trong modpack vượt giới hạn",
@@ -144,17 +157,22 @@ pub fn extract_mrpack_overrides_with(
                 "tổng kích thước modpack vượt giới hạn",
             )
         })?;
-    let (overrides, server_overrides) =
-        scan_overrides(&mut archive, archive_path, limits, index_count, index_bytes)?;
-
-    fs::create_dir_all(dest_dir).map_err(|e| ProviderError::io(dest_dir, e))?;
-    let root = SafeRoot::new(dest_dir)?;
-    extract_overrides(
+    let mut scan_bytes = index_bytes;
+    let layers = scan_prefixed_layers(
         &mut archive,
         archive_path,
-        &root,
-        overrides,
-        server_overrides,
+        Some(INDEX_NAME),
+        &["overrides/", "server-overrides/"],
+        limits,
+        &mut index_count,
+        &mut scan_bytes,
+    )?;
+    // Luôn giải nén `overrides/` trước rồi mới tới `server-overrides/` để ghi đè đúng thứ tự.
+    extract_entries(
+        &mut archive,
+        archive_path,
+        dest_dir,
+        layers.into_iter().flatten(),
         limits,
         index_bytes,
     )
@@ -182,56 +200,12 @@ pub fn read_mrpack_with(
     Ok(plan)
 }
 
-fn open_mrpack(
-    path: &Path,
-    limits: PackLimits,
-) -> Result<ZipArchive<BufReader<File>>, ProviderError> {
-    let file = File::open(path).map_err(|e| ProviderError::io(path, e))?;
-    let archive = ZipArchive::new(BufReader::new(file)).map_err(|e| zip_err(path, e))?;
-    // Chặn archive chứa hàng trăm nghìn mục thư mục hoặc mục bị bỏ qua để tránh treo vòng lặp.
-    let entry_cap = limits.max_files.saturating_mul(4).max(1024);
-    if archive.len() > entry_cap {
-        return Err(ProviderError::modpack_invalid(
-            "modpack chứa quá nhiều mục trong zip",
-        ));
-    }
-    Ok(archive)
-}
-
 fn read_index(
-    archive: &mut ZipArchive<BufReader<File>>,
+    archive: &mut zip::ZipArchive<std::io::BufReader<std::fs::File>>,
     archive_path: &Path,
     limits: PackLimits,
 ) -> Result<(MrpackIndex, MrpackRuntime), ProviderError> {
-    let entry = match archive.by_name(INDEX_NAME) {
-        Ok(entry) => entry,
-        Err(ZipError::FileNotFound) => {
-            return Err(ProviderError::modpack_invalid("thiếu modrinth.index.json"));
-        }
-        Err(e) => return Err(zip_err(archive_path, e)),
-    };
-    if entry.is_dir() || is_unix_dir(&entry) || is_symlink_or_special(&entry) {
-        return Err(ProviderError::modpack_invalid(
-            "modrinth.index.json không phải file thường",
-        ));
-    }
-    if entry.size() > limits.max_index_bytes {
-        return Err(ProviderError::modpack_invalid(
-            "modrinth.index.json vượt quá giới hạn kích thước",
-        ));
-    }
-    let mut buf = Vec::new();
-    entry
-        .take(limits.max_index_bytes.saturating_add(1))
-        .read_to_end(&mut buf)
-        .map_err(|e| map_read_io(archive_path, e))?;
-    if buf.len() as u64 > limits.max_index_bytes {
-        return Err(ProviderError::modpack_invalid(
-            "modrinth.index.json vượt quá giới hạn kích thước",
-        ));
-    }
-    let text = String::from_utf8(buf)
-        .map_err(|_| ProviderError::modpack_invalid("modrinth.index.json không phải UTF-8"))?;
+    let text = read_json_entry(archive, archive_path, INDEX_NAME, limits.max_index_bytes)?;
     let index =
         MrpackIndex::from_json(&text).map_err(|e| ProviderError::modpack_invalid(e.to_string()))?;
     let runtime = index
@@ -290,104 +264,8 @@ fn plan_index_files(
             sha1: sha1.hex().to_owned(),
             size: item.file_size,
             hosts,
+            cf_ids: None,
         });
     }
     Ok((files, skipped_client, planned_bytes, index_count))
-}
-
-fn scan_overrides(
-    archive: &mut ZipArchive<BufReader<File>>,
-    archive_path: &Path,
-    limits: PackLimits,
-    mut total_files: usize,
-    mut declared_bytes: u64,
-) -> Result<(Vec<OverrideEntry>, Vec<OverrideEntry>), ProviderError> {
-    let mut overrides = Vec::new();
-    let mut server_overrides = Vec::new();
-
-    for index in 0..archive.len() {
-        let Some((is_server, item, size)) = inspect_override_entry(archive, index, archive_path)?
-        else {
-            continue;
-        };
-        if !item.is_dir {
-            total_files = total_files
-                .checked_add(1)
-                .filter(|&n| n <= limits.max_files)
-                .ok_or_else(|| {
-                    ProviderError::modpack_invalid("số lượng file trong modpack vượt giới hạn")
-                })?;
-            declared_bytes = add_within_limit(
-                declared_bytes,
-                size,
-                limits.max_total_bytes,
-                "tổng kích thước modpack vượt giới hạn",
-            )?;
-        }
-        if is_server {
-            server_overrides.push(item);
-        } else {
-            overrides.push(item);
-        }
-    }
-    Ok((overrides, server_overrides))
-}
-
-fn inspect_override_entry(
-    archive: &mut ZipArchive<BufReader<File>>,
-    index: usize,
-    archive_path: &Path,
-) -> Result<Option<(bool, OverrideEntry, u64)>, ProviderError> {
-    let (name, is_dir, skip_special, size) = {
-        let entry = archive
-            .by_index_raw(index)
-            .map_err(|e| zip_err(archive_path, e))?;
-        let name = entry
-            .name()
-            .map_err(|e| zip_err(archive_path, e))?
-            .into_owned();
-        let is_dir = entry.is_dir() || is_unix_dir(&entry);
-        (name, is_dir, is_symlink_or_special(&entry), entry.size())
-    };
-    if name == INDEX_NAME {
-        return Ok(None);
-    }
-    let raw_check = if is_dir {
-        name.strip_suffix('/').unwrap_or(&name)
-    } else {
-        &name
-    };
-    validate_archive_path(raw_check)?;
-    if skip_special {
-        tracing::debug!(%name, "bỏ qua symlink hoặc file đặc biệt trong modpack");
-        return Ok(None);
-    }
-    let Some((is_server, rel)) = name
-        .strip_prefix("overrides/")
-        .map(|rel| (false, rel))
-        .or_else(|| {
-            name.strip_prefix("server-overrides/")
-                .map(|rel| (true, rel))
-        })
-    else {
-        // Bỏ qua `client-overrides/` và các thư mục/file lạ ở gốc zip.
-        return Ok(None);
-    };
-    let rel = if is_dir {
-        rel.strip_suffix('/').unwrap_or(rel)
-    } else {
-        rel
-    };
-    if rel.is_empty() {
-        return Ok(None);
-    }
-    Ok(Some((
-        is_server,
-        OverrideEntry {
-            index,
-            rel: rel.to_owned(),
-            is_dir,
-        },
-        size,
-    )))
 }

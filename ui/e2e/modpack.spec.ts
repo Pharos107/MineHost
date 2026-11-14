@@ -83,8 +83,8 @@ test("cài modpack từ nguồn giả tới trang server và thấy tóm tắt",
   await page.getByRole("button", { name: "Tiếp" }).click();
 
   await expect(page).toHaveURL("/new/modpack");
-  await expect(page.getByRole("radio", { name: "CurseForge" })).toBeDisabled();
-  await expect(page.getByText("Modpack CurseForge sắp có.")).toBeVisible();
+  // Chế độ e2e coi như có key CurseForge, nên nguồn này chọn được (Modrinth vẫn là mặc định).
+  await expect(page.getByRole("radio", { name: "CurseForge" })).toBeEnabled();
 
   await page.getByRole("searchbox", { name: "Tìm modpack trên Modrinth…" }).fill("E2E");
   await page.getByRole("button", { name: /E2E Fabric Pack/ }).click();

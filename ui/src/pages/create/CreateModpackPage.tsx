@@ -176,11 +176,13 @@ function ModpackSearchCard({ onSelect }: { onSelect: (hit: SearchHit) => void })
     queryKey: CURSEFORGE_KEY,
     queryFn: settingsApi.curseforge,
   });
-  const cfReason = cfSettings.data?.available ? t("modpack.curseforgeSoon") : t("modpack.curseforgeNoKey");
+  const cfAvailable = cfSettings.data?.available === true;
+  const [source, setSource] = useState<"modrinth" | "curseforge">("modrinth");
+  const activeSource = cfAvailable ? source : "modrinth";
 
   const search = useInfiniteQuery({
-    queryKey: ["modpack-search", submitted],
-    queryFn: ({ pageParam }) => contentApi.search({ source: "modrinth", kind: "modpack", q: submitted, page: pageParam }),
+    queryKey: ["modpack-search", activeSource, submitted],
+    queryFn: ({ pageParam }) => contentApi.search({ source: activeSource, kind: "modpack", q: submitted, page: pageParam }),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page * last.page_size < last.total ? last.page + 1 : undefined),
   });
@@ -191,19 +193,19 @@ function ModpackSearchCard({ onSelect }: { onSelect: (hit: SearchHit) => void })
       <Stack gap={4}>
         <SegmentedControl
           label={t("content.addDialog.sourceLabel")}
-          value="modrinth"
-          onChange={() => {}}
+          value={activeSource}
+          onChange={(next) => setSource(next === "curseforge" ? "curseforge" : "modrinth")}
           options={[
             { value: "modrinth", label: t("content.addDialog.sourceModrinth") },
             {
               value: "curseforge",
               label: t("content.addDialog.sourceCurseforge"),
-              disabled: true,
-              title: cfReason,
+              disabled: !cfAvailable,
+              title: cfAvailable ? undefined : t("modpack.curseforgeNoKey"),
             },
           ]}
         />
-        {!cfSettings.isPending && <Notice tone="info">{cfReason}</Notice>}
+        {cfSettings.isSuccess && !cfAvailable && <Notice tone="info">{t("modpack.curseforgeNoKey")}</Notice>}
         <form
           onSubmit={(e) => {
             e.preventDefault();

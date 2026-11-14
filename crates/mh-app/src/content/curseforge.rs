@@ -3,19 +3,21 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use mh_core::{ErrorCode, LoaderKind, McVersion};
+use mh_core::{CfManifestFile, ErrorCode, LoaderKind, McVersion};
 use mh_net::{HostAllowlist, HttpClient, hosts};
 pub use mh_providers::curseforge::CurseForge;
 use mh_providers::curseforge::{
     self as cf, ClassId, ModFile, ModInfo, RelationType, ReleaseType, SortField,
 };
+use mh_providers::modpack::PackFile;
 use mh_providers::modrinth::{
     DependencyType, ProjectLinks, ProjectType, SearchFilters, SearchIndex,
 };
 
 use super::catalog::{
-    CatalogSource, ContentCatalog, ContentDependency, ContentFileInfo, ContentProject,
-    ContentSearchHit, ContentSearchResult, ContentVersion, download_with_hosts,
+    CatalogSource, CfResolvedFiles, ContentCatalog, ContentDependency, ContentFileInfo,
+    ContentProject, ContentSearchHit, ContentSearchResult, ContentVersion,
+    download_pack_file_with_hosts, download_with_hosts,
 };
 use crate::AppError;
 use crate::sources::{BoxFut, CancellationToken, ProgressFn};
@@ -146,6 +148,68 @@ impl ContentCatalog for CurseforgeCatalog {
         cancel: &'a CancellationToken,
     ) -> BoxFut<'a, Result<(), AppError>> {
         download_with_hosts(&self.http, &self.hosts, file, dest, progress, cancel)
+    }
+
+    fn project_versions<'a>(
+        &'a self,
+        project: &'a str,
+    ) -> BoxFut<'a, Result<Vec<ContentVersion>, AppError>> {
+        Box::pin(async move {
+            let id = parse_cf_id(project, "project_id")?;
+            let files = self.cf.all_files(id).await?;
+            Ok(files
+                .into_iter()
+                .filter(|f| !f.is_server_pack)
+                .map(cf_version)
+                .collect())
+        })
+    }
+
+    fn download_pack_file<'a>(
+        &'a self,
+        file: &'a PackFile,
+        dest: &'a Path,
+        progress: ProgressFn<'a>,
+        cancel: &'a CancellationToken,
+    ) -> BoxFut<'a, Result<(), AppError>> {
+        download_pack_file_with_hosts(&self.http, &self.hosts, file, dest, progress, cancel)
+    }
+
+    fn pack_hosts(&self) -> HostAllowlist {
+        self.hosts
+    }
+
+    fn curseforge_server_pack<'a>(
+        &'a self,
+        file_id: &'a str,
+    ) -> BoxFut<'a, Result<Option<ContentFileInfo>, AppError>> {
+        Box::pin(async move {
+            let fid = parse_cf_id(file_id, "version_id")?;
+            let Some(file) = self.cf.files_by_id(&[fid]).await?.into_iter().next() else {
+                return Ok(None);
+            };
+            let Some(sp_id) = file.server_pack_file_id else {
+                return Ok(None);
+            };
+            let Some(mut sp) = self.cf.files_by_id(&[sp_id]).await?.into_iter().next() else {
+                return Ok(None);
+            };
+            if let Ok(info) = self.cf.mod_info(sp.mod_id).await {
+                sp.apply_mod(&info);
+            }
+            Ok(cf_version(sp).files.into_iter().next())
+        })
+    }
+
+    fn resolve_curseforge_files<'a>(
+        &'a self,
+        files: &'a [CfManifestFile],
+    ) -> BoxFut<'a, Result<CfResolvedFiles, AppError>> {
+        Box::pin(async move {
+            mh_providers::resolve_curseforge_files(&self.cf, files)
+                .await
+                .map_err(Into::into)
+        })
     }
 }
 

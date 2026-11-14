@@ -317,7 +317,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description multipart/form-data, một file .mrpack tối đa 512 MiB kèm trường name (tùy chọn memory_mb, port). */
+        /** @description multipart/form-data, một file .mrpack hoặc .zip tối đa 512 MiB kèm trường name (tùy chọn memory_mb, port). */
         post: operations["upload"];
         delete?: never;
         options?: never;
@@ -867,7 +867,7 @@ export interface components {
             /** Format: int32 */
             port?: number | null;
             project_id: string;
-            /** @description `modrinth`. */
+            /** @description `modrinth` hoặc `curseforge`. */
             source: string;
             version_id?: string | null;
         };
