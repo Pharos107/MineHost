@@ -10,8 +10,9 @@ use std::sync::Arc;
 use mh_core::{ErrorCode, LoaderKind};
 use mh_net::{HostAllowlist, HttpClient, NetConfig};
 use mh_providers::{
-    CurseForge, PackLimits, extract_curseforge_overrides_with, extract_curseforge_server_pack,
-    extract_curseforge_server_pack_with, inspect_curseforge_pack_with, plan_curseforge_pack_with,
+    CurseForge, PackLimits, extract_curseforge_overrides_after, extract_curseforge_overrides_with,
+    extract_curseforge_server_pack, extract_curseforge_server_pack_with,
+    inspect_curseforge_pack_with, plan_curseforge_pack_with,
 };
 use serde_json::json;
 use wiremock::matchers::{header, method, path};
@@ -323,4 +324,35 @@ fn server_pack_strips_single_root_dir_and_skips_launch_files() {
     )
     .unwrap();
     assert_eq!(fs::read(dest_flat.join("mods/only.jar")).unwrap(), b"jar");
+}
+
+/// Giới hạn chống zip bomb áp cho cả pack: phần mod đã tải cộng với overrides (như luồng `.mrpack`).
+#[test]
+fn overrides_limits_count_previously_downloaded_mods() {
+    let tmp = tempfile::tempdir().unwrap();
+    let manifest = sample_manifest("overrides", json!([]));
+    let pack = write_zip(
+        tmp.path(),
+        "small.zip",
+        &build_zip(|w| {
+            add_file(w, "manifest.json", &manifest);
+            add_file(w, "overrides/config/a.cfg", &[b'a'; 300]);
+            add_file(w, "overrides/config/b.cfg", b"b");
+        }),
+    );
+    let limits = PackLimits {
+        max_index_bytes: 1024 * 1024,
+        max_total_bytes: 1000,
+        max_files: 10,
+    };
+    // Riêng overrides thì vừa giới hạn.
+    extract_curseforge_overrides_after(&pack, &tmp.path().join("ok"), limits, 0, 0).unwrap();
+    // Cộng 800 byte mod đã tải thì vượt 1000 byte.
+    let err = extract_curseforge_overrides_after(&pack, &tmp.path().join("bytes"), limits, 0, 800)
+        .unwrap_err();
+    assert_eq!(err.code(), ErrorCode::ModpackInvalid);
+    // Cộng 9 file mod đã tải thì vượt 10 file.
+    let err = extract_curseforge_overrides_after(&pack, &tmp.path().join("files"), limits, 9, 0)
+        .unwrap_err();
+    assert_eq!(err.code(), ErrorCode::ModpackInvalid);
 }

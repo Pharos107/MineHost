@@ -8,7 +8,7 @@ use mh_core::{CfManifest, CfRuntime, ErrorCode};
 use mh_platform::SafeRoot;
 use mh_providers::modpack::PackPlan;
 use mh_providers::{
-    extract_curseforge_overrides_with, extract_curseforge_server_pack_with,
+    extract_curseforge_overrides_after, extract_curseforge_server_pack_with,
     inspect_curseforge_pack_with,
 };
 
@@ -189,6 +189,11 @@ impl App {
         pack_path: &Path,
         spec: CfPackSpec,
     ) -> Result<(), AppError> {
+        let limits = mh_providers::PackLimits::default();
+        // Chặn manifest quá nhiều file trước khi gọi API: giới hạn chống zip bomb áp cho cả pack.
+        if spec.manifest.files.len() > limits.max_files {
+            return Err(pack_too_big("số file trong manifest vượt giới hạn"));
+        }
         let (files, blocked) = match catalog.as_ref() {
             Some(cat) if !spec.manifest.files.is_empty() => {
                 ctx.step(JobStep::ResolveContent, 2, 9);
@@ -197,8 +202,13 @@ impl App {
             }
             _ => (Vec::new(), Vec::new()),
         };
-        let planned_bytes: u64 = files.iter().map(|f| f.size).sum();
+        let planned_bytes = files
+            .iter()
+            .try_fold(0u64, |sum, f| sum.checked_add(f.size))
+            .filter(|&sum| sum <= limits.max_total_bytes)
+            .ok_or_else(|| pack_too_big("tổng kích thước mod trong manifest vượt giới hạn"))?;
         self.check_disk_for(planned_bytes)?;
+        let planned_files = files.len();
 
         let mut plan = empty_cf_plan(&spec.manifest, spec.runtime);
         plan.files = files;
@@ -230,10 +240,12 @@ impl App {
         let override_src = pack_path.to_path_buf();
         let override_dst = paths.server_dir.clone();
         ctx.cancellable(blocking(move || {
-            extract_curseforge_overrides_with(
+            extract_curseforge_overrides_after(
                 &override_src,
                 &override_dst,
-                mh_providers::PackLimits::default(),
+                limits,
+                planned_files,
+                planned_bytes,
             )
             .map_err(AppError::from)
         }))
@@ -306,4 +318,8 @@ fn empty_cf_plan(manifest: &CfManifest, runtime: CfRuntime) -> PackPlan {
         skipped_client: Vec::new(),
         blocked: Vec::new(),
     }
+}
+
+fn pack_too_big(reason: &str) -> AppError {
+    AppError::new(ErrorCode::ModpackInvalid, reason.to_owned())
 }

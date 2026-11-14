@@ -16,10 +16,11 @@ use archive::{
 };
 
 pub use curseforge::{
-    extract_curseforge_overrides, extract_curseforge_overrides_with,
-    extract_curseforge_server_pack, extract_curseforge_server_pack_with, inspect_curseforge_pack,
-    inspect_curseforge_pack_with, plan_curseforge_pack, plan_curseforge_pack_with,
-    resolve_curseforge_files, skipped_server_pack_reason,
+    extract_curseforge_overrides, extract_curseforge_overrides_after,
+    extract_curseforge_overrides_with, extract_curseforge_server_pack,
+    extract_curseforge_server_pack_with, inspect_curseforge_pack, inspect_curseforge_pack_with,
+    plan_curseforge_pack, plan_curseforge_pack_with, resolve_curseforge_files,
+    skipped_server_pack_reason,
 };
 
 pub const MAX_INDEX_BYTES: u64 = 16 * 1024 * 1024;
