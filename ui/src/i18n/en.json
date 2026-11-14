@@ -321,7 +321,8 @@
     },
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "morePlayers": "and {{count}} more"
+    "morePlayers": "and {{count}} more",
+    "downloads": "{{value}} downloads"
   },
   "serverState": {
     "installing": "Installing",
@@ -683,19 +684,42 @@
     "removeTitle": "Remove {{name}}?",
     "removeBody": "The file {{file}} is moved to MineHost's trash, so you can get it back later.",
     "unsupported": "This server type does not support mods or plugins.",
+    "add": "Add",
+    "addDialog": {
+      "loadMore": "Load more",
+      "noResults": "No results found",
+      "noResultsHint": "Try a different search matching this server's loader and Minecraft version.",
+      "version": "Version",
+      "planning": "Checking files to install…",
+      "planTitle": "Files to install",
+      "dependencies_one": "Required dependency ({{count}})",
+      "dependencies_other": "Required dependencies ({{count}})",
+      "replacesExisting": "Replaces existing",
+      "clientOnlyHint": "Client-only mods are installed disabled; you can turn them on yourself if needed.",
+      "back": "Back",
+      "install": "Install",
+      "failedTitle": "Could not install",
+      "cancelledTitle": "Installation cancelled."
+    },
     "mods": {
       "table": "Installed mods",
       "runningHint": "The server is running: stop it before enabling, disabling, uploading, or removing mods.",
       "empty": "No mods yet",
       "emptyHint": "Upload a .jar file above or place one in the server's mods/ folder.",
-      "openPage": "Open mod page"
+      "openPage": "Open mod page",
+      "addTitle": "Add mod",
+      "searchPlaceholder": "Search mods on Modrinth…",
+      "mainItem": "Selected mod"
     },
     "plugins": {
       "table": "Installed plugins",
       "runningHint": "The server is running: stop it before enabling, disabling, uploading, or removing plugins.",
       "empty": "No plugins yet",
       "emptyHint": "Upload a .jar file above or place one in the server's plugins/ folder.",
-      "openPage": "Open plugin page"
+      "openPage": "Open plugin page",
+      "addTitle": "Add plugin",
+      "searchPlaceholder": "Search plugins on Modrinth…",
+      "mainItem": "Selected plugin"
     }
   }
 }

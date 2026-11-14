@@ -1,9 +1,20 @@
 import type { TFunction } from "i18next";
 
 import { ApiError, errorMessage, type Server } from "../../../api/client";
-import type { InstalledContent } from "../../../api/content";
+import type { ContentKind, ContentVersion, InstalledContent } from "../../../api/content";
 
 export type ContentSourceLabel = "modrinth" | "curseforge" | "modpack" | "manual";
+
+const LOADER_LABELS: Record<string, string> = {
+  fabric: "Fabric",
+  quilt: "Quilt",
+  forge: "Forge",
+  neoforge: "NeoForge",
+  paper: "Paper",
+  purpur: "Purpur",
+  spigot: "Spigot",
+  bukkit: "Bukkit",
+};
 
 /**
  * Chọn nhãn nguồn hiển thị từ bản ghi: file chép tay hoặc tải lên hiện "Thêm tay", file từ
@@ -35,4 +46,30 @@ export function isJarFile(file: Pick<File, "name">): boolean {
 export function contentUploadError(t: TFunction, error: unknown): string {
   if (error instanceof ApiError && error.code === "INVALID_INPUT") return t("content.uploadInvalid");
   return errorMessage(t, error);
+}
+
+/** Đổi `content_kind` của server sang `kind` của route tìm kiếm. */
+export function searchKindFor(kind: ContentKind): "mod" | "plugin" {
+  return kind === "plugins" ? "plugin" : "mod";
+}
+
+/** Lọc tên loader từ `categories` của Modrinth để hiện nhãn gọn trên `ProjectCard`. */
+export function hitLoaders(categories: string[], fallbackLoader?: string | null): string[] {
+  const labels = categories
+    .map((c) => LOADER_LABELS[c.toLowerCase()])
+    .filter((label): label is string => Boolean(label));
+  if (labels.length > 0) return labels;
+  if (fallbackLoader) return [LOADER_LABELS[fallbackLoader.toLowerCase()] ?? fallbackLoader];
+  return [];
+}
+
+/** Ưu tiên phiên bản Minecraft của server khi khớp, nếu không lấy bản đầu tiên. */
+export function hitVersion(gameVersions: string[], serverMinecraft?: string | null): string | undefined {
+  if (serverMinecraft && gameVersions.includes(serverMinecraft)) return serverMinecraft;
+  return gameVersions[0];
+}
+
+export function versionOptionLabel(version: Pick<ContentVersion, "version_number" | "version_type">): string {
+  if (version.version_type === "release") return version.version_number;
+  return `${version.version_number} (${version.version_type})`;
 }

@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button, IconButton } from "./Button";
+import { cx } from "./cx";
 import styles from "./Dialog.module.css";
 import { Field } from "./Field";
 import { TextInput } from "./inputs";
@@ -11,6 +12,7 @@ interface DialogProps {
   open: boolean;
   onClose: () => void;
   title: string;
+  size?: "md" | "lg";
   /** `false` khi người dùng phải chọn một nút (ví dụ EULA): Esc và bấm ra ngoài không đóng. */
   dismissible?: boolean;
   children: ReactNode;
@@ -20,7 +22,7 @@ interface DialogProps {
  * Hộp thoại dựa trên `<dialog>` để trình duyệt lo khóa focus và nền mờ. Nội dung chỉ được
  * dựng khi mở, nên trạng thái bên trong (ô đã gõ…) tự xóa sau mỗi lần đóng.
  */
-export function Dialog({ open, onClose, title, dismissible = true, children }: DialogProps) {
+export function Dialog({ open, onClose, title, size = "md", dismissible = true, children }: DialogProps) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -39,7 +41,7 @@ export function Dialog({ open, onClose, title, dismissible = true, children }: D
   return (
     <dialog
       ref={ref}
-      className={styles.dialog}
+      className={cx(styles.dialog, size === "lg" && styles.lg)}
       aria-labelledby={titleId}
       onCancel={(e) => {
         // Đóng theo prop `open`, không để trình duyệt tự đóng rồi lệch với state của React.
