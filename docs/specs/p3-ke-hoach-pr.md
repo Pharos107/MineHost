@@ -36,7 +36,7 @@ chính PR ấy.
 | 22 | Đọc `.mrpack` | Đã merge | [#90](https://github.com/Pharos107/MineHost/pull/90) |
 | 23 | Job cài modpack | Đã merge | [#93](https://github.com/Pharos107/MineHost/pull/93) |
 | 24 | Tạo server từ modpack | Đã merge | [#94](https://github.com/Pharos107/MineHost/pull/94) |
-| 25 | Phát hành `v0.4.0` | Chưa bắt đầu | |
+| 25 | Phát hành `v0.4.0` | Chờ tag (hỏi chủ dự án) | [#98](https://github.com/Pharos107/MineHost/pull/98) |
 | 26 | Key CurseForge | Đã merge | [#89](https://github.com/Pharos107/MineHost/pull/89) |
 | 27 | CurseForge | Đã merge | [#91](https://github.com/Pharos107/MineHost/pull/91) |
 | 28 | Cài mod từ CurseForge | Đã merge | [#92](https://github.com/Pharos107/MineHost/pull/92) |
