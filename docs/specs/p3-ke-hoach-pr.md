@@ -25,7 +25,14 @@ chính PR ấy.
 | 11 | Tích hợp mỗi loader trên Windows và Linux | Đã merge | [#75](https://github.com/Pharos107/MineHost/pull/75) |
 | 12 | Nhập server có sẵn có mod | Đã merge | [#76](https://github.com/Pharos107/MineHost/pull/76) |
 | 13 | Chọn Java cho từng server | Đã merge | [#77](https://github.com/Pharos107/MineHost/pull/77) |
-| 14–21 | Nhóm C · Modrinth và trang Mod | Chưa bắt đầu | |
+| 14 | Đọc metadata mod và plugin | Đang chờ CI | [#79](https://github.com/Pharos107/MineHost/pull/79) |
+| 15 | `content.toml` và quét thư mục mod | Chưa bắt đầu | |
+| 16 | Modrinth | Chưa bắt đầu | |
+| 17 | Cài, bật, tắt, gỡ mod | Chưa bắt đầu | |
+| 18 | Route mod và tìm kiếm | Chưa bắt đầu | |
+| 19 | Trang Mod hoặc Plugin | Chưa bắt đầu | |
+| 20 | Tìm và cài mod | Chưa bắt đầu | |
+| 21 | Kiểm tra trước khi bật | Chưa bắt đầu | |
 | 22–25 | Nhóm D · Modpack Modrinth, `v0.4.0` | Chưa bắt đầu | |
 | 26–30 | Nhóm E · CurseForge | Chưa bắt đầu | |
 | 31–34 | Nhóm F · Cập nhật và đổi phiên bản | Chưa bắt đầu | |
