@@ -1,0 +1,63 @@
+{
+  "data": [
+    {
+      "id": 5600002,
+      "gameId": 432,
+      "modId": 238222,
+      "isAvailable": true,
+      "displayName": "jei-1.21.1-fabric-19.16.0.220.jar",
+      "fileName": "jei-1.21.1-fabric-19.16.0.220.jar",
+      "releaseType": 1,
+      "fileStatus": 4,
+      "hashes": [
+        {
+          "value": "003c114c85ca88ef3362e018deb6aca0c682d6a1",
+          "algo": 1
+        }
+      ],
+      "fileDate": "2024-08-15T18:30:00Z",
+      "fileLength": 1435000,
+      "downloadUrl": "https://edge.forgecdn.net/files/5600/2/jei-1.21.1-fabric-19.16.0.220.jar",
+      "gameVersions": [
+        "1.21.1",
+        "Fabric"
+      ],
+      "dependencies": [
+        {
+          "modId": 306612,
+          "relationType": 3
+        }
+      ],
+      "isServerPack": false,
+      "serverPackFileId": null,
+      "fileFingerprint": 222222222
+    },
+    {
+      "id": 6100001,
+      "gameId": 432,
+      "modId": 999001,
+      "isAvailable": true,
+      "displayName": "restricted-example-1.21.1-1.0.0.jar",
+      "fileName": "restricted-example-1.21.1-1.0.0.jar",
+      "releaseType": 1,
+      "fileStatus": 4,
+      "hashes": [
+        {
+          "value": "dddddddddddddddddddddddddddddddddddddddd",
+          "algo": 1
+        }
+      ],
+      "fileDate": "2024-08-16T09:00:00Z",
+      "fileLength": 98304,
+      "downloadUrl": null,
+      "gameVersions": [
+        "1.21.1",
+        "Fabric"
+      ],
+      "dependencies": [],
+      "isServerPack": false,
+      "serverPackFileId": null,
+      "fileFingerprint": 333333333
+    }
+  ]
+}

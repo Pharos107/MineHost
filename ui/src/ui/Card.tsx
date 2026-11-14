@@ -5,6 +5,7 @@ import styles from "./Card.module.css";
 import { cx } from "./cx";
 
 interface CardProps {
+  id?: string;
   title?: string;
   description?: string;
   /** Biểu tượng nhỏ trước tiêu đề, giúp lướt nhanh giữa các mục (ví dụ trang Cài đặt). */
@@ -16,10 +17,10 @@ interface CardProps {
   children?: ReactNode;
 }
 
-export function Card({ title, description, icon: Icon, layout = "stack", actions, children }: CardProps) {
+export function Card({ id, title, description, icon: Icon, layout = "stack", actions, children }: CardProps) {
   const hasHeader = title !== undefined || actions !== undefined;
   return (
-    <section className={cx(styles.card, layout === "split" && styles.split)}>
+    <section id={id} className={cx(styles.card, layout === "split" && styles.split)}>
       {hasHeader && (
         <header className={styles.header}>
           <div>

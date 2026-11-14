@@ -1,0 +1,46 @@
+{
+  "data": {
+    "id": 238222,
+    "gameId": 432,
+    "name": "Just Enough Items (JEI)",
+    "slug": "jei",
+    "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/mc-mods/jei",
+      "wikiUrl": "https://github.com/mezz/JustEnoughItems/wiki",
+      "issuesUrl": "https://github.com/mezz/JustEnoughItems/issues",
+      "sourceUrl": "https://github.com/mezz/JustEnoughItems"
+    },
+    "summary": "View Items and Recipes",
+    "status": 4,
+    "downloadCount": 250000000.0,
+    "isFeatured": false,
+    "primaryCategoryId": 423,
+    "categories": [],
+    "classId": 6,
+    "authors": [
+      {
+        "id": 25000,
+        "name": "mezz",
+        "url": "https://www.curseforge.com/members/mezz"
+      }
+    ],
+    "logo": {
+      "id": 101010,
+      "modId": 238222,
+      "title": "jei-logo.png",
+      "description": "JEI Logo",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/101/010/256/256/638000000000000000.png",
+      "url": "https://media.forgecdn.net/avatars/101/010/638000000000000000.png"
+    },
+    "screenshots": [],
+    "mainFileId": 5600002,
+    "latestFiles": [],
+    "dateCreated": "2015-11-11T00:00:00Z",
+    "dateModified": "2024-08-10T12:00:00Z",
+    "dateReleased": "2015-11-11T00:00:00Z",
+    "allowModDistribution": true,
+    "gamePopularityRank": 1,
+    "isAvailable": true,
+    "thumbsUpCount": 45000
+  }
+}

@@ -102,7 +102,7 @@ pub struct SearchHit {
     pub project_type: String,
     pub title: String,
     pub description: String,
-    #[serde(default, deserialize_with = "non_empty_opt")]
+    #[serde(default, deserialize_with = "crate::non_empty_opt")]
     pub icon_url: Option<String>,
     pub downloads: u64,
     #[serde(default)]
@@ -115,13 +115,13 @@ pub struct SearchHit {
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct ProjectLinks {
-    #[serde(default, deserialize_with = "non_empty_opt")]
+    #[serde(default, deserialize_with = "crate::non_empty_opt")]
     pub source_url: Option<String>,
-    #[serde(default, deserialize_with = "non_empty_opt")]
+    #[serde(default, deserialize_with = "crate::non_empty_opt")]
     pub issues_url: Option<String>,
-    #[serde(default, deserialize_with = "non_empty_opt")]
+    #[serde(default, deserialize_with = "crate::non_empty_opt")]
     pub wiki_url: Option<String>,
-    #[serde(default, deserialize_with = "non_empty_opt")]
+    #[serde(default, deserialize_with = "crate::non_empty_opt")]
     pub discord_url: Option<String>,
 }
 
@@ -133,7 +133,7 @@ pub struct Project {
     pub title: String,
     pub description: String,
     pub body: String,
-    #[serde(default, deserialize_with = "non_empty_opt")]
+    #[serde(default, deserialize_with = "crate::non_empty_opt")]
     pub icon_url: Option<String>,
     pub downloads: u64,
     #[serde(default)]
@@ -216,9 +216,4 @@ impl ModrinthVersion {
             .find(|f| f.primary)
             .or_else(|| self.files.first())
     }
-}
-
-fn non_empty_opt<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Option<String>, D::Error> {
-    let opt = Option::<String>::deserialize(d)?;
-    Ok(opt.filter(|s| !s.trim().is_empty()))
 }

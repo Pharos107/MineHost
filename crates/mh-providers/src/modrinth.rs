@@ -11,7 +11,6 @@ use std::time::Duration;
 use mh_core::{LoaderKind, McVersion};
 use mh_net::{Checksum, HostAllowlist, HttpClient, NetError, hosts};
 use serde::Serialize;
-use url::Url;
 
 use crate::ProviderError;
 
@@ -59,7 +58,7 @@ impl Modrinth {
         query: &str,
         filters: &SearchFilters,
     ) -> Result<SearchResult, ProviderError> {
-        let mut url = endpoint(&self.base_url, &["search"])?;
+        let mut url = crate::endpoint(SOURCE, &self.base_url, &["search"])?;
         let facets = build_facets(filters);
         let limit = if filters.limit == 0 {
             DEFAULT_LIMIT
@@ -87,7 +86,7 @@ impl Modrinth {
         if id_or_slug.trim().is_empty() {
             return Err(not_found(id_or_slug));
         }
-        let url = endpoint(&self.base_url, &["project", id_or_slug])?;
+        let url = crate::endpoint(SOURCE, &self.base_url, &["project", id_or_slug])?;
         self.get_json(url.as_str(), PROJECT_TTL, id_or_slug).await
     }
 
@@ -109,7 +108,7 @@ impl Modrinth {
             .map_err(|_| ProviderError::invalid(SOURCE, "không tạo được tham số loaders"))?;
         let mc_json = serde_json::to_string(&[mc.as_str()])
             .map_err(|_| ProviderError::invalid(SOURCE, "không tạo được tham số game_versions"))?;
-        let mut url = endpoint(&self.base_url, &["project", project, "version"])?;
+        let mut url = crate::endpoint(SOURCE, &self.base_url, &["project", project, "version"])?;
         {
             let mut qp = url.query_pairs_mut();
             qp.append_pair("loaders", &loaders_json);
@@ -126,7 +125,7 @@ impl Modrinth {
         if project.trim().is_empty() {
             return Err(not_found(project));
         }
-        let url = endpoint(&self.base_url, &["project", project, "version"])?;
+        let url = crate::endpoint(SOURCE, &self.base_url, &["project", project, "version"])?;
         self.valid_sorted_versions(url.as_str(), project).await
     }
 
@@ -149,7 +148,7 @@ impl Modrinth {
         if id.trim().is_empty() {
             return Err(not_found(id));
         }
-        let url = endpoint(&self.base_url, &["version", id])?;
+        let url = crate::endpoint(SOURCE, &self.base_url, &["version", id])?;
         let mut ver: ModrinthVersion = self.get_json(url.as_str(), Duration::ZERO, id).await?;
         validate_version(&self.hosts, &mut ver)?;
         Ok(ver)
@@ -164,7 +163,7 @@ impl Modrinth {
             return Ok(HashMap::new());
         }
         let refs: Vec<&str> = hashes.iter().map(AsRef::as_ref).collect();
-        let url = endpoint(&self.base_url, &["version_files"])?;
+        let url = crate::endpoint(SOURCE, &self.base_url, &["version_files"])?;
         let req = HashLookupRequest {
             hashes: &refs,
             algorithm: "sha1",
@@ -265,21 +264,6 @@ fn validate_version(hosts: &HostAllowlist, ver: &mut ModrinthVersion) -> Result<
         file.hashes.sha512 = sha512.hex().to_owned();
     }
     Ok(())
-}
-
-fn endpoint(base: &str, segments: &[&str]) -> Result<Url, ProviderError> {
-    let mut url =
-        Url::parse(base).map_err(|_| ProviderError::invalid(SOURCE, "base URL không hợp lệ"))?;
-    {
-        let mut path = url
-            .path_segments_mut()
-            .map_err(|()| ProviderError::invalid(SOURCE, "base URL không hỗ trợ path"))?;
-        path.pop_if_empty();
-        for seg in segments {
-            path.push(seg);
-        }
-    }
-    Ok(url)
 }
 
 fn map_net_err(err: NetError, id: &str) -> ProviderError {
