@@ -102,7 +102,7 @@ function SearchStep({ server, kind, onSelect, onClose }: SearchStepProps) {
 
   useEffect(() => {
     const trimmed = query.trim();
-    const timer = window.setTimeout(() => setSubmitted(trimmed), trimmed === "" ? 0 : 150);
+    const timer = window.setTimeout(() => setSubmitted(trimmed), trimmed === "" ? 0 : 300);
     return () => window.clearTimeout(timer);
   }, [query]);
 
