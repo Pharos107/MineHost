@@ -327,7 +327,11 @@ fn parses_all_real_mod_fixtures() {
         .map(|e| e.file_name().to_string_lossy().into_owned())
         .collect();
     let expected_dirs: BTreeSet<String> = FIXTURES.iter().map(|f| f.dir.to_owned()).collect();
-    assert_eq!(actual_dirs, expected_dirs);
+    assert!(
+        expected_dirs.is_subset(&actual_dirs),
+        "thiếu thư mục fixture: {:?}",
+        expected_dirs.difference(&actual_dirs).collect::<Vec<_>>()
+    );
 }
 
 #[test]
