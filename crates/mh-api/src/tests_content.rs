@@ -127,8 +127,14 @@ async fn search_project_and_versions_routes() {
     assert_eq!(vers[0]["version_number"], "0.6.1");
     assert_eq!(vers[1]["version_number"], "0.6.0");
 
-    let (status, err) = api
+    let (status, all_vers) = api
         .get("/api/v1/content/modrinth/projects/sodium/versions")
+        .await;
+    assert_eq!(status, StatusCode::OK, "{all_vers}");
+    assert_eq!(all_vers[0]["version_number"], "0.6.1");
+
+    let (status, err) = api
+        .get("/api/v1/content/modrinth/projects/sodium/versions?server_id=not-a-server")
         .await;
     assert_eq!(
         (status, err["code"].as_str()),

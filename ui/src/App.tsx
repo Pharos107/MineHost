@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import { useServersLive } from "./api/live";
 import { BareLayout, SidebarLayout, TopLayout } from "./components/AppLayout";
 import { AuthGate } from "./components/AuthGate";
+import { CreateModpackPage } from "./pages/create/CreateModpackPage";
 import { CreateServerPage } from "./pages/create/CreateServerPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { HomePage } from "./pages/home/HomePage";
@@ -36,6 +37,14 @@ export function AppRoutes() {
         element={
           <TopLayout>
             <CreateServerPage />
+          </TopLayout>
+        }
+      />
+      <Route
+        path="/new/modpack"
+        element={
+          <TopLayout>
+            <CreateModpackPage />
           </TopLayout>
         }
       />

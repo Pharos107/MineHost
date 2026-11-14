@@ -1317,6 +1317,8 @@ export interface components {
             os_version?: string | null;
             /** @description RAM đề xuất cho server mới (spec P1, mục 4.3). */
             suggested_memory_mb: components["schemas"]["MemoryDto"];
+            /** @description RAM đề xuất cho server dựng từ modpack (spec P3, mục 5.7). */
+            suggested_modpack_memory_mb: components["schemas"]["MemoryDto"];
             version: string;
         };
         TextBody: {

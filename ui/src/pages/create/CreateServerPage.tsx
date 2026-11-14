@@ -19,8 +19,8 @@ export function CreateServerPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  // "Nhập thư mục có sẵn" ở bước 1 chuyển sang luồng riêng từ bước 2.
-  const [importing, setImporting] = useState(false);
+  // "Nhập thư mục có sẵn" và "Từ modpack" ở bước 1 chuyển sang luồng riêng khi bấm Tiếp.
+  const [mode, setMode] = useState<"create" | "import" | "modpack">("create");
   const [form, setForm] = useState<WizardForm>(() => ({ loader: "paper", version: "", name: t("wizard.defaultName"), memoryMb: null, port: "" }));
   const versions = useQuery({ queryKey: ["catalog", form.loader], queryFn: () => api.catalogVersions(form.loader), staleTime: 5 * 60_000 });
   const create = useMutation({ mutationFn: (body: CreateServer) => api.createServer(body) });
@@ -30,7 +30,7 @@ export function CreateServerPage() {
   const submit = () => create.mutate(toRequest(form, version));
   const canContinue = [true, version !== "", !nameError(form.name) && !portError(form.port)][step];
 
-  if (importing && step > 0) return <ImportWizard onBack={() => setStep(0)} />;
+  if (mode === "import" && step > 0) return <ImportWizard onBack={() => setStep(0)} />;
   if (create.data) {
     return <JobProgressView created={create.data} onRetry={submit} onBack={() => create.reset()} />;
   }
@@ -51,6 +51,10 @@ export function CreateServerPage() {
           onSubmit={(e) => {
             e.preventDefault();
             if (!canContinue) return;
+            if (step === 0 && mode === "modpack") {
+              void navigate("/new/modpack");
+              return;
+            }
             if (step < LAST) setStep(step + 1);
             else submit();
           }}
@@ -59,10 +63,14 @@ export function CreateServerPage() {
             {/* Mỗi loại có danh sách phiên bản riêng: đổi loại thì chọn lại bản mới nhất của loại đó. */}
             {step === 0 && (
               <LoaderStep
-                value={importing ? "import" : form.loader}
+                value={mode === "create" ? form.loader : mode}
                 onChange={(choice) => {
-                  setImporting(choice === "import");
-                  if (choice !== "import") update({ loader: choice, version: "", loaderVersion: "" });
+                  if (choice === "import" || choice === "modpack") {
+                    setMode(choice);
+                    return;
+                  }
+                  setMode("create");
+                  update({ loader: choice, version: "", loaderVersion: "" });
                 }}
               />
             )}

@@ -5055,6 +5055,7 @@
           "memory_used_bytes",
           "data_dir",
           "suggested_memory_mb",
+          "suggested_modpack_memory_mb",
           "lan_addresses",
           "java_majors"
         ],
@@ -5140,6 +5141,10 @@
           "suggested_memory_mb": {
             "$ref": "#/components/schemas/MemoryDto",
             "description": "RAM đề xuất cho server mới (spec P1, mục 4.3)."
+          },
+          "suggested_modpack_memory_mb": {
+            "$ref": "#/components/schemas/MemoryDto",
+            "description": "RAM đề xuất cho server dựng từ modpack (spec P3, mục 5.7)."
           },
           "version": {
             "type": "string"

@@ -313,6 +313,22 @@ impl ContentCatalog for FakeModCatalog {
         })
     }
 
+    fn project_versions<'a>(
+        &'a self,
+        project: &'a str,
+    ) -> BoxFut<'a, Result<Vec<ContentVersion>, AppError>> {
+        Box::pin(async move {
+            let mut list: Vec<ContentVersion> = self
+                .versions
+                .iter()
+                .filter(|v| v.project_id == project)
+                .cloned()
+                .collect();
+            list.sort_by_key(|v| std::cmp::Reverse(v.date_published));
+            Ok(list)
+        })
+    }
+
     fn version<'a>(&'a self, id: &'a str) -> BoxFut<'a, Result<ContentVersion, AppError>> {
         Box::pin(async move {
             self.versions
