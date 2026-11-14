@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use anyhow::Context;
 use mh_app::App;
-use mh_core::ErrorCode;
+use mh_core::{CurseforgeKey, ErrorCode};
 use mh_platform::DataDirs;
 use tokio::net::TcpListener;
 
@@ -107,11 +107,26 @@ fn start_lan(
 }
 
 fn open_app(dirs: DataDirs) -> anyhow::Result<App> {
+    let cf_key = builtin_curseforge_key();
     #[cfg(feature = "e2e")]
     if let Some(java) = e2e_java_bin() {
-        return e2e_app(dirs, java);
+        return e2e_app(dirs, java, cf_key);
     }
-    App::new(dirs).context("không khởi tạo được MineHost")
+    let app = App::new(dirs).context("không khởi tạo được MineHost")?;
+    Ok(match cf_key {
+        Some(key) => app.with_curseforge_key(key),
+        None => app,
+    })
+}
+
+fn builtin_curseforge_key() -> Option<CurseforgeKey> {
+    option_env!("MINEHOST_CURSEFORGE_KEY").and_then(|raw| match CurseforgeKey::parse(raw) {
+        Ok(key) => Some(key),
+        Err(err) => {
+            tracing::warn!(%err, "MINEHOST_CURSEFORGE_KEY khi build không hợp lệ, bỏ qua");
+            None
+        }
+    })
 }
 
 /// Đường dẫn trong `MINEHOST_E2E_JAVA`. Biến rỗng thì coi như không bật chế độ e2e.
@@ -131,7 +146,11 @@ fn e2e_java_bin() -> Option<std::path::PathBuf> {
 }
 
 #[cfg(feature = "e2e")]
-fn e2e_app(dirs: DataDirs, java: std::path::PathBuf) -> anyhow::Result<App> {
+fn e2e_app(
+    dirs: DataDirs,
+    java: std::path::PathBuf,
+    cf_key: Option<CurseforgeKey>,
+) -> anyhow::Result<App> {
     // Bản này không tải Paper hay Java. Một dòng warn để khỏi tưởng đang chạy server thật.
     tracing::warn!(
         java = %java.display(),
@@ -139,10 +158,14 @@ fn e2e_app(dirs: DataDirs, java: std::path::PathBuf) -> anyhow::Result<App> {
         "chế độ e2e: không gọi mạng; Paper giả 1.21.4 và 1.20.4; Java là binary trong biến môi trường"
     );
     let deps = mh_app::e2e::deps(java);
-    let app = App::with_deps(dirs, deps).context("không khởi tạo được MineHost")?;
-    Ok(app
+    let app = App::with_deps(dirs, deps)
+        .context("không khởi tạo được MineHost")?
         .with_players(mh_app::e2e::players())
-        .with_content(mh_app::e2e::content()))
+        .with_content(mh_app::e2e::content());
+    Ok(match cf_key {
+        Some(key) => app.with_curseforge_key(key),
+        None => app,
+    })
 }
 
 pub fn open_browser(url: &str) {

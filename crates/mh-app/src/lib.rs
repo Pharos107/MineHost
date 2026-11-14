@@ -8,6 +8,7 @@ mod backup;
 mod backup_schedule;
 pub mod content;
 mod create;
+mod curseforge;
 #[cfg(feature = "e2e")]
 pub mod e2e;
 mod error;
@@ -45,6 +46,7 @@ pub use content::{
     WrongLoaderMod,
 };
 pub use create::{CreateRequest, Created};
+pub use curseforge::{CurseforgeKeySource, CurseforgeStatus};
 pub use error::AppError;
 pub use files::{FileEntry, FileKind, TEXT_LIMIT, TextFile};
 pub use import::{Detected, ImportRequest};
@@ -133,6 +135,8 @@ pub struct App {
     content_locks: Mutex<HashMap<ServerId, Arc<tokio::sync::Mutex<()>>>>,
     /// Kết quả "thiếu dependency" của lần `preflight` gần nhất, để `ServerView` không phải quét jar.
     preflight_missing: Mutex<HashMap<ServerId, bool>>,
+    curseforge_builtin: Option<mh_core::CurseforgeKey>,
+    secrets_lock: Mutex<()>,
     shutdown: tokio::sync::Notify,
     events: tokio::sync::broadcast::Sender<AppEvent>,
 }
@@ -196,6 +200,8 @@ impl App {
             content_scanner: Arc::new(ContentScanner::new()),
             content_locks: Mutex::new(HashMap::new()),
             preflight_missing: Mutex::new(HashMap::new()),
+            curseforge_builtin: None,
+            secrets_lock: Mutex::new(()),
             shutdown: tokio::sync::Notify::new(),
             events: tokio::sync::broadcast::channel(256).0,
         })

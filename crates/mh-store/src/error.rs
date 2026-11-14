@@ -42,6 +42,10 @@ pub enum StoreError {
     /// `content.toml` sai cú pháp TOML hoặc có schema mới hơn bản MineHost này.
     #[error("`{path}` không hợp lệ: {detail}")]
     InvalidContent { path: PathBuf, detail: String },
+
+    /// `secrets.toml` sai cú pháp TOML hoặc có khóa không hợp lệ.
+    #[error("`{path}` không hợp lệ: {detail}")]
+    InvalidSecrets { path: PathBuf, detail: String },
 }
 
 impl StoreError {
@@ -76,6 +80,16 @@ impl StoreError {
         }
     }
 
+    pub(crate) fn invalid_secrets(
+        path: impl Into<PathBuf>,
+        detail: impl std::fmt::Display,
+    ) -> Self {
+        Self::InvalidSecrets {
+            path: path.into(),
+            detail: detail.to_string(),
+        }
+    }
+
     pub fn code(&self) -> ErrorCode {
         match self {
             Self::NotFound(_) => ErrorCode::NotFound,
@@ -83,7 +97,8 @@ impl StoreError {
             Self::Broken { .. }
             | Self::InvalidPlayers { .. }
             | Self::InvalidWorld { .. }
-            | Self::InvalidContent { .. } => ErrorCode::ConfigInvalid,
+            | Self::InvalidContent { .. }
+            | Self::InvalidSecrets { .. } => ErrorCode::ConfigInvalid,
             Self::Serialize(e) => e.code(),
             Self::Platform(e) => e.code(),
             Self::AlreadyExists(_) | Self::Io { .. } => ErrorCode::Internal,

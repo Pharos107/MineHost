@@ -34,6 +34,7 @@ tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-tungstenite.workspace = true
 tower.workspace = true
+tracing-subscriber.workspace = true
 
 # Cùng mã nguồn với `fake-mc` của mh-runtime; test WebSocket dùng nó thay cho Java.
 [[bin]]
