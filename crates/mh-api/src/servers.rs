@@ -3,8 +3,9 @@
 use std::sync::Arc;
 
 use axum::Json;
+use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, StatusCode};
 use mh_app::{App, CreateRequest, SettingsPatch};
 use mh_core::{
     BackupSchedule, DailyTime, GamePort, LoaderKind, LoaderVersion, McVersion, MemoryLimits,
@@ -19,6 +20,7 @@ use crate::dto::{
     PropertiesDto, PropertyDto, ServerDto, ServerMetricsDto, TrashedDto,
 };
 use crate::error::{ApiError, ApiJson, ErrorBody, IdPath};
+use crate::preflight::{StartActionBody, parse_optional_start_body};
 
 type ApiResult<T> = Result<T, ApiError>;
 
@@ -142,14 +144,18 @@ pub async fn eula(
 
 #[utoipa::path(post, path = "/api/v1/servers/{id}/actions/{action}", tag = "servers",
     params(("id" = String, Path), ("action" = String, Path, description = "start, stop, restart, kill")),
+    request_body = Option<StartActionBody>,
     responses((status = 204, description = "Đã nhận lệnh"), (status = 409, body = ErrorBody)))]
 pub async fn action(
     State(app): State<Arc<App>>,
     IdPath(id): IdPath,
     Path((_, action)): Path<(String, String)>,
+    headers: HeaderMap,
+    body: Bytes,
 ) -> ApiResult<StatusCode> {
+    let opts = parse_optional_start_body(&headers, &body)?;
     match action.as_str() {
-        "start" => app.start(id).await?,
+        "start" => app.start_with(id, opts.ignore_preflight).await?,
         "stop" => app.stop(id).await?,
         "restart" => app.restart(id).await?,
         "kill" => app.kill(id).await?,

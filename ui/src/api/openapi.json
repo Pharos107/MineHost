@@ -1115,6 +1115,22 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/StartActionBody"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "204": {
             "description": "Đã nhận lệnh"
@@ -2543,6 +2559,45 @@
         }
       }
     },
+    "/api/v1/servers/{id}/preflight": {
+      "get": {
+        "tags": [
+          "content"
+        ],
+        "summary": "Kiểm tra điều kiện mod/plugin trước khi bật server.",
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreflightDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}/properties": {
       "get": {
         "tags": [
@@ -2876,6 +2931,21 @@
         ],
         "properties": {
           "current": {
+            "type": "string"
+          }
+        }
+      },
+      "ClientOnlyDto": {
+        "type": "object",
+        "required": [
+          "file_name",
+          "name"
+        ],
+        "properties": {
+          "file_name": {
+            "type": "string"
+          },
+          "name": {
             "type": "string"
           }
         }
@@ -3593,6 +3663,25 @@
           }
         }
       },
+      "MissingDepDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "version_req",
+          "required_by"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "required_by": {
+            "type": "string"
+          },
+          "version_req": {
+            "type": "string"
+          }
+        }
+      },
       "MkdirBody": {
         "type": "object",
         "required": [
@@ -3937,6 +4026,49 @@
           }
         }
       },
+      "PreflightDto": {
+        "type": "object",
+        "description": "Báo cáo kiểm tra trước khi bật server.",
+        "required": [
+          "missing_deps",
+          "version_mismatches",
+          "wrong_loader",
+          "pending",
+          "client_only"
+        ],
+        "properties": {
+          "client_only": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClientOnlyDto"
+            }
+          },
+          "missing_deps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MissingDepDto"
+            }
+          },
+          "pending": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingContentDto"
+            }
+          },
+          "version_mismatches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VersionMismatchDto"
+            }
+          },
+          "wrong_loader": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WrongLoaderDto"
+            }
+          }
+        }
+      },
       "ProgressDto": {
         "type": "object",
         "required": [
@@ -4269,7 +4401,8 @@
           "eula_accepted",
           "slow_start",
           "restart_pending",
-          "ignored_jvm_args"
+          "ignored_jvm_args",
+          "preflight_blocking"
         ],
         "properties": {
           "autostart": {
@@ -4418,6 +4551,10 @@
             "format": "int32",
             "minimum": 0
           },
+          "preflight_blocking": {
+            "type": "boolean",
+            "description": "Có lỗi preflight đang chặn bật server (còn thiếu mod hoặc file CurseForge pending)."
+          },
           "restart_at": {
             "type": [
               "array",
@@ -4506,6 +4643,14 @@
           "unsupported",
           "unknown"
         ]
+      },
+      "StartActionBody": {
+        "type": "object",
+        "properties": {
+          "ignore_preflight": {
+            "type": "boolean"
+          }
+        }
       },
       "StateDto": {
         "type": "string",
@@ -4685,6 +4830,51 @@
           "trash_path": {
             "type": "string",
             "description": "Thư mục trong thùng rác, để người dùng tự lấy lại."
+          }
+        }
+      },
+      "VersionMismatchDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "version_req",
+          "installed_version",
+          "required_by"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "installed_version": {
+            "type": "string"
+          },
+          "required_by": {
+            "type": "string"
+          },
+          "version_req": {
+            "type": "string"
+          }
+        }
+      },
+      "WrongLoaderDto": {
+        "type": "object",
+        "required": [
+          "file_name",
+          "name",
+          "formats"
+        ],
+        "properties": {
+          "file_name": {
+            "type": "string"
+          },
+          "formats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "type": "string"
           }
         }
       }

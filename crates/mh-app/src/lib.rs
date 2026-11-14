@@ -40,8 +40,9 @@ pub use auth::AuthStore;
 pub use backup::{BackupKind, BackupMeta, BackupRequest, BackupStarted};
 pub use backup_schedule::{BackupCandidate, BackupPlanner};
 pub use content::{
-    ContentCatalog, ContentInstallPlan, ContentList, ModrinthCatalog, NoContentCatalog,
-    PlannedContent,
+    ClientOnlyMod, ContentCatalog, ContentInstallPlan, ContentList, MissingDependency,
+    ModrinthCatalog, NoContentCatalog, PlannedContent, PreflightReport, VersionMismatch,
+    WrongLoaderMod,
 };
 pub use create::{CreateRequest, Created};
 pub use error::AppError;
@@ -130,6 +131,8 @@ pub struct App {
     content_catalog: Arc<dyn ContentCatalog>,
     content_scanner: Arc<ContentScanner>,
     content_locks: Mutex<HashMap<ServerId, Arc<tokio::sync::Mutex<()>>>>,
+    /// Kết quả "thiếu dependency" của lần `preflight` gần nhất, để `ServerView` không phải quét jar.
+    preflight_missing: Mutex<HashMap<ServerId, bool>>,
     shutdown: tokio::sync::Notify,
     events: tokio::sync::broadcast::Sender<AppEvent>,
 }
@@ -192,6 +195,7 @@ impl App {
             content_catalog: Arc::new(NoContentCatalog),
             content_scanner: Arc::new(ContentScanner::new()),
             content_locks: Mutex::new(HashMap::new()),
+            preflight_missing: Mutex::new(HashMap::new()),
             shutdown: tokio::sync::Notify::new(),
             events: tokio::sync::broadcast::channel(256).0,
         })

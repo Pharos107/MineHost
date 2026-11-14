@@ -8,9 +8,10 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, "../..");
+const targetDir = process.env.CARGO_TARGET_DIR ? resolve(repo, process.env.CARGO_TARGET_DIR) : join(repo, "target");
 const exe = process.platform === "win32" ? ".exe" : "";
-const minehost = join(repo, "target/debug", `minehost${exe}`);
-const fakeJava = join(repo, "target/debug", `fake-mc${exe}`);
+const minehost = join(targetDir, "debug", `minehost${exe}`);
+const fakeJava = join(targetDir, "debug", `fake-mc${exe}`);
 const port = process.env.MINEHOST_E2E_PORT ?? "7879";
 
 for (const bin of [minehost, fakeJava]) {
