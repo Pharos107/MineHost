@@ -290,3 +290,38 @@ async fn file_url_outside_modrinth_allowlist_is_rejected() {
     let err = mr.version("SMxNOGZ6").await.unwrap_err();
     assert_eq!(err.code(), ErrorCode::DownloadHostNotAllowed);
 }
+
+#[tokio::test]
+async fn bad_version_is_skipped_in_lists_not_failing_them() {
+    let (s, _t, mr) = setup().await;
+    let mut list: Vec<serde_json::Value> =
+        serde_json::from_str(&fixture("versions_sodium_fabric_1_21_1.json")).unwrap();
+    list[1]["files"][0]["url"] = serde_json::json!("https://evil.example/x.jar");
+    let bad_id = list[1]["id"].as_str().unwrap().to_owned();
+    Mock::given(method("GET"))
+        .and(path("/v2/project/AANobbMI/version"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&list))
+        .mount(&s)
+        .await;
+    let mut by_hash: serde_json::Map<String, serde_json::Value> =
+        serde_json::from_str(&fixture("version_files.json")).unwrap();
+    let first = by_hash.keys().next().unwrap().clone();
+    by_hash[&first]["files"][0]["url"] = serde_json::json!("https://evil.example/y.jar");
+    Mock::given(method("POST"))
+        .and(path("/v2/version_files"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&by_hash))
+        .mount(&s)
+        .await;
+
+    let versions = mr
+        .versions("AANobbMI", LoaderKind::Fabric, &mc("1.21.1"))
+        .await
+        .unwrap();
+    assert_eq!(versions.len(), 2);
+    assert!(versions.iter().all(|v| v.id != bad_id));
+
+    let keys: Vec<String> = by_hash.keys().cloned().collect();
+    let map = mr.versions_by_hash(&keys).await.unwrap();
+    assert_eq!(map.len(), keys.len() - 1);
+    assert!(!map.contains_key(&first));
+}

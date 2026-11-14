@@ -325,11 +325,13 @@ impl Modrinth {
             qp.append_pair("loaders", &loaders_json);
             qp.append_pair("game_versions", &mc_json);
         }
-        let mut out: Vec<ModrinthVersion> =
+        let all: Vec<ModrinthVersion> =
             self.get_json(url.as_str(), Duration::ZERO, project).await?;
-        for ver in &mut out {
-            validate_version(&self.hosts, ver)?;
-        }
+        // Một bản có file lạ không được làm mất cả danh sách: bỏ riêng bản đó.
+        let mut out: Vec<ModrinthVersion> = all
+            .into_iter()
+            .filter_map(|ver| keep_valid(&self.hosts, ver))
+            .collect();
         out.sort_by_key(|v| Reverse(v.date_published));
         Ok(out)
     }
@@ -358,15 +360,15 @@ impl Modrinth {
             hashes: &refs,
             algorithm: "sha1",
         };
-        let mut out: HashMap<String, ModrinthVersion> = self
+        let all: HashMap<String, ModrinthVersion> = self
             .http
             .post_json(url.as_str(), &req)
             .await
             .map_err(|e| map_net_err(e, ""))?;
-        for ver in out.values_mut() {
-            validate_version(&self.hosts, ver)?;
-        }
-        Ok(out)
+        Ok(all
+            .into_iter()
+            .filter_map(|(hash, ver)| keep_valid(&self.hosts, ver).map(|ver| (hash, ver)))
+            .collect())
     }
 
     async fn get_json<T: serde::de::DeserializeOwned>(
@@ -419,6 +421,17 @@ fn build_facets(filters: &SearchFilters) -> Vec<Vec<String>> {
         facets.push(vec!["server_side!=unsupported".to_owned()]);
     }
     facets
+}
+
+/// Giữ bản hợp lệ; bản có file ngoài danh sách host hoặc hash sai thì ghi log và bỏ.
+fn keep_valid(hosts: &HostAllowlist, mut ver: ModrinthVersion) -> Option<ModrinthVersion> {
+    match validate_version(hosts, &mut ver) {
+        Ok(()) => Some(ver),
+        Err(e) => {
+            tracing::warn!(version = ver.id, error = %e, "bỏ bản Modrinth không hợp lệ");
+            None
+        }
+    }
 }
 
 fn validate_version(hosts: &HostAllowlist, ver: &mut ModrinthVersion) -> Result<(), ProviderError> {
