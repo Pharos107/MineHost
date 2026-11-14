@@ -1,19 +1,76 @@
-//! Hoàn tất tải song song file modpack, ghi `content.toml` và `[modpack]` trong `instance.toml`.
+//! Hoàn tất tải song song file modpack, tắt mod client-only, ghi `content.toml` và `[modpack]`.
 
 use std::collections::HashMap;
+use std::fs;
 use std::path::Path;
+use std::sync::Arc;
 
-use mh_core::instance::{ModpackSection, UpstreamText};
+use mh_core::instance::{GameSection, ModpackSection, UpstreamText};
 use mh_core::{ContentKind, ErrorCode};
-use mh_providers::modpack::{PackFile, PackPlan};
-use mh_store::{ContentManifest, ContentRecord, ContentScanner, ContentSource, ProjectId};
+use mh_platform::SafeRoot;
+use mh_providers::modpack::{BlockedPackFile, PackFile, PackPlan};
+use mh_store::{
+    ContentManifest, ContentRecord, ContentScanner, ContentSource, PendingContent, ProjectId,
+    ServerPaths,
+};
 use time::OffsetDateTime;
 use tokio::task::JoinSet;
 
-use super::ModpackMeta;
-use crate::AppError;
+use super::{ModpackMeta, ModpackSummary, PackTarget};
 use crate::jobs::{JobContext, JobStep};
 use crate::sources::CancellationToken;
+use crate::{App, AppError};
+
+impl App {
+    pub(super) async fn finalize_modpack(
+        &self,
+        ctx: &JobContext,
+        target: PackTarget,
+        game: GameSection,
+        paths: &ServerPaths,
+        plan: PackPlan,
+        meta: ModpackMeta,
+    ) -> Result<(), AppError> {
+        let pending_curseforge: Vec<String> = plan.blocked.iter().map(|b| b.path.clone()).collect();
+        let installed_mods = self.record_modpack_content(paths, &plan).await?;
+        let modpack = build_modpack_section(&plan, meta)?;
+        self.write_server_spec(
+            &paths.server_dir,
+            target.id,
+            target.name,
+            game,
+            target.memory,
+            target.port,
+            Some(modpack),
+        )?;
+        self.refresh_preflight(target.id).await;
+        let summary = ModpackSummary {
+            installed_mods,
+            skipped_client: plan.skipped_client,
+            pending_curseforge,
+        };
+        if let Ok(value) = serde_json::to_value(&summary) {
+            ctx.set_result(value);
+        }
+        Ok(())
+    }
+
+    async fn record_modpack_content(
+        &self,
+        paths: &ServerPaths,
+        plan: &PackPlan,
+    ) -> Result<usize, AppError> {
+        let server_dir = paths.server_dir.clone();
+        let content_file = paths.content_file.clone();
+        let files = plan.files.clone();
+        let blocked = plan.blocked.clone();
+        let scanner = Arc::clone(&self.content_scanner);
+        crate::files::blocking(move || {
+            write_content_manifest(&scanner, &server_dir, &content_file, &files, &blocked)
+        })
+        .await
+    }
+}
 
 pub(super) async fn drain_downloads(
     ctx: &JobContext,
@@ -75,11 +132,17 @@ pub(super) fn write_content_manifest(
     server_dir: &Path,
     content_file: &Path,
     pack_files: &[PackFile],
+    blocked: &[BlockedPackFile],
 ) -> Result<usize, AppError> {
+    disable_client_only_mods(scanner, server_dir, content_file)?;
+
     let by_path: HashMap<&str, (&str, Option<ProjectId>, Option<String>)> = pack_files
         .iter()
         .map(|f| {
-            let (pid, vid) = parse_modrinth_cdn_ids(&f.urls);
+            let (pid, vid) = match f.cf_ids {
+                Some((pid, fid)) => (Some(ProjectId::Int(pid)), Some(fid.to_string())),
+                None => parse_modrinth_cdn_ids(&f.urls),
+            };
             (f.path.as_str(), (f.sha1.as_str(), pid, vid))
         })
         .collect();
@@ -89,7 +152,7 @@ pub(super) fn write_content_manifest(
     let mut records = Vec::new();
     for kind in [ContentKind::Mods, ContentKind::Plugins] {
         for item in scanner.scan_dirs(server_dir, content_file, kind)? {
-            // Chỉ gắn ID Modrinth nếu hash trên đĩa còn khớp bản đã tải (tránh gắn nhầm khi override ghi đè).
+            // Chỉ gắn ID nguồn nếu hash trên đĩa còn khớp bản đã tải (tránh gắn nhầm khi override ghi đè).
             let (project_id, version_id) = match by_path.get(item.path.as_str()) {
                 Some((sha1, pid, vid)) if *sha1 == item.sha1 => (pid.clone(), vid.clone()),
                 _ => (None, None),
@@ -107,13 +170,69 @@ pub(super) fn write_content_manifest(
             });
         }
     }
+    let pending: Vec<PendingContent> = blocked
+        .iter()
+        .map(|b| PendingContent {
+            path: b.path.clone(),
+            project_id: b.project_id,
+            file_id: b.file_id,
+            sha1: b.sha1.clone(),
+            page_url: b.page_url.clone(),
+            extra: Default::default(),
+        })
+        .collect();
     let count = records.len();
     let manifest = ContentManifest {
         file: records,
+        pending,
         ..Default::default()
     };
     manifest.save(content_file)?;
     Ok(count)
+}
+
+/// Dựa vào metadata trong `.jar` để chuyển mod chỉ chạy client sang `mods-disabled/` (spec P3, mục 3.5).
+fn disable_client_only_mods(
+    scanner: &ContentScanner,
+    server_dir: &Path,
+    content_file: &Path,
+) -> Result<(), AppError> {
+    if !server_dir.join(ContentKind::Mods.dir()).is_dir() {
+        return Ok(());
+    }
+    let items = scanner.scan_dirs(server_dir, content_file, ContentKind::Mods)?;
+    let to_disable: Vec<_> = items
+        .into_iter()
+        .filter(|i| i.enabled && i.meta.as_ref().is_ok_and(|m| m.side.is_client_only()))
+        .collect();
+    if to_disable.is_empty() {
+        return Ok(());
+    }
+    let root = SafeRoot::new(server_dir)?;
+    let disabled_dir = root.join(ContentKind::Mods.disabled_dir())?;
+    fs::create_dir_all(disabled_dir.as_path()).map_err(|e| {
+        AppError::new(
+            ErrorCode::Internal,
+            format!("không tạo được mods-disabled: {e}"),
+        )
+    })?;
+    for item in to_disable {
+        let src = root.join(&item.path)?;
+        let dst = root.join(&format!(
+            "{}/{}",
+            ContentKind::Mods.disabled_dir(),
+            item.file_name
+        ))?;
+        if !dst.as_path().exists() {
+            fs::rename(src.as_path(), dst.as_path()).map_err(|e| {
+                AppError::new(
+                    ErrorCode::Internal,
+                    format!("không chuyển được mod client-only {}: {e}", item.file_name),
+                )
+            })?;
+        }
+    }
+    Ok(())
 }
 
 pub(super) fn build_modpack_section(

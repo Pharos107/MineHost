@@ -1,19 +1,22 @@
-//! Nguồn CurseForge giả cho chế độ e2e (không gọi mạng): có mod kèm dependency và mod cấm phân phối.
+//! Nguồn CurseForge giả cho chế độ e2e (không gọi mạng): mod có dependency, mod cấm phân phối,
+//! một modpack chứa mod cấm phân phối và một modpack có server pack lồng một tầng.
 
 use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::path::Path;
 
-use mh_core::{ErrorCode, LoaderKind, McVersion};
+use mh_core::{CfManifestFile, ErrorCode, LoaderKind, McVersion};
+use mh_net::{Checksum, HostAllowlist, hosts};
 use mh_providers::curseforge::mod_loader_type;
-use time::OffsetDateTime;
+use mh_providers::modpack::{BlockedPackFile, PackFile};
 use time::macros::datetime;
 
-use super::content::{GAME_VERSIONS, build_jar};
+use super::content::build_jar;
+use super::pack::{add_e2e_cf_modpacks, cf_project, cf_version, download_e2e_pack_file};
 use crate::AppError;
 use crate::content::{
-    CatalogSource, ContentCatalog, ContentDependency, ContentFileInfo, ContentProject,
-    ContentSearchHit, ContentSearchResult, ContentVersion, DependencyType, ProjectLinks,
+    CatalogSource, CfResolvedFiles, ContentCatalog, ContentDependency, ContentFileInfo,
+    ContentProject, ContentSearchHit, ContentSearchResult, ContentVersion, DependencyType,
     ProjectType, SearchFilters,
 };
 use crate::sources::{BoxFut, CancellationToken, ProgressFn};
@@ -23,6 +26,7 @@ pub(super) struct E2eCurseforge {
     projects: Vec<ContentProject>,
     versions: Vec<ContentVersion>,
     files: HashMap<String, Vec<u8>>,
+    server_packs: HashMap<String, ContentFileInfo>,
 }
 
 impl E2eCurseforge {
@@ -34,11 +38,12 @@ impl E2eCurseforge {
             );
             let bytes = build_jar("fabric.mod.json", &body);
             let url = format!("e2e://curseforge/{ver_id}/{filename}");
+            let sha1 = mh_store::sha1_hex(&bytes);
             let info = ContentFileInfo {
                 url: Some(url.clone()),
                 filename: filename.to_owned(),
                 size: bytes.len() as u64,
-                sha1: Some("a".repeat(40)),
+                sha1: Some(sha1),
                 sha512: None,
                 manual_download: false,
                 download_page_url: Some(format!(
@@ -56,6 +61,12 @@ impl E2eCurseforge {
             "Fabric API (CF)",
         );
         let cf_jei_file = register("5800001", "cf-jei-19.21.0.jar", "jei", "Just Enough Items");
+        let cf_fapi_bytes = cf_fapi_file
+            .url
+            .as_deref()
+            .and_then(|u| files.get(u))
+            .cloned()
+            .unwrap_or_default();
         let restricted_file = ContentFileInfo {
             url: None,
             filename: "cf-restricted-1.0.0.jar".to_owned(),
@@ -69,10 +80,11 @@ impl E2eCurseforge {
             ),
         };
 
-        let projects = vec![
+        let mut projects = vec![
             cf_project(
                 "306612",
                 "fabric-api",
+                "mod",
                 "Fabric API (CF)",
                 "Thư viện nền CF cho Fabric.",
                 2_000_000,
@@ -80,6 +92,7 @@ impl E2eCurseforge {
             cf_project(
                 "238222",
                 "jei",
+                "mod",
                 "Just Enough Items (JEI)",
                 "Xem công thức chế tạo (có dep).",
                 1_500_000,
@@ -87,13 +100,14 @@ impl E2eCurseforge {
             cf_project(
                 "999001",
                 "restricted-mod",
+                "mod",
                 "Restricted Mod",
                 "Mod cấm tải tự động qua API.",
                 300_000,
             ),
         ];
 
-        let versions = vec![
+        let mut versions = vec![
             cf_version(
                 "5800000",
                 "306612",
@@ -124,10 +138,20 @@ impl E2eCurseforge {
             ),
         ];
 
+        let mut server_packs = HashMap::new();
+        add_e2e_cf_modpacks(
+            &mut projects,
+            &mut versions,
+            &mut files,
+            &mut server_packs,
+            &cf_fapi_bytes,
+        );
+
         Self {
             projects,
             versions,
             files,
+            server_packs,
         }
     }
 
@@ -154,14 +178,13 @@ impl E2eCurseforge {
                 total_hits: 0,
             };
         }
+        let target_type = filters.project_type.map_or("mod", ProjectType::as_str);
         let needle = query.trim().to_ascii_lowercase();
         let mut matched: Vec<ContentSearchHit> = self
             .projects
             .iter()
             .filter(|p| {
-                filters
-                    .project_type
-                    .is_none_or(|k| p.project_type == k.as_str())
+                p.project_type == target_type
                     && (needle.is_empty()
                         || p.title.to_ascii_lowercase().contains(&needle)
                         || p.slug.to_ascii_lowercase().contains(&needle)
@@ -271,58 +294,97 @@ impl ContentCatalog for E2eCurseforge {
             Ok(())
         })()))
     }
-}
 
-fn cf_project(
-    id: &str,
-    slug: &str,
-    title: &str,
-    description: &str,
-    downloads: u64,
-) -> ContentProject {
-    ContentProject {
-        source: CatalogSource::Curseforge,
-        id: id.to_owned(),
-        slug: slug.to_owned(),
-        project_type: "mod".to_owned(),
-        title: title.to_owned(),
-        description: description.to_owned(),
-        body: None,
-        icon_url: None,
-        downloads,
-        loaders: Vec::new(),
-        game_versions: Vec::new(),
-        client_side: None,
-        server_side: None,
-        page_url: format!("https://www.curseforge.com/minecraft/mc-mods/{slug}"),
-        links: ProjectLinks {
-            source_url: None,
-            issues_url: None,
-            wiki_url: None,
-            discord_url: None,
-        },
+    fn project_versions<'a>(
+        &'a self,
+        project: &'a str,
+    ) -> BoxFut<'a, Result<Vec<ContentVersion>, AppError>> {
+        Box::pin(std::future::ready((|| {
+            let pid = self.find_project(project)?.id.as_str();
+            let mut list: Vec<ContentVersion> = self
+                .versions
+                .iter()
+                .filter(|v| v.project_id == pid)
+                .cloned()
+                .collect();
+            list.sort_by_key(|v| Reverse(v.date_published));
+            Ok(list)
+        })()))
     }
-}
 
-fn cf_version(
-    id: &str,
-    project_id: &str,
-    name: &str,
-    date_published: OffsetDateTime,
-    file: ContentFileInfo,
-    dependencies: Vec<ContentDependency>,
-) -> ContentVersion {
-    ContentVersion {
-        id: id.to_owned(),
-        project_id: project_id.to_owned(),
-        name: name.to_owned(),
-        version_number: None,
-        version_type: "release".to_owned(),
-        game_versions: GAME_VERSIONS.iter().map(|s| (*s).to_owned()).collect(),
-        loaders: vec!["fabric".to_owned()],
-        date_published,
-        dependencies,
-        files: vec![file],
+    fn download_pack_file<'a>(
+        &'a self,
+        file: &'a PackFile,
+        dest: &'a Path,
+        progress: ProgressFn<'a>,
+        cancel: &'a CancellationToken,
+    ) -> BoxFut<'a, Result<(), AppError>> {
+        Box::pin(std::future::ready(download_e2e_pack_file(
+            &self.files,
+            file,
+            dest,
+            progress,
+            cancel,
+        )))
+    }
+
+    fn pack_hosts(&self) -> HostAllowlist {
+        hosts::CURSEFORGE
+    }
+
+    fn curseforge_server_pack<'a>(
+        &'a self,
+        file_id: &'a str,
+    ) -> BoxFut<'a, Result<Option<ContentFileInfo>, AppError>> {
+        Box::pin(std::future::ready(Ok(self
+            .server_packs
+            .get(file_id)
+            .cloned())))
+    }
+
+    fn resolve_curseforge_files<'a>(
+        &'a self,
+        files: &'a [CfManifestFile],
+    ) -> BoxFut<'a, Result<CfResolvedFiles, AppError>> {
+        Box::pin(std::future::ready((|| {
+            let mut pack_files = Vec::new();
+            let mut blocked = Vec::new();
+            for entry in files {
+                let vid = entry.file_id.to_string();
+                let Some(ver) = self.versions.iter().find(|v| v.id == vid) else {
+                    if entry.required {
+                        return Err(AppError::new(ErrorCode::ContentNotFound, vid));
+                    }
+                    continue;
+                };
+                let f = &ver.files[0];
+                let path = format!("mods/{}", f.filename);
+                if let (false, Some(url)) = (f.manual_download, f.url.clone()) {
+                    let sha1 = f.sha1.clone().unwrap_or_default();
+                    let checksum = Checksum::sha1(&sha1).ok_or_else(|| {
+                        AppError::new(ErrorCode::ModpackInvalid, "sha1 không hợp lệ")
+                    })?;
+                    pack_files.push(PackFile {
+                        path,
+                        urls: vec![url],
+                        checksum,
+                        sha1,
+                        size: f.size,
+                        hosts: hosts::CURSEFORGE,
+                        cf_ids: Some((entry.project_id, entry.file_id)),
+                    });
+                } else {
+                    blocked.push(BlockedPackFile {
+                        path,
+                        project_id: entry.project_id,
+                        file_id: entry.file_id,
+                        sha1: f.sha1.clone().unwrap_or_default(),
+                        page_url: f.download_page_url.clone().unwrap_or_default(),
+                    });
+                }
+            }
+            Ok((pack_files, blocked))
+        })()))
     }
 }
 
@@ -347,6 +409,19 @@ mod tests {
             .unwrap();
         let ids: Vec<&str> = hits.hits.iter().map(|h| h.project_id.as_str()).collect();
         assert_eq!(ids, ["306612", "238222", "999001"]);
+
+        let packs = cf
+            .search(
+                "",
+                &SearchFilters {
+                    project_type: Some(ProjectType::Modpack),
+                    ..SearchFilters::default()
+                },
+            )
+            .await
+            .unwrap();
+        let pack_ids: Vec<&str> = packs.hits.iter().map(|h| h.project_id.as_str()).collect();
+        assert_eq!(pack_ids, ["910002", "910001"]);
 
         let jei_vers = cf
             .versions("238222", LoaderKind::Fabric, &mc)

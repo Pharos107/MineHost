@@ -2,8 +2,11 @@
 
 use std::collections::HashMap;
 use std::io::{Cursor, Write};
+use std::path::Path;
 
+use mh_core::ErrorCode;
 use mh_net::Checksum;
+use mh_providers::modpack::PackFile;
 use serde_json::json;
 use sha2::{Digest, Sha512};
 use time::OffsetDateTime;
@@ -12,10 +15,12 @@ use zip::CompressionMethod;
 use zip::write::{SimpleFileOptions, ZipWriter};
 
 use super::content::GAME_VERSIONS;
+use crate::AppError;
 use crate::content::{
     CatalogSource, ContentDependency, ContentFileInfo, ContentProject, ContentVersion,
     ProjectLinks, SideSupport,
 };
+use crate::sources::{CancellationToken, ProgressFn};
 
 pub(super) fn add_e2e_modpack(
     projects: &mut Vec<ContentProject>,
@@ -107,19 +112,48 @@ fn build_mrpack_bytes(index_files: &[serde_json::Value]) -> Vec<u8> {
         },
     })
     .to_string();
+    build_zip_entries(&[
+        ("modrinth.index.json", index.as_bytes()),
+        ("overrides/config/e2e-pack.txt", b"e2e-override=true\n"),
+    ])
+}
+
+pub(super) fn build_zip_entries(entries: &[(&str, &[u8])]) -> Vec<u8> {
     let mut zip = ZipWriter::new(Cursor::new(Vec::new()));
     let opts = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
-    if zip.start_file("modrinth.index.json", opts).is_ok()
-        && zip.write_all(index.as_bytes()).is_ok()
-        && zip
-            .start_file("overrides/config/e2e-pack.txt", opts)
-            .is_ok()
-        && zip.write_all(b"e2e-override=true\n").is_ok()
-        && let Ok(cur) = zip.finish()
-    {
-        return cur.into_inner();
+    for (name, data) in entries {
+        if zip.start_file(*name, opts).is_err() || zip.write_all(data).is_err() {
+            return Vec::new();
+        }
     }
-    Vec::new()
+    zip.finish().map(|cur| cur.into_inner()).unwrap_or_default()
+}
+
+pub(super) fn download_e2e_pack_file(
+    files: &HashMap<String, Vec<u8>>,
+    file: &PackFile,
+    dest: &Path,
+    progress: ProgressFn<'_>,
+    cancel: &CancellationToken,
+) -> Result<(), AppError> {
+    if cancel.is_cancelled() {
+        return Err(AppError::cancelled());
+    }
+    let bytes = file
+        .urls
+        .iter()
+        .find_map(|url| files.get(url))
+        .ok_or_else(|| AppError::new(ErrorCode::ContentNotFound, &file.path))?;
+    if !verify_bytes_checksum(bytes, &file.checksum) {
+        return Err(AppError::new(
+            ErrorCode::ChecksumMismatch,
+            format!("sai checksum file `{}`", file.path),
+        ));
+    }
+    let size = bytes.len() as u64;
+    progress(size, Some(size));
+    mh_platform::fs::write_atomic(dest, bytes)?;
+    Ok(())
 }
 
 pub(super) fn verify_bytes_checksum(bytes: &[u8], checksum: &Checksum) -> bool {
@@ -214,6 +248,182 @@ pub(super) fn sha512_hex(bytes: &[u8]) -> String {
         .iter()
         .map(|b| format!("{b:02x}"))
         .collect()
+}
+
+pub(super) fn add_e2e_cf_modpacks(
+    projects: &mut Vec<ContentProject>,
+    versions: &mut Vec<ContentVersion>,
+    files: &mut HashMap<String, Vec<u8>>,
+    server_packs: &mut HashMap<String, ContentFileInfo>,
+    cf_fapi_bytes: &[u8],
+) {
+    let manifest_restricted = json!({
+        "minecraft": { "version": "1.21.4", "modLoaders": [{ "id": "fabric-0.16.9", "primary": true }] },
+        "manifestType": "minecraftModpack",
+        "manifestVersion": 1,
+        "name": "E2E CF Restricted Pack",
+        "version": "1.0.0",
+        "files": [
+            { "projectID": 306612, "fileID": 5800000, "required": true },
+            { "projectID": 999001, "fileID": 5800999, "required": true }
+        ],
+        "overrides": "overrides"
+    })
+    .to_string();
+    let zip_restricted = build_zip_entries(&[
+        ("manifest.json", manifest_restricted.as_bytes()),
+        ("overrides/config/cf-restricted.cfg", b"restricted=true\n"),
+    ]);
+    let restricted_pack_file = register_cf_zip(
+        files,
+        "5900001",
+        "cf-restricted-pack-1.0.0.zip",
+        zip_restricted,
+    );
+    projects.push(cf_project(
+        "910001",
+        "cf-restricted-pack",
+        "modpack",
+        "E2E CF Restricted Pack",
+        "Modpack CurseForge có một mod cấm phân phối.",
+        180_000,
+    ));
+    versions.push(cf_version(
+        "5900001",
+        "910001",
+        "cf-restricted-pack-1.0.0",
+        datetime!(2024-12-16 0:00 UTC),
+        restricted_pack_file,
+        Vec::new(),
+    ));
+
+    let manifest_sp = json!({
+        "minecraft": { "version": "1.21.4", "modLoaders": [{ "id": "fabric-0.16.9", "primary": true }] },
+        "manifestType": "minecraftModpack",
+        "manifestVersion": 1,
+        "name": "E2E CF Server Pack",
+        "version": "1.0.0",
+        "files": [],
+        "overrides": "overrides"
+    })
+    .to_string();
+    let client_zip = build_zip_entries(&[("manifest.json", manifest_sp.as_bytes())]);
+    let client_pack_file =
+        register_cf_zip(files, "5900002", "cf-server-pack-1.0.0.zip", client_zip);
+    let sp_zip = build_zip_entries(&[
+        (
+            "CFServerPack-1.0/mods/cf-fabric-api-0.110.0.jar",
+            cf_fapi_bytes,
+        ),
+        (
+            "CFServerPack-1.0/config/server-pack.toml",
+            b"mode = \"e2e\"\n",
+        ),
+        ("CFServerPack-1.0/start.sh", b"#!/bin/sh\njava"),
+        ("CFServerPack-1.0/run.bat", b"@echo off\njava"),
+        ("CFServerPack-1.0/libraries/net/fabric/dummy.jar", b"lib"),
+        ("CFServerPack-1.0/fabric-server-launch.jar", b"launch"),
+    ]);
+    let sp_file = register_cf_zip(files, "5900003", "cf-server-pack-1.0.0-server.zip", sp_zip);
+    server_packs.insert("5900002".to_owned(), sp_file);
+
+    projects.push(cf_project(
+        "910002",
+        "cf-server-pack",
+        "modpack",
+        "E2E CF Server Pack",
+        "Modpack CurseForge có server pack lồng một tầng.",
+        220_000,
+    ));
+    versions.push(cf_version(
+        "5900002",
+        "910002",
+        "cf-server-pack-1.0.0",
+        datetime!(2024-12-17 0:00 UTC),
+        client_pack_file,
+        Vec::new(),
+    ));
+}
+
+fn register_cf_zip(
+    files: &mut HashMap<String, Vec<u8>>,
+    ver_id: &str,
+    filename: &str,
+    bytes: Vec<u8>,
+) -> ContentFileInfo {
+    let url = format!("e2e://curseforge/{ver_id}/{filename}");
+    let info = ContentFileInfo {
+        url: Some(url.clone()),
+        filename: filename.to_owned(),
+        size: bytes.len() as u64,
+        sha1: Some(mh_store::sha1_hex(&bytes)),
+        sha512: None,
+        manual_download: false,
+        download_page_url: Some(format!(
+            "https://www.curseforge.com/minecraft/modpacks/e2e/download/{ver_id}"
+        )),
+    };
+    files.insert(url, bytes);
+    info
+}
+
+pub(super) fn cf_project(
+    id: &str,
+    slug: &str,
+    project_type: &str,
+    title: &str,
+    description: &str,
+    downloads: u64,
+) -> ContentProject {
+    let segment = if project_type == "modpack" {
+        "modpacks"
+    } else {
+        "mc-mods"
+    };
+    ContentProject {
+        source: CatalogSource::Curseforge,
+        id: id.to_owned(),
+        slug: slug.to_owned(),
+        project_type: project_type.to_owned(),
+        title: title.to_owned(),
+        description: description.to_owned(),
+        body: None,
+        icon_url: None,
+        downloads,
+        loaders: Vec::new(),
+        game_versions: Vec::new(),
+        client_side: None,
+        server_side: None,
+        page_url: format!("https://www.curseforge.com/minecraft/{segment}/{slug}"),
+        links: ProjectLinks {
+            source_url: None,
+            issues_url: None,
+            wiki_url: None,
+            discord_url: None,
+        },
+    }
+}
+
+pub(super) fn cf_version(
+    id: &str,
+    project_id: &str,
+    name: &str,
+    date_published: OffsetDateTime,
+    file: ContentFileInfo,
+    dependencies: Vec<ContentDependency>,
+) -> ContentVersion {
+    ContentVersion {
+        id: id.to_owned(),
+        project_id: project_id.to_owned(),
+        name: name.to_owned(),
+        version_number: None,
+        version_type: "release".to_owned(),
+        game_versions: GAME_VERSIONS.iter().map(|s| (*s).to_owned()).collect(),
+        loaders: vec!["fabric".to_owned()],
+        date_published,
+        dependencies,
+        files: vec![file],
+    }
 }
 
 #[cfg(test)]

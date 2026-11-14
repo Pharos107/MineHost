@@ -1023,7 +1023,7 @@
         "tags": [
           "servers"
         ],
-        "description": "multipart/form-data, một file .mrpack tối đa 512 MiB kèm trường name (tùy chọn memory_mb, port).",
+        "description": "multipart/form-data, một file .mrpack hoặc .zip tối đa 512 MiB kèm trường name (tùy chọn memory_mb, port).",
         "operationId": "upload",
         "responses": {
           "202": {
@@ -3443,7 +3443,7 @@
           },
           "source": {
             "type": "string",
-            "description": "`modrinth`."
+            "description": "`modrinth` hoặc `curseforge`."
           },
           "version_id": {
             "type": [

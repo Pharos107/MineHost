@@ -22,7 +22,7 @@ type ApiResult<T> = Result<T, ApiError>;
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateModpackBody {
-    /// `modrinth`.
+    /// `modrinth` hoặc `curseforge`.
     pub source: String,
     pub project_id: String,
     pub version_id: Option<String>,
@@ -42,15 +42,7 @@ pub async fn create(
     State(app): State<Arc<App>>,
     ApiJson(body): ApiJson<CreateModpackBody>,
 ) -> ApiResult<(StatusCode, Json<CreatedDto>)> {
-    match parse_source(&body.source)? {
-        CatalogSource::Modrinth => {}
-        CatalogSource::Curseforge => {
-            return Err(ApiError::new(
-                StatusCode::SERVICE_UNAVAILABLE,
-                ErrorCode::CurseforgeUnavailable,
-            ));
-        }
-    }
+    let source_kind = parse_source(&body.source)?;
     let project_id = body.project_id.trim();
     if project_id.is_empty() {
         return Err(ApiError::invalid("project_id"));
@@ -65,11 +57,18 @@ pub async fn create(
         }
         None => None,
     };
-    let req = ModpackRequest {
-        source: ModpackSourceInput::Modrinth {
+    let source = match source_kind {
+        CatalogSource::Modrinth => ModpackSourceInput::Modrinth {
             project_id: project_id.to_owned(),
             version_id,
         },
+        CatalogSource::Curseforge => ModpackSourceInput::Curseforge {
+            project_id: project_id.to_owned(),
+            version_id,
+        },
+    };
+    let req = ModpackRequest {
+        source,
         name: ServerName::parse(&body.name).map_err(|_| ApiError::invalid("name"))?,
         memory_mb: body.memory_mb.map(memory).transpose()?,
         port: body.port.map(port).transpose()?,
@@ -85,7 +84,7 @@ pub async fn create(
 }
 
 #[utoipa::path(post, path = "/api/v1/servers/modpack/upload", tag = "servers",
-    description = "multipart/form-data, một file .mrpack tối đa 512 MiB kèm trường name (tùy chọn memory_mb, port).",
+    description = "multipart/form-data, một file .mrpack hoặc .zip tối đa 512 MiB kèm trường name (tùy chọn memory_mb, port).",
     responses(
         (status = 202, description = "Job cài modpack đã chạy", body = CreatedDto),
         (status = 400, body = ErrorBody),
@@ -158,10 +157,9 @@ async fn read_upload_form(
                 if form.file.is_some() {
                     return Err(ApiError::invalid("file"));
                 }
-                let file_name = validate_pack_filename(field.file_name())?;
+                let (file_name, ext) = validate_pack_filename(field.file_name())?;
                 let guard =
-                    files::stream_to_temp(app, "modpack-upload", "mrpack", field, max_bytes)
-                        .await?;
+                    files::stream_to_temp(app, "modpack-upload", ext, field, max_bytes).await?;
                 form.file = Some((file_name, guard));
             }
             Some("name") => {
@@ -185,7 +183,7 @@ async fn read_upload_form(
     Ok(form)
 }
 
-fn validate_pack_filename(raw: Option<&str>) -> ApiResult<String> {
+fn validate_pack_filename(raw: Option<&str>) -> ApiResult<(String, &'static str)> {
     let Some(name) = raw.filter(|n| !n.is_empty()) else {
         return Err(ApiError::invalid("file"));
     };
@@ -199,18 +197,12 @@ fn validate_pack_filename(raw: Option<&str>) -> ApiResult<String> {
         .and_then(|e| e.to_str())
         .map(str::to_ascii_lowercase);
     match ext.as_deref() {
-        Some("mrpack") => Ok(name.to_owned()),
-        Some("zip") => Err(ApiError::new(
-            StatusCode::UNPROCESSABLE_ENTITY,
-            ErrorCode::ModpackInvalid,
-        )
-        .with_params(serde_json::json!({
-            "reason": "CurseForge .zip chưa được hỗ trợ ở phiên bản này (chỉ nhận .mrpack)"
-        }))),
+        Some("mrpack") => Ok((name.to_owned(), "mrpack")),
+        Some("zip") => Ok((name.to_owned(), "zip")),
         _ => Err(
             ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, ErrorCode::ModpackInvalid).with_params(
                 serde_json::json!({
-                    "reason": "chỉ hỗ trợ file modpack .mrpack"
+                    "reason": "chỉ hỗ trợ file modpack .mrpack hoặc .zip"
                 }),
             ),
         ),
