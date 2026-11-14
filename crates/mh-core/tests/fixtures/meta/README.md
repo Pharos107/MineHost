@@ -1,4 +1,4 @@
-# Fixture metadata mod
+# Fixture metadata mod và plugin
 
 Mỗi thư mục chứa nguyên văn file metadata trích trực tiếp từ file `.jar` tải trên Modrinth (không chỉnh sửa nội dung).
 
@@ -24,3 +24,8 @@ Mỗi thư mục chứa nguyên văn file metadata trích trực tiếp từ fil
 | 18 | `waystones` | `waystones/neoforge.mods.toml` | neoforge | `21.1.46+neoforge-1.21.1` | https://cdn.modrinth.com/data/LOpKHB2A/versions/6Z6MQ6os/waystones-neoforge-1.21.1-21.1.46.jar | `75718161662d9ec957ba22e10e497788ec1687ba` |
 | 19 | `curios` | `curios/neoforge.mods.toml` | neoforge | `9.5.1+1.21.1` | https://cdn.modrinth.com/data/vvuO3ImH/versions/yohfFbgD/curios-neoforge-9.5.1%2B1.21.1.jar | `418fcd42e3a7844c9bdc71c9b6401fdb3894e0c4` |
 | 20 | `appleskin` | `appleskin/neoforge.mods.toml` | neoforge | `3.0.9+mc1.21` | https://cdn.modrinth.com/data/EsAfCjCV/versions/uAKA6Laj/appleskin-neoforge-mc1.21-3.0.9.jar | `81cf0e668f991f83ac8820c386fbd6c9c3602246` |
+| 21 | `worldguard` | `worldguard/plugin.yml` | paper | `7.0.21` | https://cdn.modrinth.com/data/DKY9btbd/versions/fiHLM6oY/worldguard-bukkit-7.0.21.jar | `a8a3f140c9578ed78a0c8038963d02e79c91d9d7` |
+| 22 | `luckperms` | `luckperms/plugin.yml` | paper | `v5.5.71-bukkit` | https://cdn.modrinth.com/data/Vebnzrzj/versions/b0mk8uS6/LuckPerms-Bukkit-5.5.71.jar | `fc8bb9919fa77c670b7ed5c284bcb66770ea71fc` |
+| 23 | `vaultunlocked` | `vaultunlocked/plugin.yml` | paper | `2.20.3` | https://cdn.modrinth.com/data/ayRaM8J7/versions/qZgRzoYs/VaultUnlocked-2.20.3.jar | `daeb8d9dd3ba7bfbdfe51da01c7ccc6c8db47b3f` |
+| 24 | `chunky` | `chunky/paper-plugin.yml` | paper | `1.5.66` | https://cdn.modrinth.com/data/fALzjamp/versions/RBuKjN4k/Chunky-Paper-1.5.66.jar | `1ad238cf2e923a7dac91c93ae5c7681bcb96abda` |
+| 25 | `fancyholograms` | `fancyholograms/paper-plugin.yml` | paper | `3.0.0-SNAPSHOT.95` | https://cdn.modrinth.com/data/5QNgOj66/versions/bwLwcHfP/FancyHolograms-3.0.0-SNAPSHOT.95.jar | `0a9ecee8149b675e599b61dc3286b268958cc0e2` |

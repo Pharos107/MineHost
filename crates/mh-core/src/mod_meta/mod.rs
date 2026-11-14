@@ -1,4 +1,4 @@
-//! Đọc metadata của mod (Fabric, Quilt, Forge, NeoForge) từ chuỗi.
+//! Đọc metadata của mod (Fabric, Quilt, Forge, NeoForge) và plugin (Paper/Bukkit) từ chuỗi.
 //!
 //! Mọi hàm nhận trực tiếp nội dung file văn bản đã trích từ jar (không làm I/O ở `mh-core`),
 //! áp dụng luật nhận mod chỉ chạy ở client (spec P3, mục 3.5) và chuẩn hóa danh sách dependency.
@@ -9,6 +9,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 mod version_req;
+mod yaml;
 
 pub use version_req::matches_version_req;
 
@@ -60,6 +61,8 @@ pub enum ModMetaFormat {
     QuiltModJson,
     ModsToml,
     NeoForgeModsToml,
+    PluginYml,
+    PaperPluginYml,
 }
 
 impl ModMetaFormat {
@@ -70,18 +73,22 @@ impl ModMetaFormat {
             "quilt.mod.json" => Some(Self::QuiltModJson),
             "META-INF/mods.toml" => Some(Self::ModsToml),
             "META-INF/neoforge.mods.toml" => Some(Self::NeoForgeModsToml),
+            "plugin.yml" => Some(Self::PluginYml),
+            "paper-plugin.yml" => Some(Self::PaperPluginYml),
             _ => None,
         }
     }
 }
 
-/// Lỗi khi phân tích metadata mod.
+/// Lỗi khi phân tích metadata mod hoặc plugin.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum ModMetaError {
     #[error("JSON metadata không hợp lệ: {0}")]
     Json(String),
     #[error("TOML metadata không hợp lệ: {0}")]
     Toml(String),
+    #[error("YAML metadata không hợp lệ: {0}")]
+    Yaml(String),
     #[error("metadata thiếu trường bắt buộc `{0}`")]
     MissingField(&'static str),
 }
@@ -92,6 +99,8 @@ pub fn parse_mod_meta(format: ModMetaFormat, text: &str) -> Result<ModMeta, ModM
         ModMetaFormat::FabricModJson => parse_fabric_mod_json(text),
         ModMetaFormat::QuiltModJson => parse_quilt_mod_json(text),
         ModMetaFormat::ModsToml | ModMetaFormat::NeoForgeModsToml => parse_forge_toml(text),
+        ModMetaFormat::PluginYml => yaml::parse_plugin_yml(text),
+        ModMetaFormat::PaperPluginYml => yaml::parse_paper_plugin_yml(text),
     }
 }
 
@@ -294,7 +303,7 @@ fn env_to_side(env: Option<&str>) -> ModSide {
     }
 }
 
-fn strip_bom(text: &str) -> &str {
+pub(super) fn strip_bom(text: &str) -> &str {
     text.strip_prefix('\u{feff}').unwrap_or(text)
 }
 
@@ -304,7 +313,7 @@ fn opt_non_empty(s: Option<&str>) -> Option<String> {
         .map(str::to_owned)
 }
 
-fn normalize_version(raw: Option<&str>) -> Option<String> {
+pub(super) fn normalize_version(raw: Option<&str>) -> Option<String> {
     let trimmed = opt_non_empty(raw)?;
     // Placeholder Maven/Gradle chưa được thay khi đóng gói (ví dụ `${file.jarVersion}`).
     if let Some(start) = trimmed.find("${")
@@ -315,7 +324,7 @@ fn normalize_version(raw: Option<&str>) -> Option<String> {
     Some(trimmed)
 }
 
-fn require_field(s: Option<&str>, field: &'static str) -> Result<String, ModMetaError> {
+pub(super) fn require_field(s: Option<&str>, field: &'static str) -> Result<String, ModMetaError> {
     opt_non_empty(s).ok_or(ModMetaError::MissingField(field))
 }
 
