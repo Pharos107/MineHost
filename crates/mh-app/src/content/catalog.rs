@@ -6,14 +6,21 @@ use std::sync::Arc;
 use mh_core::{ErrorCode, LoaderKind, McVersion};
 use mh_net::{Checksum, Download, HostAllowlist, HttpClient, hosts};
 pub use mh_providers::modrinth::{
-    Dependency, DependencyType, FileHashes, Modrinth, ModrinthVersion, Project, SideSupport,
-    VersionFile, modrinth_loaders,
+    Dependency, DependencyType, FileHashes, Modrinth, ModrinthVersion, Project, ProjectLinks,
+    ProjectType, SearchFilters, SearchHit, SearchIndex, SearchResult, SideSupport, VersionFile,
+    modrinth_loaders,
 };
 
 use crate::AppError;
 use crate::sources::{BoxFut, CancellationToken, ProgressFn};
 
 pub trait ContentCatalog: Send + Sync + 'static {
+    fn search<'a>(
+        &'a self,
+        query: &'a str,
+        filters: &'a SearchFilters,
+    ) -> BoxFut<'a, Result<SearchResult, AppError>>;
+
     fn project<'a>(&'a self, id_or_slug: &'a str) -> BoxFut<'a, Result<Project, AppError>>;
 
     fn versions<'a>(
@@ -60,6 +67,14 @@ impl ModrinthCatalog {
 }
 
 impl ContentCatalog for ModrinthCatalog {
+    fn search<'a>(
+        &'a self,
+        query: &'a str,
+        filters: &'a SearchFilters,
+    ) -> BoxFut<'a, Result<SearchResult, AppError>> {
+        Box::pin(async move { Ok(self.modrinth.search(query, filters).await?) })
+    }
+
     fn project<'a>(&'a self, id_or_slug: &'a str) -> BoxFut<'a, Result<Project, AppError>> {
         Box::pin(async move { Ok(self.modrinth.project(id_or_slug).await?) })
     }
@@ -118,6 +133,14 @@ impl NoContentCatalog {
 }
 
 impl ContentCatalog for NoContentCatalog {
+    fn search<'a>(
+        &'a self,
+        _: &'a str,
+        _: &'a SearchFilters,
+    ) -> BoxFut<'a, Result<SearchResult, AppError>> {
+        Box::pin(async { Err(Self::offline()) })
+    }
+
     fn project<'a>(&'a self, _: &'a str) -> BoxFut<'a, Result<Project, AppError>> {
         Box::pin(async { Err(Self::offline()) })
     }

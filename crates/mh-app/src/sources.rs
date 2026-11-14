@@ -16,7 +16,7 @@ use crate::AppError;
 // Kiểu cần để tự cài `ServerCatalog`/`JavaSource` (ví dụ trong test) mà không phụ thuộc thẳng
 // các crate tầng dưới.
 pub use mh_java::JavaRuntime;
-pub use mh_net::{CancellationToken, Checksum};
+pub use mh_net::{CancellationToken, Checksum, HostAllowlist};
 pub use mh_providers::{InstallPlan, InstallerRun, LoaderRelease, PlannedFile, ServerJar};
 
 pub type BoxFut<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;

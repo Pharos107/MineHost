@@ -16,6 +16,7 @@
 //! `cargo build -p minehost --features e2e` cũng tạo `target/debug/e2e-fake-mc` từ cùng mã nguồn,
 //! để test Rust lấy đường dẫn qua `CARGO_BIN_EXE`. Playwright nên dùng `fake-mc` của `mh-runtime`.
 
+mod content;
 mod loader;
 
 use std::path::{Path, PathBuf};
@@ -239,6 +240,11 @@ impl E2eJava {
             version: JAVA_VERSION.to_owned(),
         }
     }
+}
+
+/// Nguồn Modrinth giả cho chế độ e2e (spec P3, mục 5.9). Không gọi mạng.
+pub fn content() -> Arc<dyn crate::ContentCatalog> {
+    Arc::new(content::E2eContent::new())
 }
 
 /// Tra người chơi không gọi Mojang: mọi tên đều có tài khoản, UUID tính như offline-mode,

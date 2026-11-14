@@ -8,16 +8,21 @@ mod plan;
 use std::sync::Arc;
 
 use mh_core::{ContentKind, ErrorCode, InstanceSpec, ServerId};
-use mh_store::{ContentFile, ContentManifest, PendingContent};
+use mh_store::ContentManifest;
+pub use mh_store::{ContentFile, ContentSource, PendingContent, ProjectId};
 
 pub use catalog::{
     ContentCatalog, Dependency, DependencyType, FileHashes, Modrinth, ModrinthCatalog,
-    ModrinthVersion, NoContentCatalog, Project, SideSupport, VersionFile,
+    ModrinthVersion, NoContentCatalog, Project, ProjectLinks, ProjectType, SearchFilters,
+    SearchHit, SearchIndex, SearchResult, SideSupport, VersionFile, modrinth_loaders,
 };
 pub use plan::{ContentInstallPlan, PlannedContent};
 
 use crate::files::blocking;
 use crate::{App, AppError, lock};
+
+/// Số kết quả mỗi trang tìm kiếm nội dung.
+pub const CONTENT_PAGE_SIZE: u32 = 20;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ContentList {
@@ -30,6 +35,64 @@ impl App {
     pub fn with_content(mut self, catalog: Arc<dyn ContentCatalog>) -> Self {
         self.content_catalog = catalog;
         self
+    }
+
+    /// Tìm mod/plugin/modpack trên catalog. Có `server_id` thì lọc theo loader, Minecraft và
+    /// chỉ lấy mục chạy được phía server (`server_side != unsupported`).
+    pub async fn search_content(
+        &self,
+        query: &str,
+        kind: Option<ProjectType>,
+        server_id: Option<ServerId>,
+        page: u32,
+    ) -> Result<SearchResult, AppError> {
+        if page == 0 {
+            return Err(AppError::new(ErrorCode::InvalidInput, "page phải >= 1")
+                .with_params(serde_json::json!({ "field": "page" })));
+        }
+        let mut filters = SearchFilters {
+            project_type: kind,
+            limit: CONTENT_PAGE_SIZE,
+            offset: page.saturating_sub(1).saturating_mul(CONTENT_PAGE_SIZE),
+            ..SearchFilters::default()
+        };
+        if let Some(id) = server_id {
+            let spec = self.store.load(id)?;
+            let server_kind = content_kind_for(&spec)?;
+            if filters.project_type.is_none() {
+                filters.project_type = Some(match server_kind {
+                    ContentKind::Mods => ProjectType::Mod,
+                    ContentKind::Plugins => ProjectType::Plugin,
+                });
+            }
+            filters.loader = Some(spec.game.loader);
+            filters.minecraft = Some(spec.game.minecraft);
+            filters.server_only = true;
+        }
+        self.content_catalog.search(query, &filters).await
+    }
+
+    /// Chi tiết một project từ nguồn nội dung.
+    pub async fn content_project(&self, project_id: &str) -> Result<Project, AppError> {
+        self.content_catalog.project(project_id).await
+    }
+
+    /// Các phiên bản của project hợp với loader và Minecraft của server, mới nhất trước.
+    pub async fn content_versions(
+        &self,
+        project_id: &str,
+        server_id: ServerId,
+    ) -> Result<Vec<ModrinthVersion>, AppError> {
+        let spec = self.store.load(server_id)?;
+        let _ = content_kind_for(&spec)?;
+        self.content_catalog
+            .versions(project_id, spec.game.loader, &spec.game.minecraft)
+            .await
+    }
+
+    /// Kiểm tra nhanh server có tồn tại, hỗ trợ mod/plugin và đang rảnh trước khi nhận upload.
+    pub fn check_content_idle(&self, id: ServerId) -> Result<(), AppError> {
+        self.ensure_content_idle(id).map(|_| ())
     }
 
     /// Danh sách mod/plugin hiện trên đĩa cùng các mục `pending`. Vanilla trả `CONTENT_INCOMPATIBLE`.

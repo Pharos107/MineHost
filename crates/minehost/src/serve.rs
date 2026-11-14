@@ -140,7 +140,9 @@ fn e2e_app(dirs: DataDirs, java: std::path::PathBuf) -> anyhow::Result<App> {
     );
     let deps = mh_app::e2e::deps(java);
     let app = App::with_deps(dirs, deps).context("không khởi tạo được MineHost")?;
-    Ok(app.with_players(mh_app::e2e::players()))
+    Ok(app
+        .with_players(mh_app::e2e::players())
+        .with_content(mh_app::e2e::content()))
 }
 
 pub fn open_browser(url: &str) {

@@ -6,7 +6,7 @@
 //!   `X-MineHost: 1` (cho CLI và test). Trình duyệt không cho trang khác tự đặt header này
 //!   mà không qua preflight CORS, mà MineHost không trả lời CORS.
 //! - Body của request thay đổi dữ liệu phải là JSON, để form HTML của trang khác không gửi được.
-//!   Ngoại lệ duy nhất: `POST /api/v1/servers/{id}/files/upload` nhận `multipart/form-data`.
+//!   Ngoại lệ: `POST /api/v1/servers/{id}/files/upload` và `.../content/upload` nhận `multipart/form-data`.
 //! - WebSocket cũng phải đúng `Origin`, vì trình duyệt không áp dụng same-origin cho WebSocket.
 //! - Từ P2: thêm `<ip-lan>:<cổng>` của các listener LAN đang mở (spec P2, mục 5.9).
 
@@ -137,19 +137,19 @@ fn is_json(headers: &HeaderMap) -> bool {
 
 fn is_upload(req: &Request) -> bool {
     req.method() == Method::POST
-        && is_files_upload(req.uri().path())
+        && is_upload_path(req.uri().path())
         && mime_is(req.headers(), "multipart/form-data")
 }
 
 /// Đúng path upload, không phải tiền tố. Guard chạy ngoài `nest`, nên path còn `/api/v1`.
-fn is_files_upload(path: &str) -> bool {
+fn is_upload_path(path: &str) -> bool {
     let Some(rest) = path.strip_prefix("/api/v1/servers/") else {
         return false;
     };
     let Some((_, tail)) = rest.split_once('/') else {
         return false;
     };
-    tail == "files/upload"
+    matches!(tail, "files/upload" | "content/upload")
 }
 
 fn mime_is(headers: &HeaderMap, expected: &str) -> bool {
@@ -162,20 +162,26 @@ fn mime_is(headers: &HeaderMap, expected: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::is_files_upload;
+    use super::is_upload_path;
 
     #[test]
     fn only_exact_upload_path_is_multipart() {
         let id = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
-        assert!(is_files_upload(&format!(
+        assert!(is_upload_path(&format!(
             "/api/v1/servers/{id}/files/upload"
         )));
-        assert!(!is_files_upload(&format!(
+        assert!(is_upload_path(&format!(
+            "/api/v1/servers/{id}/content/upload"
+        )));
+        assert!(!is_upload_path(&format!(
             "/api/v1/servers/{id}/files/mkdir"
         )));
-        assert!(!is_files_upload(&format!(
+        assert!(!is_upload_path(&format!(
             "/api/v1/servers/{id}/files/upload/extra"
         )));
-        assert!(!is_files_upload("/api/v1/servers/files/upload"));
+        assert!(!is_upload_path(&format!(
+            "/api/v1/servers/{id}/content/upload/extra"
+        )));
+        assert!(!is_upload_path("/api/v1/servers/files/upload"));
     }
 }

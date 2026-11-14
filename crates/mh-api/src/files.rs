@@ -300,12 +300,12 @@ async fn save_field(
     Ok(Some(file_name))
 }
 
-async fn drain_field(mut field: Field<'_>) -> Result<(), ApiError> {
+pub(crate) async fn drain_field(mut field: Field<'_>) -> Result<(), ApiError> {
     while field.chunk().await.map_err(from_multipart)?.is_some() {}
     Ok(())
 }
 
-fn from_multipart(err: MultipartError) -> ApiError {
+pub(crate) fn from_multipart(err: MultipartError) -> ApiError {
     if err.status() == StatusCode::PAYLOAD_TOO_LARGE {
         return ApiError::new(StatusCode::PAYLOAD_TOO_LARGE, ErrorCode::FileTooLarge);
     }

@@ -368,6 +368,7 @@ Không đổi. Phần dò cgroup v2 nằm ở `mh-runtime/src/os/cgroup.rs`, c�
 | GET | `/content/{source}/projects/{pid}` | Mô tả, ảnh, link, `server_side` |
 | GET | `/content/{source}/projects/{pid}/versions?server_id=` | Bản hợp với server, mới nhất trước |
 | GET | `/servers/{id}/content` | Danh sách mod hoặc plugin (mục 3.3), kèm `pending` |
+| POST | `/servers/{id}/content/plan` | `{ source, project_id, version_id? }` → danh sách sẽ cài (mod chính + dependency) |
 | POST | `/servers/{id}/content` | `{ source, project_id, version_id? }` → Job |
 | POST | `/servers/{id}/content/upload` | `multipart`, jar ≤ 512 MiB; khớp hash với `pending` thì xóa dòng chờ |
 | PATCH | `/servers/{id}/content/{file}` | `{ enabled }` |
