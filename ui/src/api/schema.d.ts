@@ -292,6 +292,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/modpack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/modpack/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description multipart/form-data, một file .mrpack tối đa 512 MiB kèm trường name (tùy chọn memory_mb, port). */
+        post: operations["upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}": {
         parameters: {
             query?: never;
@@ -810,6 +843,16 @@ export interface components {
             /** @description Bản được bảo vệ không bị tự xóa và không xóa được cho tới khi bỏ bảo vệ. */
             protected?: boolean | null;
         };
+        CreateModpackBody: {
+            memory_mb?: components["schemas"]["MemoryDto"] | null;
+            name: string;
+            /** Format: int32 */
+            port?: number | null;
+            project_id: string;
+            /** @description `modrinth`. */
+            source: string;
+            version_id?: string | null;
+        };
         CreateServerBody: {
             /** @description `paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`. */
             loader: string;
@@ -912,6 +955,8 @@ export interface components {
             /** @description Ví dụ `create_server`. */
             kind: string;
             progress?: components["schemas"]["ProgressDto"] | null;
+            /** @description Kết quả tóm tắt tùy theo loại Job (ví dụ thống kê modpack đã cài). */
+            result?: Record<string, never> | null;
             server_id?: string | null;
             /** @description RFC 3339, lúc Job được tạo. */
             started_at: string;
@@ -2013,6 +2058,106 @@ export interface operations {
                 };
             };
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateModpackBody"];
+            };
+        };
+        responses: {
+            /** @description Job cài modpack đã chạy */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Job cài modpack đã chạy */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

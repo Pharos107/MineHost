@@ -182,7 +182,10 @@
       "copy_files": "Chép thư mục server",
       "run_installer": "Cài {{loader}}",
       "resolve_content": "Đọc thông tin mod",
-      "download_content": "Tải {{name}}"
+      "download_content": "Tải {{name}}",
+      "download_modpack": "Tải modpack {{name}}",
+      "download_pack_file": "Tải file modpack ({{index}}/{{total}}): {{name}}",
+      "apply_overrides": "Áp dụng cấu hình modpack"
     }
   },
   "server": {
@@ -393,6 +396,7 @@
     "cancel": "Hủy",
     "kinds": {
       "create_server": "Tạo server",
+      "create_modpack": "Cài modpack",
       "backup": "Sao lưu",
       "restore": "Khôi phục",
       "import_server": "Nhập server",

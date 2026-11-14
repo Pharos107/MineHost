@@ -489,3 +489,6 @@ mod tests_players;
 
 #[path = "tests_content.rs"]
 mod tests_content;
+
+#[path = "tests_modpack.rs"]
+mod tests_modpack;

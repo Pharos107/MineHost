@@ -12,6 +12,7 @@ mod guard;
 mod import;
 mod jobs;
 mod lan;
+mod modpack;
 mod players;
 mod preflight;
 mod servers;
@@ -39,6 +40,8 @@ pub use lan::{LanState, lan_listener};
         system::system_info,
         servers::list,
         servers::create,
+        modpack::create,
+        modpack::upload,
         import::inspect,
         import::import,
         servers::get,
@@ -110,6 +113,7 @@ pub use lan::{LanState, lan_listener};
         dto::MemoryDto,
         dto::CrashDto,
         dto::CreateServerBody,
+        modpack::CreateModpackBody,
         dto::CreatedDto,
         dto::BackupSettingsDto,
         dto::BackupSettingsBody,
@@ -211,6 +215,18 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         .route("/health", get(system::health))
         .route("/system", get(system::system_info))
         .route("/servers", get(servers::list).post(servers::create))
+        .route("/servers/modpack", post(modpack::create))
+        .route(
+            "/servers/modpack/upload",
+            post(modpack::upload)
+                .layer(DefaultBodyLimit::max(files::upload_body_limit(
+                    upload_max_bytes,
+                )))
+                .layer(axum::middleware::from_fn_with_state(
+                    upload_max_bytes,
+                    files::inject_upload_limit,
+                )),
+        )
         .route("/servers/import", post(import::import))
         .route("/servers/import/inspect", post(import::inspect))
         .route(

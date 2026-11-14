@@ -18,6 +18,7 @@
 
 mod content;
 mod loader;
+mod pack;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

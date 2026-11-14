@@ -1,28 +1,23 @@
 //! Route tìm kiếm, xem và quản lý mod/plugin (spec P3, mục 5.8).
 
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
 
 use axum::Json;
-use axum::extract::multipart::Field;
 use axum::extract::{Extension, FromRequestParts, Multipart, Path as AxumPath, Query, State};
 use axum::http::StatusCode;
 use axum::http::request::Parts;
 use mh_app::App;
 use mh_app::content::{CONTENT_PAGE_SIZE, ProjectType, SearchResult};
 use mh_core::{ErrorCode, ServerId};
-use tokio::io::AsyncWriteExt;
 
 use crate::backups::JobStartedDto;
 pub(crate) use crate::content_dto::*;
 use crate::error::{ApiError, ApiJson, ErrorBody, IdPath};
-use crate::files::{self, UploadLimit};
+use crate::files::{self, TempUploadGuard, UploadLimit};
 
 type ApiResult<T> = Result<T, ApiError>;
-
-static UPLOAD_SEQ: AtomicU64 = AtomicU64::new(0);
 
 /// `{id}` và `{file}` trong đường dẫn.
 pub struct ContentFilePath(ServerId, String);
@@ -219,13 +214,16 @@ pub async fn upload(
             return Err(ApiError::invalid("file"));
         }
         let name = valid_jar_field_name(field.file_name())?;
-        let guard = stream_jar_to_temp(&app, field, max_bytes).await?;
+        let guard = files::stream_to_temp(&app, "content-upload", "jar", field, max_bytes).await?;
         found = Some((name, guard));
     }
     let Some((file_name, guard)) = found else {
         return Err(ApiError::invalid("file"));
     };
-    let uploaded = app.upload_content(id, &file_name, &guard.0).await?;
+    let Some(temp_path) = guard.path() else {
+        return Err(ApiError::invalid("file"));
+    };
+    let uploaded = app.upload_content(id, &file_name, temp_path).await?;
     Ok(Json(uploaded.into()))
 }
 
@@ -262,7 +260,7 @@ pub async fn remove(
     Ok(StatusCode::NO_CONTENT)
 }
 
-fn check_source(source: &str) -> ApiResult<()> {
+pub(crate) fn check_source(source: &str) -> ApiResult<()> {
     match source {
         SOURCE_MODRINTH => Ok(()),
         "curseforge" => Err(ApiError::new(
@@ -315,46 +313,4 @@ fn valid_jar_field_name(raw: Option<&str>) -> ApiResult<String> {
         return Err(ApiError::invalid("file"));
     }
     Ok(name.to_owned())
-}
-
-struct TempUploadGuard(PathBuf);
-
-impl Drop for TempUploadGuard {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_file(&self.0);
-    }
-}
-
-async fn stream_jar_to_temp(
-    app: &App,
-    mut field: Field<'_>,
-    max_bytes: u64,
-) -> ApiResult<TempUploadGuard> {
-    let cache_dir = app.dirs().cache();
-    tokio::fs::create_dir_all(&cache_dir)
-        .await
-        .map_err(ApiError::internal)?;
-    let seq = UPLOAD_SEQ.fetch_add(1, Ordering::Relaxed);
-    let temp_path = cache_dir.join(format!(
-        ".content-upload-{}-{seq}.jar.part",
-        std::process::id()
-    ));
-    let guard = TempUploadGuard(temp_path.clone());
-    let mut file = tokio::fs::File::create(&temp_path)
-        .await
-        .map_err(ApiError::internal)?;
-    let mut total = 0u64;
-    while let Some(chunk) = field.chunk().await.map_err(files::from_multipart)? {
-        total = total.saturating_add(chunk.len() as u64);
-        if total > max_bytes {
-            return Err(ApiError::new(
-                StatusCode::PAYLOAD_TOO_LARGE,
-                ErrorCode::FileTooLarge,
-            ));
-        }
-        file.write_all(&chunk).await.map_err(ApiError::internal)?;
-    }
-    file.flush().await.map_err(ApiError::internal)?;
-    drop(file);
-    Ok(guard)
 }

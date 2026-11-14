@@ -259,10 +259,10 @@ fn parse_since(text: &str) -> Result<OffsetDateTime, ApiError> {
     OffsetDateTime::parse(text, &Rfc3339).map_err(|_| ApiError::invalid("since"))
 }
 
-fn memory(m: MemoryDto) -> ApiResult<MemoryLimits> {
+pub(crate) fn memory(m: MemoryDto) -> ApiResult<MemoryLimits> {
     MemoryLimits::new(m.min, m.max).map_err(|_| ApiError::invalid("memory_mb"))
 }
 
-fn port(p: u16) -> ApiResult<GamePort> {
+pub(crate) fn port(p: u16) -> ApiResult<GamePort> {
     GamePort::new(p).map_err(|_| ApiError::invalid("port"))
 }
