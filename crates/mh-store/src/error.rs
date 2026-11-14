@@ -38,6 +38,10 @@ pub enum StoreError {
     /// `level.dat` không phải NBT gzip hoặc không có điểm spawn.
     #[error("`{path}` không có điểm spawn: {detail}")]
     InvalidWorld { path: PathBuf, detail: String },
+
+    /// `content.toml` sai cú pháp TOML hoặc có schema mới hơn bản MineHost này.
+    #[error("`{path}` không hợp lệ: {detail}")]
+    InvalidContent { path: PathBuf, detail: String },
 }
 
 impl StoreError {
@@ -62,13 +66,24 @@ impl StoreError {
         }
     }
 
+    pub(crate) fn invalid_content(
+        path: impl Into<PathBuf>,
+        detail: impl std::fmt::Display,
+    ) -> Self {
+        Self::InvalidContent {
+            path: path.into(),
+            detail: detail.to_string(),
+        }
+    }
+
     pub fn code(&self) -> ErrorCode {
         match self {
             Self::NotFound(_) => ErrorCode::NotFound,
             // File người chơi hỏng cùng loại với instance.toml hỏng: người dùng sửa được file.
-            Self::Broken { .. } | Self::InvalidPlayers { .. } | Self::InvalidWorld { .. } => {
-                ErrorCode::ConfigInvalid
-            }
+            Self::Broken { .. }
+            | Self::InvalidPlayers { .. }
+            | Self::InvalidWorld { .. }
+            | Self::InvalidContent { .. } => ErrorCode::ConfigInvalid,
             Self::Serialize(e) => e.code(),
             Self::Platform(e) => e.code(),
             Self::AlreadyExists(_) | Self::Io { .. } => ErrorCode::Internal,

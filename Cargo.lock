@@ -1482,10 +1482,13 @@ dependencies = [
  "mh-platform",
  "serde",
  "serde_json",
+ "sha1 0.11.0",
  "tempfile",
  "thiserror",
  "time",
+ "toml",
  "tracing",
+ "zip",
 ]
 
 [[package]]

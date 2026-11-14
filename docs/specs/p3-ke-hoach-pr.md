@@ -7,7 +7,7 @@ Hai bản phát hành (spec mục 11): nhóm A–D ra `v0.4.0` (PR-25), nhóm E�
 
 ## Tiến độ
 
-Cập nhật 2026-11-14, sau khi merge #80. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-14, sau khi merge #81. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -26,7 +26,7 @@ chính PR ấy.
 | 12 | Nhập server có sẵn có mod | Đã merge | [#76](https://github.com/Pharos107/MineHost/pull/76) |
 | 13 | Chọn Java cho từng server | Đã merge | [#77](https://github.com/Pharos107/MineHost/pull/77) |
 | 14 | Đọc metadata mod và plugin | Đã merge | [#79](https://github.com/Pharos107/MineHost/pull/79), [#80](https://github.com/Pharos107/MineHost/pull/80) |
-| 15 | `content.toml` và quét thư mục mod | Chưa bắt đầu | |
+| 15 | `content.toml` và quét thư mục mod | Đã merge | [#81](https://github.com/Pharos107/MineHost/pull/81) |
 | 16 | Modrinth | Chưa bắt đầu | |
 | 17 | Cài, bật, tắt, gỡ mod | Chưa bắt đầu | |
 | 18 | Route mod và tìm kiếm | Chưa bắt đầu | |
