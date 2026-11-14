@@ -120,7 +120,9 @@ fn open_app(dirs: DataDirs) -> anyhow::Result<App> {
 }
 
 fn builtin_curseforge_key() -> Option<CurseforgeKey> {
-    option_env!("MINEHOST_CURSEFORGE_KEY").and_then(|raw| match CurseforgeKey::parse(raw) {
+    // Bản build từ fork không có secret thì biến có mặt nhưng rỗng: coi như không nhúng key.
+    let raw = option_env!("MINEHOST_CURSEFORGE_KEY").filter(|raw| !raw.trim().is_empty());
+    raw.and_then(|raw| match CurseforgeKey::parse(raw) {
         Ok(key) => Some(key),
         Err(err) => {
             tracing::warn!(%err, "MINEHOST_CURSEFORGE_KEY khi build không hợp lệ, bỏ qua");
