@@ -14,6 +14,7 @@ pub mod instance;
 pub mod launch;
 pub mod memory;
 pub mod mod_meta;
+pub mod mrpack;
 pub mod players;
 pub mod properties;
 pub mod schedule;
@@ -31,6 +32,10 @@ pub use memory::{MemoryLimits, memory_limit_mb, suggest_memory_mb};
 pub use mod_meta::{
     ModDependency, ModMeta, ModMetaError, ModMetaFormat, ModSide, matches_version_req,
     parse_mod_meta,
+};
+pub use mrpack::{
+    MrpackDependencies, MrpackEnv, MrpackEnvSupport, MrpackError, MrpackFile, MrpackHashes,
+    MrpackIndex, MrpackRuntime, validate_mrpack_path,
 };
 pub use players::{
     FreezeAttribute, PlayerAction, PlayerCommandError, PlayerLogEvent, PlayerName,

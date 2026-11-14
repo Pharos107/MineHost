@@ -1445,6 +1445,7 @@ name = "mh-providers"
 version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
+ "flate2",
  "mh-core",
  "mh-net",
  "mh-platform",
@@ -1458,6 +1459,7 @@ dependencies = [
  "tracing",
  "url",
  "wiremock",
+ "zip",
 ]
 
 [[package]]
