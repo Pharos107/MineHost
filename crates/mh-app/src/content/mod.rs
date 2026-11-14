@@ -4,6 +4,7 @@ mod catalog;
 mod curseforge;
 mod install;
 mod manage;
+mod modrinth;
 mod plan;
 mod preflight;
 
@@ -14,13 +15,15 @@ use mh_store::ContentManifest;
 pub use mh_store::{ContentFile, ContentSource, PendingContent, ProjectId};
 
 pub use catalog::{
-    CatalogSource, ContentCatalog, ContentDependency, ContentFileInfo, ContentProject,
-    ContentSearchHit, ContentSearchResult, ContentVersion, DependencyType, Modrinth,
-    ModrinthCatalog, NoContentCatalog, ProjectLinks, ProjectType, SearchFilters, SearchIndex,
-    SideSupport, modrinth_loaders,
+    BlockedPackFile, CatalogSource, CfResolvedFiles, ContentCatalog, ContentDependency,
+    ContentFileInfo, ContentProject, ContentSearchHit, ContentSearchResult, ContentVersion,
+    DependencyType, Modrinth, NoContentCatalog, PackFile, ProjectLinks, ProjectType, SearchFilters,
+    SearchIndex, SideSupport, modrinth_loaders,
 };
+pub(crate) use curseforge::parse_cf_id;
 pub use curseforge::{CurseForge, CurseforgeCatalog};
 pub use manage::PendingUploadResult;
+pub use modrinth::ModrinthCatalog;
 pub use plan::{ContentInstallPlan, PlannedContent};
 pub(crate) use preflight::preflight_block_error;
 pub use preflight::{
@@ -136,6 +139,15 @@ impl App {
         catalog
             .versions(project_id, spec.game.loader, &spec.game.minecraft)
             .await
+    }
+
+    /// Mọi phiên bản của project khi chưa có server (dùng cho modpack), mới nhất trước.
+    pub async fn project_versions(
+        &self,
+        source: CatalogSource,
+        project_id: &str,
+    ) -> Result<Vec<ContentVersion>, AppError> {
+        self.catalog_for(source)?.project_versions(project_id).await
     }
 
     /// Kiểm tra nhanh server có tồn tại, hỗ trợ mod/plugin và đang rảnh trước khi nhận upload.

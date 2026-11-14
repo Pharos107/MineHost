@@ -325,3 +325,21 @@ async fn bad_version_is_skipped_in_lists_not_failing_them() {
     assert_eq!(map.len(), keys.len() - 1);
     assert!(!map.contains_key(&first));
 }
+
+#[tokio::test]
+async fn project_versions_lists_without_loader_or_mc_filter() {
+    let (s, _t, mr) = setup().await;
+    Mock::given(method("GET"))
+        .and(path("/v2/project/pack-1/version"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_string(fixture("versions_sodium_fabric_1_21_1.json")),
+        )
+        .expect(1)
+        .mount(&s)
+        .await;
+
+    let list = mr.project_versions("pack-1").await.unwrap();
+    assert_eq!(list.len(), 3);
+    assert!(list[0].date_published >= list[1].date_published);
+}

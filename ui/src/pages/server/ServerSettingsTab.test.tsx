@@ -32,6 +32,7 @@ function renderTab(server: Server) {
             java_majors: [8, 11, 16, 17, 21, 25],
             memory_total_bytes: 8 * 1024 ** 3,
             suggested_memory_mb: { min: 1024, max: 2048 },
+            suggested_modpack_memory_mb: { min: 1024, max: 4096 },
           })
         : Response.json({}),
     ),

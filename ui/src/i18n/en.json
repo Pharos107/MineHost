@@ -182,7 +182,10 @@
       "copy_files": "Copying server folder",
       "run_installer": "Installing {{loader}}",
       "resolve_content": "Resolving mod dependencies",
-      "download_content": "Downloading {{name}}"
+      "download_content": "Downloading {{name}}",
+      "download_modpack": "Downloading modpack {{name}}",
+      "download_pack_file": "Downloading pack file ({{index}}/{{total}}): {{name}}",
+      "apply_overrides": "Applying modpack overrides"
     }
   },
   "server": {
@@ -394,6 +397,7 @@
     "cancel": "Cancel",
     "kinds": {
       "create_server": "Create server",
+      "create_modpack": "Install modpack",
       "backup": "Backup",
       "restore": "Restore",
       "import_server": "Import server",
@@ -754,5 +758,29 @@
       "searchPlaceholderCurseforge": "Search plugins on CurseForge…",
       "mainItem": "Selected plugin"
     }
+  },
+  "modpack": {
+    "title": "Create server from modpack",
+    "description": "Search modpacks on Modrinth or upload an existing .mrpack file.",
+    "dropTitle": "Upload modpack file",
+    "dropLabel": "Choose modpack file",
+    "dropHint": "or drop a .mrpack or .zip file here, up to 512 MiB.",
+    "searchTitle": "Search modpacks",
+    "searchPlaceholder": "Search modpacks on Modrinth…",
+    "curseforgeNoKey": "CurseForge is unavailable because no API key is configured in Settings.",
+    "noResults": "No modpacks found",
+    "noResultsHint": "Try a different keyword or upload a .mrpack file above.",
+    "version": "Modpack version",
+    "fileLabel": "Modpack file",
+    "fileSize": "File size",
+    "creatingTitle": "Installing modpack",
+    "creatingDescription": "MineHost is downloading Java, installing the loader, and fetching modpack files.",
+    "doneTitle": "Modpack installed",
+    "doneDescription": "The server is ready. Open the server page to accept the EULA and start it.",
+    "summaryInstalled": "Mods installed",
+    "summarySkippedClient": "Skipped (client-only)",
+    "summaryPendingCf": "Pending CurseForge files",
+    "pendingCfHint": "Some CurseForge files must be downloaded manually on the Mods page before starting the server.",
+    "openServer": "Open server"
   }
 }

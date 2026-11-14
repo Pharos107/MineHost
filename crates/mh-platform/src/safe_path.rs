@@ -93,7 +93,7 @@ impl AsRef<Path> for SafePath {
     }
 }
 
-fn is_valid_name(name: &str) -> bool {
+pub fn is_valid_name(name: &str) -> bool {
     if name.contains(':') || name.chars().any(char::is_control) {
         return false;
     }

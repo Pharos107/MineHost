@@ -4,11 +4,12 @@ use std::sync::Arc;
 
 use std::path::Path;
 
-use mh_core::instance::GameSection;
+use mh_core::instance::{GameSection, ModpackSection};
 use mh_core::{
     ErrorCode, GamePort, InstanceSpec, LoaderKind, LoaderVersion, McVersion, MemoryLimits,
     Properties, ServerId, ServerName,
 };
+use mh_store::ServerPaths;
 use time::OffsetDateTime;
 
 use crate::jobs::{JobContext, JobKind, JobStep};
@@ -40,21 +41,15 @@ pub struct Created {
 impl App {
     /// Bắt đầu Job cài server; trả ngay ID server và ID Job.
     pub fn create(self: &Arc<Self>, req: CreateRequest) -> Result<Created, AppError> {
-        let port = match req.port {
-            Some(port) => {
-                self.ensure_port_unused(port, None)?;
-                port
-            }
-            None => self.choose_port(None)?,
-        };
+        let port = self.resolve_new_port(req.port)?;
         let memory = req.memory_mb.unwrap_or_else(|| self.suggested_memory());
         let id = ServerId::generate();
         lock(&self.installing).insert(
             id,
             Installing {
                 name: req.name.clone(),
-                loader: req.loader,
-                minecraft: req.minecraft.clone(),
+                loader: Some(req.loader),
+                minecraft: Some(req.minecraft.clone()),
                 port,
                 job_id: None,
             },
@@ -77,6 +72,19 @@ impl App {
         })
     }
 
+    pub(crate) fn resolve_new_port(
+        &self,
+        requested: Option<GamePort>,
+    ) -> Result<GamePort, AppError> {
+        match requested {
+            Some(port) => {
+                self.ensure_port_unused(port, None)?;
+                Ok(port)
+            }
+            None => self.choose_port(None),
+        }
+    }
+
     async fn install(
         &self,
         ctx: &JobContext,
@@ -91,29 +99,48 @@ impl App {
         ctx.step(JobStep::CheckDisk, 1, STEPS);
         self.check_disk()?;
 
-        let minecraft = req.minecraft.to_string();
+        let (paths, game) = self
+            .setup_vanilla_server(ctx, id, req.loader, &req.minecraft, 2, STEPS)
+            .await?;
+
+        ctx.step(JobStep::PrepareFiles, 5, STEPS);
+        self.write_new_server(&paths.server_dir, id, req, game, memory, port)
+    }
+
+    pub(crate) async fn setup_vanilla_server(
+        &self,
+        ctx: &JobContext,
+        id: ServerId,
+        loader: LoaderKind,
+        mc: &McVersion,
+        step_base: u8,
+        step_count: u8,
+    ) -> Result<(ServerPaths, GameSection), AppError> {
+        let minecraft = mc.to_string();
         ctx.step(
             JobStep::ResolveVersion {
                 minecraft: minecraft.clone(),
             },
-            2,
-            STEPS,
+            step_base,
+            step_count,
         );
-        let resolved = ctx
-            .cancellable(self.catalog.resolve(req.loader, &req.minecraft))
-            .await?;
+        let resolved = ctx.cancellable(self.catalog.resolve(loader, mc)).await?;
 
         let major = resolved.java_major;
-        ctx.step(JobStep::DownloadJava { major }, 3, STEPS);
+        ctx.step(JobStep::DownloadJava { major }, step_base + 1, step_count);
         {
             let _permit = ctx.download_permit().await?;
             let mut progress = |done: u64, total: Option<u64>| ctx.bytes(done, total);
             self.java.ensure(major, &mut progress, &ctx.cancel).await?;
         }
 
-        ctx.step(JobStep::DownloadServer { minecraft }, 4, STEPS);
+        ctx.step(
+            JobStep::DownloadServer { minecraft },
+            step_base + 2,
+            step_count,
+        );
         let paths = self.store.create_dir(id)?;
-        let game = GameSection::new(req.loader, req.minecraft.clone(), resolved.build, major);
+        let game = GameSection::new(loader, mc.clone(), resolved.build, major);
         {
             let _permit = ctx.download_permit().await?;
             let dest = paths.server_dir.join(game.jar.as_str());
@@ -123,9 +150,7 @@ impl App {
                 .await?;
         }
         ctx.check_cancel()?;
-
-        ctx.step(JobStep::PrepareFiles, 5, STEPS);
-        self.write_new_server(&paths.server_dir, id, req, game, memory, port)
+        Ok((paths, game))
     }
 
     /// Bước cuối của mọi kiểu tạo server: `server.properties`, rồi `instance.toml`.
@@ -138,14 +163,29 @@ impl App {
         memory: MemoryLimits,
         port: GamePort,
     ) -> Result<(), AppError> {
+        self.write_server_spec(server_dir, id, req.name.clone(), game, memory, port, None)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn write_server_spec(
+        &self,
+        server_dir: &Path,
+        id: ServerId,
+        name: ServerName,
+        game: GameSection,
+        memory: MemoryLimits,
+        port: GamePort,
+        modpack: Option<ModpackSection>,
+    ) -> Result<(), AppError> {
         let mut props =
             Properties::parse("# Tạo bởi MineHost; Minecraft sẽ thêm các khóa còn lại.\n");
-        props.set("motd", req.name.as_str());
+        props.set("motd", name.as_str());
         props.set("server-port", &port.to_string());
         write_properties(server_dir, &props)?;
         let now = OffsetDateTime::now_utc();
         let now = now.replace_nanosecond(0).unwrap_or(now);
-        let spec = InstanceSpec::new(id, req.name.clone(), now, game, memory, port);
+        let mut spec = InstanceSpec::new(id, name, now, game, memory, port);
+        spec.modpack = modpack;
         // `instance.toml` ghi sau cùng: có nó nghĩa là server đã cài xong.
         self.store.save(&spec)?;
         Ok(())

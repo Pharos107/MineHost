@@ -1,4 +1,4 @@
-import { request, serverPath } from "./client";
+import { request, serverPath, type Created } from "./client";
 import type { components } from "./schema";
 
 export type ContentKind = components["schemas"]["ContentKindDto"];
@@ -15,7 +15,14 @@ export type PendingContent = components["schemas"]["PendingContentDto"];
 export type PendingUploadItem = components["schemas"]["PendingUploadItemDto"];
 export type PendingUploadResult = components["schemas"]["PendingUploadResultDto"];
 export type ContentInstallBody = components["schemas"]["ContentInstallBody"];
+export type CreateModpackBody = components["schemas"]["CreateModpackBody"];
 export type JobStarted = components["schemas"]["JobStartedDto"];
+
+export interface ModpackSummary {
+  installed_mods: number;
+  skipped_client: string[];
+  pending_curseforge: string[];
+}
 
 export interface SearchContentParams {
   source?: string;
@@ -43,11 +50,13 @@ export const contentApi = {
   },
   project: (source: string, projectId: string) =>
     request<ContentProject>("GET", `/content/${encodeURIComponent(source)}/projects/${encodeURIComponent(projectId)}`),
-  versions: (source: string, projectId: string, serverId: string) =>
-    request<ContentVersion[]>(
+  versions: (source: string, projectId: string, serverId?: string) => {
+    const query = serverId ? `?server_id=${encodeURIComponent(serverId)}` : "";
+    return request<ContentVersion[]>(
       "GET",
-      `/content/${encodeURIComponent(source)}/projects/${encodeURIComponent(projectId)}/versions?server_id=${encodeURIComponent(serverId)}`,
-    ),
+      `/content/${encodeURIComponent(source)}/projects/${encodeURIComponent(projectId)}/versions${query}`,
+    );
+  },
   plan: (serverId: string, body: ContentInstallBody) =>
     request<ContentPlan>("POST", `${serverPath(serverId)}/content/plan`, body),
   install: (serverId: string, body: ContentInstallBody) =>
@@ -66,4 +75,10 @@ export const contentApi = {
     for (const file of files) form.append("file", file, file.name);
     return request<PendingUploadResult>("POST", `${serverPath(serverId)}/content/pending/upload`, form);
   },
+};
+
+/** Route tạo server từ modpack (spec P3, mục 5.8). */
+export const modpackApi = {
+  create: (body: CreateModpackBody) => request<Created>("POST", "/servers/modpack", body),
+  upload: (form: FormData) => request<Created>("POST", "/servers/modpack/upload", form),
 };

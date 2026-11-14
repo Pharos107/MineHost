@@ -21,7 +21,12 @@ vi.mock("../../api/ws", () => ({
 }));
 
 const runningJob: Job = { id: 7, kind: "create_server", state: "running", server_id: "01JB", started_at: "2026-10-27T00:00:00Z" };
-const system = { memory_total_bytes: 16 * GB, memory_available_bytes: 10 * GB, suggested_memory_mb: { min: 1024, max: 4096 } };
+const system = {
+  memory_total_bytes: 16 * GB,
+  memory_available_bytes: 10 * GB,
+  suggested_memory_mb: { min: 1024, max: 4096 },
+  suggested_modpack_memory_mb: { min: 1024, max: 8192 },
+};
 const versions = ["1.21.4", "1.21.3", "1.21.1", "1.20.6", "1.20.4", "1.19.4"].map((id) => ({ id, release_time: "" }));
 
 function mockApi() {
@@ -52,6 +57,7 @@ function renderWizard() {
       <MemoryRouter initialEntries={["/new"]}>
         <Routes>
           <Route path="/new" element={<CreateServerPage />} />
+          <Route path="/new/modpack" element={<p>trang modpack</p>} />
           <Route path="/servers/:id" element={<p>trang chi tiết</p>} />
         </Routes>
       </MemoryRouter>
@@ -162,5 +168,16 @@ describe("CreateServerPage", () => {
     expect(await screen.findByText("Không kết nối được Internet. Kiểm tra mạng rồi thử lại.")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Quay lại" }));
     expect(screen.getByRole("textbox", { name: "Tên server" })).toHaveProperty("value", "Server của tôi");
+  });
+
+  it("chọn Từ modpack và bấm Tiếp thì chuyển sang /new/modpack", async () => {
+    mockApi();
+    const user = userEvent.setup();
+    renderWizard();
+    const modpackRadio = screen.getByRole("radio", { name: /^Từ modpack/ });
+    expect(modpackRadio).toHaveProperty("disabled", false);
+    await user.click(modpackRadio);
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    expect(await screen.findByText("trang modpack")).toBeTruthy();
   });
 });

@@ -21,7 +21,14 @@ pub use error::ProviderError;
 pub use fabric::Fabric;
 pub use forge::Forge;
 pub use loader::{InstallPlan, InstallerRun, LoaderRelease, PlannedFile};
-pub use modpack::{BlockedPackFile, PackFile, PackLimits, PackPlan, read_mrpack, read_mrpack_with};
+pub use modpack::{
+    BlockedPackFile, PackFile, PackLimits, PackPlan, extract_curseforge_overrides,
+    extract_curseforge_overrides_with, extract_curseforge_server_pack,
+    extract_curseforge_server_pack_with, extract_mrpack_overrides, extract_mrpack_overrides_with,
+    inspect_curseforge_pack, inspect_curseforge_pack_with, plan_curseforge_pack,
+    plan_curseforge_pack_with, plan_mrpack, plan_mrpack_with, read_mrpack, read_mrpack_with,
+    resolve_curseforge_files, skipped_server_pack_reason,
+};
 pub use modrinth::Modrinth;
 pub use mojang::{Mojang, Profile, Release, ServerJar, VersionDetail};
 pub use neoforge::NeoForge;

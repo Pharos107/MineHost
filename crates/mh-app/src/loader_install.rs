@@ -6,10 +6,14 @@ use std::path::Path;
 use std::time::Duration;
 
 use mh_core::instance::{GameSection, LaunchMode, LaunchSection};
-use mh_core::{ArgsOs, ErrorCode, GamePort, Launch, MemoryLimits, ServerId};
+use mh_core::{
+    ArgsOs, ErrorCode, GamePort, Launch, LoaderKind, LoaderVersion, McVersion, MemoryLimits,
+    ServerId,
+};
 use mh_platform::SafeRoot;
 use mh_providers::loader::INSTALL_DIR;
 use mh_runtime::{Completion, ENCODING_FLAGS, ProcessSpec, ResourceLimits};
+use mh_store::ServerPaths;
 
 use crate::jobs::{JobContext, JobStep};
 use crate::sources::{InstallerRun, LoaderInstall};
@@ -33,43 +37,71 @@ impl App {
     ) -> Result<(), AppError> {
         ctx.step(JobStep::CheckDisk, 1, STEPS);
         self.check_disk()?;
-        let minecraft = req.minecraft.to_string();
+        let (paths, game) = self
+            .setup_loader_server(
+                ctx,
+                id,
+                req.loader,
+                &req.minecraft,
+                req.loader_version.as_ref(),
+                2,
+                STEPS,
+            )
+            .await?;
+        ctx.step(JobStep::PrepareFiles, 6, STEPS);
+        self.write_new_server(&paths.server_dir, id, req, game, memory, port)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) async fn setup_loader_server(
+        &self,
+        ctx: &JobContext,
+        id: ServerId,
+        loader: LoaderKind,
+        mc: &McVersion,
+        wanted: Option<&LoaderVersion>,
+        step_base: u8,
+        step_count: u8,
+    ) -> Result<(ServerPaths, GameSection), AppError> {
+        let minecraft = mc.to_string();
         ctx.step(
             JobStep::ResolveVersion {
                 minecraft: minecraft.clone(),
             },
-            2,
-            STEPS,
+            step_base,
+            step_count,
         );
-        let wanted = req.loader_version.as_ref();
         let install = ctx
-            .cancellable(self.catalog.plan(req.loader, &req.minecraft, wanted))
+            .cancellable(self.catalog.plan(loader, mc, wanted))
             .await?;
         let major = install.java_major;
-        ctx.step(JobStep::DownloadJava { major }, 3, STEPS);
+        ctx.step(JobStep::DownloadJava { major }, step_base + 1, step_count);
         let java = {
             let _permit = ctx.download_permit().await?;
             let mut progress = |done: u64, total: Option<u64>| ctx.bytes(done, total);
             self.java.ensure(major, &mut progress, &ctx.cancel).await?
         };
-        ctx.step(JobStep::DownloadServer { minecraft }, 4, STEPS);
+        ctx.step(
+            JobStep::DownloadServer { minecraft },
+            step_base + 2,
+            step_count,
+        );
         let paths = self.store.create_dir(id)?;
         let root = SafeRoot::new(&paths.server_dir)?;
         self.download_plan_files(ctx, &root, &install).await?;
         ctx.step(
             JobStep::RunInstaller {
-                loader: req.loader.to_string(),
+                loader: loader.to_string(),
             },
-            5,
-            STEPS,
+            step_base + 3,
+            step_count,
         );
         if let Some(run) = &install.plan.installer {
             self.run_installer(ctx, &java.java_bin, &root, run).await?;
         }
-        let game = loader_game(req, &install, &root)?;
+        let game = loader_game(loader, &install, &root)?;
         remove_install_dir(&root);
-        ctx.step(JobStep::PrepareFiles, 6, STEPS);
-        self.write_new_server(&paths.server_dir, id, req, game, memory, port)
+        Ok((paths, game))
     }
 
     async fn download_plan_files(
@@ -144,12 +176,12 @@ fn install_failed(detail: &str, done: Completion, tail: VecDeque<String>) -> App
 
 /// `[game]` của server mới, sau khi đã thấy file chạy server trên đĩa.
 fn loader_game(
-    req: &CreateRequest,
+    loader: LoaderKind,
     install: &LoaderInstall,
     root: &SafeRoot,
 ) -> Result<GameSection, AppError> {
     let plan = &install.plan;
-    let mut game = GameSection::new(req.loader, plan.minecraft.clone(), None, install.java_major);
+    let mut game = GameSection::new(loader, plan.minecraft.clone(), None, install.java_major);
     game.loader_version = Some(plan.loader_version.clone());
     let expected = match &plan.launch {
         Launch::Jar(jar) => {

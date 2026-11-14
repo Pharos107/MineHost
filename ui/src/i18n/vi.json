@@ -182,7 +182,10 @@
       "copy_files": "Chép thư mục server",
       "run_installer": "Cài {{loader}}",
       "resolve_content": "Đọc thông tin mod",
-      "download_content": "Tải {{name}}"
+      "download_content": "Tải {{name}}",
+      "download_modpack": "Tải modpack {{name}}",
+      "download_pack_file": "Tải file modpack ({{index}}/{{total}}): {{name}}",
+      "apply_overrides": "Áp dụng cấu hình modpack"
     }
   },
   "server": {
@@ -394,6 +397,7 @@
     "cancel": "Hủy",
     "kinds": {
       "create_server": "Tạo server",
+      "create_modpack": "Cài modpack",
       "backup": "Sao lưu",
       "restore": "Khôi phục",
       "import_server": "Nhập server",
@@ -754,5 +758,29 @@
       "searchPlaceholderCurseforge": "Tìm plugin trên CurseForge…",
       "mainItem": "Plugin sẽ cài"
     }
+  },
+  "modpack": {
+    "title": "Tạo server từ modpack",
+    "description": "Tìm modpack trên Modrinth hoặc tải lên file .mrpack có sẵn.",
+    "dropTitle": "Tải lên file modpack",
+    "dropLabel": "Chọn file modpack",
+    "dropHint": "hoặc kéo thả file .mrpack hoặc .zip vào đây, tối đa 512 MiB.",
+    "searchTitle": "Tìm modpack",
+    "searchPlaceholder": "Tìm modpack trên Modrinth…",
+    "curseforgeNoKey": "CurseForge chưa sẵn sàng vì chưa cấu hình API key trong Cài đặt.",
+    "noResults": "Không tìm thấy modpack nào",
+    "noResultsHint": "Thử từ khóa khác hoặc tải lên file .mrpack có sẵn ở trên.",
+    "version": "Phiên bản modpack",
+    "fileLabel": "File modpack",
+    "fileSize": "Dung lượng",
+    "creatingTitle": "Đang cài modpack",
+    "creatingDescription": "MineHost đang tải Java, cài loader và các file trong modpack.",
+    "doneTitle": "Đã cài xong modpack",
+    "doneDescription": "Server đã sẵn sàng. Mở trang server để đồng ý EULA và bật chơi.",
+    "summaryInstalled": "Số mod đã cài",
+    "summarySkippedClient": "Bỏ qua (chỉ chạy ở client)",
+    "summaryPendingCf": "File CurseForge còn chờ",
+    "pendingCfHint": "Một số file CurseForge cần tự tải trên trang Mod trước khi bật server.",
+    "openServer": "Mở trang server"
   }
 }

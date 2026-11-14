@@ -19,6 +19,7 @@ use crate::StoreError;
 
 pub use scan::{
     ContentFile, ContentMetaError, ContentScanner, JarInfo, inspect_jar_file, scan_content,
+    sha1_hex,
 };
 
 pub const CONTENT_FILE: &str = "content.toml";
