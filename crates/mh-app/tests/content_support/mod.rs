@@ -336,26 +336,3 @@ pub async fn finish_job(app: &App, job_id: u64) -> mh_app::JobSnapshot {
         .unwrap()
         .clone()
 }
-
-pub async fn collect_steps(app: &App, job_id: u64) -> (mh_app::JobSnapshot, Vec<String>) {
-    let mut rx = app.jobs().subscribe(job_id).unwrap();
-    let mut seen = Vec::new();
-    let deadline = tokio::time::Instant::now() + WAIT;
-    loop {
-        let cur = rx.borrow_and_update().clone();
-        if let Some(p) = &cur.progress
-            && let Ok(v) = serde_json::to_value(&p.step)
-            && let Some(k) = v.get("kind").and_then(|s| s.as_str())
-            && seen.last().is_none_or(|prev| prev != k)
-        {
-            seen.push(k.to_owned());
-        }
-        if cur.state != JobState::Running {
-            return (cur, seen);
-        }
-        tokio::time::timeout_at(deadline, rx.changed())
-            .await
-            .unwrap()
-            .unwrap();
-    }
-}
