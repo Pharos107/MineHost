@@ -162,7 +162,7 @@ impl HttpClient {
     ///
     /// Dừng khi thân dài hơn `max_bytes`, không giữ phần vượt quá.
     pub async fn get_bytes(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, NetError> {
-        let mut resp = self.send_with(&self.direct, url, false).await?;
+        let mut resp = self.send_with(url, false, || self.direct.get(url)).await?;
         if resp
             .content_length()
             .is_some_and(|len| len > max_bytes as u64)
@@ -172,9 +172,29 @@ impl HttpClient {
         read_capped(url, &mut resp, max_bytes).await
     }
 
+    /// POST JSON, không cache vì thân request thay đổi theo truy vấn; vẫn giữ User-Agent chung,
+    /// retry khi lỗi tạm thời và xử lý 429 như GET (spec P3, mục 5.3).
+    pub async fn post_json<B: serde::Serialize, T: DeserializeOwned>(
+        &self,
+        url: &str,
+        body: &B,
+    ) -> Result<T, NetError> {
+        let payload = serde_json::to_vec(body).map_err(|e| unavailable(url, &e))?;
+        let resp = self
+            .send_with(url, false, || {
+                self.http
+                    .post(url)
+                    .header(reqwest::header::CONTENT_TYPE, "application/json")
+                    .body(payload.clone())
+            })
+            .await?;
+        let bytes = resp.bytes().await.map_err(|e| unavailable(url, &e))?;
+        decode(url, &bytes, None)
+    }
+
     /// GET có retry khi timeout, lỗi kết nối, 5xx hoặc 429. Chỉ trả response 2xx.
     pub(crate) async fn send(&self, url: &str) -> Result<reqwest::Response, NetError> {
-        self.send_with(&self.http, url, false).await
+        self.send_with(url, false, || self.http.get(url)).await
     }
 
     /// Như `send`; có danh sách host thì tự theo chuyển hướng và kiểm tra từng bước.
@@ -189,7 +209,10 @@ impl HttpClient {
         let mut current = parse_url(url)?;
         for _ in 0..=MAX_REDIRECTS {
             allowed.check(&current)?;
-            let resp = self.send_with(&self.direct, current.as_str(), true).await?;
+            let next_url = current.as_str();
+            let resp = self
+                .send_with(next_url, true, || self.direct.get(next_url))
+                .await?;
             if !resp.status().is_redirection() {
                 return Ok(resp);
             }
@@ -200,14 +223,14 @@ impl HttpClient {
 
     async fn send_with(
         &self,
-        http: &reqwest::Client,
         url: &str,
         accept_redirect: bool,
+        make_req: impl Fn() -> reqwest::RequestBuilder,
     ) -> Result<reqwest::Response, NetError> {
         let mut attempt = 0;
         let mut waited_for_limit = false;
         loop {
-            let err = match http.get(url).send().await {
+            let err = match make_req().send().await {
                 Ok(resp) if resp.status().is_success() => return Ok(resp),
                 Ok(resp) if accept_redirect && resp.status().is_redirection() => return Ok(resp),
                 Ok(resp) if resp.status() == reqwest::StatusCode::TOO_MANY_REQUESTS => {
