@@ -511,6 +511,16 @@
     "lanNoAddress": "Chưa mở được địa chỉ LAN nào. Máy có thể chưa nối mạng LAN, hoặc cổng đang bị chương trình khác dùng.",
     "lanUrl": "Địa chỉ trong mạng LAN",
     "lanDescription": "Cho điện thoại, máy tính khác trong nhà mở MineHost qua mạng LAN.",
+    "curseforge": "CurseForge",
+    "curseforgeDescription": "Tải mod và modpack từ CurseForge.",
+    "curseforgeBuiltin": "Đang dùng key của MineHost.",
+    "curseforgeUser": "Đang dùng key của bạn.",
+    "curseforgeNone": "Chưa có key CurseForge: bản tự build này không nhúng key của MineHost, nên nguồn CurseForge đang tắt.",
+    "curseforgeKey": "API key riêng",
+    "curseforgeKeyHint": "Lưu riêng trên máy này, ưu tiên hơn key có sẵn của MineHost.",
+    "curseforgeSave": "Lưu",
+    "curseforgeRemove": "Xóa",
+    "curseforgeSaved": "Đã lưu API key CurseForge.",
     "description": "Mật khẩu, truy cập từ máy khác trong nhà, và thông tin máy đang chạy MineHost."
   },
   "backups": {

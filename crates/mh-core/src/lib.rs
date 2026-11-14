@@ -8,12 +8,14 @@
 pub mod backup_schedule;
 pub mod console;
 pub mod crash;
+pub mod curseforge;
 pub mod error;
 pub mod ids;
 pub mod instance;
 pub mod launch;
 pub mod memory;
 pub mod mod_meta;
+pub mod mrpack;
 pub mod players;
 pub mod properties;
 pub mod schedule;
@@ -23,6 +25,7 @@ pub mod version;
 pub use backup_schedule::{BackupSchedule, check_keep, next_run};
 pub use console::{ConsoleLine, ConsoleStream};
 pub use crash::{CrashHint, diagnose};
+pub use curseforge::CurseforgeKey;
 pub use error::{ErrorCode, InvalidValue};
 pub use ids::{GamePort, ServerId, ServerName};
 pub use instance::{InstanceError, InstanceSpec};
@@ -31,6 +34,10 @@ pub use memory::{MemoryLimits, memory_limit_mb, suggest_memory_mb};
 pub use mod_meta::{
     ModDependency, ModMeta, ModMetaError, ModMetaFormat, ModSide, matches_version_req,
     parse_mod_meta,
+};
+pub use mrpack::{
+    MrpackDependencies, MrpackEnv, MrpackEnvSupport, MrpackError, MrpackFile, MrpackHashes,
+    MrpackIndex, MrpackRuntime, validate_mrpack_path,
 };
 pub use players::{
     FreezeAttribute, PlayerAction, PlayerCommandError, PlayerLogEvent, PlayerName,

@@ -55,6 +55,11 @@ impl DataDirs {
         self.root.join("auth.toml")
     }
 
+    /// API key bí mật của người dùng, ví dụ CurseForge (spec P3, mục 4.3).
+    pub fn secrets_file(&self) -> PathBuf {
+        self.root.join("secrets.toml")
+    }
+
     pub fn logs(&self) -> PathBuf {
         self.root.join("logs")
     }
@@ -108,6 +113,7 @@ mod tests {
         }
         assert_eq!(dirs.config_file(), dirs.root().join("config.toml"));
         assert_eq!(dirs.auth_file(), dirs.root().join("auth.toml"));
+        assert_eq!(dirs.secrets_file(), dirs.root().join("secrets.toml"));
     }
 
     #[test]

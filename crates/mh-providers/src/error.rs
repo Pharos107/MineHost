@@ -51,6 +51,10 @@ pub enum ProviderError {
     /// Hồ sơ không có ảnh. App dùng skin mặc định; không phải `PLAYER_NOT_FOUND`.
     #[error("không có skin")]
     NoSkin,
+
+    /// File modpack thiếu index, sai định dạng, vượt giới hạn hoặc có đường dẫn thoát thư mục.
+    #[error("modpack không hợp lệ: {reason}")]
+    ModpackInvalid { reason: String },
 }
 
 impl ProviderError {
@@ -77,6 +81,20 @@ impl ProviderError {
             Self::PlayerNotFound(_) => ErrorCode::PlayerNotFound,
             // Người gọi phải khớp biến thể này để lấy skin mặc định, không dựa vào mã HTTP.
             Self::NoSkin => ErrorCode::NotFound,
+            Self::ModpackInvalid { .. } => ErrorCode::ModpackInvalid,
+        }
+    }
+
+    pub(crate) fn io(path: impl Into<PathBuf>, source: io::Error) -> Self {
+        Self::Io {
+            path: path.into(),
+            source,
+        }
+    }
+
+    pub(crate) fn modpack_invalid(reason: impl Into<String>) -> Self {
+        Self::ModpackInvalid {
+            reason: reason.into(),
         }
     }
 
