@@ -98,10 +98,9 @@ rằng MineHost bỏ qua file này.
 ### 3.3 Đĩa là nguồn chính của danh sách mod
 
 Danh sách mod là những gì đang nằm trong `mods/` và `mods-disabled/` (với plugin là `plugins/` và
-`plugins-disabled/`). File
-`servers/<id>/content.toml` (mục 4.2) chỉ ghi thêm nguồn gốc của từng file để cập nhật được. Người
-dùng chép jar vào bằng tay hay qua trang Tệp thì jar đó hiện là "Thêm tay"; xóa jar bằng tay thì dòng
-của nó trong `content.toml` bị bỏ ở lần đọc sau. Không file nào bị coi là đã cài chỉ vì có trong
+`plugins-disabled/`). File `servers/<id>/content.toml` (mục 4.2) chỉ ghi thêm nguồn gốc của từng
+file để cập nhật được. Người dùng chép jar vào bằng tay hay qua trang Tệp thì jar đó hiện là "Thêm
+tay"; xóa jar bằng tay thì dòng của nó trong `content.toml` bị bỏ ở lần đọc sau. Không file nào bị coi là đã cài chỉ vì có trong
 `content.toml`.
 
 Tắt một mod hoặc plugin là chuyển jar sang thư mục tắt tương ứng (`mods-disabled/` hoặc
