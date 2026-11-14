@@ -7,7 +7,7 @@ Hai bản phát hành (spec mục 11): nhóm A–D ra `v0.4.0` (PR-25), nhóm E�
 
 ## Tiến độ
 
-Cập nhật 2026-11-15, sau khi merge #88. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-15, sau khi merge #91. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -33,8 +33,15 @@ chính PR ấy.
 | 19 | Trang Mod hoặc Plugin | Đã merge | [#86](https://github.com/Pharos107/MineHost/pull/86) |
 | 20 | Tìm và cài mod | Đã merge | [#88](https://github.com/Pharos107/MineHost/pull/88) |
 | 21 | Kiểm tra trước khi bật | Đã merge | [#87](https://github.com/Pharos107/MineHost/pull/87) |
-| 22–25 | Nhóm D · Modpack Modrinth, `v0.4.0` | Chưa bắt đầu | |
-| 26–30 | Nhóm E · CurseForge | Chưa bắt đầu | |
+| 22 | Đọc `.mrpack` | Đã merge | [#90](https://github.com/Pharos107/MineHost/pull/90) |
+| 23 | Job cài modpack | Chưa bắt đầu | |
+| 24 | Tạo server từ modpack | Chưa bắt đầu | |
+| 25 | Phát hành `v0.4.0` | Chưa bắt đầu | |
+| 26 | Key CurseForge | Đã merge | [#89](https://github.com/Pharos107/MineHost/pull/89) |
+| 27 | CurseForge | Đã merge | [#91](https://github.com/Pharos107/MineHost/pull/91) |
+| 28 | Cài mod từ CurseForge | Chưa bắt đầu | |
+| 29 | Modpack CurseForge | Chưa bắt đầu | |
+| 30 | Tải tay file CurseForge | Chưa bắt đầu | |
 | 31–34 | Nhóm F · Cập nhật và đổi phiên bản | Chưa bắt đầu | |
 | 35 | Nhóm G · Bộ nhớ đệm và trạng thái giới hạn | Chưa bắt đầu | |
 | 36–38 | Nhóm H · Kiểm thử modpack, `v0.5.0` | Chưa bắt đầu | |
