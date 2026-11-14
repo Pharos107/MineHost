@@ -112,7 +112,17 @@ impl HttpClient {
         url: &str,
         ttl: Duration,
     ) -> Result<Fetched<T>, NetError> {
-        self.fetch_json(url, ttl, None).await
+        self.fetch_json(url, ttl, None, &[]).await
+    }
+
+    /// Như `get_json`, kèm header bổ sung (ví dụ `x-api-key` cho CurseForge).
+    pub async fn get_json_with_headers<T: DeserializeOwned>(
+        &self,
+        url: &str,
+        ttl: Duration,
+        headers: &[(&str, &str)],
+    ) -> Result<Fetched<T>, NetError> {
+        self.fetch_json(url, ttl, None, headers).await
     }
 
     /// Như `get_json`, thêm kiểm tra hash của thân response (ví dụ `sha1` mà manifest Mojang
@@ -123,7 +133,7 @@ impl HttpClient {
         ttl: Duration,
         checksum: &Checksum,
     ) -> Result<Fetched<T>, NetError> {
-        self.fetch_json(url, ttl, Some(checksum)).await
+        self.fetch_json(url, ttl, Some(checksum), &[]).await
     }
 
     async fn fetch_json<T: DeserializeOwned>(
@@ -131,19 +141,21 @@ impl HttpClient {
         url: &str,
         ttl: Duration,
         checksum: Option<&Checksum>,
+        headers: &[(&str, &str)],
     ) -> Result<Fetched<T>, NetError> {
         let fresh = |value| Fetched {
             value,
             stale: false,
         };
-        if let Some(body) = self.memory_hit(url, ttl) {
+        let key = cache_key(url, headers);
+        if let Some(body) = self.memory_hit(&key, ttl) {
             return decode(url, &body, checksum).map(fresh);
         }
-        let err = match self.fetch_bytes(url).await {
+        let err = match self.fetch_bytes(url, headers).await {
             Ok(body) => {
                 // Kiểm tra trước khi lưu, để dữ liệu hỏng không bao giờ vào cache.
                 let value = decode(url, &body, checksum)?;
-                self.remember(url, body).await;
+                self.remember(&key, url, body).await;
                 return Ok(fresh(value));
             }
             Err(err) => err,
@@ -151,7 +163,7 @@ impl HttpClient {
         if !err.is_network() {
             return Err(err);
         }
-        let Ok(body) = tokio::fs::read(self.meta_path(url)).await else {
+        let Ok(body) = tokio::fs::read(self.meta_path(&key)).await else {
             return Err(err);
         };
         tracing::warn!(url, error = %err, "mạng lỗi, dùng bản lưu lần trước");
@@ -179,13 +191,26 @@ impl HttpClient {
         url: &str,
         body: &B,
     ) -> Result<T, NetError> {
+        self.post_json_with_headers(url, body, &[]).await
+    }
+
+    /// Như `post_json`, kèm header bổ sung.
+    pub async fn post_json_with_headers<B: serde::Serialize, T: DeserializeOwned>(
+        &self,
+        url: &str,
+        body: &B,
+        headers: &[(&str, &str)],
+    ) -> Result<T, NetError> {
         let payload = serde_json::to_vec(body).map_err(|e| unavailable(url, &e))?;
         let resp = self
             .send_with(url, false, || {
-                self.http
-                    .post(url)
-                    .header(reqwest::header::CONTENT_TYPE, "application/json")
-                    .body(payload.clone())
+                apply_headers(
+                    self.http
+                        .post(url)
+                        .header(reqwest::header::CONTENT_TYPE, "application/json")
+                        .body(payload.clone()),
+                    headers,
+                )
             })
             .await?;
         let bytes = resp.bytes().await.map_err(|e| unavailable(url, &e))?;
@@ -266,35 +291,62 @@ impl HttpClient {
         }
     }
 
-    async fn fetch_bytes(&self, url: &str) -> Result<Vec<u8>, NetError> {
-        let resp = self.send(url).await?;
+    async fn fetch_bytes(&self, url: &str, headers: &[(&str, &str)]) -> Result<Vec<u8>, NetError> {
+        let resp = self
+            .send_with(url, false, || apply_headers(self.http.get(url), headers))
+            .await?;
         let body = resp.bytes().await.map_err(|e| unavailable(url, &e))?;
         Ok(body.to_vec())
     }
 
-    fn memory_hit(&self, url: &str, ttl: Duration) -> Option<Arc<[u8]>> {
+    fn memory_hit(&self, key: &str, ttl: Duration) -> Option<Arc<[u8]>> {
         let memory = self.memory.lock().ok()?;
-        let (at, body) = memory.get(url)?;
+        let (at, body) = memory.get(key)?;
         (at.elapsed() < ttl).then(|| Arc::clone(body))
     }
 
-    async fn remember(&self, url: &str, body: Vec<u8>) {
-        let path = self.meta_path(url);
+    async fn remember(&self, key: &str, url: &str, body: Vec<u8>) {
+        let path = self.meta_path(key);
         if let Err(err) = write_replace(&path, &body).await {
             tracing::warn!(url, error = %err, "không lưu được bản cache meta");
         }
         if let Ok(mut memory) = self.memory.lock() {
-            memory.insert(url.to_owned(), (Instant::now(), body.into()));
+            memory.insert(key.to_owned(), (Instant::now(), body.into()));
         }
     }
 
-    fn meta_path(&self, url: &str) -> PathBuf {
-        let key = hex(&Sha256::digest(url.as_bytes()));
+    fn meta_path(&self, key: &str) -> PathBuf {
+        let digest = hex(&Sha256::digest(key.as_bytes()));
         self.config
             .cache_dir
             .join("meta")
-            .join(format!("{key}.json"))
+            .join(format!("{digest}.json"))
     }
+}
+
+fn apply_headers(
+    mut builder: reqwest::RequestBuilder,
+    headers: &[(&str, &str)],
+) -> reqwest::RequestBuilder {
+    for (name, value) in headers {
+        builder = builder.header(*name, *value);
+    }
+    builder
+}
+
+fn cache_key(url: &str, headers: &[(&str, &str)]) -> String {
+    if headers.is_empty() {
+        return url.to_owned();
+    }
+    // Băm giá trị header để không lưu key bí mật dạng rõ trong cache key và tách cache theo key.
+    let mut hasher = Sha256::new();
+    for (name, value) in headers {
+        hasher.update(name.as_bytes());
+        hasher.update([0]);
+        hasher.update(value.as_bytes());
+        hasher.update([0]);
+    }
+    format!("{url}#h={}", hex(&hasher.finalize()))
 }
 
 fn decode<T: DeserializeOwned>(

@@ -1,0 +1,33 @@
+{
+  "data": {
+    "id": 999001,
+    "gameId": 432,
+    "name": "Restricted Example Mod",
+    "slug": "restricted-example",
+    "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/mc-mods/restricted-example",
+      "wikiUrl": null,
+      "issuesUrl": null,
+      "sourceUrl": null
+    },
+    "summary": "Mod opted out of third-party API distribution",
+    "status": 4,
+    "downloadCount": 12500,
+    "isFeatured": false,
+    "primaryCategoryId": 423,
+    "categories": [],
+    "classId": 6,
+    "authors": [],
+    "logo": null,
+    "screenshots": [],
+    "mainFileId": 6100001,
+    "latestFiles": [],
+    "dateCreated": "2024-01-01T00:00:00Z",
+    "dateModified": "2024-08-01T00:00:00Z",
+    "dateReleased": "2024-01-01T00:00:00Z",
+    "allowModDistribution": false,
+    "gamePopularityRank": 500,
+    "isAvailable": true,
+    "thumbsUpCount": 100
+  }
+}

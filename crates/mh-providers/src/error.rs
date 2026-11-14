@@ -33,6 +33,10 @@ pub enum ProviderError {
         id: String,
     },
 
+    /// Không có key CurseForge, hoặc key bị từ chối (spec P3, mục 3.6, 4.4).
+    #[error("CurseForge hiện không khả dụng")]
+    CurseforgeUnavailable,
+
     /// API trả dữ liệu thiếu hoặc sai (thường là API đổi cấu trúc); chi tiết nằm trong log.
     #[error("dữ liệu từ {source_name} không hợp lệ: {reason}")]
     Invalid {
@@ -68,6 +72,7 @@ impl ProviderError {
             Self::Io { .. } => ErrorCode::Internal,
             Self::VersionNotFound { .. } => ErrorCode::VersionNotFound,
             Self::ContentNotFound { .. } => ErrorCode::ContentNotFound,
+            Self::CurseforgeUnavailable => ErrorCode::CurseforgeUnavailable,
             Self::Invalid { .. } => ErrorCode::NetworkUnavailable,
             Self::PlayerNotFound(_) => ErrorCode::PlayerNotFound,
             // Người gọi phải khớp biến thể này để lấy skin mặc định, không dựa vào mã HTTP.
