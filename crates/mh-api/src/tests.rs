@@ -213,6 +213,10 @@ async fn system_reports_resources_and_suggestion() {
         body["suggested_memory_mb"],
         json!({ "min": 1024, "max": 2048 })
     );
+    assert_eq!(
+        body["suggested_modpack_memory_mb"],
+        json!({ "min": 1024, "max": 4096 })
+    );
     assert!(body["lan_addresses"].is_array());
 }
 

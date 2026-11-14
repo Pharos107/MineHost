@@ -137,6 +137,15 @@ impl App {
             .await
     }
 
+    /// Mọi phiên bản của project khi chưa có server (dùng cho modpack), mới nhất trước.
+    pub async fn project_versions(
+        &self,
+        source: CatalogSource,
+        project_id: &str,
+    ) -> Result<Vec<ContentVersion>, AppError> {
+        self.catalog_for(source)?.project_versions(project_id).await
+    }
+
     /// Kiểm tra nhanh server có tồn tại, hỗ trợ mod/plugin và đang rảnh trước khi nhận upload.
     pub fn check_content_idle(&self, id: ServerId) -> Result<(), AppError> {
         self.ensure_content_idle(id).map(|_| ())
