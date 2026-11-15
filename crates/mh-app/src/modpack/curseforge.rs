@@ -316,6 +316,7 @@ fn empty_cf_plan(manifest: &CfManifest, runtime: CfRuntime) -> PackPlan {
         loader_version: runtime.loader_version,
         files: Vec::new(),
         skipped_client: Vec::new(),
+        server_unsupported: Vec::new(),
         blocked: Vec::new(),
     }
 }

@@ -80,6 +80,9 @@ pub struct PackPlan {
     pub loader_version: Option<LoaderVersion>,
     pub files: Vec<PackFile>,
     pub skipped_client: Vec<String>,
+    /// Jar trong `mods/` mà `.mrpack` ghi `env.server = "unsupported"`: không tải mặc định, nhưng
+    /// MineHost tải lại khi nó là dependency bắt buộc của mod chạy trên server (spec P3, mục 3.5).
+    pub server_unsupported: Vec<PackFile>,
     pub blocked: Vec<BlockedPackFile>,
 }
 
@@ -102,8 +105,13 @@ pub fn plan_mrpack_with(
 ) -> Result<PackPlan, ProviderError> {
     let mut archive = open_pack_archive(archive_path, limits)?;
     let (index, runtime) = read_index(&mut archive, archive_path, limits)?;
-    let (files, skipped_client, mut index_bytes, mut index_count) =
-        plan_index_files(index.files, hosts, limits)?;
+    let IndexPlan {
+        files,
+        skipped_client,
+        server_unsupported,
+        planned_bytes: mut index_bytes,
+        mut index_count,
+    } = plan_index_files(index.files, hosts, limits)?;
     // Quét trước để bắt zip bomb / tên file không hợp lệ trước khi tải loader hay file.
     let _ = scan_prefixed_layers(
         &mut archive,
@@ -123,6 +131,7 @@ pub fn plan_mrpack_with(
         loader_version: runtime.loader_version,
         files,
         skipped_client,
+        server_unsupported,
         blocked: Vec::new(),
     })
 }
@@ -215,58 +224,122 @@ fn read_index(
     Ok((index, runtime))
 }
 
+struct IndexPlan {
+    files: Vec<PackFile>,
+    skipped_client: Vec<String>,
+    server_unsupported: Vec<PackFile>,
+    planned_bytes: u64,
+    index_count: usize,
+}
+
 fn plan_index_files(
     entries: Vec<mh_core::MrpackFile>,
     hosts: HostAllowlist,
     limits: PackLimits,
-) -> Result<(Vec<PackFile>, Vec<String>, u64, usize), ProviderError> {
+) -> Result<IndexPlan, ProviderError> {
     let index_count = entries.len();
     if index_count > limits.max_files {
         return Err(ProviderError::modpack_invalid(
             "số lượng file trong modpack vượt giới hạn",
         ));
     }
-    let mut files = Vec::new();
-    let mut skipped_client = Vec::new();
-    let mut planned_bytes = 0u64;
-
-    for item in entries {
+    let mut plan = IndexPlan {
+        files: Vec::new(),
+        skipped_client: Vec::new(),
+        server_unsupported: Vec::new(),
+        planned_bytes: 0,
+        index_count,
+    };
+    // File dự phòng có ngân sách riêng, cùng mức trần với pack; vượt thì bỏ bớt dự phòng thay vì
+    // từ chối pack, vì chúng chỉ được tải khi thật sự cần.
+    let mut fallback_bytes = 0u64;
+    for item in dedupe_entries(entries)? {
         validate_archive_path(&item.path)?;
         if item.is_client_only() {
-            skipped_client.push(item.path);
+            let within_budget = fallback_bytes
+                .checked_add(item.file_size)
+                .filter(|total| *total <= limits.max_total_bytes);
+            if let Some(total) = within_budget.filter(|_| is_mod_jar(&item.path)) {
+                // Chỉ là dự phòng: file hỏng (thiếu URL, sai host) thì bỏ, không làm hỏng cả pack.
+                match pack_file(&item, hosts) {
+                    Ok(file) => {
+                        fallback_bytes = total;
+                        plan.server_unsupported.push(file);
+                    }
+                    Err(err) => tracing::debug!(path = item.path, %err, "bỏ file dự phòng hỏng"),
+                }
+            }
+            plan.skipped_client.push(item.path);
             continue;
         }
-        if item.downloads.is_empty() {
-            return Err(ProviderError::modpack_invalid(format!(
-                "file `{}` không có URL tải",
-                item.path
-            )));
-        }
-        for url in &item.downloads {
-            hosts.check_str(url).map_err(|e| {
-                tracing::warn!(path = item.path, url, error = %e, "URL trong .mrpack ngoài danh sách host");
-                ProviderError::Net(e)
-            })?;
-        }
-        let sha1 = Checksum::sha1(&item.hashes.sha1)
-            .ok_or_else(|| ProviderError::modpack_invalid("sha1 trong index không hợp lệ"))?;
-        let checksum = Checksum::sha512(&item.hashes.sha512)
-            .ok_or_else(|| ProviderError::modpack_invalid("sha512 trong index không hợp lệ"))?;
-        planned_bytes = add_within_limit(
-            planned_bytes,
+        plan.planned_bytes = add_within_limit(
+            plan.planned_bytes,
             item.file_size,
             limits.max_total_bytes,
             "tổng kích thước modpack vượt giới hạn",
         )?;
-        files.push(PackFile {
-            path: item.path,
-            urls: item.downloads,
-            checksum,
-            sha1: sha1.hex().to_owned(),
-            size: item.file_size,
-            hosts,
-            cf_ids: None,
-        });
+        plan.files.push(pack_file(&item, hosts)?);
     }
-    Ok((files, skipped_client, planned_bytes, index_count))
+    Ok(plan)
+}
+
+/// Có pack ghi cùng một file nhiều lần (Pokemon Elysium 1.2.1 lặp 4 lần); bản trùng y hệt chỉ cài
+/// một lần. Cùng đường dẫn mà khác hash thì không biết chọn bản nào, nên từ chối pack.
+fn dedupe_entries(
+    entries: Vec<mh_core::MrpackFile>,
+) -> Result<Vec<mh_core::MrpackFile>, ProviderError> {
+    let mut seen: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut out = Vec::with_capacity(entries.len());
+    for item in entries {
+        match seen.get(&item.path) {
+            Some(hash) if hash.eq_ignore_ascii_case(&item.hashes.sha512) => continue,
+            Some(_) => {
+                return Err(ProviderError::modpack_invalid(format!(
+                    "file `{}` xuất hiện nhiều lần với nội dung khác nhau",
+                    item.path
+                )));
+            }
+            None => {
+                seen.insert(item.path.clone(), item.hashes.sha512.clone());
+                out.push(item);
+            }
+        }
+    }
+    Ok(out)
+}
+
+fn is_mod_jar(path: &str) -> bool {
+    path.starts_with("mods/")
+        && !path["mods/".len()..].contains('/')
+        && std::path::Path::new(path)
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("jar"))
+}
+
+fn pack_file(item: &mh_core::MrpackFile, hosts: HostAllowlist) -> Result<PackFile, ProviderError> {
+    if item.downloads.is_empty() {
+        return Err(ProviderError::modpack_invalid(format!(
+            "file `{}` không có URL tải",
+            item.path
+        )));
+    }
+    for url in &item.downloads {
+        hosts.check_str(url).map_err(|e| {
+            tracing::warn!(path = item.path, url, error = %e, "URL trong .mrpack ngoài danh sách host");
+            ProviderError::Net(e)
+        })?;
+    }
+    let sha1 = Checksum::sha1(&item.hashes.sha1)
+        .ok_or_else(|| ProviderError::modpack_invalid("sha1 trong index không hợp lệ"))?;
+    let checksum = Checksum::sha512(&item.hashes.sha512)
+        .ok_or_else(|| ProviderError::modpack_invalid("sha512 trong index không hợp lệ"))?;
+    Ok(PackFile {
+        path: item.path.clone(),
+        urls: item.downloads.clone(),
+        checksum,
+        sha1: sha1.hex().to_owned(),
+        size: item.file_size,
+        hosts,
+        cf_ids: None,
+    })
 }

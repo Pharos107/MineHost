@@ -173,6 +173,7 @@ pub async fn plan_curseforge_pack_with(
         loader_version: runtime.loader_version,
         files,
         skipped_client: Vec::new(),
+        server_unsupported: Vec::new(),
         blocked,
     })
 }

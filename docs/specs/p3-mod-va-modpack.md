@@ -124,6 +124,13 @@ Một file bị coi là chỉ chạy ở client khi một trong các nguồn sau
    `neoforge.mods.toml`, mọi dependency vào `minecraft`, `forge` hoặc `neoforge` đều có
    `side = "CLIENT"` (cách của dự án cũ, `missingmods/jarmeta.go`).
 
+Ngoại lệ của nguồn 1 (thêm ngày 2026-11-15, sau khi chạy thử modpack thật): nhiều pack gắn cờ
+`unsupported` cho thư viện mà mod chạy trên server bắt buộc cần (Prominence II với `athena`,
+`s_lib`), và loader từ chối khởi động. Sau khi cài xong, nếu mod chạy trên server còn thiếu dependency
+bắt buộc, MineHost tải các jar `unsupported` trong `mods/` của pack về thư mục tạm, cài những jar cung
+cấp đúng id còn thiếu (tính cả `provides` và jar lồng) mà không phải mod chỉ client theo nguồn 3, lặp
+tới khi không thêm được gì. Không thiếu gì thì không tải file nào trong số đó.
+
 File loại 2 và 3 được cài vào `mods-disabled/` với nhãn "Chỉ chạy ở client". Người dùng bật lại được;
 MineHost không tắt lại file người dùng đã tự bật. CurseForge không có trường tương đương nên mod từ
 CurseForge chỉ dựa vào nguồn 3.

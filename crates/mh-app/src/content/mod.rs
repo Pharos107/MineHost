@@ -26,10 +26,10 @@ pub use curseforge::{CurseForge, CurseforgeCatalog};
 pub use manage::PendingUploadResult;
 pub use modrinth::ModrinthCatalog;
 pub use plan::{ContentInstallPlan, PlannedContent};
-pub(crate) use preflight::preflight_block_error;
 pub use preflight::{
     ClientOnlyMod, MissingDependency, PreflightReport, VersionMismatch, WrongLoaderMod,
 };
+pub(crate) use preflight::{missing_server_deps, preflight_block_error, reads_mods_toml_deps};
 pub use updates::{MAX_UPDATE_ITEMS, UpdateCandidate, UpdateItem, UpdateReport};
 
 use crate::files::blocking;
