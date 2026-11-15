@@ -186,3 +186,23 @@ fn validates_mrpack_relative_paths() {
         );
     }
 }
+
+/// Create Plus 6.0.0-alpha-f ghi `env.server = "unknown"`; trước đây cả pack bị từ chối.
+#[test]
+fn unknown_env_value_is_kept_and_installed_on_server() {
+    let json = base_json(
+        r#"{"minecraft":"1.21.1","neoforge":"21.1.233"}"#,
+        "mods/a.jar",
+    )
+    .replace(
+        r#""fileSize": 1234"#,
+        r#""fileSize": 1234, "env": {"client": "required", "server": "unknown"}"#,
+    );
+    let index = MrpackIndex::from_json(&json).unwrap();
+    let file = &index.files[0];
+    assert_eq!(
+        file.env.and_then(|e| e.server),
+        Some(MrpackEnvSupport::Unknown)
+    );
+    assert!(!file.is_client_only());
+}

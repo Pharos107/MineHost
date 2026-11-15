@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
+use mh_core::instance::GameSection;
 use mh_core::{
     ErrorCode, FabricDepOverrides, InstanceSpec, LoaderKind, ModMeta, ModMetaFormat, ServerId,
     matches_version_req, parse_fabric_dep_overrides,
@@ -90,7 +91,7 @@ impl App {
             let manifest = ContentManifest::load(&paths.content_file)?;
             let overrides = load_dep_overrides(spec.game.loader, &paths.server_dir, id);
             Ok(build_report(
-                spec.game.loader,
+                &spec.game,
                 &files,
                 &overrides,
                 manifest.pending,
@@ -192,13 +193,35 @@ fn load_dep_overrides(loader: LoaderKind, server_dir: &Path, id: ServerId) -> Fa
     })
 }
 
+/// Forge cho Minecraft 1.12.2 trở xuống đọc dependency từ `mcmod.info` và annotation `@Mod`, không
+/// đọc `mods.toml`. MineHost không đọc được các nguồn đó, còn `mods.toml` sót lại trong jar (có ở
+/// EnhancedVisuals 1.12.2) khai dependency của bản mới, nên so dependency ở đây chỉ ra kết quả sai.
+fn reads_mods_toml_deps(game: &GameSection) -> bool {
+    if game.loader != LoaderKind::Forge {
+        return true;
+    }
+    let mut parts = game.minecraft.as_str().split('.');
+    match (
+        parts.next(),
+        parts.next().and_then(|m| m.parse::<u32>().ok()),
+    ) {
+        (Some("1"), Some(minor)) => minor >= 13,
+        _ => true,
+    }
+}
+
 fn build_report(
-    loader: LoaderKind,
+    game: &GameSection,
     files: &[ContentFile],
     overrides: &FabricDepOverrides,
     pending: Vec<PendingContent>,
 ) -> PreflightReport {
-    let (missing_deps, version_mismatches) = check_dependencies(loader, files, overrides);
+    let loader = game.loader;
+    let (missing_deps, version_mismatches) = if reads_mods_toml_deps(game) {
+        check_dependencies(loader, files, overrides)
+    } else {
+        (Vec::new(), Vec::new())
+    };
     let mut wrong_loader = Vec::new();
     let mut client_only = Vec::new();
 
@@ -343,4 +366,25 @@ fn display_name(file: &ContentFile) -> String {
         .as_ref()
         .map(|m| m.name.clone())
         .unwrap_or_else(|_| file.file_name.clone())
+}
+
+#[cfg(test)]
+mod tests {
+    use mh_core::McVersion;
+
+    use super::*;
+
+    fn game(loader: LoaderKind, mc: &str) -> GameSection {
+        GameSection::new(loader, McVersion::parse(mc).unwrap(), Some(1), 8)
+    }
+
+    #[test]
+    fn legacy_forge_skips_mods_toml_dependencies() {
+        assert!(!reads_mods_toml_deps(&game(LoaderKind::Forge, "1.12.2")));
+        assert!(!reads_mods_toml_deps(&game(LoaderKind::Forge, "1.7.10")));
+        assert!(reads_mods_toml_deps(&game(LoaderKind::Forge, "1.13.2")));
+        assert!(reads_mods_toml_deps(&game(LoaderKind::Forge, "1.20.1")));
+        assert!(reads_mods_toml_deps(&game(LoaderKind::Fabric, "1.12.2")));
+        assert!(reads_mods_toml_deps(&game(LoaderKind::NeoForge, "1.21.1")));
+    }
 }
