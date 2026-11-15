@@ -164,7 +164,8 @@ const FIXTURES: &[ExpectedFixture] = &[
         version: Some("6.0.8"),
         side: ModSide::Both,
         key_deps: &[
-            ("flywheel", "[1.0.0,2.0)", true),
+            // `side = "CLIENT"`: Forge không ép trên server dù `mandatory = true`.
+            ("flywheel", "[1.0.0,2.0)", false),
             ("ponder", "[0.8,)", true),
             ("jei", "[15.19.0,)", false),
         ],

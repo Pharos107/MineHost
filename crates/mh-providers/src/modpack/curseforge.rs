@@ -231,6 +231,27 @@ pub fn extract_curseforge_overrides_after(
 }
 
 /// Giải nén server pack `.zip` CurseForge vào `dest_dir`, trả danh sách entry khởi chạy/installer đã bỏ qua.
+/// Server pack có ít nhất một jar trong `mods/` (kể cả khi pack bọc trong một thư mục gốc).
+///
+/// Server pack kiểu ServerStarter (Craftoria 1.37.0) chỉ có `startserver.sh` và
+/// `server-setup-config.yaml`, mod được tải khi chạy script lần đầu. MineHost không chạy script đó,
+/// nên cài pack như vậy cho ra server không có mod; phải dựng từ manifest thay vào.
+pub fn server_pack_has_mods(archive_path: &Path) -> Result<bool, ProviderError> {
+    let mut archive = open_pack_archive(archive_path, PackLimits::default())?;
+    for index in 0..archive.len() {
+        let entry = read_entry_meta(&mut archive, index, archive_path)?;
+        if entry.is_dir {
+            continue;
+        }
+        let lower = entry.name.replace('\\', "/").to_ascii_lowercase();
+        let in_mods = lower.starts_with("mods/") || lower.contains("/mods/");
+        if in_mods && lower.ends_with(".jar") {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
 pub fn extract_curseforge_server_pack(
     archive_path: &Path,
     dest_dir: &Path,

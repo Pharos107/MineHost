@@ -12,7 +12,7 @@ use mh_net::{HostAllowlist, HttpClient, NetConfig};
 use mh_providers::{
     CurseForge, PackLimits, extract_curseforge_overrides_after, extract_curseforge_overrides_with,
     extract_curseforge_server_pack, extract_curseforge_server_pack_with,
-    inspect_curseforge_pack_with, plan_curseforge_pack_with,
+    inspect_curseforge_pack_with, plan_curseforge_pack_with, server_pack_has_mods,
 };
 use serde_json::json;
 use wiremock::matchers::{header, method, path};
@@ -355,4 +355,27 @@ fn overrides_limits_count_previously_downloaded_mods() {
     let err = extract_curseforge_overrides_after(&pack, &tmp.path().join("files"), limits, 9, 0)
         .unwrap_err();
     assert_eq!(err.code(), ErrorCode::ModpackInvalid);
+}
+
+/// Server pack kiểu ServerStarter (Craftoria) không có jar trong `mods/`.
+#[test]
+fn server_pack_has_mods_detects_starter_packs() {
+    let tmp = tempfile::tempdir().unwrap();
+    let starter = build_zip(|w| {
+        add_file(w, "startserver.sh", b"#!/bin/sh");
+        add_file(w, "server-setup-config.yaml", b"modpack: {}");
+        add_file(w, "mods/", b"");
+        add_file(w, "config/mods/readme.txt", b"x");
+    });
+    let flat = build_zip(|w| add_file(w, "mods/a.jar", b"jar"));
+    let nested = build_zip(|w| add_file(w, "Pack-Server-1.0/MODS/B.JAR", b"jar"));
+    let cases = [
+        ("starter.zip", &starter, false),
+        ("flat.zip", &flat, true),
+        ("nested.zip", &nested, true),
+    ];
+    for (name, bytes, want) in cases {
+        let path = write_zip(tmp.path(), name, bytes);
+        assert_eq!(server_pack_has_mods(&path).unwrap(), want, "{name}");
+    }
 }

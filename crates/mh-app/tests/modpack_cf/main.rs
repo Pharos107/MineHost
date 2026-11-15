@@ -3,6 +3,7 @@
 
 #![allow(clippy::unwrap_used, clippy::panic)]
 
+mod server_starter;
 mod support;
 
 use std::collections::HashMap;
