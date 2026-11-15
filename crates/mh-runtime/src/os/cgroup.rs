@@ -12,6 +12,7 @@ use std::io;
 use std::os::fd::{AsRawFd, RawFd};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Duration;
 
 use crate::ResourceLimits;
 
@@ -89,7 +90,8 @@ impl Cgroups {
     }
 }
 
-/// cgroup của một process. Bị xóa khi drop; lúc đó process đã thoát nên cgroup rỗng.
+/// cgroup của một process. Bị xóa khi drop: process chính đã thoát, process con/cháu còn sót thì
+/// bị kill cùng lúc để không chạy tiếp ngoài sự quản lý của MineHost.
 #[derive(Debug)]
 pub(crate) struct ServerCgroup {
     dir: PathBuf,
@@ -107,6 +109,28 @@ impl ServerCgroup {
         self.procs = None;
     }
 
+    /// Process cháu (installer, script của mod) còn trong cgroup thì `rmdir` báo `EBUSY`.
+    /// `cgroup.kill` (kernel 5.14+) kill hết một lượt; chờ ngắn tới khi cgroup rỗng.
+    fn kill_leftovers(&self) {
+        if self.is_empty() {
+            return;
+        }
+        if let Err(e) = fs::write(self.dir.join("cgroup.kill"), "1") {
+            tracing::warn!(dir = %self.dir.display(), error = %e, "không kill được process còn trong cgroup");
+            return;
+        }
+        for _ in 0..40 {
+            if self.is_empty() {
+                return;
+            }
+            std::thread::sleep(Duration::from_millis(25));
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        !fs::read_to_string(self.dir.join("cgroup.events")).is_ok_and(|text| populated(&text))
+    }
+
     /// Kernel đã kill ít nhất một process trong cgroup vì vượt `memory.max`.
     pub(crate) fn oom_killed(&self) -> bool {
         fs::read_to_string(self.dir.join("memory.events")).is_ok_and(|text| oom_kills(&text) > 0)
@@ -115,6 +139,7 @@ impl ServerCgroup {
 
 impl Drop for ServerCgroup {
     fn drop(&mut self) {
+        self.kill_leftovers();
         if let Err(e) = fs::remove_dir(&self.dir) {
             tracing::warn!(dir = %self.dir.display(), error = %e, "không xóa được cgroup của server");
         }
@@ -137,6 +162,13 @@ fn create_dir(dir: &Path) -> io::Result<()> {
     }
 }
 
+fn populated(cgroup_events: &str) -> bool {
+    cgroup_events
+        .lines()
+        .find_map(|line| line.strip_prefix("populated "))
+        .is_some_and(|v| v.trim() != "0")
+}
+
 fn oom_kills(memory_events: &str) -> u64 {
     memory_events
         .lines()
@@ -155,5 +187,20 @@ mod tests {
         assert_eq!(oom_kills(events), 1);
         assert_eq!(oom_kills("oom 0\noom_kill 0\n"), 0);
         assert_eq!(oom_kills(""), 0);
+    }
+
+    #[test]
+    fn reads_populated_flag() {
+        assert!(populated(
+            "populated 1
+frozen 0
+"
+        ));
+        assert!(!populated(
+            "populated 0
+frozen 0
+"
+        ));
+        assert!(!populated(""));
     }
 }

@@ -463,13 +463,20 @@ pub(crate) async fn write_replace(path: &Path, contents: &[u8]) -> Result<(), Ne
             .await
             .map_err(|e| NetError::io(dir, e))?;
     }
-    let tmp = path.with_extension("tmp");
-    tokio::fs::write(&tmp, contents)
-        .await
-        .map_err(|e| NetError::io(&tmp, e))?;
-    tokio::fs::rename(&tmp, path)
-        .await
-        .map_err(|e| NetError::io(path, e))
+    let tmp = crate::download::unique_tmp(path);
+    let result = async {
+        tokio::fs::write(&tmp, contents)
+            .await
+            .map_err(|e| NetError::io(&tmp, e))?;
+        tokio::fs::rename(&tmp, path)
+            .await
+            .map_err(|e| NetError::io(path, e))
+    }
+    .await;
+    if result.is_err() {
+        let _ = tokio::fs::remove_file(&tmp).await;
+    }
+    result
 }
 
 pub(crate) fn hex(bytes: &[u8]) -> String {
