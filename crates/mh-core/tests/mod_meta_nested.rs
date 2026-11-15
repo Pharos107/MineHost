@@ -101,3 +101,37 @@ Made by:
     assert_eq!(meta.version.as_deref(), Some("4.0.11"));
     assert!(parse_mod_meta(ModMetaFormat::FabricModJson, "{\"id\": ").is_err());
 }
+
+/// Forge/NeoForge không ép dependency `side = "CLIENT"` trên server (ATM10 cần `iris` chỉ ở client).
+#[test]
+fn client_side_forge_dependency_is_not_required_on_server() {
+    let toml = r#"
+[[mods]]
+modId = "shaderbridge"
+[[dependencies.shaderbridge]]
+modId = "iris"
+type = "required"
+side = "CLIENT"
+[[dependencies.shaderbridge]]
+modId = "curios"
+mandatory = true
+side = "BOTH"
+[[dependencies.shaderbridge]]
+modId = "serverlib"
+type = "required"
+side = "SERVER"
+[[dependencies.shaderbridge]]
+modId = "oculus"
+mandatory = true
+side = " client "
+"#;
+    let meta = parse_mod_meta(ModMetaFormat::NeoForgeModsToml, toml).unwrap();
+    let required: Vec<&str> = meta
+        .depends
+        .iter()
+        .filter(|d| d.required)
+        .map(|d| d.id.as_str())
+        .collect();
+    assert_eq!(required, vec!["curios", "serverlib"]);
+    assert!(meta.depends.iter().any(|d| d.id == "iris" && !d.required));
+}
