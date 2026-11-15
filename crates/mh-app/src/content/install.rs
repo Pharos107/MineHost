@@ -71,6 +71,20 @@ impl App {
         self.check_disk()?;
 
         ctx.step(JobStep::ResolveContent, 2, 3);
+        self.install_now(ctx, id, source, project_id, version_id)
+            .await
+    }
+
+    /// Lập kế hoạch, tải vào thư mục tạm rồi thay vào `mods/`. Job cập nhật gọi lại hàm này cho
+    /// từng mục sau khi đã sao lưu.
+    pub(super) async fn install_now(
+        &self,
+        ctx: &JobContext,
+        id: ServerId,
+        source: CatalogSource,
+        project_id: &str,
+        version_id: Option<&str>,
+    ) -> Result<(), AppError> {
         let catalog = self.catalog_for(source)?;
         let plan = ctx
             .cancellable(self.plan_content_install(id, source, project_id, version_id))

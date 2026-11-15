@@ -26,6 +26,7 @@ mod restart_schedule;
 mod restore;
 mod servers;
 pub mod sources;
+mod update;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

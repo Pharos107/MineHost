@@ -19,6 +19,7 @@ mod preflight;
 mod servers;
 mod system;
 mod ui;
+mod updates;
 mod ws;
 
 use std::sync::Arc;
@@ -98,6 +99,8 @@ pub use lan::{LanState, lan_listener};
         content::upload_pending,
         content::toggle,
         content::remove,
+        updates::check,
+        updates::update,
         preflight::get,
     ),
     components(schemas(
@@ -183,6 +186,10 @@ pub use lan::{LanState, lan_listener};
         preflight::WrongLoaderDto,
         preflight::ClientOnlyDto,
         preflight::PreflightDto,
+        updates::UpdateItemBody,
+        updates::UpdateBody,
+        updates::UpdateCandidateDto,
+        updates::UpdateReportDto,
     ))
 )]
 struct ApiDoc;
@@ -321,6 +328,8 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
             get(content::list).post(content::install),
         )
         .route("/servers/{id}/content/plan", post(content::plan))
+        .route("/servers/{id}/updates", post(updates::update))
+        .route("/servers/{id}/updates/check", post(updates::check))
         .route(
             "/servers/{id}/content/upload",
             post(content::upload)

@@ -713,6 +713,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Tắt server nếu đang chạy, tạo bản `before_update`, rồi cài các bản đã chọn. Lỗi sau bước sao lưu có `backup_id` trong `params`. */
+        post: operations["update"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/updates/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Hỏi nguồn mod xem có bản mới. Kết quả nằm trong `result` của Job, dạng `UpdateReportDto`. */
+        post: operations["check"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings/access": {
         parameters: {
             query?: never;
@@ -1364,6 +1398,38 @@ export interface components {
         TrashedDto: {
             /** @description Thư mục trong thùng rác, để người dùng tự lấy lại. */
             trash_path: string;
+        };
+        UpdateBody: {
+            items: components["schemas"]["UpdateItemBody"][];
+        };
+        /** @description Dạng `result` của Job `check_updates`. Chỉ để sinh kiểu cho UI; backend ghi bằng `UpdateReport`. */
+        UpdateCandidateDto: {
+            current_version_id?: string | null;
+            file: string;
+            latest_version_id: string;
+            latest_version_name: string;
+            /** @description Mod "Thêm tay" được nhận ra qua hash. */
+            manual: boolean;
+            project_id: string;
+            /** @description `modrinth` hoặc `curseforge`. */
+            source: string;
+        };
+        UpdateItemBody: {
+            /** @description `file` trong kết quả kiểm tra, dạng `mods/x.jar`. */
+            file: string;
+            project_id: string;
+            source: string;
+            /** @description Bản muốn cài, thường là `latest_version_id`. */
+            version_id: string;
+        };
+        UpdateReportDto: {
+            /** Format: int32 */
+            checked: number;
+            /** Format: int32 */
+            from_modpack: number;
+            /** Format: int32 */
+            unknown: number;
+            updates: components["schemas"]["UpdateCandidateDto"][];
         };
         VersionMismatchDto: {
             id: string;
@@ -3492,6 +3558,100 @@ export interface operations {
                 content?: never;
             };
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBody"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStartedDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    check: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStartedDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

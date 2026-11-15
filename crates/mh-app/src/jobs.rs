@@ -33,6 +33,9 @@ pub enum JobKind {
     Restore,
     InstallJava,
     InstallContent,
+    /// Hỏi nguồn mod xem có bản mới; kết quả nằm trong `result` (spec P3, mục 5.7).
+    CheckUpdates,
+    UpdateContent,
 }
 
 /// Bước đang làm. UI dịch theo `kind`, ví dụ "Tải Java 21 (48/61 MB)".
@@ -57,6 +60,8 @@ pub enum JobStep {
     StopServer,
     /// Sao lưu hiện trạng. Server đã tắt nên không gửi lệnh save.
     BeforeRestore,
+    /// Bản `before_update` trước khi cập nhật hoặc đổi phiên bản (spec P3, mục 3.9).
+    BeforeUpdate,
     Unpack,
     Swap,
     /// Chép thư mục server có sẵn khi nhập.

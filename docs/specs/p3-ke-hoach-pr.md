@@ -8,7 +8,7 @@ Một bản phát hành: `v0.5.0` (PR-38) chốt cả P3. Kế hoạch ban đầ
 
 ## Tiến độ
 
-Cập nhật 2026-11-15, khi làm PR-31. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-15, khi làm PR-32. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -44,7 +44,7 @@ chính PR ấy.
 | 29 | Modpack CurseForge | Đã merge | [#95](https://github.com/Pharos107/MineHost/pull/95) |
 | 30 | Tải tay file CurseForge | Đã merge | [#96](https://github.com/Pharos107/MineHost/pull/96) |
 | 31 | Bản `before_update`, chép `content.toml` | Đã merge | [#101](https://github.com/Pharos107/MineHost/pull/101) |
-| 32 | Kiểm tra và cập nhật mod | Chưa bắt đầu | |
+| 32 | Kiểm tra và cập nhật mod | Đã merge | [#102](https://github.com/Pharos107/MineHost/pull/102) |
 | 33 | Cập nhật modpack, đổi phiên bản | Chưa bắt đầu | |
 | 34 | Giao diện cập nhật và mục Phiên bản | Chưa bắt đầu | |
 | 35 | Nhóm G · Bộ nhớ đệm và trạng thái giới hạn | Chưa bắt đầu | |

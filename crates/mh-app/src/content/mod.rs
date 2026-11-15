@@ -7,6 +7,7 @@ mod manage;
 mod modrinth;
 mod plan;
 mod preflight;
+mod updates;
 
 use std::sync::Arc;
 
@@ -29,6 +30,7 @@ pub(crate) use preflight::preflight_block_error;
 pub use preflight::{
     ClientOnlyMod, MissingDependency, PreflightReport, VersionMismatch, WrongLoaderMod,
 };
+pub use updates::{MAX_UPDATE_ITEMS, UpdateCandidate, UpdateItem, UpdateReport};
 
 use crate::files::blocking;
 use crate::{App, AppError, lock};

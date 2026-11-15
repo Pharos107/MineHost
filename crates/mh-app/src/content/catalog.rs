@@ -1,5 +1,6 @@
 //! Nguồn danh mục mod/plugin dùng chung cho Modrinth và CurseForge.
 
+use std::collections::HashMap;
 use std::path::Path;
 
 use mh_core::{CfManifestFile, ErrorCode, LoaderKind, McVersion};
@@ -22,6 +23,12 @@ pub type CfResolvedFiles = (Vec<PackFile>, Vec<BlockedPackFile>);
 pub enum CatalogSource {
     Modrinth,
     Curseforge,
+}
+
+impl serde::Serialize for CatalogSource {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(self.as_str())
+    }
 }
 
 impl CatalogSource {
@@ -201,6 +208,17 @@ pub trait ContentCatalog: Send + Sync + 'static {
 
     fn pack_hosts(&self) -> HostAllowlist {
         hosts::MODRINTH
+    }
+
+    /// Tra phiên bản theo SHA-1 của file (Modrinth `version_files`), để nhận ra mod "Thêm tay" và
+    /// kiểm tra cập nhật (spec P3, mục 5.7). Hash không có trên nguồn thì vắng mặt trong map. Nguồn
+    /// không hỗ trợ (CurseForge dùng fingerprint riêng) trả map rỗng.
+    fn versions_by_hash<'a>(
+        &'a self,
+        sha1: &'a [String],
+    ) -> BoxFut<'a, Result<HashMap<String, ContentVersion>, AppError>> {
+        let _ = sha1;
+        Box::pin(async { Ok(HashMap::new()) })
     }
 
     fn curseforge_server_pack<'a>(

@@ -2856,6 +2856,130 @@
         }
       }
     },
+    "/api/v1/servers/{id}/updates": {
+      "post": {
+        "tags": [
+          "content"
+        ],
+        "description": "Tắt server nếu đang chạy, tạo bản `before_update`, rồi cài các bản đã chọn. Lỗi sau bước sao lưu có `backup_id` trong `params`.",
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStartedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/updates/check": {
+      "post": {
+        "tags": [
+          "content"
+        ],
+        "description": "Hỏi nguồn mod xem có bản mới. Kết quả nằm trong `result` của Job, dạng `UpdateReportDto`.",
+        "operationId": "check",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStartedDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/settings/access": {
       "get": {
         "tags": [
@@ -5323,6 +5447,117 @@
           "trash_path": {
             "type": "string",
             "description": "Thư mục trong thùng rác, để người dùng tự lấy lại."
+          }
+        }
+      },
+      "UpdateBody": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateItemBody"
+            }
+          }
+        }
+      },
+      "UpdateCandidateDto": {
+        "type": "object",
+        "description": "Dạng `result` của Job `check_updates`. Chỉ để sinh kiểu cho UI; backend ghi bằng `UpdateReport`.",
+        "required": [
+          "file",
+          "source",
+          "project_id",
+          "latest_version_id",
+          "latest_version_name",
+          "manual"
+        ],
+        "properties": {
+          "current_version_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "file": {
+            "type": "string"
+          },
+          "latest_version_id": {
+            "type": "string"
+          },
+          "latest_version_name": {
+            "type": "string"
+          },
+          "manual": {
+            "type": "boolean",
+            "description": "Mod \"Thêm tay\" được nhận ra qua hash."
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "description": "`modrinth` hoặc `curseforge`."
+          }
+        }
+      },
+      "UpdateItemBody": {
+        "type": "object",
+        "required": [
+          "file",
+          "source",
+          "project_id",
+          "version_id"
+        ],
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "`file` trong kết quả kiểm tra, dạng `mods/x.jar`."
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "version_id": {
+            "type": "string",
+            "description": "Bản muốn cài, thường là `latest_version_id`."
+          }
+        }
+      },
+      "UpdateReportDto": {
+        "type": "object",
+        "required": [
+          "updates",
+          "checked",
+          "unknown",
+          "from_modpack"
+        ],
+        "properties": {
+          "checked": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "from_modpack": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "unknown": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "updates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateCandidateDto"
+            }
           }
         }
       },
