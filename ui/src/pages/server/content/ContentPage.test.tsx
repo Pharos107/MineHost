@@ -322,5 +322,7 @@ describe("ContentPage", () => {
     expect(await screen.findByText(/wrong\.jar:.*cf-restricted-1\.0\.0\.jar/)).toBeTruthy();
     expect(await screen.findByText("Đã có")).toBeTruthy();
     expect(screen.getByText(/Đã có đủ các file CurseForge/)).toBeTruthy();
+    // Hết mục chờ sau khi tải lại danh sách, lỗi của file sai vẫn phải còn.
+    expect(screen.getByText(/wrong\.jar:.*cf-restricted-1\.0\.0\.jar/)).toBeTruthy();
   });
 });

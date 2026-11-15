@@ -118,15 +118,16 @@ export function ContentPendingBox({ server, pending, locked, onDone }: ContentPe
             onFiles={(files) => void handleFiles(files)}
           >
             {uploading && <ProgressBar label={t("content.pending.uploading", { names: uploading.join(", ") })} />}
-            {errors.map((err, idx) => (
-              <Notice key={`${err.fileName}-${idx}`} tone="danger">
-                {`${err.fileName}: ${err.message}`}
-              </Notice>
-            ))}
           </FileDrop>
         ) : (
           <Notice tone="success">{t("content.pending.allDone")}</Notice>
         )}
+        {/* Ngoài FileDrop: file cuối cùng khớp làm hết mục chờ thì lỗi của file kia vẫn phải hiện. */}
+        {errors.map((err, idx) => (
+          <Notice key={`${err.fileName}-${idx}`} tone="danger">
+            {`${err.fileName}: ${err.message}`}
+          </Notice>
+        ))}
 
         {startWithout.isError && <Notice tone="danger">{errorMessage(t, startWithout.error)}</Notice>}
       </Stack>
