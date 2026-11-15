@@ -8,7 +8,7 @@ mod error;
 mod io_util;
 mod restore;
 
-pub use create::{DEFAULT_EXCLUDE, create};
+pub use create::{DEFAULT_EXCLUDE, Extra, create, create_with};
 pub use error::BackupError;
 pub use restore::{restore, unpack_tar};
 

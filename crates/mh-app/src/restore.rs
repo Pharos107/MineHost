@@ -98,11 +98,17 @@ impl App {
         index += 1;
         self.unpack_into(ctx, &archive, &meta.sha256, &staging)
             .await?;
+        let snapshot = match crate::backup_snapshot::take_snapshot(&staging) {
+            Ok(snapshot) => snapshot,
+            Err(err) => return Err(discard(&staging, err)),
+        };
         if let Err(err) = ready_to_swap(ctx, &handle) {
             return Err(discard(&staging, err));
         }
         ctx.step(JobStep::Swap, index, steps);
         swap_world(&paths.server_dir, &staging, &old)?;
+        self.apply_snapshot(id, snapshot)?;
+        self.refresh_preflight(id).await;
         self.prune_kind(id, BackupKind::BeforeRestore, KEEP_BEFORE_RESTORE);
         self.notify_changed(id);
         tracing::info!(server = %id, backup = %backup_label, "đã khôi phục");
@@ -135,7 +141,7 @@ impl App {
             kind: BackupKind::BeforeRestore,
         };
         // Server đã tắt: nén thẳng, không gửi save-off / save-all / save-on.
-        self.archive_world(ctx, spec, &req).await
+        self.archive_world(ctx, spec, &req).await.map(|_| ())
     }
 
     async fn unpack_into(

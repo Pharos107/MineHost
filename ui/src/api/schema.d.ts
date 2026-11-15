@@ -781,7 +781,7 @@ export interface components {
             /** @description RFC 3339. */
             created_at: string;
             id: string;
-            /** @description `manual`, `scheduled` hoặc `before_restore`. */
+            /** @description `manual`, `scheduled`, `before_restore` hoặc `before_update`. */
             kind: string;
             loader: string;
             minecraft: string;

@@ -1,6 +1,6 @@
 # Spec P2 — Nhiều server và vận hành hằng ngày
 
-- Trạng thái: đã phát hành `v0.3.0` (2026-11-15). Tiến độ từng PR: [kế hoạch PR](p2-ke-hoach-pr.md#tiến-độ). Vấn đề mở sau lần rà soát: mục 12.
+- Trạng thái: đã xong, tag `v0.3.0` (2026-11-15; bản Release để nháp, không công khai). Tiến độ từng PR: [kế hoạch PR](p2-ke-hoach-pr.md#tiến-độ). Vấn đề mở sau lần rà soát: mục 12.
 - Ngày: 2026-10-26
 - Spec gốc: "MineHost v2 — Spec kiến trúc (Rust)", phần Lộ trình P2
 - Kế hoạch PR: [p2-ke-hoach-pr.md](p2-ke-hoach-pr.md)

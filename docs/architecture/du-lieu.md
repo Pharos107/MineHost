@@ -59,8 +59,14 @@ File sẽ có khi PR tương ứng merge: `<data>/auth.toml` (mật khẩu admin
 
 ## Sao lưu chứa gì
 
-Toàn bộ `servers/<id>/server/`, trừ `logs/`, `crash-reports/`, `cache/` ở gốc và mọi symlink. Mỗi bản
-là một file nén đầy đủ (zstd mức 3), không có bản tăng dần. `instance.toml` **không** nằm trong backup.
+Toàn bộ `servers/<id>/server/`, trừ `logs/`, `crash-reports/`, `cache/`, `.minehost/` ở gốc và mọi
+symlink. Mỗi bản là một file nén đầy đủ (zstd mức 3), không có bản tăng dần.
+
+Từ P3, archive có thêm thư mục `.minehost/` chứa bản chụp `instance.toml` và `content.toml` (nếu có).
+Khôi phục thì `content.toml` được trả về như lúc sao lưu, còn `instance.toml` chỉ lấy lại `[game]` và
+`[modpack]` (loader, phiên bản, Java). Tên, cổng, RAM, lịch giữ như hiện tại. Backup của P2 không có
+thư mục này nên khôi phục không đụng tới hai file đó. Bản `before_update` (spec P3 mục 3.9) luôn được
+bảo vệ và không tính vào số bản giữ lại.
 
 Giải nén tay khi không có MineHost (cần `tar` có hỗ trợ zstd):
 

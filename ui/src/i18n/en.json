@@ -564,7 +564,8 @@
     "kinds": {
       "manual": "Manual",
       "scheduled": "Automatic",
-      "before_restore": "Before restore"
+      "before_restore": "Before restore",
+      "before_update": "Before update"
     },
     "restore": "Restore",
     "download": "Download",

@@ -45,7 +45,7 @@ thì sửa dòng của nó ở đây trong chính PR ấy.
 | 31 | Lịch khởi động lại | Đã merge | [#54](https://github.com/Pharos107/MineHost/pull/54) |
 | 32 | Nhập server có sẵn | Đã merge | [#55](https://github.com/Pharos107/MineHost/pull/55) |
 | 33 | Fuzz `SafeRoot` và workflow hằng tuần | Đã merge | [#56](https://github.com/Pharos107/MineHost/pull/56) |
-| 34 | Chạy dài 72 giờ (rút còn 56 giờ), phát hành `v0.3.0` | Đã phát hành | [Kết quả](p2-ket-qua-chay-dai.md) |
+| 34 | Chạy dài 72 giờ (rút còn 56 giờ), phát hành `v0.3.0` | Đã tag (Release để nháp) | [Kết quả](p2-ket-qua-chay-dai.md) |
 
 ## Thứ tự và phụ thuộc
 

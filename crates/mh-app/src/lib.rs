@@ -6,6 +6,7 @@
 mod auth;
 mod backup;
 mod backup_schedule;
+mod backup_snapshot;
 pub mod content;
 mod create;
 mod curseforge;

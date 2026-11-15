@@ -25,7 +25,7 @@ type ApiResult<T> = Result<T, ApiError>;
 #[derive(Debug, Serialize, ToSchema)]
 pub struct BackupDto {
     pub id: String,
-    /// `manual`, `scheduled` hoặc `before_restore`.
+    /// `manual`, `scheduled`, `before_restore` hoặc `before_update`.
     pub kind: String,
     /// RFC 3339.
     pub created_at: String,
@@ -57,6 +57,7 @@ const fn kind_name(kind: BackupKind) -> &'static str {
         BackupKind::Manual => "manual",
         BackupKind::Scheduled => "scheduled",
         BackupKind::BeforeRestore => "before_restore",
+        BackupKind::BeforeUpdate => "before_update",
     }
 }
 

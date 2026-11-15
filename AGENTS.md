@@ -14,9 +14,9 @@ giai đoạn trong `docs/specs/` và ADR trong `docs/adr/` là bản đúng. M�
 ## Giai đoạn hiện tại: P3 — Mod, plugin và modpack
 
 - [Spec P3](docs/specs/p3-mod-va-modpack.md) (đã duyệt) và
-  [kế hoạch PR](docs/specs/p3-ke-hoach-pr.md): 38 PR, nhóm A → H, hai bản phát hành `v0.4.0` (sau
-  nhóm D) và `v0.5.0`. Tiến độ ghi ở đầu kế hoạch PR; PR nào merge thì sửa bảng đó trong chính PR ấy.
-- P2 đã phát hành `v0.3.0` ([kết quả chạy dài](docs/specs/p2-ket-qua-chay-dai.md)).
+  [kế hoạch PR](docs/specs/p3-ke-hoach-pr.md): 38 PR, nhóm A → H, một bản phát hành `v0.5.0` khi
+  xong P3 (bỏ `v0.4.0`). Tiến độ ghi ở đầu kế hoạch PR; PR nào merge thì sửa bảng đó trong chính PR ấy.
+- P2 đã xong, tag `v0.3.0` chỉ để nháp, không công khai ([kết quả chạy dài](docs/specs/p2-ket-qua-chay-dai.md)).
 - Còn mở từ P1: lần thử tay 5 phút trên Windows mới cài
   ([kết quả thử tay](docs/specs/p1-ket-qua-thu-tay.md)). Lỗi tìm được ở đó sửa trước việc của P3.
 - Quyết định từ P1, P2 vẫn giữ: chưa dùng SQLite (ADR 0004); chỉ dùng Java do MineHost tải; icon khay
