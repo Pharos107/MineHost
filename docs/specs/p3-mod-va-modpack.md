@@ -123,6 +123,12 @@ Một file bị coi là chỉ chạy ở client khi một trong các nguồn sau
    `minecraft.environment = "client"` trong `quilt.mod.json`; trong `META-INF/mods.toml` hoặc
    `neoforge.mods.toml`, mọi dependency vào `minecraft`, `forge` hoặc `neoforge` đều có
    `side = "CLIENT"` (cách của dự án cũ, `missingmods/jarmeta.go`).
+4. Pack CurseForge dựng từ `manifest.json` (không có server pack): CurseForge không có trường tương
+   đương nguồn 2, nên MineHost tra SHA-1 của các jar trong `mods/` (cả file chờ tải tay) trên Modrinth
+   (`version_files` rồi `projects`). Project ghi `server_side = "unsupported"` thì xử lý như nguồn 2.
+   Modrinth không trả lời thì chỉ ghi log rồi cài tiếp. Server pack chính thức thì không tra, vì tác
+   giả đã làm riêng cho server. (Thêm ngày 2026-11-16: Monifactory chỉ có bản client, WATERMeDIA trong
+   đó làm server crash mà jar không khai báo gì.)
 
 Ngoại lệ của nguồn 1 (thêm ngày 2026-11-15, sau khi chạy thử modpack thật): nhiều pack gắn cờ
 `unsupported` cho thư viện mà mod chạy trên server bắt buộc cần (Prominence II với `athena`,
@@ -131,9 +137,9 @@ bắt buộc, MineHost tải các jar `unsupported` trong `mods/` của pack v�
 cấp đúng id còn thiếu (tính cả `provides` và jar lồng) mà không phải mod chỉ client theo nguồn 3, lặp
 tới khi không thêm được gì. Không thiếu gì thì không tải file nào trong số đó.
 
-File loại 2 và 3 được cài vào `mods-disabled/` với nhãn "Chỉ chạy ở client". Người dùng bật lại được;
-MineHost không tắt lại file người dùng đã tự bật. CurseForge không có trường tương đương nên mod từ
-CurseForge chỉ dựa vào nguồn 3.
+File loại 2, 3 và 4 được cài vào `mods-disabled/` với nhãn "Chỉ chạy ở client". Người dùng bật lại
+được; MineHost không tắt lại file người dùng đã tự bật. Mod CurseForge cài lẻ (không qua modpack) chỉ
+dựa vào nguồn 3.
 
 ### 3.6 CurseForge dùng key riêng của MineHost
 

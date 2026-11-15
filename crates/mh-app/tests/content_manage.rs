@@ -45,6 +45,7 @@ fn pending_entry(file: &str, name: &str, pid: u64, fid: u64, sha1: String) -> Pe
         sha1,
         page_url: format!("https://www.curseforge.com/minecraft/mc-mods/{name}/download/{fid}"),
         from_modpack: false,
+        client_only: false,
         extra: Default::default(),
     }
 }

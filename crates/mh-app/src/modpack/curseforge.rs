@@ -1,5 +1,6 @@
 //! Nhánh cài modpack CurseForge (qua API hoặc file `.zip` tải lên, spec P3 mục 3.5, 3.6, 5.7).
 
+use std::collections::HashSet;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -12,7 +13,7 @@ use mh_providers::{
     inspect_curseforge_pack_with, server_pack_has_mods,
 };
 
-use super::finish::sanitize_upstream;
+use super::finish::{InstalledPack, sanitize_upstream};
 use super::{ModpackMeta, PackTarget, TempFileCleanup};
 use crate::content::{CatalogSource, ContentCatalog, ContentFileInfo, ContentVersion};
 use crate::files::blocking;
@@ -201,7 +202,8 @@ impl App {
         );
 
         ctx.step(JobStep::PrepareFiles, step_count, step_count);
-        self.finalize_modpack(ctx, target, game, &paths, plan, spec.meta)
+        // Server pack do tác giả làm cho server: không cần tra mod chỉ client ở nguồn ngoài.
+        self.finalize_modpack(ctx, target, game, &paths, plan.into(), spec.meta)
             .await
     }
 
@@ -276,8 +278,50 @@ impl App {
         .await?;
 
         ctx.step(JobStep::PrepareFiles, step_count, step_count);
-        self.finalize_modpack(ctx, target, game, &paths, plan, spec.meta)
+        let client_sha1 = self.cf_client_only_hashes(ctx, &plan).await?;
+        let pack = InstalledPack { plan, client_sha1 };
+        self.finalize_modpack(ctx, target, game, &paths, pack, spec.meta)
             .await
+    }
+
+    /// Pack dựng từ `manifest.json` là bản cho client. CurseForge không ghi mod nào chỉ chạy ở
+    /// client, nên tra SHA-1 của jar trong `mods/` trên Modrinth (spec P3, mục 3.5, nguồn 4). Lỗi
+    /// mạng chỉ ghi log: pack vẫn cài, mod chỉ client có metadata trong jar vẫn bị tắt như cũ.
+    async fn cf_client_only_hashes(
+        &self,
+        ctx: &JobContext,
+        plan: &PackPlan,
+    ) -> Result<HashSet<String>, AppError> {
+        let in_mods = |path: &str| path.starts_with("mods/") && path.ends_with(".jar");
+        let sha1: Vec<String> = plan
+            .files
+            .iter()
+            .filter(|f| in_mods(&f.path))
+            .map(|f| f.sha1.to_ascii_lowercase())
+            .chain(
+                plan.blocked
+                    .iter()
+                    .filter(|b| in_mods(&b.path))
+                    .map(|b| b.sha1.to_ascii_lowercase()),
+            )
+            .collect();
+        if sha1.is_empty() {
+            return Ok(HashSet::new());
+        }
+        let lookup = self.content_catalog.server_unsupported_by_hash(&sha1);
+        match ctx.cancellable(lookup).await {
+            Ok(found) => {
+                if !found.is_empty() {
+                    tracing::info!(count = found.len(), "tắt mod chỉ chạy client theo Modrinth");
+                }
+                Ok(found)
+            }
+            Err(err) => {
+                ctx.check_cancel()?;
+                tracing::warn!(%err, "không tra được mod chỉ chạy client trên Modrinth");
+                Ok(HashSet::new())
+            }
+        }
     }
 }
 

@@ -9,7 +9,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
-use mh_app::content::{CurseForge, CurseforgeCatalog};
+use mh_app::content::{CurseForge, CurseforgeCatalog, Modrinth, ModrinthCatalog};
 use mh_app::sources::{
     BoxFut, CancellationToken, CatalogVersion, Checksum, HostAllowlist, InstallPlan, LoaderInstall,
     PlannedFile, ProgressFn, ResolvedServer, ServerJar,
@@ -263,9 +263,14 @@ pub fn cf_app(
     let hosts = HostAllowlist::new(&["127.0.0.1"]);
     let cf =
         CurseForge::with_base_url(Arc::clone(&http), "test-cf-key", server.uri()).with_hosts(hosts);
+    // Modrinth giả cùng server: tra mod chỉ client theo SHA-1 (spec P3, mục 3.5). Test không mount
+    // `/v2/...` thì nhận 404 và cài tiếp như khi Modrinth không trả lời.
+    let modrinth = Modrinth::with_base_url(Arc::clone(&http), format!("{}/v2", server.uri()));
+    let content = ModrinthCatalog::new(Arc::clone(&http)).with_modrinth(modrinth, hosts);
     let catalog = CurseforgeCatalog::new(http, "test-cf-key").with_curseforge(cf, hosts);
     let mut app = App::with_deps(dirs, deps)
         .unwrap()
+        .with_content(Arc::new(content))
         .with_curseforge(Arc::new(catalog));
     if with_key {
         app = app.with_curseforge_key(CurseforgeKey::parse("test-cf-key").unwrap());

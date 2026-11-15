@@ -199,6 +199,7 @@ fn build_pending(kind: ContentKind, item: &PlannedContent) -> Result<PendingCont
         sha1: item.file.sha1.clone().unwrap_or_default(),
         page_url: item.file.download_page_url.clone().unwrap_or_default(),
         from_modpack: false,
+        client_only: item.client_only,
         extra: Default::default(),
     })
 }
