@@ -272,6 +272,27 @@
       "hard": "Khó"
     }
   },
+  "version": {
+    "title": "Phiên bản",
+    "build": "Build",
+    "modpack": "Modpack",
+    "change": "Đổi phiên bản",
+    "changeTitle": "Đổi phiên bản",
+    "changeBody": "Server sẽ tắt nếu đang chạy. MineHost sao lưu trước (bản \"Trước cập nhật\"), rồi tải bản đã chọn. Giữ nguyên bản Minecraft là lấy build hoặc bản loader mới nhất. Server không tự bật lại.",
+    "current": "{{version}} (đang dùng)",
+    "recommended": "Bản đề xuất",
+    "confirm": "Tiếp tục",
+    "downgradeWarning": "Đây là bản Minecraft cũ hơn. World đã mở bằng bản mới thường không mở lại được bằng bản cũ. Nếu hỏng, khôi phục bản \"Trước cập nhật\".",
+    "downgradeAck": "Tôi hiểu world có thể không mở được",
+    "changed": "Đã chuyển sang Minecraft {{minecraft}}. Bật lại server khi sẵn sàng.",
+    "upToDate": "Đã là bản mới nhất, không có gì thay đổi.",
+    "failedWithBackup": "Đổi phiên bản lỗi. Bản sao lưu \"Trước cập nhật\" ở trang Sao lưu giúp bạn quay về.",
+    "updateModpack": "Cập nhật modpack",
+    "modpackTitle": "Cập nhật modpack",
+    "modpackBody": "Server sẽ tắt nếu đang chạy. MineHost sao lưu trước, gỡ file của bản modpack cũ, rồi cài bản đã chọn. Mod bạn tự thêm vẫn giữ.",
+    "modpackVersion": "Bản modpack",
+    "modpackUpdated": "Đã cập nhật modpack: gỡ {{removed}} file của bản cũ, giữ {{kept}} mod bạn tự thêm."
+  },
   "settings": {
     "title": "Cài đặt server",
     "autostart": "Tự bật khi mở MineHost",

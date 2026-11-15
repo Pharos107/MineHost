@@ -27,8 +27,8 @@ tải tay từng file và không phải đọc log để đoán vì sao server k
       tiếp được, server bật được (test Playwright với nguồn giả và test tích hợp với một pack thật).
 - [ ] Mỗi loader có test tích hợp trong job `integration`: tạo server, bật tới `Done`, tắt sạch, trên
       Windows và Linux.
-- [ ] Cập nhật một modpack lên bản mới: có bản backup `before_update`; khôi phục bản đó thì server quay
-      về bản cũ và bật được.
+- [x] Cập nhật một modpack lên bản mới: có bản backup `before_update`; khôi phục bản đó thì server quay
+      về bản cũ và bật được (test `crates/mh-app/tests/modpack/update.rs`, Java là `fake-mc`).
 - [ ] Server vượt giới hạn RAM của MineHost bị dừng và hiện lý do "vượt giới hạn RAM", không làm
       treo máy (test với `fake-mc` trên Windows và Linux có cgroup).
 - [ ] Mỗi trang mới ở mục 6 có ít nhất một test Playwright chạy với API thật.

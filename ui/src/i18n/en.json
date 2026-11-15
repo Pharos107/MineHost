@@ -272,6 +272,27 @@
       "hard": "Hard"
     }
   },
+  "version": {
+    "title": "Version",
+    "build": "Build",
+    "modpack": "Modpack",
+    "change": "Change version",
+    "changeTitle": "Change version",
+    "changeBody": "The server stops if it is running. MineHost makes a \"Before update\" backup first, then downloads the chosen version. Keeping the same Minecraft version gets the newest build or loader version. The server is not started again.",
+    "current": "{{version}} (current)",
+    "recommended": "Recommended",
+    "confirm": "Continue",
+    "downgradeWarning": "This is an older Minecraft version. A world opened by a newer version often cannot be opened by an older one. If it breaks, restore the \"Before update\" backup.",
+    "downgradeAck": "I understand the world may not open",
+    "changed": "Switched to Minecraft {{minecraft}}. Start the server when you are ready.",
+    "upToDate": "Already the newest version; nothing changed.",
+    "failedWithBackup": "The version change failed. The \"Before update\" backup on the Backups page lets you go back.",
+    "updateModpack": "Update modpack",
+    "modpackTitle": "Update modpack",
+    "modpackBody": "The server stops if it is running. MineHost makes a backup first, removes the old modpack files, then installs the chosen version. Mods you added yourself are kept.",
+    "modpackVersion": "Modpack version",
+    "modpackUpdated": "Modpack updated: removed {{removed}} old files, kept {{kept}} mods you added."
+  },
   "settings": {
     "title": "Server settings",
     "autostart": "Start when MineHost opens",

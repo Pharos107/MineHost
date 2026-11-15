@@ -1318,6 +1318,7 @@ export interface components {
             loader_version?: string | null;
             memory_mb?: components["schemas"]["MemoryDto"] | null;
             minecraft?: string | null;
+            modpack?: components["schemas"]["ServerModpackDto"] | null;
             name?: string | null;
             /** Format: int32 */
             pid?: number | null;
@@ -1340,6 +1341,15 @@ export interface components {
             /** @description RFC 3339. Có khi server đang ở trạng thái chạy. */
             running_since?: string | null;
             samples: components["schemas"]["MetricSampleDto"][];
+        };
+        /** @description `[modpack]` của server: nguồn, project và bản đang cài. */
+        ServerModpackDto: {
+            name: string;
+            project_id?: string | null;
+            /** @description `modrinth`, `curseforge` hoặc `file`. */
+            source: string;
+            version_id?: string | null;
+            version_name?: string | null;
         };
         SessionDto: {
             /** @description Có khi đang đăng nhập. Gửi lại bằng header `X-CSRF-Token`. */
