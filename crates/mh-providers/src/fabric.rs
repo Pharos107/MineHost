@@ -11,16 +11,14 @@ use mh_net::{Checksum, HostAllowlist, HttpClient, hosts};
 use serde::Deserialize;
 
 use crate::loader::{
-    InstallPlan, InstallerRun, LoaderRelease, PlannedFile, check_loader_url, installer_path, pick,
-    recommended_first,
+    InstallPlan, InstallerRun, LoaderRelease, PlannedFile, check_loader_url, installer_checksum,
+    installer_path, pick, recommended_first,
 };
 use crate::{ProviderError, Release};
 
 pub const META_BASE: &str = "https://meta.fabricmc.net/v2";
 const SOURCE: &str = "Fabric";
 const TTL: Duration = Duration::from_secs(60 * 60);
-/// File `.sha256` cạnh jar trên maven chỉ có 64 ký tự hex, đôi khi kèm tên file.
-const MAX_HASH_FILE: usize = 256;
 pub const LAUNCH_JAR: &str = "fabric-server-launch.jar";
 
 #[derive(Debug, Clone)]
@@ -161,16 +159,6 @@ impl Fabric {
     }
 
     async fn installer_sha256(&self, jar_url: &str) -> Result<Checksum, ProviderError> {
-        let body = self
-            .http
-            .get_bytes(&format!("{jar_url}.sha256"), MAX_HASH_FILE)
-            .await?;
-        let text = String::from_utf8_lossy(&body);
-        text.split_whitespace()
-            .next()
-            .and_then(Checksum::sha256)
-            .ok_or_else(|| {
-                ProviderError::invalid(SOURCE, "file .sha256 của installer sai định dạng")
-            })
+        installer_checksum(&self.http, SOURCE, jar_url).await
     }
 }

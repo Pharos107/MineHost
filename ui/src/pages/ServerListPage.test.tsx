@@ -97,6 +97,22 @@ describe("ServerListPage", () => {
     expect(within(card).getByText("Fabric 1.21.4, tối đa 4 GB RAM")).toBeTruthy();
   });
 
+  it("thẻ server tạo từ modpack hiện tên modpack", async () => {
+    mockApi([
+      server({
+        id: "01FD",
+        name: "Pack",
+        loader: "neoforge",
+        minecraft: "1.21.1",
+        memory_mb: { min: 1024, max: 4096 },
+        modpack: { source: "modrinth", project_id: "P", version_id: "v1", name: "Gói Thử", version_name: "1.0" },
+      }),
+    ]);
+    renderPage();
+    const card = (await screen.findByRole("link", { name: "Pack" })).closest("article")!;
+    expect(within(card).getByText("Gói Thử (NeoForge 1.21.1), tối đa 4 GB RAM")).toBeTruthy();
+  });
+
   it("lọc theo trạng thái; lọc ra trống vẫn đổi lại được", async () => {
     mockApi([server({ id: "A", name: "Chạy", state: "running" }), server({ id: "B", name: "Tắt", state: "stopped" })]);
     renderPage();

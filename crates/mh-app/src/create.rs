@@ -13,7 +13,7 @@ use mh_store::ServerPaths;
 use time::OffsetDateTime;
 
 use crate::jobs::{JobContext, JobKind, JobStep};
-use crate::launcher::write_properties;
+use crate::launcher::{PROPERTIES_FILE, read_properties, write_properties};
 use crate::{App, AppError, Installing, JobId, lock};
 
 const STEPS: u8 = 5;
@@ -193,11 +193,7 @@ impl App {
         port: GamePort,
         modpack: Option<ModpackSection>,
     ) -> Result<(), AppError> {
-        let mut props =
-            Properties::parse("# Tạo bởi MineHost; Minecraft sẽ thêm các khóa còn lại.\n");
-        props.set("motd", name.as_str());
-        props.set("server-port", &port.to_string());
-        write_properties(server_dir, &props)?;
+        write_initial_properties(server_dir, &name, port)?;
         let now = OffsetDateTime::now_utc();
         let now = now.replace_nanosecond(0).unwrap_or(now);
         let mut spec = InstanceSpec::new(id, name, now, game, memory, port);
@@ -238,4 +234,23 @@ impl App {
             _ => Ok(()),
         }
     }
+}
+
+/// Modpack hay mang sẵn `server.properties` (level-type, allow-flight...): giữ nguyên, chỉ đặt cổng
+/// MineHost đã chọn; `motd` chỉ đặt khi pack chưa có.
+fn write_initial_properties(
+    server_dir: &Path,
+    name: &ServerName,
+    port: GamePort,
+) -> Result<(), AppError> {
+    let mut props = if server_dir.join(PROPERTIES_FILE).is_file() {
+        read_properties(server_dir)?
+    } else {
+        Properties::parse("# Tạo bởi MineHost; Minecraft sẽ thêm các khóa còn lại.\n")
+    };
+    if props.get("motd").is_none_or(|m| m.trim().is_empty()) {
+        props.set("motd", name.as_str());
+    }
+    props.set("server-port", &port.to_string());
+    write_properties(server_dir, &props)
 }

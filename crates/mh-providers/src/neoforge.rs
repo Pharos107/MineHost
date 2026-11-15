@@ -12,14 +12,13 @@ use mh_net::{Checksum, HostAllowlist, HttpClient, hosts};
 
 use crate::loader::{
     InstallPlan, InstallerRun, LoaderRelease, PlannedFile, check_loader_url, compare_versions,
-    installer_path, maven_versions, pick, recommended_first,
+    installer_checksum, installer_path, maven_versions, pick, recommended_first,
 };
 use crate::{ProviderError, Release};
 
 pub const MAVEN_BASE: &str = "https://maven.neoforged.net/releases/net/neoforged/neoforge";
 const SOURCE: &str = "NeoForge";
 const MAX_METADATA: usize = 8 * 1024 * 1024;
-const MAX_HASH_FILE: usize = 256;
 
 #[derive(Debug, Clone)]
 pub struct NeoForge {
@@ -65,6 +64,15 @@ impl NeoForge {
         &self,
         mc: &McVersion,
     ) -> Result<Vec<LoaderRelease>, ProviderError> {
+        let mut releases = self.all_releases(mc).await?;
+        if releases.iter().any(|r| r.stable) {
+            releases.retain(|r| r.stable);
+        }
+        Ok(recommended_first(releases))
+    }
+
+    /// Mọi bản NeoForge cho `mc`, kể cả beta, mới nhất trước.
+    async fn all_releases(&self, mc: &McVersion) -> Result<Vec<LoaderRelease>, ProviderError> {
         let all = self.all_versions().await?;
         let mut releases: Vec<LoaderRelease> = all
             .iter()
@@ -75,11 +83,8 @@ impl NeoForge {
                 version,
             })
             .collect();
-        if releases.iter().any(|r| r.stable) {
-            releases.retain(|r| r.stable);
-        }
         releases.sort_by(|a, b| compare_versions(b.version.as_str(), a.version.as_str()));
-        Ok(recommended_first(releases))
+        Ok(releases)
     }
 
     pub async fn plan(
@@ -87,7 +92,12 @@ impl NeoForge {
         mc: &McVersion,
         wanted: Option<&LoaderVersion>,
     ) -> Result<InstallPlan, ProviderError> {
-        let releases = self.loader_versions(mc).await?;
+        // Modpack ghim đúng một bản thì cài bản đó, kể cả beta: pack được làm và thử với bản ấy.
+        // Danh sách ẩn beta chỉ để chọn bản đề xuất khi người dùng không ghim.
+        let releases = match wanted {
+            Some(_) => self.all_releases(mc).await?,
+            None => self.loader_versions(mc).await?,
+        };
         let loader = pick(&releases, wanted)
             .ok_or_else(|| ProviderError::VersionNotFound {
                 source_name: SOURCE,
@@ -134,17 +144,7 @@ impl NeoForge {
     }
 
     async fn installer_sha256(&self, jar_url: &str) -> Result<Checksum, ProviderError> {
-        let body = self
-            .http
-            .get_bytes(&format!("{jar_url}.sha256"), MAX_HASH_FILE)
-            .await?;
-        let text = String::from_utf8_lossy(&body);
-        text.split_whitespace()
-            .next()
-            .and_then(Checksum::sha256)
-            .ok_or_else(|| {
-                ProviderError::invalid(SOURCE, "file .sha256 của installer sai định dạng")
-            })
+        installer_checksum(&self.http, SOURCE, jar_url).await
     }
 }
 

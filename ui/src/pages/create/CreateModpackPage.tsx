@@ -212,7 +212,11 @@ function ModpackSearchCard({ onSelect }: { onSelect: (hit: SearchHit) => void })
             setSubmitted(query.trim());
           }}
         >
-          <SearchInput value={query} onChange={setQuery} label={t("modpack.searchPlaceholder")} />
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            label={t(activeSource === "curseforge" ? "modpack.searchPlaceholderCurseforge" : "modpack.searchPlaceholder")}
+          />
         </form>
         {search.isPending ? (
           <Spinner label={t("ui.loading")} />

@@ -102,7 +102,7 @@ fn start_lan(
         router.clone(),
         lan,
         addr.port(),
-        Arc::new(mh_platform::system::lan_ipv4),
+        Arc::new(mh_platform::system::ui_ipv4),
     ))
 }
 

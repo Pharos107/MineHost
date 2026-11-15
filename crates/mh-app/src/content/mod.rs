@@ -5,6 +5,7 @@ mod curseforge;
 mod install;
 mod manage;
 mod modrinth;
+mod pending_upload;
 mod plan;
 mod preflight;
 mod updates;

@@ -190,6 +190,11 @@ pub(super) fn extract_entries(
     let mut buf = vec![0u8; COPY_BUF_BYTES];
 
     for item in entries {
+        // Chỉ người dùng được đồng ý EULA trong MineHost; không nhận `eula=true` đi kèm pack.
+        if is_root_eula(&item.rel) {
+            tracing::debug!(path = %item.rel, "bỏ qua eula.txt trong modpack");
+            continue;
+        }
         let target = safe_join(&root, &item.rel)?;
         if item.is_dir {
             fs::create_dir_all(target.as_path())
@@ -215,6 +220,10 @@ pub(super) fn extract_entries(
         )?;
     }
     Ok(())
+}
+
+fn is_root_eula(rel: &str) -> bool {
+    rel.eq_ignore_ascii_case("eula.txt")
 }
 
 fn copy_bounded(

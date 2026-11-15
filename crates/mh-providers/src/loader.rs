@@ -6,7 +6,7 @@
 use std::cmp::Ordering;
 
 use mh_core::{Launch, LoaderVersion, McVersion};
-use mh_net::{Checksum, HostAllowlist};
+use mh_net::{Checksum, HostAllowlist, HttpClient, NetError};
 
 use crate::ProviderError;
 
@@ -64,6 +64,42 @@ pub(crate) fn installer_path(
 
 /// URL installer do meta trả về phải nằm trong danh sách host (mặc định `hosts::LOADERS`) trước
 /// khi MineHost gọi tới nó, kể cả để lấy file hash cạnh nó.
+/// File `.sha256` / `.sha1` cạnh jar trên maven chỉ có chuỗi hex, đôi khi kèm tên file.
+const MAX_HASH_FILE: usize = 256;
+
+/// Hash của jar installer trên maven: `.sha256`, không có (404) thì `.sha1` (spec P3, mục 3.1).
+/// Bản Forge cũ chỉ có `.sha1`.
+pub(crate) async fn installer_checksum(
+    http: &HttpClient,
+    source: &'static str,
+    jar_url: &str,
+) -> Result<Checksum, ProviderError> {
+    match read_hash_file(http, &format!("{jar_url}.sha256"), Checksum::sha256).await {
+        Err(ProviderError::Net(NetError::Status { status: 404, .. })) => {
+            read_hash_file(http, &format!("{jar_url}.sha1"), Checksum::sha1)
+                .await?
+                .ok_or_else(|| {
+                    ProviderError::invalid(source, "file .sha1 của installer sai định dạng")
+                })
+        }
+        other => other?.ok_or_else(|| {
+            ProviderError::invalid(source, "file .sha256 của installer sai định dạng")
+        }),
+    }
+}
+
+async fn read_hash_file(
+    http: &HttpClient,
+    url: &str,
+    parse: fn(&str) -> Option<Checksum>,
+) -> Result<Option<Checksum>, ProviderError> {
+    let body = http.get_bytes(url, MAX_HASH_FILE).await?;
+    Ok(String::from_utf8_lossy(&body)
+        .split_whitespace()
+        .next()
+        .and_then(parse))
+}
+
 pub(crate) fn check_loader_url(
     source: &'static str,
     allowed: &HostAllowlist,
