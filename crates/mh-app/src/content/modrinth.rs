@@ -1,5 +1,6 @@
 //! Nguồn danh mục Modrinth: tra API và tải file qua `HttpClient` (có cache theo hash).
 
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -78,6 +79,19 @@ impl ContentCatalog for ModrinthCatalog {
 
     fn version<'a>(&'a self, id: &'a str) -> BoxFut<'a, Result<ContentVersion, AppError>> {
         Box::pin(async move { Ok(modrinth_version(self.modrinth.version(id).await?)) })
+    }
+
+    fn versions_by_hash<'a>(
+        &'a self,
+        sha1: &'a [String],
+    ) -> BoxFut<'a, Result<HashMap<String, ContentVersion>, AppError>> {
+        Box::pin(async move {
+            let found = self.modrinth.versions_by_hash(sha1).await?;
+            Ok(found
+                .into_iter()
+                .map(|(hash, ver)| (hash.to_ascii_lowercase(), modrinth_version(ver)))
+                .collect())
+        })
     }
 
     fn download<'a>(

@@ -8,6 +8,8 @@ mod pending;
 mod preflight;
 #[path = "tests_content_support.rs"]
 mod support;
+#[path = "tests_updates.rs"]
+mod updates;
 
 use std::sync::Arc;
 

@@ -177,6 +177,7 @@
       "compress": "Nén bản sao lưu",
       "stop_server": "Tắt server",
       "before_restore": "Sao lưu hiện trạng",
+      "before_update": "Sao lưu trước khi cập nhật",
       "unpack": "Giải nén bản sao lưu",
       "swap": "Thay world",
       "copy_files": "Chép thư mục server",
@@ -402,7 +403,9 @@
       "restore": "Khôi phục",
       "import_server": "Nhập server",
       "install_java": "Tải Java",
-      "install_content": "Cài mod"
+      "install_content": "Cài mod",
+      "check_updates": "Kiểm tra cập nhật mod",
+      "update_content": "Cập nhật mod"
     },
     "states": {
       "running": "Đang chạy",

@@ -235,6 +235,25 @@ impl ContentCatalog for FakeModCatalog {
         })
     }
 
+    fn versions_by_hash<'a>(
+        &'a self,
+        sha1: &'a [String],
+    ) -> BoxFut<'a, Result<HashMap<String, ContentVersion>, AppError>> {
+        Box::pin(async move {
+            let mut found = HashMap::new();
+            for ver in self.versions.values() {
+                let Some(bytes) = ver.files[0].url.as_ref().and_then(|u| self.files.get(u)) else {
+                    continue;
+                };
+                let hash = sha1_hex(bytes);
+                if sha1.contains(&hash) {
+                    found.insert(hash, ver.clone());
+                }
+            }
+            Ok(found)
+        })
+    }
+
     fn download<'a>(
         &'a self,
         file: &'a ContentFileInfo,
@@ -261,6 +280,14 @@ impl ContentCatalog for FakeModCatalog {
             Ok(())
         })
     }
+}
+
+pub fn sha1_hex(bytes: &[u8]) -> String {
+    use sha1::Digest as _;
+    sha1::Sha1::digest(bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
 }
 
 pub fn sha512_hex(bytes: &[u8]) -> String {

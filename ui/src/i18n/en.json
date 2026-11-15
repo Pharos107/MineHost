@@ -177,6 +177,7 @@
       "compress": "Compressing the backup",
       "stop_server": "Stopping the server",
       "before_restore": "Backing up the current world",
+      "before_update": "Backing up before the update",
       "unpack": "Unpacking the backup",
       "swap": "Replacing the world",
       "copy_files": "Copying server folder",
@@ -402,7 +403,9 @@
       "restore": "Restore",
       "import_server": "Import server",
       "install_java": "Install Java",
-      "install_content": "Install mod"
+      "install_content": "Install mod",
+      "check_updates": "Check mod updates",
+      "update_content": "Update mods"
     },
     "states": {
       "running": "Running",

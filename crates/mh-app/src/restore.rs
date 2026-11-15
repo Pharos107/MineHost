@@ -82,7 +82,7 @@ impl App {
         let mut index = 1u8;
         if live {
             ctx.step(JobStep::StopServer, index, steps);
-            self.stop_for_restore(&handle).await?;
+            self.stop_for_change(&handle).await?;
             index += 1;
         }
         ctx.check_cancel()?;
@@ -115,13 +115,14 @@ impl App {
         Ok(())
     }
 
-    async fn stop_for_restore(&self, handle: &SupervisorHandle) -> Result<(), AppError> {
+    /// Tắt hẳn server trước khi khôi phục hoặc cập nhật.
+    pub(crate) async fn stop_for_change(&self, handle: &SupervisorHandle) -> Result<(), AppError> {
         // Hủy Job không cắt bước này: bỏ dở sẽ để server nằm ở Stopping.
         let status = handle.stop_and_wait(self.shutdown_timeout()).await;
         if status.state.has_process() || status.restart_pending {
             return Err(AppError::new(
                 ErrorCode::ServerBusy,
-                "server không dừng trước khi khôi phục",
+                "server không dừng trước khi thay đổi",
             ));
         }
         Ok(())
@@ -207,7 +208,7 @@ pub(crate) fn stale_backup_ids(metas: &[BackupMeta], kind: BackupKind, keep: usi
         .collect()
 }
 
-fn server_is_live(handle: &SupervisorHandle) -> bool {
+pub(crate) fn server_is_live(handle: &SupervisorHandle) -> bool {
     let status = handle.status();
     status.state.has_process() || status.restart_pending
 }
