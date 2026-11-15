@@ -207,7 +207,7 @@ trả, UI không tự tính.
 
 Repo private nên runner của GitHub chỉ có khoảng 7 GB RAM và giới hạn phút chạy. Workflow `modpacks`
 chạy trên một runner tự host trên máy Linux thử nghiệm, lúc 04:00 giờ Việt Nam, mỗi lần một pack.
-Runner chạy dưới unit systemd riêng có `MemoryMax=12G`, `CPUWeight=20`, `Nice=10` để không ảnh hưởng
+Runner chạy dưới unit systemd riêng có `MemoryMax=12G`, `CPUWeight=20`, `Nice=10`, dùng tối đa nửa số nhân để không ảnh hưởng
 dịch vụ khác trên máy. Cách cài runner ghi ở `docs/ops/runner-modpack.md` (PR-36).
 
 ## 4. Mô hình dữ liệu

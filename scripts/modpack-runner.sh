@@ -4,6 +4,7 @@
 #
 #   sudo bash scripts/modpack-runner.sh install <file-chứa-registration-token>
 #   sudo bash scripts/modpack-runner.sh uninstall <file-chứa-removal-token>
+#   sudo bash scripts/modpack-runner.sh update   # viết lại unit sau khi sửa script
 #   sudo bash scripts/modpack-runner.sh status
 #
 # Token đọc từ file (không qua tham số dòng lệnh để không lộ trong `ps`), đọc xong thì xóa file.
@@ -64,6 +65,8 @@ EOF
 }
 
 write_unit() {
+  local CPU_HALF=$(( $(nproc) / 2 ))
+  [ "$CPU_HALF" -ge 1 ] || CPU_HALF=1
   cat > "$UNIT_PATH" <<EOF
 [Unit]
 Description=GitHub Actions runner cho workflow modpacks của MineHost
@@ -85,6 +88,11 @@ MemoryMax=12G
 # Không cho đẩy RAM của test sang swap (máy chỉ có vài GB swap, dùng chung với dịch vụ thật).
 MemorySwapMax=0
 CPUWeight=20
+# Máy có daemon watchdog khởi động lại cả máy khi loadavg 1 phút vượt ngưỡng (24 trên máy 12
+# luồng). Một modpack Forge lớn lúc khởi động đẩy load lên 28. Giới hạn ở nửa số nhân: Java thấy ít
+# nhân hơn nên tạo ít luồng hơn, và phần CPU còn lại luôn để cho server thật.
+AllowedCPUs=0-$((CPU_HALF - 1))
+CPUQuota=$((CPU_HALF * 100))%
 IOWeight=20
 Nice=10
 TasksMax=8192
@@ -158,9 +166,22 @@ uninstall_runner() {
   echo "đã gỡ runner và xóa $RUNNER_HOME"
 }
 
+# Viết lại unit và luật mạng theo bản script hiện tại, không cần token. Khởi động lại runner, nên
+# job đang chạy (nếu có) bị hủy.
+update_unit() {
+  need_root
+  [ -f "$UNIT_PATH" ] || die "chưa cài runner"
+  write_nft
+  write_unit
+  systemctl daemon-reload
+  systemctl restart "$UNIT_NAME"
+  echo "đã cập nhật unit $UNIT_NAME"
+}
+
 case "${1:-}" in
   install) install_runner "${2:-}" ;;
   uninstall) uninstall_runner "${2:-}" ;;
+  update) update_unit ;;
   status) systemctl status "$UNIT_NAME" --no-pager ;;
-  *) die "dùng: $0 install|uninstall <file-token> | status" ;;
+  *) die "dùng: $0 install|uninstall <file-token> | update | status" ;;
 esac
