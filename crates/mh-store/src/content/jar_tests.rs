@@ -5,7 +5,7 @@ use std::io::{Cursor, Write};
 use mh_core::ModMetaFormat;
 use zip::write::SimpleFileOptions;
 
-use super::{MAX_NESTED_DEPTH, read_jar_metadata};
+use super::{MAX_NESTED_DEPTH, MAX_NESTED_OPENED, read_jar_metadata};
 
 fn zip_bytes(entries: &[(&str, &[u8])]) -> Vec<u8> {
     let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
@@ -87,7 +87,11 @@ fn keeps_one_meta_per_format_for_multi_loader_jars() {
         formats,
         vec![ModMetaFormat::QuiltModJson, ModMetaFormat::FabricModJson]
     );
-    assert_eq!(meta.meta.unwrap().depends.len(), 1, "bản chính vẫn là Quilt");
+    assert_eq!(
+        meta.meta.unwrap().depends.len(),
+        1,
+        "bản chính vẫn là Quilt"
+    );
     assert!(meta.format_metas[1].1.depends.is_empty());
 }
 
@@ -104,6 +108,31 @@ fn stops_at_max_depth_and_skips_broken_nested_jars() {
     // Jar ngoài cùng là level5; chỉ đọc 3 tầng lồng: level4, level3, level2.
     assert_eq!(
         ids(&jar),
-        vec!["level2".to_owned(), "level3".to_owned(), "level4".to_owned()]
+        vec![
+            "level2".to_owned(),
+            "level3".to_owned(),
+            "level4".to_owned()
+        ]
     );
+}
+
+#[test]
+fn caps_nested_jars_opened_even_without_metadata() {
+    let names: Vec<String> = (0..MAX_NESTED_OPENED + 50)
+        .map(|i| format!("lib{i:04}.jar"))
+        .collect();
+    let jars_json: Vec<String> = names
+        .iter()
+        .map(|n| format!(r#"{{"file":"{n}"}}"#))
+        .collect();
+    let extra = format!(r#","jars":[{}]"#, jars_json.join(","));
+    let plain = zip_bytes(&[("a.class", b"x")]);
+    let entries: Vec<(&str, &[u8])> = names.iter().map(|n| (n.as_str(), &plain[..])).collect();
+    // Thêm một mod thật ở cuối danh sách đã sắp: vượt ngân sách thì không được đọc tới.
+    let last = fabric_jar("late-mod", "", &[]);
+    let mut entries = entries;
+    let extra = extra.replacen("]", r#",{"file":"zz-late.jar"}]"#, 1);
+    entries.push(("zz-late.jar", &last));
+    let outer = fabric_jar("outer", &extra, &entries);
+    assert!(ids(&outer).is_empty());
 }

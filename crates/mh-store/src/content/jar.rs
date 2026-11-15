@@ -14,8 +14,10 @@ pub(super) const MAX_META_BYTES: usize = 1024 * 1024;
 const MAX_NESTED_JAR_BYTES: u64 = 64 * 1024 * 1024;
 /// Fabric API lồng một tầng; vài mod lồng thư viện có jar lồng riêng. Ba tầng là đủ.
 const MAX_NESTED_DEPTH: usize = 3;
-/// Tổng số mod lồng tối đa đọc từ một jar (Fabric API có khoảng 50).
-const MAX_BUNDLED: usize = 512;
+/// Số jar lồng tối đa được mở trong một lần đọc, đếm ở mọi tầng (Fabric API có khoảng 50).
+const MAX_NESTED_OPENED: usize = 512;
+/// Tổng byte jar lồng đã giải nén tối đa trong một lần đọc, cộng dồn mọi tầng.
+const MAX_NESTED_TOTAL_BYTES: u64 = 256 * 1024 * 1024;
 const JARJAR_METADATA: &str = "META-INF/jarjar/metadata.json";
 
 pub(super) const META_PRIORITY: [&str; 6] = [
@@ -69,7 +71,11 @@ pub(super) fn read_jar_metadata<R: Read + Seek>(reader: R) -> JarMetadata {
     };
     let (formats, meta, format_metas) = read_formats(&mut archive);
     let mut bundled = Vec::new();
-    collect_bundled(&mut archive, &format_metas, 1, &mut bundled);
+    let mut budget = NestedBudget {
+        opened: 0,
+        bytes: 0,
+    };
+    collect_bundled(&mut archive, &format_metas, 1, &mut budget, &mut bundled);
     JarMetadata {
         formats,
         meta,
@@ -119,11 +125,19 @@ fn read_formats<R: Read + Seek>(archive: &mut ZipArchive<R>) -> FormatsRead {
     )
 }
 
+/// Ngân sách chung cho cả cây jar lồng của một jar, để jar khai báo hàng nghìn jar con (có
+/// metadata hay không) cũng không bắt giải nén quá giới hạn.
+struct NestedBudget {
+    opened: usize,
+    bytes: u64,
+}
+
 /// Đọc đệ quy các jar lồng mà metadata (hoặc `META-INF/jarjar/metadata.json`) khai báo.
 fn collect_bundled<R: Read + Seek>(
     archive: &mut ZipArchive<R>,
     metas: &[(ModMetaFormat, ModMeta)],
     depth: usize,
+    budget: &mut NestedBudget,
     out: &mut Vec<ModMeta>,
 ) {
     if depth > MAX_NESTED_DEPTH {
@@ -141,32 +155,46 @@ fn collect_bundled<R: Read + Seek>(
     paths.sort();
     paths.dedup();
     for path in paths {
-        if out.len() >= MAX_BUNDLED {
+        if budget.opened >= MAX_NESTED_OPENED || budget.bytes >= MAX_NESTED_TOTAL_BYTES {
             return;
         }
-        let Some(bytes) = read_nested_bytes(archive, &path) else {
+        let Some(bytes) = read_nested_bytes(archive, &path, budget) else {
             continue;
         };
         let Ok(mut inner) = ZipArchive::new(Cursor::new(bytes)) else {
             continue;
         };
         let (_, _, inner_metas) = read_formats(&mut inner);
+        if inner_metas.is_empty() {
+            // Jar con không phải mod (thư viện Java thuần): không có gì để tính, không đào sâu.
+            continue;
+        }
         out.extend(inner_metas.iter().map(|(_, m)| m.clone()));
-        collect_bundled(&mut inner, &inner_metas, depth + 1, out);
+        collect_bundled(&mut inner, &inner_metas, depth + 1, budget, out);
     }
 }
 
-fn read_nested_bytes<R: Read + Seek>(archive: &mut ZipArchive<R>, path: &str) -> Option<Vec<u8>> {
+/// Đọc một jar lồng vào RAM; tính vào ngân sách trước khi giải nén để entry khai kích thước giả
+/// cũng không vượt phần còn lại.
+fn read_nested_bytes<R: Read + Seek>(
+    archive: &mut ZipArchive<R>,
+    path: &str,
+    budget: &mut NestedBudget,
+) -> Option<Vec<u8>> {
     let entry = archive.by_name(path).ok()?;
-    if entry.is_dir() || entry.size() > MAX_NESTED_JAR_BYTES {
+    if entry.is_dir() {
+        return None;
+    }
+    budget.opened += 1;
+    let limit = MAX_NESTED_JAR_BYTES.min(MAX_NESTED_TOTAL_BYTES.saturating_sub(budget.bytes));
+    if entry.size() > limit {
         return None;
     }
     let mut buf = Vec::new();
-    entry
-        .take(MAX_NESTED_JAR_BYTES + 1)
-        .read_to_end(&mut buf)
-        .ok()?;
-    (buf.len() as u64 <= MAX_NESTED_JAR_BYTES).then_some(buf)
+    let read = entry.take(limit + 1).read_to_end(&mut buf);
+    budget.bytes += buf.len() as u64;
+    read.ok()?;
+    (buf.len() as u64 <= limit).then_some(buf)
 }
 
 fn read_zip_text<R: Read + Seek>(
