@@ -25,9 +25,13 @@ pub struct UpdateItemBody {
     pub version_id: String,
 }
 
+/// Gửi đúng một trong hai: `items` (cập nhật từng mod) hoặc `modpack_version_id` (cập nhật modpack).
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct UpdateBody {
+    #[serde(default)]
     pub items: Vec<UpdateItemBody>,
+    /// Bản modpack Modrinth muốn chuyển tới. Kết quả Job có `removed`, `kept`, `backup_id`.
+    pub modpack_version_id: Option<String>,
 }
 
 /// Dạng `result` của Job `check_updates`. Chỉ để sinh kiểu cho UI; backend ghi bằng `UpdateReport`.
@@ -69,7 +73,7 @@ pub async fn check(
 }
 
 #[utoipa::path(post, path = "/api/v1/servers/{id}/updates", tag = "content",
-    description = "Tắt server nếu đang chạy, tạo bản `before_update`, rồi cài các bản đã chọn. Lỗi sau \
+    description = "Tắt server nếu đang chạy, tạo bản `before_update`, rồi cài các bản mod đã chọn hoặc bản modpack mới. Lỗi sau \
                    bước sao lưu có `backup_id` trong `params`.",
     params(("id" = String, Path)), request_body = UpdateBody,
     responses(
@@ -84,6 +88,13 @@ pub async fn update(
     IdPath(id): IdPath,
     ApiJson(body): ApiJson<UpdateBody>,
 ) -> Result<(StatusCode, Json<JobStartedDto>), ApiError> {
+    if let Some(version) = body.modpack_version_id.as_deref() {
+        if !body.items.is_empty() {
+            return Err(ApiError::invalid("items"));
+        }
+        let job_id = app.update_modpack(id, version)?;
+        return Ok((StatusCode::ACCEPTED, Json(JobStartedDto { job_id })));
+    }
     if body.items.is_empty() || body.items.len() > MAX_UPDATE_ITEMS {
         return Err(ApiError::invalid("items"));
     }

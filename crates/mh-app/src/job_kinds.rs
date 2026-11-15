@@ -17,6 +17,7 @@ pub enum JobKind {
     CheckUpdates,
     UpdateContent,
     ChangeVersion,
+    UpdateModpack,
 }
 
 /// Bước đang làm. UI dịch theo `kind`, ví dụ "Tải Java 21 (48/61 MB)".

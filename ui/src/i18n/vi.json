@@ -406,7 +406,8 @@
       "install_content": "Cài mod",
       "check_updates": "Kiểm tra cập nhật mod",
       "update_content": "Cập nhật mod",
-      "change_version": "Đổi phiên bản"
+      "change_version": "Đổi phiên bản",
+      "update_modpack": "Cập nhật modpack"
     },
     "states": {
       "running": "Đang chạy",

@@ -73,3 +73,25 @@ async fn version_change_needs_confirm_and_valid_versions() {
     assert_eq!(snap["kind"], "change_version");
     assert_eq!(snap["result"]["changed"], false, "{snap}");
 }
+
+#[tokio::test]
+async fn modpack_update_needs_a_modpack_server() {
+    let api = content_api(None);
+    let fabric = create_with_loader(&api, "Fabric", "fabric", 25565).await;
+    let uri = format!("/api/v1/servers/{fabric}/updates");
+    let (status, err) = api
+        .post(&uri, Some(json!({ "modpack_version_id": "v2" })))
+        .await;
+    assert_eq!(
+        (status, err["code"].as_str()),
+        (StatusCode::CONFLICT, Some("CONTENT_INCOMPATIBLE")),
+        "{err}"
+    );
+    let both = json!({
+        "modpack_version_id": "v2",
+        "items": [{ "file": "mods/a.jar", "source": "modrinth", "project_id": "P", "version_id": "v" }],
+    });
+    let (status, err) = api.post(&uri, Some(both)).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{err}");
+    assert_eq!(err["params"]["field"], "items");
+}
