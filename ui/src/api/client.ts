@@ -11,18 +11,21 @@ export type MetricSample = components["schemas"]["MetricSampleDto"];
 export type ServerMetrics = components["schemas"]["ServerMetricsDto"];
 export type JobProgress = components["schemas"]["ProgressDto"];
 export type CatalogVersion = components["schemas"]["CatalogVersionDto"];
+export type LoaderVersion = components["schemas"]["LoaderVersionDto"];
 export type CreateServer = components["schemas"]["CreateServerBody"];
 export type Created = components["schemas"]["CreatedDto"];
 export type ConsoleLine = components["schemas"]["ConsoleLineDto"];
 export type ServerAction = "start" | "stop" | "restart" | "kill";
-/** Loại server tạo được (spec P2, mục 5.4). */
-export type Loader = "paper" | "vanilla" | "purpur";
+/** Loại server tạo được (spec P2 mục 5.4, spec P3 mục 3.1). */
+export type Loader = "paper" | "vanilla" | "purpur" | "fabric" | "quilt" | "forge" | "neoforge";
 export type Detected = components["schemas"]["DetectedDto"];
 export type ImportServer = components["schemas"]["ImportBody"];
 export type Property = components["schemas"]["PropertyDto"];
 export type ServerPatch = components["schemas"]["PatchServerBody"];
 export type Trashed = components["schemas"]["TrashedDto"];
-type ErrorBody = components["schemas"]["ErrorBody"];
+export type Preflight = components["schemas"]["PreflightDto"];
+export type StartActionBody = components["schemas"]["StartActionBody"];
+export type ErrorBody = components["schemas"]["ErrorBody"];
 
 /** Lỗi từ API. Thông báo được dịch theo `code`, không lấy câu chữ từ backend. */
 export class ApiError extends Error {
@@ -69,7 +72,8 @@ export async function request<T>(
   extraHeaders: Record<string, string> = {},
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json", ...extraHeaders };
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  const isForm = typeof FormData !== "undefined" && body instanceof FormData;
+  if (body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   if (method !== "GET") Object.assign(headers, mutationHeaders());
 
   let response: Response;
@@ -77,7 +81,7 @@ export async function request<T>(
     response = await fetch(`/api/v1${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     });
   } catch {
     throw new ApiError("NETWORK", {}, 0);
@@ -109,7 +113,9 @@ export const api = {
   /** Xem trước thư mục server có sẵn: loại, phiên bản, jar, có `mods/` không. */
   inspectImport: (path: string) => request<Detected>("POST", "/servers/import/inspect", { path }),
   importServer: (body: ImportServer) => request<Created>("POST", "/servers/import", body),
-  action: (id: string, action: ServerAction) => request<void>("POST", `${serverPath(id)}/actions/${action}`),
+  preflight: (id: string) => request<Preflight>("GET", `${serverPath(id)}/preflight`),
+  action: (id: string, action: ServerAction, body?: StartActionBody) =>
+    request<void>("POST", `${serverPath(id)}/actions/${action}`, body),
   acceptEula: (id: string) => request<Server>("POST", `${serverPath(id)}/eula`, { accept: true }),
   sendCommand: (id: string, command: string) => request<void>("POST", `${serverPath(id)}/console`, { command }),
   updateServer: (id: string, patch: ServerPatch) => request<Server>("PATCH", serverPath(id), patch),
@@ -122,6 +128,9 @@ export const api = {
   saveProperties: (id: string, properties: Property[]) => request<void>("PUT", `${serverPath(id)}/properties`, { properties }),
   /** Bản cài được của một loại server, mới nhất trước. */
   catalogVersions: (loader: Loader) => request<CatalogVersion[]>("GET", `/catalog/${loader}/versions`),
+  /** Bản cài được của một mod loader cho một phiên bản Minecraft, bản đề xuất đứng đầu. */
+  loaderVersions: (loader: Loader, minecraft: string) =>
+    request<LoaderVersion[]>("GET", `/catalog/${loader}/${encodeURIComponent(minecraft)}/loader-versions`),
   /** Job đang giữ, mới nhất trước; `serverId` có thì chỉ Job của server đó. */
   jobs: (serverId?: string) =>
     request<Job[]>("GET", serverId ? `/jobs?server_id=${encodeURIComponent(serverId)}` : "/jobs"),
@@ -129,10 +138,35 @@ export const api = {
   cancelJob: (id: number) => request<void>("POST", `/jobs/${id}/cancel`),
 };
 
+interface MissingDepParam {
+  id?: string;
+  version_req?: string;
+  required_by?: string;
+}
+
+function formatApiError(t: TFunction, code: string, params: Record<string, unknown>): string {
+  if (code === "DEPENDENCY_MISSING" && Array.isArray(params.missing) && params.missing.length > 0) {
+    const list = (params.missing as MissingDepParam[])
+      .map((m) => (m.version_req && m.version_req !== "*" ? `${m.id} (${m.version_req}) — ${m.required_by}` : `${m.id} — ${m.required_by}`))
+      .join(", ");
+    return t("errors.DEPENDENCY_MISSING_LIST", { list });
+  }
+  if (code === "UPLOAD_HASH_MISMATCH" && typeof params.expected === "string" && params.expected.length > 0) {
+    return t("errors.UPLOAD_HASH_MISMATCH_EXPECTED", { expected: params.expected });
+  }
+  return t(`errors.${code}`, { ...params, defaultValue: t("errors.INTERNAL") });
+}
+
 /** Câu thông báo đã dịch cho một lỗi bất kỳ. */
 export function errorMessage(t: TFunction, error: unknown): string {
   if (error instanceof ApiError) {
-    return t(`errors.${error.code}`, { ...error.params, defaultValue: t("errors.INTERNAL") });
+    return formatApiError(t, error.code, error.params);
+  }
+  if (error && typeof error === "object" && "code" in error && typeof error.code === "string") {
+    const params = "params" in error && error.params && typeof error.params === "object"
+      ? (error.params as Record<string, unknown>)
+      : {};
+    return formatApiError(t, error.code, params);
   }
   return t("errors.INTERNAL");
 }

@@ -6,7 +6,7 @@ import { useNavigate } from "react-router";
 
 import { api, errorMessage, type ImportServer, type Loader } from "../../api/client";
 import { Button, Card, Facts, Field, Notice, PageHeader, Select, Stack, Steps, TextInput } from "../../ui";
-import { nameError } from "./form";
+import { isModLoader, MOD_LOADERS, nameError, STANDARD_LOADERS } from "./form";
 import { JobProgressView } from "./JobProgressView";
 import { importReady, importRequest, type ImportChoice } from "./importForm";
 
@@ -99,34 +99,46 @@ function FolderStep({ choice, update, inspect }: FolderStepProps) {
         </Button>
       </Stack>
       {inspect.isError && <Notice tone="danger">{errorMessage(t, inspect.error)}</Notice>}
-      {found && (
-        <Facts
-          items={[
-            { label: t("wizard.loader"), value: found.loader ? t(`loaders.${found.loader}`) : t("wizard.importUnknown") },
-            { label: t("wizard.version"), value: found.minecraft ?? t("wizard.importUnknown") },
-            { label: t("wizard.importJar"), value: found.jar ? <code>{found.jar}</code> : t("wizard.importUnknown") },
-          ]}
-        />
-      )}
-      {found?.has_mods && <Notice tone="danger">{t("errors.MODS_NOT_SUPPORTED")}</Notice>}
-      {found && !found.has_mods && !found.jar && <Notice tone="danger">{t("wizard.importNoJar")}</Notice>}
-      {found && !found.has_mods && found.jar && !found.loader && (
-        <Field label={t("wizard.importPickLoader")}>
-          <Select value={choice.loader} onChange={(e) => update({ loader: e.target.value as Loader | "" })}>
-            <option value="">—</option>
-            {(["paper", "purpur", "vanilla"] as const).map((loader) => (
-              <option key={loader} value={loader}>
-                {t(`loaders.${loader}`)}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      )}
-      {found && !found.has_mods && found.jar && !found.minecraft && (
-        <Field label={t("wizard.importPickVersion")} hint={t("wizard.importPickVersionHint")}>
-          <TextInput value={choice.minecraft} autoComplete="off" onChange={(e) => update({ minecraft: e.target.value })} />
-        </Field>
-      )}
+      {found && (() => {
+        const effectiveLoader = (found.loader ?? choice.loader) as Loader | "";
+        const hasLaunch = Boolean(found.jar) || found.loader === "forge" || found.loader === "neoforge";
+        const modsBlocked = found.has_mods && effectiveLoader !== "" && !isModLoader(effectiveLoader);
+        return (
+          <>
+            <Facts
+              items={[
+                { label: t("wizard.loader"), value: found.loader ? t(`loaders.${found.loader}`) : t("wizard.importUnknown") },
+                ...(found.loader_version ? [{ label: t("wizard.loaderVersion"), value: found.loader_version }] : []),
+                { label: t("wizard.version"), value: found.minecraft ?? t("wizard.importUnknown") },
+                {
+                  label: t("wizard.importJar"),
+                  value: found.jar ? <code>{found.jar}</code> : hasLaunch ? t("wizard.importArgsFile") : t("wizard.importUnknown"),
+                },
+              ]}
+            />
+            {modsBlocked && <Notice tone="danger">{t("errors.MODS_NOT_SUPPORTED")}</Notice>}
+            {!hasLaunch && <Notice tone="danger">{t("wizard.importNoJar")}</Notice>}
+            {found.ignored_jvm_args && <Notice tone="warning">{t("wizard.importIgnoredJvmArgs")}</Notice>}
+            {hasLaunch && !found.loader && (
+              <Field label={t("wizard.importPickLoader")}>
+                <Select value={choice.loader} onChange={(e) => update({ loader: e.target.value as Loader | "" })}>
+                  <option value="">—</option>
+                  {[...STANDARD_LOADERS, ...MOD_LOADERS].map((loader) => (
+                    <option key={loader} value={loader}>
+                      {t(`loaders.${loader}`)}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            )}
+            {hasLaunch && !found.minecraft && (
+              <Field label={t("wizard.importPickVersion")} hint={t("wizard.importPickVersionHint")}>
+                <TextInput value={choice.minecraft} autoComplete="off" onChange={(e) => update({ minecraft: e.target.value })} />
+              </Field>
+            )}
+          </>
+        );
+      })()}
     </>
   );
 }

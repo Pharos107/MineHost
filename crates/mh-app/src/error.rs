@@ -52,15 +52,26 @@ macro_rules! from_coded {
 
 from_coded!(
     StoreError,
-    ProviderError,
     JavaError,
-    NetError,
     PlatformError,
     InvalidValue,
     RuntimeError,
     BackupError,
     PlayerCommandError,
 );
+
+// Giữ tham số như `retry_after_s` của `UPSTREAM_RATE_LIMITED` để giao diện dịch được.
+impl From<NetError> for AppError {
+    fn from(err: NetError) -> Self {
+        Self::new(err.code(), err.to_string()).with_params(err.params())
+    }
+}
+
+impl From<ProviderError> for AppError {
+    fn from(err: ProviderError) -> Self {
+        Self::new(err.code(), err.to_string()).with_params(err.params())
+    }
+}
 
 impl From<SupervisorError> for AppError {
     fn from(err: SupervisorError) -> Self {

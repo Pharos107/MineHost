@@ -21,7 +21,12 @@ vi.mock("../../api/ws", () => ({
 }));
 
 const runningJob: Job = { id: 7, kind: "create_server", state: "running", server_id: "01JB", started_at: "2026-10-27T00:00:00Z" };
-const system = { memory_total_bytes: 16 * GB, memory_available_bytes: 10 * GB, suggested_memory_mb: { min: 1024, max: 4096 } };
+const system = {
+  memory_total_bytes: 16 * GB,
+  memory_available_bytes: 10 * GB,
+  suggested_memory_mb: { min: 1024, max: 4096 },
+  suggested_modpack_memory_mb: { min: 1024, max: 8192 },
+};
 const versions = ["1.21.4", "1.21.3", "1.21.1", "1.20.6", "1.20.4", "1.19.4"].map((id) => ({ id, release_time: "" }));
 
 function mockApi() {
@@ -29,6 +34,13 @@ function mockApi() {
     if (url === "/api/v1/catalog/paper/versions") return Response.json(versions);
     // Purpur chưa có 1.21.4 trong dữ liệu giả: wizard phải lấy bản mới nhất của chính Purpur.
     if (url === "/api/v1/catalog/purpur/versions") return Response.json(versions.slice(1));
+    if (url === "/api/v1/catalog/fabric/versions") return Response.json(versions);
+    if (url === "/api/v1/catalog/fabric/1.21.4/loader-versions") {
+      return Response.json([
+        { version: "0.16.9", stable: true },
+        { version: "0.17.0-beta.1", stable: false },
+      ]);
+    }
     if (url === "/api/v1/system") return Response.json(system);
     if (url === "/api/v1/servers" && init?.method === "POST") return Response.json({ server_id: "01JB", job_id: 7 }, { status: 202 });
     if (url === "/api/v1/jobs/7") return Response.json(runningJob);
@@ -45,6 +57,7 @@ function renderWizard() {
       <MemoryRouter initialEntries={["/new"]}>
         <Routes>
           <Route path="/new" element={<CreateServerPage />} />
+          <Route path="/new/modpack" element={<p>trang modpack</p>} />
           <Route path="/servers/:id" element={<p>trang chi tiết</p>} />
         </Routes>
       </MemoryRouter>
@@ -112,6 +125,35 @@ describe("CreateServerPage", () => {
     expect(await screen.findByText("trang chi tiết")).toBeTruthy();
   });
 
+  it("chọn Server có mod hiện đủ 4 loader theo thứ tự và chọn được bản loader ở Nâng cao", async () => {
+    const fetchMock = mockApi();
+    const user = userEvent.setup();
+    renderWizard();
+
+    await user.click(screen.getByRole("radio", { name: /^Server có mod/ }));
+    const loaderRadios = screen
+      .getAllByRole("radio")
+      .map((el) => (el as HTMLInputElement).value)
+      .filter((v) => ["fabric", "neoforge", "forge", "quilt"].includes(v));
+    expect(loaderRadios).toEqual(["fabric", "neoforge", "forge", "quilt"]);
+
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await screen.findByRole("combobox", { name: "Phiên bản Minecraft" });
+    await user.click(screen.getByRole("button", { name: "Nâng cao" }));
+    const loaderSelect = await screen.findByRole("combobox", { name: "Phiên bản mod loader" });
+    expect(loaderSelect).toHaveProperty("value", "0.16.9");
+    await user.selectOptions(loaderSelect, "0.17.0-beta.1");
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await user.click(screen.getByRole("button", { name: "Tạo server" }));
+
+    const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
+    expect(JSON.parse(String(post?.[1]?.body))).toMatchObject({
+      loader: "fabric",
+      minecraft: "1.21.4",
+      loader_version: "0.17.0-beta.1",
+    });
+  });
+
   it("Job lỗi thì báo lỗi đã dịch và quay lại được bước cuối", async () => {
     mockApi();
     const user = userEvent.setup();
@@ -126,5 +168,16 @@ describe("CreateServerPage", () => {
     expect(await screen.findByText("Không kết nối được Internet. Kiểm tra mạng rồi thử lại.")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Quay lại" }));
     expect(screen.getByRole("textbox", { name: "Tên server" })).toHaveProperty("value", "Server của tôi");
+  });
+
+  it("chọn Từ modpack và bấm Tiếp thì chuyển sang /new/modpack", async () => {
+    mockApi();
+    const user = userEvent.setup();
+    renderWizard();
+    const modpackRadio = screen.getByRole("radio", { name: /^Từ modpack/ });
+    expect(modpackRadio).toHaveProperty("disabled", false);
+    await user.click(modpackRadio);
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    expect(await screen.findByText("trang modpack")).toBeTruthy();
   });
 });

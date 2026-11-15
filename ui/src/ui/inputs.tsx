@@ -29,10 +29,11 @@ interface SearchInputProps {
   onChange: (value: string) => void;
   /** Đã dịch; dùng làm cả placeholder và nhãn cho trình đọc màn hình. */
   label: string;
+  autoFocus?: boolean;
 }
 
 /** Ô tìm kiếm có kính lúp, dùng chung cho mọi danh sách. */
-export function SearchInput({ value, onChange, label }: SearchInputProps) {
+export function SearchInput({ value, onChange, label, autoFocus }: SearchInputProps) {
   return (
     <span className={styles.searchWrap}>
       <Search className={styles.searchIcon} size={16} aria-hidden />
@@ -42,6 +43,7 @@ export function SearchInput({ value, onChange, label }: SearchInputProps) {
         value={value}
         placeholder={label}
         aria-label={label}
+        data-autofocus={autoFocus || undefined}
         onChange={(e) => onChange(e.target.value)}
       />
     </span>

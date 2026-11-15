@@ -16,6 +16,7 @@ fn fake_mc(args: &[&str]) -> ProcessSpec {
         program: PathBuf::from(env!("CARGO_BIN_EXE_fake-mc")),
         args: args.iter().map(|a| (*a).to_owned()).collect(),
         work_dir: std::env::temp_dir(),
+        limits: None,
     }
 }
 

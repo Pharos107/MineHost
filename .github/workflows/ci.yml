@@ -149,8 +149,8 @@ jobs:
             .minehost-e2e/cache
           key: e2e-${{ runner.os }}-paper-1.21.4-java-21-v1
       - name: Test tích hợp
-        run: cargo test -p minehost --test paper --locked -- --ignored --test-threads=1
-        timeout-minutes: 40
+        run: cargo test -p minehost --test paper --test loaders --locked -- --ignored --test-threads=1
+        timeout-minutes: 60
 
   checks:
     name: Kiểm tra repo

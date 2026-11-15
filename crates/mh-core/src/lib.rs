@@ -6,12 +6,17 @@
 //! Mọi kiểu domain chỉ tạo được qua hàm `parse`/`new` có kiểm tra, kể cả khi đọc bằng serde.
 
 pub mod backup_schedule;
+pub mod cf_manifest;
 pub mod console;
 pub mod crash;
+pub mod curseforge;
 pub mod error;
 pub mod ids;
 pub mod instance;
+pub mod launch;
 pub mod memory;
+pub mod mod_meta;
+pub mod mrpack;
 pub mod players;
 pub mod properties;
 pub mod schedule;
@@ -19,12 +24,26 @@ pub mod state;
 pub mod version;
 
 pub use backup_schedule::{BackupSchedule, check_keep, next_run};
+pub use cf_manifest::{
+    CfManifest, CfManifestError, CfManifestFile, CfMinecraft, CfModLoader, CfRuntime,
+    validate_cf_overrides,
+};
 pub use console::{ConsoleLine, ConsoleStream};
 pub use crash::{CrashHint, diagnose};
+pub use curseforge::CurseforgeKey;
 pub use error::{ErrorCode, InvalidValue};
 pub use ids::{GamePort, ServerId, ServerName};
 pub use instance::{InstanceError, InstanceSpec};
-pub use memory::{MemoryLimits, suggest_memory_mb};
+pub use launch::{ArgsFilePath, ArgsOs, Launch};
+pub use memory::{MemoryLimits, memory_limit_mb, suggest_memory_mb, suggest_modpack_memory_mb};
+pub use mod_meta::{
+    ModDependency, ModMeta, ModMetaError, ModMetaFormat, ModSide, matches_version_req,
+    parse_mod_meta,
+};
+pub use mrpack::{
+    MrpackDependencies, MrpackEnv, MrpackEnvSupport, MrpackError, MrpackFile, MrpackHashes,
+    MrpackIndex, MrpackRuntime, validate_mrpack_path,
+};
 pub use players::{
     FreezeAttribute, PlayerAction, PlayerCommandError, PlayerLogEvent, PlayerName,
     UnsupportedVersion, command, freeze_attributes, offline_uuid, parse_log_line,
@@ -32,7 +51,10 @@ pub use players::{
 pub use properties::Properties;
 pub use schedule::{DailyTime, MAX_RESTART_TIMES, normalize_restart_times, seconds_until_next};
 pub use state::{ServerEvent, ServerState, transition};
-pub use version::{LoaderKind, McVersion};
+pub use version::{
+    ContentKind, JAVA_MAJORS, LoaderKind, LoaderVersion, McVersion, is_supported_java_major,
+    mojang_java_major, neoforge_minecraft,
+};
 
 /// Tên sản phẩm hiển thị cho người dùng.
 pub const PRODUCT_NAME: &str = "MineHost";

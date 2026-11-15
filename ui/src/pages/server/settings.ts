@@ -2,6 +2,12 @@ import type { Server, ServerPatch } from "../../api/client";
 import { memoryFor } from "../../memory";
 import { nameError, portError } from "../create/form";
 
+/** Bản Java hiện trong ô chọn: danh sách backend cho phép, cộng bản server đang dùng nếu nằm ngoài. */
+export function javaChoices(supported: readonly number[], current: number): number[] {
+  const all = current > 0 && !supported.includes(current) ? [...supported, current] : [...supported];
+  return all.sort((a, b) => a - b);
+}
+
 /** Giá trị đang sửa trong tab Cài đặt server; `port` là chữ để gõ dở vẫn giữ được. */
 export interface SettingsForm {
   name: string;
@@ -11,6 +17,7 @@ export interface SettingsForm {
   restartOnCrash: boolean;
   /** Giờ khởi động lại hằng ngày `HH:MM`; ô vừa thêm còn trống thì là chuỗi rỗng. */
   restartAt: string[];
+  javaMajor: number;
 }
 
 /** Tối đa số mốc mỗi ngày, giống backend (spec P2, mục 4.1). */
@@ -25,6 +32,7 @@ export function settingsFrom(server: Server): SettingsForm {
     autostart: server.autostart ?? false,
     restartOnCrash: server.restart_on_crash ?? true,
     restartAt: server.restart_at ?? [],
+    javaMajor: server.java_major ?? server.java_recommended ?? 0,
   };
 }
 
@@ -60,5 +68,6 @@ export function settingsPatch(server: Server, form: SettingsForm): ServerPatch {
   if (form.autostart !== before.autostart) patch.autostart = form.autostart;
   if (form.restartOnCrash !== before.restartOnCrash) patch.restart_on_crash = form.restartOnCrash;
   if (!sameTimes(form.restartAt, before.restartAt)) patch.restart_at = form.restartAt;
+  if (form.javaMajor !== before.javaMajor) patch.java_major = form.javaMajor;
   return patch;
 }

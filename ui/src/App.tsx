@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import { useServersLive } from "./api/live";
 import { BareLayout, SidebarLayout, TopLayout } from "./components/AppLayout";
 import { AuthGate } from "./components/AuthGate";
+import { CreateModpackPage } from "./pages/create/CreateModpackPage";
 import { CreateServerPage } from "./pages/create/CreateServerPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { HomePage } from "./pages/home/HomePage";
@@ -14,6 +15,7 @@ import { ConsoleRoute, GameSettingsRoute, ServerSettingsRoute } from "./pages/se
 import { FileEditorPage } from "./pages/server/files/FileEditorPage";
 import { FilesPage } from "./pages/server/files/FilesPage";
 import { BackupsPage } from "./pages/server/backups/BackupsPage";
+import { ContentPage } from "./pages/server/content/ContentPage";
 import { OverviewPage } from "./pages/server/overview/OverviewPage";
 import { ServerLayout } from "./pages/server/ServerLayout";
 import { SettingsPage } from "./pages/settings/SettingsPage";
@@ -38,6 +40,14 @@ export function AppRoutes() {
           </TopLayout>
         }
       />
+      <Route
+        path="/new/modpack"
+        element={
+          <TopLayout>
+            <CreateModpackPage />
+          </TopLayout>
+        }
+      />
       <Route element={<SidebarLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/servers" element={<ServerListPage />} />
@@ -46,6 +56,7 @@ export function AppRoutes() {
         <Route path="/servers/:id" element={<ServerLayout />}>
           <Route index element={<OverviewPage />} />
           <Route path="console" element={<ConsoleRoute />} />
+          <Route path="content" element={<ContentPage />} />
           <Route path="files" element={<FilesPage />} />
           <Route path="files/edit" element={<FileEditorPage />} />
           <Route path="players" element={<PlayersPage />} />

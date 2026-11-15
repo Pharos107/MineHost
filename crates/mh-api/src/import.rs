@@ -7,7 +7,7 @@ use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use mh_app::{App, Detected, ImportRequest};
-use mh_core::{LoaderKind, McVersion, ServerName};
+use mh_core::{McVersion, ServerName};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -22,22 +22,27 @@ pub struct InspectBody {
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct DetectedDto {
-    /// `paper`, `purpur`, `vanilla`; không nhận ra thì `null`, người dùng chọn tay.
+    /// `paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge`, `neoforge`; không nhận ra thì `null`.
     pub loader: Option<String>,
+    pub loader_version: Option<String>,
     pub minecraft: Option<String>,
-    /// Jar sẽ chạy. `null` nghĩa là thư mục không có jar nào, không nhập được.
+    /// Jar sẽ chạy. `null` nghĩa là không có jar (trừ Forge/NeoForge dùng `args_file`).
     pub jar: Option<String>,
-    /// Có `mods/`: chưa hỗ trợ ở bản này.
+    /// Có `mods/`: cần chọn mod loader để nhập.
     pub has_mods: bool,
+    /// Có `user_jvm_args.txt` chứa cờ ngoài chú thích mà MineHost bỏ qua.
+    pub ignored_jvm_args: bool,
 }
 
 impl From<Detected> for DetectedDto {
     fn from(found: Detected) -> Self {
         Self {
             loader: found.loader.map(|l| l.to_string()),
+            loader_version: found.loader_version.map(|v| v.as_str().to_owned()),
             minecraft: found.minecraft.map(|v| v.to_string()),
             jar: found.jar.map(|j| j.as_str().to_owned()),
             has_mods: found.has_mods,
+            ignored_jvm_args: found.ignored_jvm_args,
         }
     }
 }
@@ -81,9 +86,8 @@ pub async fn import(
         loader: body
             .loader
             .as_deref()
-            .map(LoaderKind::parse)
-            .transpose()
-            .map_err(|_| ApiError::invalid("loader"))?,
+            .map(crate::servers::parse_loader)
+            .transpose()?,
         minecraft: body
             .minecraft
             .as_deref()

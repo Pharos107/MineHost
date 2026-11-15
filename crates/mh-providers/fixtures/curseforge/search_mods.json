@@ -1,0 +1,112 @@
+{
+  "data": [
+    {
+      "id": 238222,
+      "gameId": 432,
+      "name": "Just Enough Items (JEI)",
+      "slug": "jei",
+      "links": {
+        "websiteUrl": "https://www.curseforge.com/minecraft/mc-mods/jei",
+        "wikiUrl": "https://github.com/mezz/JustEnoughItems/wiki",
+        "issuesUrl": "https://github.com/mezz/JustEnoughItems/issues",
+        "sourceUrl": "https://github.com/mezz/JustEnoughItems"
+      },
+      "summary": "View Items and Recipes",
+      "status": 4,
+      "downloadCount": 250000000.0,
+      "isFeatured": false,
+      "primaryCategoryId": 423,
+      "categories": [
+        {
+          "id": 423,
+          "gameId": 432,
+          "name": "Map and Information",
+          "slug": "map-information",
+          "url": "https://www.curseforge.com/minecraft/mc-mods/map-information",
+          "iconUrl": "https://media.forgecdn.net/category-icons/423.png",
+          "dateModified": "2019-03-12T14:48:00Z",
+          "isClass": false,
+          "classId": 6,
+          "parentCategoryId": 6,
+          "displayIndex": 0
+        }
+      ],
+      "classId": 6,
+      "authors": [
+        {
+          "id": 25000,
+          "name": "mezz",
+          "url": "https://www.curseforge.com/members/mezz"
+        }
+      ],
+      "logo": {
+        "id": 101010,
+        "modId": 238222,
+        "title": "jei-logo.png",
+        "description": "JEI Logo",
+        "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/101/010/256/256/638000000000000000.png",
+        "url": "https://media.forgecdn.net/avatars/101/010/638000000000000000.png"
+      },
+      "screenshots": [],
+      "mainFileId": 5600002,
+      "latestFiles": [],
+      "dateCreated": "2015-11-11T00:00:00Z",
+      "dateModified": "2024-08-10T12:00:00Z",
+      "dateReleased": "2015-11-11T00:00:00Z",
+      "allowModDistribution": true,
+      "gamePopularityRank": 1,
+      "isAvailable": true,
+      "thumbsUpCount": 45000
+    },
+    {
+      "id": 306612,
+      "gameId": 432,
+      "name": "Fabric API",
+      "slug": "fabric-api",
+      "links": {
+        "websiteUrl": "https://www.curseforge.com/minecraft/mc-mods/fabric-api",
+        "wikiUrl": "",
+        "issuesUrl": "https://github.com/FabricMC/fabric/issues",
+        "sourceUrl": "https://github.com/FabricMC/fabric"
+      },
+      "summary": "Lightweight and modular API providing common hooks and intercompatibility measures.",
+      "status": 4,
+      "downloadCount": 180000000,
+      "isFeatured": false,
+      "primaryCategoryId": 421,
+      "categories": [],
+      "classId": 6,
+      "authors": [
+        {
+          "id": 30001,
+          "name": "modmuss50",
+          "url": "https://www.curseforge.com/members/modmuss50"
+        }
+      ],
+      "logo": {
+        "id": 202020,
+        "modId": 306612,
+        "title": "fabric-api.png",
+        "description": "Fabric API Logo",
+        "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/202/020/256/256/638000000000000001.png",
+        "url": "https://media.forgecdn.net/avatars/202/020/638000000000000001.png"
+      },
+      "screenshots": [],
+      "mainFileId": 5600010,
+      "latestFiles": [],
+      "dateCreated": "2018-12-10T00:00:00Z",
+      "dateModified": "2024-08-12T10:00:00Z",
+      "dateReleased": "2018-12-10T00:00:00Z",
+      "allowModDistribution": true,
+      "gamePopularityRank": 2,
+      "isAvailable": true,
+      "thumbsUpCount": 32000
+    }
+  ],
+  "pagination": {
+    "index": 0,
+    "pageSize": 20,
+    "resultCount": 2,
+    "totalCount": 2
+  }
+}

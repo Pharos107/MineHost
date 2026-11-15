@@ -6,7 +6,9 @@
 mod auth;
 mod backup;
 mod backup_schedule;
+pub mod content;
 mod create;
+mod curseforge;
 #[cfg(feature = "e2e")]
 pub mod e2e;
 mod error;
@@ -15,7 +17,9 @@ mod import;
 pub mod jobs;
 mod launcher;
 mod lifecycle;
+mod loader_install;
 mod metrics;
+mod modpack;
 mod players;
 mod restart_schedule;
 mod restore;
@@ -31,19 +35,26 @@ use mh_java::JavaManager;
 use mh_net::{FreeSpaceFn, HttpClient, NetConfig};
 use mh_platform::{DataDirs, SystemInfo};
 use mh_runtime::ProcessRuntime;
-use mh_store::ServerStore;
+use mh_store::{ContentScanner, ServerStore};
 use mh_supervisor::SupervisorConfig;
 
 pub use auth::AuthStore;
 pub use backup::{BackupKind, BackupMeta, BackupRequest, BackupStarted};
 pub use backup_schedule::{BackupCandidate, BackupPlanner};
+pub use content::{
+    CatalogSource, ClientOnlyMod, ContentCatalog, ContentInstallPlan, ContentList,
+    CurseforgeCatalog, MissingDependency, ModrinthCatalog, NoContentCatalog, PlannedContent,
+    PreflightReport, VersionMismatch, WrongLoaderMod,
+};
 pub use create::{CreateRequest, Created};
+pub use curseforge::{CurseforgeKeySource, CurseforgeStatus};
 pub use error::AppError;
 pub use files::{FileEntry, FileKind, TEXT_LIMIT, TextFile};
 pub use import::{Detected, ImportRequest};
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};
 pub use metrics::{MetricSample, MetricsConfig, MetricsEvent, ServerMetrics};
 pub use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
+pub use modpack::{ModpackRequest, ModpackSourceInput, ModpackSummary};
 pub use players::{
     ActionDone, MojangDirectory, NoDirectory, PlayerDirectory, PlayerProfile, PlayerRequest,
     PlayerView, PlayersView,
@@ -95,8 +106,8 @@ pub enum AppEvent {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Installing {
     pub name: ServerName,
-    pub loader: LoaderKind,
-    pub minecraft: McVersion,
+    pub loader: Option<LoaderKind>,
+    pub minecraft: Option<McVersion>,
     pub port: GamePort,
     pub job_id: Option<JobId>,
 }
@@ -109,7 +120,7 @@ pub struct App {
     catalog: Arc<dyn ServerCatalog>,
     java: Arc<dyn JavaSource>,
     runtime: Arc<ProcessRuntime>,
-    jobs: JobRunner,
+    jobs: Arc<JobRunner>,
     supervisors: Mutex<HashMap<ServerId, SupervisorHandle>>,
     installing: Mutex<HashMap<ServerId, Installing>>,
     port_free: PortProbe,
@@ -121,6 +132,15 @@ pub struct App {
     metrics_hub: metrics::MetricsHub,
     online: Arc<players::OnlinePlayers>,
     player_directory: Arc<dyn PlayerDirectory>,
+    http: Option<Arc<HttpClient>>,
+    content_catalog: Arc<dyn ContentCatalog>,
+    curseforge_catalog: Option<Arc<dyn ContentCatalog>>,
+    content_scanner: Arc<ContentScanner>,
+    content_locks: Mutex<HashMap<ServerId, Arc<tokio::sync::Mutex<()>>>>,
+    /// Kết quả "thiếu dependency" của lần `preflight` gần nhất, để `ServerView` không phải quét jar.
+    preflight_missing: Mutex<HashMap<ServerId, bool>>,
+    curseforge_builtin: Option<mh_core::CurseforgeKey>,
+    secrets_lock: Mutex<()>,
     shutdown: tokio::sync::Notify,
     events: tokio::sync::broadcast::Sender<AppEvent>,
 }
@@ -150,7 +170,11 @@ impl App {
             save_flush_timeout: backup::DEFAULT_SAVE_FLUSH_TIMEOUT,
             metrics: MetricsConfig::default(),
         };
-        Ok(Self::with_deps(dirs, deps)?.with_players(Arc::new(MojangDirectory::new(http))))
+        let mut app = Self::with_deps(dirs, deps)?
+            .with_players(Arc::new(MojangDirectory::new(Arc::clone(&http))))
+            .with_content(Arc::new(ModrinthCatalog::new(Arc::clone(&http))));
+        app.http = Some(http);
+        Ok(app)
     }
 
     pub fn with_deps(dirs: DataDirs, deps: AppDeps) -> Result<Self, AppError> {
@@ -166,7 +190,7 @@ impl App {
             catalog: deps.catalog,
             java: deps.java,
             runtime: Arc::new(ProcessRuntime::new()?),
-            jobs: JobRunner::new(MAX_DOWNLOADS),
+            jobs: Arc::new(JobRunner::new(MAX_DOWNLOADS)),
             supervisors: Mutex::new(HashMap::new()),
             installing: Mutex::new(HashMap::new()),
             port_free: deps.port_free,
@@ -178,6 +202,14 @@ impl App {
             metrics_hub: metrics::MetricsHub::new(),
             online: Arc::new(players::OnlinePlayers::new()),
             player_directory: Arc::new(NoDirectory),
+            http: None,
+            content_catalog: Arc::new(NoContentCatalog),
+            curseforge_catalog: None,
+            content_scanner: Arc::new(ContentScanner::new()),
+            content_locks: Mutex::new(HashMap::new()),
+            preflight_missing: Mutex::new(HashMap::new()),
+            curseforge_builtin: None,
+            secrets_lock: Mutex::new(()),
             shutdown: tokio::sync::Notify::new(),
             events: tokio::sync::broadcast::channel(256).0,
         })
@@ -205,11 +237,24 @@ impl App {
         mh_core::suggest_memory_mb(self.total_memory_mb)
     }
 
+    pub fn suggested_modpack_memory(&self) -> mh_core::MemoryLimits {
+        mh_core::suggest_modpack_memory_mb(self.total_memory_mb)
+    }
+
     pub async fn catalog_versions(
         &self,
         loader: LoaderKind,
     ) -> Result<Vec<CatalogVersion>, AppError> {
         self.catalog.versions(loader).await
+    }
+
+    /// Bản mod loader cài được cho `minecraft`, bản đề xuất đứng đầu (spec P3, mục 5.8).
+    pub async fn loader_versions(
+        &self,
+        loader: LoaderKind,
+        minecraft: &mh_core::McVersion,
+    ) -> Result<Vec<sources::LoaderRelease>, AppError> {
+        self.catalog.loader_versions(loader, minecraft).await
     }
 
     pub fn subscribe_events(&self) -> tokio::sync::broadcast::Receiver<AppEvent> {

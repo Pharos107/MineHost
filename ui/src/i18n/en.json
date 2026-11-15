@@ -14,6 +14,10 @@
     "allServers": "All servers",
     "overview": "Overview",
     "console": "Console",
+    "content": {
+      "mods": "Mods",
+      "plugins": "Plugins"
+    },
     "files": "Files",
     "players": "Players",
     "backups": "Backups",
@@ -59,7 +63,11 @@
   "loaders": {
     "paper": "Paper",
     "vanilla": "Vanilla",
-    "purpur": "Purpur"
+    "purpur": "Purpur",
+    "fabric": "Fabric",
+    "quilt": "Quilt",
+    "forge": "Forge",
+    "neoforge": "NeoForge"
   },
   "servers": {
     "heading": "Your servers",
@@ -97,8 +105,22 @@
       "importName": "Name"
     },
     "loader": "Choose a server type",
+    "kind": "Server kind",
+    "kindStandard": "Standard server",
+    "kindStandardDescription": "Play vanilla or add lightweight plugins.",
+    "kindModded": "Modded server",
+    "kindModdedDescription": "Pick individual mods with Fabric, NeoForge, Forge or Quilt.",
+    "kindModpack": "From a modpack",
+    "kindModpackDescription": "Install a ready-made modpack from Modrinth or CurseForge.",
+    "soon": "Coming soon",
     "paperDescription": "Fast, supports plugins.",
     "vanillaDescription": "The original server from Mojang, no plugins.",
+    "fabricDescription": "Lightweight, updates quickly, with a large library of modern mods.",
+    "neoforgeDescription": "Modern fork of Forge for recent Minecraft versions, used by many large mods.",
+    "forgeDescription": "Long-standing loader required by classic mods and older Minecraft versions.",
+    "quiltDescription": "Forked from Fabric and compatible with most Fabric mods.",
+    "loaderVersion": "Mod loader version",
+    "loaderVersionHint": "Defaults to the recommended stable version for the selected Minecraft version.",
     "recommended": "Recommended",
     "version": "Minecraft version",
     "versionHint": "Your friends need this exact version to join.",
@@ -133,7 +155,9 @@
     "importInspect": "Check folder",
     "importUnknown": "Not recognized",
     "importJar": "Jar file",
+    "importArgsFile": "Args file (args_file)",
     "importNoJar": "No .jar file found in this folder.",
+    "importIgnoredJvmArgs": "This folder contains user_jvm_args.txt. MineHost ignores that file to manage memory safely.",
     "importPickLoader": "Choose the server type",
     "importPickVersion": "Minecraft version",
     "importPickVersionHint": "For example 1.21.4.",
@@ -155,7 +179,13 @@
       "before_restore": "Backing up the current world",
       "unpack": "Unpacking the backup",
       "swap": "Replacing the world",
-      "copy_files": "Copying server folder"
+      "copy_files": "Copying server folder",
+      "run_installer": "Installing {{loader}}",
+      "resolve_content": "Resolving mod dependencies",
+      "download_content": "Downloading {{name}}",
+      "download_modpack": "Downloading modpack {{name}}",
+      "download_pack_file": "Downloading pack file ({{index}}/{{total}}): {{name}}",
+      "apply_overrides": "Applying modpack overrides"
     }
   },
   "server": {
@@ -186,6 +216,7 @@
     "PORT_IN_USE": "Another program is using the server's port. Change the port on the Server settings page.",
     "EULA_NOT_ACCEPTED": "Accept the Minecraft EULA, then start the server again.",
     "GAME_ERROR": "The game or a plugin failed. Check the console for details, then try restarting.",
+    "MEMORY_LIMIT": "MineHost stopped the server because it went over its RAM limit. A mod or plugin may be leaking memory; check the console, or give the server more RAM in Server settings.",
     "unknown": "The cause is unknown. Check the console for details."
   },
   "eula": {
@@ -256,7 +287,13 @@
     "restartAtRemove": "Remove {{time}}",
     "restartAtTime": "Restart time {{n}}",
     "restartAtInvalid": "Pick both hour and minute for every time.",
-    "restartAtDuplicate": "Two times are the same."
+    "restartAtDuplicate": "Two times are the same.",
+    "ignoredJvmArgs": "This server folder contains user_jvm_args.txt, which MineHost ignores in favor of the memory setting below.",
+    "java": "Java version",
+    "javaHint": "Defaults to the Java version recommended for this Minecraft version. Change it only if a mod or plugin requires another version.",
+    "javaOption": "Java {{major}}",
+    "javaRecommended": "Java {{major}} (recommended)",
+    "javaWarning": "This Minecraft version normally uses Java {{recommended}}. Picking another version may prevent the server from starting."
   },
   "delete": {
     "title": "Delete server",
@@ -287,7 +324,8 @@
     },
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "morePlayers": "and {{count}} more"
+    "morePlayers": "and {{count}} more",
+    "downloads": "{{value}} downloads"
   },
   "serverState": {
     "installing": "Installing",
@@ -331,7 +369,19 @@
     "FILE_EXISTS": "A file or folder with that name already exists.",
     "BACKUP_PROTECTED": "This backup is protected. Remove the protection before deleting it.",
     "MODS_NOT_SUPPORTED": "This server has mods (a mods folder). Mods are not supported yet; they come in a later version.",
-    "SERVER_NOT_RUNNING": "The server is not running. Start it and try again."
+    "SERVER_NOT_RUNNING": "The server is not running. Start it and try again.",
+    "LOADER_INSTALL_FAILED": "Could not install the mod loader. See the job log for details.",
+    "CONTENT_INCOMPATIBLE": "This mod or plugin has no version for this server type and Minecraft version.",
+    "CONTENT_NOT_FOUND": "This mod, plugin or modpack was not found. It may have been removed from its source.",
+    "DEPENDENCY_MISSING": "Required mods are missing. Install them, then start the server again.",
+    "DEPENDENCY_MISSING_LIST": "Required mods are missing: {{list}}. Install them, then start the server again.",
+    "CURSEFORGE_UNAVAILABLE": "CurseForge is unavailable: there is no API key or the key was rejected. See CurseForge in Settings.",
+    "CURSEFORGE_FILES_PENDING": "Some CurseForge files must be downloaded by hand. Open the Mods page to download and drop them in.",
+    "UPLOAD_HASH_MISMATCH": "The uploaded file does not match the expected file. Download the exact version from the mod page.",
+    "UPLOAD_HASH_MISMATCH_EXPECTED": "The uploaded file does not match the expected hash — need {{expected}}. Download the exact version from the mod page.",
+    "MODPACK_INVALID": "The modpack file is invalid or damaged.",
+    "DOWNLOAD_HOST_NOT_ALLOWED": "A file points to a site that is not allowed, so MineHost did not download it.",
+    "UPSTREAM_RATE_LIMITED": "The source site is rate limiting requests. Try again in {{retry_after_s}} seconds."
   },
   "jobsPage": {
     "description": "What MineHost is doing or just finished, such as creating a server or making a backup.",
@@ -347,9 +397,12 @@
     "cancel": "Cancel",
     "kinds": {
       "create_server": "Create server",
+      "create_modpack": "Install modpack",
       "backup": "Backup",
       "restore": "Restore",
-      "import_server": "Import server"
+      "import_server": "Import server",
+      "install_java": "Install Java",
+      "install_content": "Install mod"
     },
     "states": {
       "running": "Running",
@@ -463,6 +516,16 @@
     "lanNoAddress": "No LAN address could be opened yet. The computer may not be on a LAN, or another program is using the port.",
     "lanUrl": "LAN address",
     "lanDescription": "Let phones and other computers at home open MineHost over the LAN.",
+    "curseforge": "CurseForge",
+    "curseforgeDescription": "Download mods and modpacks from CurseForge.",
+    "curseforgeBuiltin": "Using MineHost's built-in key.",
+    "curseforgeUser": "Using your own key.",
+    "curseforgeNone": "No CurseForge key: this self-built binary does not include a MineHost key, so CurseForge is disabled.",
+    "curseforgeKey": "Personal API key",
+    "curseforgeKeyHint": "Stored privately on this machine and takes priority over MineHost's built-in key.",
+    "curseforgeSave": "Save",
+    "curseforgeRemove": "Remove",
+    "curseforgeSaved": "CurseForge API key saved.",
     "description": "Password, access from other devices at home, and details of the computer running MineHost."
   },
   "backups": {
@@ -601,5 +664,123 @@
     "count": "{{count}} / {{max}}",
     "starting": "Waiting for the server to start",
     "openConsole": "Open console"
+  },
+  "preflight": {
+    "blockingTitle": "Action needed before starting",
+    "warningTitle": "Mod notes before starting",
+    "startAnyway": "Start anyway",
+    "missingItem": "Missing {{id}} {{version}} (required by {{by}})",
+    "missingItemAny": "Missing {{id}} (required by {{by}})",
+    "mismatchItem": "{{by}} needs {{id}} {{version}}, found {{installed}}",
+    "wrongLoaderItem": "{{name}} ({{file}}) is for a different server loader",
+    "pendingItem": "Waiting for manual CurseForge download: {{file}}",
+    "clientOnlyItem": "{{name}} is client-only (can usually be ignored or disabled)"
+  },
+  "content": {
+    "name": "Name",
+    "version": "Version",
+    "source": "Source",
+    "enabled": "Enabled",
+    "toggleLabel": "Enable {{name}}",
+    "clientOnly": "Client only",
+    "sources": {
+      "modrinth": "Modrinth",
+      "curseforge": "CurseForge",
+      "modpack": "Modpack",
+      "manual": "Manual"
+    },
+    "upload": "Upload .jar",
+    "uploadHint": "or drop .jar files here, up to 512 MiB. Only upload files from trusted sources because mods and plugins run arbitrary code.",
+    "uploading": "Uploading {{names}}",
+    "uploaded_one": "Uploaded {{count}} file.",
+    "uploaded_other": "Uploaded {{count}} files.",
+    "uploadInvalid": "The file is not a valid .jar or is damaged.",
+    "pending": {
+      "title_one": "{{count}} CurseForge file requires manual download",
+      "title_other": "{{count}} CurseForge files require manual download",
+      "description": "The author disabled automatic API downloads. Open each page, download the exact version, and drop the files below.",
+      "openPage": "Open download page",
+      "waiting": "Pending",
+      "ready": "Ready",
+      "dropLabel": "Choose CurseForge files",
+      "dropHint": "or drop one or more downloaded .jar files here to verify their SHA-1.",
+      "uploading": "Checking {{names}}",
+      "allDone": "All manual CurseForge files are ready. You can start the server now.",
+      "startWithout": "Start without these mods"
+    },
+    "remove": "Remove",
+    "removeTitle": "Remove {{name}}?",
+    "removeBody": "The file {{file}} is moved to MineHost's trash, so you can get it back later.",
+    "unsupported": "This server type does not support mods or plugins.",
+    "add": "Add",
+    "addDialog": {
+      "sourceLabel": "Source",
+      "sourceModrinth": "Modrinth",
+      "sourceCurseforge": "CurseForge",
+      "curseforgeUnavailableHint": "CurseForge is unavailable because no API key is configured in Settings.",
+      "loadMore": "Load more",
+      "noResults": "No results found",
+      "noResultsHint": "Try a different search matching this server's loader and Minecraft version.",
+      "version": "Version",
+      "planning": "Checking files to install…",
+      "planTitle": "Files to install",
+      "dependencies_one": "Required dependency ({{count}})",
+      "dependencies_other": "Required dependencies ({{count}})",
+      "replacesExisting": "Replaces existing",
+      "manualDownload": "Manual download",
+      "manualDownloadHint": "Some files cannot be downloaded automatically via the API. MineHost will install the remaining files and save the manual downloads for you to fetch from their download pages.",
+      "openDownloadPage": "Open download page",
+      "clientOnlyHint": "Client-only mods are installed disabled; you can turn them on yourself if needed.",
+      "back": "Back",
+      "install": "Install",
+      "failedTitle": "Could not install",
+      "cancelledTitle": "Installation cancelled."
+    },
+    "mods": {
+      "table": "Installed mods",
+      "runningHint": "The server is running: stop it before enabling, disabling, uploading, or removing mods.",
+      "empty": "No mods yet",
+      "emptyHint": "Upload a .jar file above or place one in the server's mods/ folder.",
+      "openPage": "Open mod page",
+      "addTitle": "Add mod",
+      "searchPlaceholder": "Search mods on Modrinth…",
+      "searchPlaceholderCurseforge": "Search mods on CurseForge…",
+      "mainItem": "Selected mod"
+    },
+    "plugins": {
+      "table": "Installed plugins",
+      "runningHint": "The server is running: stop it before enabling, disabling, uploading, or removing plugins.",
+      "empty": "No plugins yet",
+      "emptyHint": "Upload a .jar file above or place one in the server's plugins/ folder.",
+      "openPage": "Open plugin page",
+      "addTitle": "Add plugin",
+      "searchPlaceholder": "Search plugins on Modrinth…",
+      "searchPlaceholderCurseforge": "Search plugins on CurseForge…",
+      "mainItem": "Selected plugin"
+    }
+  },
+  "modpack": {
+    "title": "Create server from modpack",
+    "description": "Search modpacks on Modrinth or upload an existing .mrpack file.",
+    "dropTitle": "Upload modpack file",
+    "dropLabel": "Choose modpack file",
+    "dropHint": "or drop a .mrpack or .zip file here, up to 512 MiB.",
+    "searchTitle": "Search modpacks",
+    "searchPlaceholder": "Search modpacks on Modrinth…",
+    "curseforgeNoKey": "CurseForge is unavailable because no API key is configured in Settings.",
+    "noResults": "No modpacks found",
+    "noResultsHint": "Try a different keyword or upload a .mrpack file above.",
+    "version": "Modpack version",
+    "fileLabel": "Modpack file",
+    "fileSize": "File size",
+    "creatingTitle": "Installing modpack",
+    "creatingDescription": "MineHost is downloading Java, installing the loader, and fetching modpack files.",
+    "doneTitle": "Modpack installed",
+    "doneDescription": "The server is ready. Open the server page to accept the EULA and start it.",
+    "summaryInstalled": "Mods installed",
+    "summarySkippedClient": "Skipped (client-only)",
+    "summaryPendingCf": "Pending CurseForge files",
+    "pendingCfHint": "Some CurseForge files must be downloaded manually on the Mods page before starting the server.",
+    "openServer": "Open server"
   }
 }

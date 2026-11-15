@@ -28,7 +28,7 @@ Bỏ test tích hợp Paper thật (nhanh hơn vài phút mỗi OS) bằng `-f i
 | `ui` | Linux | `npm run lint`, `typecheck`, `npm test` (Vitest), `npm run build` |
 | `rust` | Windows x64, Linux x64, Linux arm64 | `cargo clippy -D warnings`, `cargo test --workspace`, build release. `cargo fmt --check` chỉ trên Linux x64 |
 | `e2e` | Linux | Playwright với binary `minehost` thật ở chế độ e2e (catalog và Java giả, không gọi mạng) |
-| `integration` | Windows x64, Linux x64 | `cargo test -p minehost --test paper -- --ignored`: Paper 1.21.4 và Java 21 thật. Bật mặc định, tắt được bằng input `integration` |
+| `integration` | Windows x64, Linux x64 | `cargo test -p minehost --test paper --test loaders -- --ignored`: Paper, Vanilla, Purpur, Fabric, Quilt, Forge, NeoForge 1.21.4 và Java thật. Bật mặc định, tắt được bằng input `integration` |
 | `checks` | Linux | Giới hạn 500 dòng mỗi file mã nguồn; `ui/src/api/openapi.json` khớp `minehost openapi` |
 | `deny` | Linux | `cargo-deny`: lỗ hổng, giấy phép, nguồn crate |
 
@@ -42,7 +42,7 @@ Bỏ test tích hợp Paper thật (nhanh hơn vài phút mỗi OS) bằng `-f i
 | API | `mh-api` | `oneshot` từng route, WebSocket thật trong process | Không |
 | Giao diện | `ui/src` | Vitest, Testing Library | Không |
 | E2E | `ui/e2e` | Playwright, binary thật ở chế độ e2e ([README của binary](../../crates/minehost/README.md)) | Không |
-| Tích hợp | `crates/minehost/tests/paper.rs` | Paper và Java thật; test đánh dấu `#[ignore]` | Có |
+| Tích hợp | `crates/minehost/tests/paper.rs`, `loaders.rs` | Server, mod loader và Java thật; test đánh dấu `#[ignore]` | Có |
 | Fuzz | `fuzz/` | `cargo-fuzz`, target `safe_root_join` và `backup_restore`; workflow `fuzz.yml` chạy mỗi Chủ nhật, mỗi target 15 phút ([README](../../fuzz/README.md)) | Không |
 
 Quy tắc: test thường không được gọi mạng thật. Test gọi mạng phải đánh dấu `#[ignore]`.

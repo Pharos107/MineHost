@@ -167,6 +167,7 @@ impl Harness {
             name: ServerName::parse("WS").unwrap(),
             loader: LoaderKind::Paper,
             minecraft: McVersion::parse("1.21.4").unwrap(),
+            loader_version: None,
             memory_mb: None,
             port: None,
         };
@@ -183,6 +184,7 @@ impl Harness {
                 name: ServerName::parse(name).unwrap(),
                 loader: LoaderKind::Paper,
                 minecraft: McVersion::parse("1.21.4").unwrap(),
+                loader_version: None,
                 memory_mb: None,
                 port: None,
             })
@@ -311,6 +313,7 @@ async fn job_topic_reports_until_finished() {
         name: ServerName::parse("Job").unwrap(),
         loader: LoaderKind::Paper,
         minecraft: McVersion::parse("1.21.4").unwrap(),
+        loader_version: None,
         memory_mb: None,
         port: None,
     };

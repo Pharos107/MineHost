@@ -8,7 +8,7 @@ use serde::de::DeserializeOwned;
 use sha2::{Digest, Sha256};
 
 use crate::download::digest_hex;
-use crate::{Checksum, NetError};
+use crate::{Checksum, HostAllowlist, NetError};
 
 /// PaperMC yêu cầu User-Agent có thông tin liên hệ; thiếu thì có thể bị chặn.
 pub const USER_AGENT: &str = concat!(
@@ -49,6 +49,12 @@ pub struct Fetched<T> {
     pub value: T,
     pub stale: bool,
 }
+
+/// Số bước chuyển hướng tối đa, bằng mặc định của reqwest.
+const MAX_REDIRECTS: usize = 10;
+
+/// 429 bảo chờ tới mức này thì tự chờ rồi thử lại một lần; lâu hơn thì báo người dùng.
+const MAX_RATE_LIMIT_WAIT_S: u64 = 10;
 
 /// Thân response theo URL, kèm thời điểm tải để tính TTL.
 type MemoryCache = HashMap<String, (Instant, Arc<[u8]>)>;
@@ -106,7 +112,17 @@ impl HttpClient {
         url: &str,
         ttl: Duration,
     ) -> Result<Fetched<T>, NetError> {
-        self.fetch_json(url, ttl, None).await
+        self.fetch_json(url, ttl, None, &[]).await
+    }
+
+    /// Như `get_json`, kèm header bổ sung (ví dụ `x-api-key` cho CurseForge).
+    pub async fn get_json_with_headers<T: DeserializeOwned>(
+        &self,
+        url: &str,
+        ttl: Duration,
+        headers: &[(&str, &str)],
+    ) -> Result<Fetched<T>, NetError> {
+        self.fetch_json(url, ttl, None, headers).await
     }
 
     /// Như `get_json`, thêm kiểm tra hash của thân response (ví dụ `sha1` mà manifest Mojang
@@ -117,7 +133,7 @@ impl HttpClient {
         ttl: Duration,
         checksum: &Checksum,
     ) -> Result<Fetched<T>, NetError> {
-        self.fetch_json(url, ttl, Some(checksum)).await
+        self.fetch_json(url, ttl, Some(checksum), &[]).await
     }
 
     async fn fetch_json<T: DeserializeOwned>(
@@ -125,19 +141,21 @@ impl HttpClient {
         url: &str,
         ttl: Duration,
         checksum: Option<&Checksum>,
+        headers: &[(&str, &str)],
     ) -> Result<Fetched<T>, NetError> {
         let fresh = |value| Fetched {
             value,
             stale: false,
         };
-        if let Some(body) = self.memory_hit(url, ttl) {
+        let key = cache_key(url, headers);
+        if let Some(body) = self.memory_hit(&key, ttl) {
             return decode(url, &body, checksum).map(fresh);
         }
-        let err = match self.fetch_bytes(url).await {
+        let err = match self.fetch_bytes(url, headers).await {
             Ok(body) => {
                 // Kiểm tra trước khi lưu, để dữ liệu hỏng không bao giờ vào cache.
                 let value = decode(url, &body, checksum)?;
-                self.remember(url, body).await;
+                self.remember(&key, url, body).await;
                 return Ok(fresh(value));
             }
             Err(err) => err,
@@ -145,7 +163,7 @@ impl HttpClient {
         if !err.is_network() {
             return Err(err);
         }
-        let Ok(body) = tokio::fs::read(self.meta_path(url)).await else {
+        let Ok(body) = tokio::fs::read(self.meta_path(&key)).await else {
             return Err(err);
         };
         tracing::warn!(url, error = %err, "mạng lỗi, dùng bản lưu lần trước");
@@ -156,7 +174,7 @@ impl HttpClient {
     ///
     /// Dừng khi thân dài hơn `max_bytes`, không giữ phần vượt quá.
     pub async fn get_bytes(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, NetError> {
-        let mut resp = self.send_with(&self.direct, url).await?;
+        let mut resp = self.send_with(url, false, || self.direct.get(url)).await?;
         if resp
             .content_length()
             .is_some_and(|len| len > max_bytes as u64)
@@ -166,20 +184,93 @@ impl HttpClient {
         read_capped(url, &mut resp, max_bytes).await
     }
 
+    /// POST JSON, không cache vì thân request thay đổi theo truy vấn; vẫn giữ User-Agent chung,
+    /// retry khi lỗi tạm thời và xử lý 429 như GET (spec P3, mục 5.3).
+    pub async fn post_json<B: serde::Serialize, T: DeserializeOwned>(
+        &self,
+        url: &str,
+        body: &B,
+    ) -> Result<T, NetError> {
+        self.post_json_with_headers(url, body, &[]).await
+    }
+
+    /// Như `post_json`, kèm header bổ sung.
+    pub async fn post_json_with_headers<B: serde::Serialize, T: DeserializeOwned>(
+        &self,
+        url: &str,
+        body: &B,
+        headers: &[(&str, &str)],
+    ) -> Result<T, NetError> {
+        let payload = serde_json::to_vec(body).map_err(|e| unavailable(url, &e))?;
+        let resp = self
+            .send_with(url, false, || {
+                apply_headers(
+                    self.http
+                        .post(url)
+                        .header(reqwest::header::CONTENT_TYPE, "application/json")
+                        .body(payload.clone()),
+                    headers,
+                )
+            })
+            .await?;
+        let bytes = resp.bytes().await.map_err(|e| unavailable(url, &e))?;
+        decode(url, &bytes, None)
+    }
+
     /// GET có retry khi timeout, lỗi kết nối, 5xx hoặc 429. Chỉ trả response 2xx.
     pub(crate) async fn send(&self, url: &str) -> Result<reqwest::Response, NetError> {
-        self.send_with(&self.http, url).await
+        self.send_with(url, false, || self.http.get(url)).await
+    }
+
+    /// Như `send`; có danh sách host thì tự theo chuyển hướng và kiểm tra từng bước.
+    pub(crate) async fn send_download(
+        &self,
+        url: &str,
+        allowed: Option<&HostAllowlist>,
+    ) -> Result<reqwest::Response, NetError> {
+        let Some(allowed) = allowed else {
+            return self.send(url).await;
+        };
+        let mut current = parse_url(url)?;
+        for _ in 0..=MAX_REDIRECTS {
+            allowed.check(&current)?;
+            let next_url = current.as_str();
+            let resp = self
+                .send_with(next_url, true, || self.direct.get(next_url))
+                .await?;
+            if !resp.status().is_redirection() {
+                return Ok(resp);
+            }
+            current = redirect_target(&current, &resp)?;
+        }
+        Err(unavailable(url, &"chuyển hướng quá nhiều lần"))
     }
 
     async fn send_with(
         &self,
-        http: &reqwest::Client,
         url: &str,
+        accept_redirect: bool,
+        make_req: impl Fn() -> reqwest::RequestBuilder,
     ) -> Result<reqwest::Response, NetError> {
         let mut attempt = 0;
+        let mut waited_for_limit = false;
         loop {
-            let err = match http.get(url).send().await {
+            let err = match make_req().send().await {
                 Ok(resp) if resp.status().is_success() => return Ok(resp),
+                Ok(resp) if accept_redirect && resp.status().is_redirection() => return Ok(resp),
+                Ok(resp) if resp.status() == reqwest::StatusCode::TOO_MANY_REQUESTS => {
+                    let wait = retry_after_s(&resp);
+                    if waited_for_limit || wait > MAX_RATE_LIMIT_WAIT_S {
+                        return Err(NetError::RateLimited {
+                            url: url.to_owned(),
+                            retry_after_s: wait,
+                        });
+                    }
+                    tracing::warn!(url, wait, "nguồn trả 429, chờ rồi thử lại một lần");
+                    tokio::time::sleep(Duration::from_secs(wait)).await;
+                    waited_for_limit = true;
+                    continue;
+                }
                 Ok(resp) if !is_retryable(resp.status()) => {
                     return Err(NetError::Status {
                         url: url.to_owned(),
@@ -200,35 +291,62 @@ impl HttpClient {
         }
     }
 
-    async fn fetch_bytes(&self, url: &str) -> Result<Vec<u8>, NetError> {
-        let resp = self.send(url).await?;
+    async fn fetch_bytes(&self, url: &str, headers: &[(&str, &str)]) -> Result<Vec<u8>, NetError> {
+        let resp = self
+            .send_with(url, false, || apply_headers(self.http.get(url), headers))
+            .await?;
         let body = resp.bytes().await.map_err(|e| unavailable(url, &e))?;
         Ok(body.to_vec())
     }
 
-    fn memory_hit(&self, url: &str, ttl: Duration) -> Option<Arc<[u8]>> {
+    fn memory_hit(&self, key: &str, ttl: Duration) -> Option<Arc<[u8]>> {
         let memory = self.memory.lock().ok()?;
-        let (at, body) = memory.get(url)?;
+        let (at, body) = memory.get(key)?;
         (at.elapsed() < ttl).then(|| Arc::clone(body))
     }
 
-    async fn remember(&self, url: &str, body: Vec<u8>) {
-        let path = self.meta_path(url);
+    async fn remember(&self, key: &str, url: &str, body: Vec<u8>) {
+        let path = self.meta_path(key);
         if let Err(err) = write_replace(&path, &body).await {
             tracing::warn!(url, error = %err, "không lưu được bản cache meta");
         }
         if let Ok(mut memory) = self.memory.lock() {
-            memory.insert(url.to_owned(), (Instant::now(), body.into()));
+            memory.insert(key.to_owned(), (Instant::now(), body.into()));
         }
     }
 
-    fn meta_path(&self, url: &str) -> PathBuf {
-        let key = hex(&Sha256::digest(url.as_bytes()));
+    fn meta_path(&self, key: &str) -> PathBuf {
+        let digest = hex(&Sha256::digest(key.as_bytes()));
         self.config
             .cache_dir
             .join("meta")
-            .join(format!("{key}.json"))
+            .join(format!("{digest}.json"))
     }
+}
+
+fn apply_headers(
+    mut builder: reqwest::RequestBuilder,
+    headers: &[(&str, &str)],
+) -> reqwest::RequestBuilder {
+    for (name, value) in headers {
+        builder = builder.header(*name, *value);
+    }
+    builder
+}
+
+fn cache_key(url: &str, headers: &[(&str, &str)]) -> String {
+    if headers.is_empty() {
+        return url.to_owned();
+    }
+    // Băm giá trị header để không lưu key bí mật dạng rõ trong cache key và tách cache theo key.
+    let mut hasher = Sha256::new();
+    for (name, value) in headers {
+        hasher.update(name.as_bytes());
+        hasher.update([0]);
+        hasher.update(value.as_bytes());
+        hasher.update([0]);
+    }
+    format!("{url}#h={}", hex(&hasher.finalize()))
 }
 
 fn decode<T: DeserializeOwned>(
@@ -294,7 +412,41 @@ fn body_too_large(url: &str, max_bytes: usize) -> NetError {
 }
 
 fn is_retryable(status: reqwest::StatusCode) -> bool {
-    status.is_server_error() || status == reqwest::StatusCode::TOO_MANY_REQUESTS
+    status.is_server_error()
+}
+
+/// `Retry-After` (giây), hoặc `X-Ratelimit-Reset` của Modrinth (giây tới lúc mở lại). Thiếu
+/// hoặc là ngày giờ thì coi như 1 giây.
+fn retry_after_s(resp: &reqwest::Response) -> u64 {
+    ["retry-after", "x-ratelimit-reset"]
+        .iter()
+        .find_map(|name| {
+            resp.headers()
+                .get(*name)?
+                .to_str()
+                .ok()?
+                .trim()
+                .parse()
+                .ok()
+        })
+        .unwrap_or(1)
+}
+
+pub(crate) fn parse_url(url: &str) -> Result<reqwest::Url, NetError> {
+    reqwest::Url::parse(url).map_err(|e| unavailable(url, &e))
+}
+
+fn redirect_target(
+    from: &reqwest::Url,
+    resp: &reqwest::Response,
+) -> Result<reqwest::Url, NetError> {
+    let location = resp
+        .headers()
+        .get(reqwest::header::LOCATION)
+        .and_then(|v| v.to_str().ok())
+        .ok_or_else(|| unavailable(from.as_str(), &"chuyển hướng không có Location"))?;
+    from.join(location)
+        .map_err(|e| unavailable(from.as_str(), &e))
 }
 
 fn unavailable(url: &str, reason: &dyn fmt::Display) -> NetError {

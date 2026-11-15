@@ -55,6 +55,8 @@ jobs:
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --release --locked -p minehost
+        env:
+          MINEHOST_CURSEFORGE_KEY: ${{ secrets.MINEHOST_CURSEFORGE_KEY }}
       - name: Đóng gói
         shell: bash
         run: |

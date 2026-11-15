@@ -10,9 +10,12 @@ interface Backend {
   passwordSet: boolean;
   lan: boolean;
   urls: string[];
+  cfSource?: "builtin" | "user" | "none";
+  cfBuiltin?: boolean;
 }
 
 function stubBackend(state: Backend) {
+  let cfSource = state.cfSource ?? (state.cfBuiltin ? "builtin" : "none");
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const method = init?.method ?? "GET";
     if (url === "/api/v1/auth/session") {
@@ -23,6 +26,17 @@ function stubBackend(state: Backend) {
     }
     if (url === "/api/v1/settings/access") {
       return Response.json({ lan: state.lan, lan_urls: state.lan ? state.urls : [] });
+    }
+    if (url === "/api/v1/settings/curseforge" && method === "PUT") {
+      cfSource = "user";
+      return Response.json({ available: true, source: cfSource });
+    }
+    if (url === "/api/v1/settings/curseforge" && method === "DELETE") {
+      cfSource = state.cfBuiltin ? "builtin" : "none";
+      return Response.json({ available: cfSource !== "none", source: cfSource });
+    }
+    if (url === "/api/v1/settings/curseforge") {
+      return Response.json({ available: cfSource !== "none", source: cfSource });
     }
     if (url === "/api/v1/auth/password" && method === "PUT") {
       state.passwordSet = true;
@@ -85,5 +99,37 @@ describe("SettingsPage", () => {
     fireEvent.click(await screen.findByRole("switch", { name: /Cho máy khác trong mạng LAN/ }));
     expect(await screen.findByText("http://192.168.1.5:7878")).toBeTruthy();
     expect(screen.getByText(/dùng HTTP, không mã hóa/)).toBeTruthy();
+  });
+
+  it("CurseForge: hiện trạng thái chưa có key, lưu key riêng rồi xóa quay về key có sẵn", async () => {
+    const fetchMock = stubBackend({ passwordSet: false, lan: false, urls: [], cfBuiltin: false });
+    renderPage();
+
+    expect(await screen.findByText(/nguồn CurseForge đang tắt/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Xóa" })).toBeNull();
+
+    const input = screen.getByLabelText("API key riêng") as HTMLInputElement;
+    expect(input.type).toBe("password");
+    fireEvent.change(input, { target: { value: "my-cf-key-123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+
+    expect(await screen.findByText("Đang dùng key của bạn.")).toBeTruthy();
+    expect(screen.getByText("Đã lưu API key CurseForge.")).toBeTruthy();
+    expect(input.value).toBe("");
+    const put = fetchMock.mock.calls.find(([url, init]) => url === "/api/v1/settings/curseforge" && init?.method === "PUT");
+    expect(JSON.parse(String(put?.[1]?.body))).toEqual({ api_key: "my-cf-key-123" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Xóa" }));
+    expect(await screen.findByText(/nguồn CurseForge đang tắt/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Xóa" })).toBeNull();
+  });
+
+  it("CurseForge: có key nhúng thì hiện Đang dùng key của MineHost và xóa key riêng quay về builtin", async () => {
+    stubBackend({ passwordSet: false, lan: false, urls: [], cfBuiltin: true, cfSource: "user" });
+    renderPage();
+
+    expect(await screen.findByText("Đang dùng key của bạn.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Xóa" }));
+    expect(await screen.findByText("Đang dùng key của MineHost.")).toBeTruthy();
   });
 });

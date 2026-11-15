@@ -1,0 +1,86 @@
+[
+  {
+    "loader": {
+      "maven": "org.quiltmc:quilt-loader:0.20.0-beta.9",
+      "version": "0.20.0-beta.9",
+      "build": 9,
+      "separator": ".",
+      "file_size": 1550096,
+      "hashes": {
+        "sha1": "5f092442b79a6511f6b25c8d175ae76393444db7",
+        "sha256": "a475689ac9a5b9718c045972bb0f41381ce22315a87273a99f30ec1fa3aacb8a",
+        "sha512": "6f2e2c0f47afeee5812bf979b19372a9384661e896a0278f2183a5494ea0db962dff7afc401738c469d37f2e506261fb971e0831ddf12efa219e4f875d0b9e45"
+      }
+    }
+  },
+  {
+    "loader": {
+      "maven": "org.quiltmc:quilt-loader:0.24.0",
+      "version": "0.24.0",
+      "build": 0,
+      "separator": ".",
+      "file_size": 1835091,
+      "hashes": {
+        "sha1": "4871568efbf6714774904c97b438d2b2bb7f4eba",
+        "sha256": "c5ae7358819fe4dde4e2836cddfe57e76ed84ab7851a54edd56f7831b2af73fc",
+        "sha512": "95436417d84f56ebaf513257804073fa9e23f992f642cfd57dcc2a245598b2072157935d1605b169a237bb86da65b956eacd967cb3d58fde32291398017d0bce"
+      }
+    }
+  },
+  {
+    "loader": {
+      "maven": "org.quiltmc:quilt-loader:0.16.1-beta.3",
+      "version": "0.16.1-beta.3",
+      "build": 3,
+      "separator": ".",
+      "file_size": 1144790,
+      "hashes": {
+        "sha1": "1cf42dc4fdb4c08c7682583fc89011c2fa8c31c8",
+        "sha256": "fc6d82e151e4644809003c91cf2a39e17c395e789aba1fa5ee977b955c9d7f24",
+        "sha512": "5f5064a5889e9efe50c93b7d03a6ee46ae50a465d54faebee2da7ddf06a4579e3dd099d765594b1cfa09d9148a0d29f6a7c6f2939c46121fa3ea0eb4449ce381"
+      }
+    }
+  },
+  {
+    "loader": {
+      "maven": "org.quiltmc:quilt-loader:0.25.0-beta.1",
+      "version": "0.25.0-beta.1",
+      "build": 1,
+      "separator": ".",
+      "file_size": 1849918,
+      "hashes": {
+        "sha1": "afe7cec07fd4b8ffcb8d2b659bfecf01c3e8d99c",
+        "sha256": "27ed11cc292514772ce5eaa494a31f1b441067803d9e2f4f6eeeeef3b11a3fe1",
+        "sha512": "3dd2e33ad5b788397e4ce43ebac4ccfc77256ec09355909b2e6b96a1b250ce7e558eca3bdbcb12573da7c1b07928813dff96cecb5c86a0b0ae2b0e2ed72aa8f1"
+      }
+    }
+  },
+  {
+    "loader": {
+      "maven": "org.quiltmc:quilt-loader:0.30.1",
+      "version": "0.30.1",
+      "build": 1,
+      "separator": ".",
+      "file_size": 3149891,
+      "hashes": {
+        "sha1": "2fa21d6438f63c8dd40f2e81290b0a09de1442b3",
+        "sha256": "a561a9fe9abb45556c696095a29e81477618bf2408b86c36db5aecdcd6a86fdb",
+        "sha512": "cc575e8243051ef15bd3c581a5d76c1b03e00de558180b6255a20694963875e9cdfe24a3f17cd218e11d0d1c5c5f1d4072369f7631eee54ccf97a2fbd10e5aa5"
+      }
+    }
+  },
+  {
+    "loader": {
+      "maven": "org.quiltmc:quilt-loader:0.30.2",
+      "version": "0.30.2",
+      "build": 2,
+      "separator": ".",
+      "file_size": 3159782,
+      "hashes": {
+        "sha1": "6d9a96b5d366ea2d7c008a182c5148080dadfacb",
+        "sha256": "273033b1e92793e87f4800b02c6f3d8a89e14cbb71a8087a1f008837f24ab945",
+        "sha512": "d84fa34920adbbadd8e55522c96d006d512ba551c1a1392e0ddc47e31470f3fcb2caf6e1ad8e3a1661bd4419795f1366b9667fd718e24707db056435d59e953b"
+      }
+    }
+  }
+]

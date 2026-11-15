@@ -3,6 +3,9 @@
 mod access;
 mod auth;
 mod backups;
+mod content;
+mod content_dto;
+mod curseforge;
 mod dto;
 mod error;
 mod files;
@@ -10,7 +13,9 @@ mod guard;
 mod import;
 mod jobs;
 mod lan;
+mod modpack;
 mod players;
+mod preflight;
 mod servers;
 mod system;
 mod ui;
@@ -36,6 +41,8 @@ pub use lan::{LanState, lan_listener};
         system::system_info,
         servers::list,
         servers::create,
+        modpack::create,
+        modpack::upload,
         import::inspect,
         import::import,
         servers::get,
@@ -61,6 +68,7 @@ pub use lan::{LanState, lan_listener};
         jobs::get,
         jobs::cancel,
         jobs::catalog_versions,
+        jobs::loader_versions,
         jobs::shutdown,
         auth::session,
         auth::login,
@@ -69,6 +77,9 @@ pub use lan::{LanState, lan_listener};
         auth::delete_password,
         access::get_access,
         access::put_access,
+        curseforge::get_curseforge,
+        curseforge::put_curseforge,
+        curseforge::delete_curseforge,
         files::list,
         files::delete_file,
         files::read,
@@ -77,6 +88,17 @@ pub use lan::{LanState, lan_listener};
         files::upload,
         files::mkdir,
         files::rename_file,
+        content::search,
+        content::project,
+        content::versions,
+        content::list,
+        content::plan,
+        content::install,
+        content::upload,
+        content::upload_pending,
+        content::toggle,
+        content::remove,
+        preflight::get,
     ),
     components(schemas(
         error::ErrorBody,
@@ -87,14 +109,19 @@ pub use lan::{LanState, lan_listener};
         auth::ClearPasswordBody,
         access::AccessDto,
         access::AccessBody,
+        curseforge::CurseforgeKeySourceDto,
+        curseforge::CurseforgeSettingsDto,
+        curseforge::CurseforgeKeyBody,
         system::Health,
         system::SystemDto,
         system::DiskDto,
         dto::ServerDto,
+        dto::ContentKindDto,
         dto::StateDto,
         dto::MemoryDto,
         dto::CrashDto,
         dto::CreateServerBody,
+        modpack::CreateModpackBody,
         dto::CreatedDto,
         dto::BackupSettingsDto,
         dto::BackupSettingsBody,
@@ -123,6 +150,7 @@ pub use lan::{LanState, lan_listener};
         dto::PropertiesDto,
         dto::PropertyDto,
         dto::CatalogVersionDto,
+        dto::LoaderVersionDto,
         dto::JobDto,
         dto::JobStateDto,
         dto::ProgressDto,
@@ -133,6 +161,28 @@ pub use lan::{LanState, lan_listener};
         files::EtagDto,
         files::MkdirBody,
         files::RenameBody,
+        content::SideSupportDto,
+        content::SearchHitDto,
+        content::SearchResultDto,
+        content::ProjectLinksDto,
+        content::ProjectDto,
+        content::ContentVersionDto,
+        content::ContentSourceDto,
+        content::InstalledContentDto,
+        content::PendingContentDto,
+        content::ServerContentDto,
+        content::ContentInstallBody,
+        content::PlannedContentDto,
+        content::ContentPlanDto,
+        content::ToggleContentBody,
+        content::PendingUploadItemDto,
+        content::PendingUploadResultDto,
+        preflight::StartActionBody,
+        preflight::MissingDepDto,
+        preflight::VersionMismatchDto,
+        preflight::WrongLoaderDto,
+        preflight::ClientOnlyDto,
+        preflight::PreflightDto,
     ))
 )]
 struct ApiDoc;
@@ -175,6 +225,18 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         .route("/health", get(system::health))
         .route("/system", get(system::system_info))
         .route("/servers", get(servers::list).post(servers::create))
+        .route("/servers/modpack", post(modpack::create))
+        .route(
+            "/servers/modpack/upload",
+            post(modpack::upload)
+                .layer(DefaultBodyLimit::max(files::upload_body_limit(
+                    upload_max_bytes,
+                )))
+                .layer(axum::middleware::from_fn_with_state(
+                    upload_max_bytes,
+                    files::inject_upload_limit,
+                )),
+        )
         .route("/servers/import", post(import::import))
         .route("/servers/import/inspect", post(import::inspect))
         .route(
@@ -184,6 +246,7 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
                 .delete(servers::trash),
         )
         .route("/servers/{id}/eula", post(servers::eula))
+        .route("/servers/{id}/preflight", get(preflight::get))
         .route("/servers/{id}/actions/{action}", post(servers::action))
         .route(
             "/servers/{id}/console",
@@ -243,10 +306,57 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         .route("/jobs/{id}", get(jobs::get))
         .route("/jobs/{id}/cancel", post(jobs::cancel))
         .route("/catalog/{loader}/versions", get(jobs::catalog_versions))
+        .route(
+            "/catalog/{loader}/{minecraft}/loader-versions",
+            get(jobs::loader_versions),
+        )
+        .route("/content/search", get(content::search))
+        .route("/content/{source}/projects/{pid}", get(content::project))
+        .route(
+            "/content/{source}/projects/{pid}/versions",
+            get(content::versions),
+        )
+        .route(
+            "/servers/{id}/content",
+            get(content::list).post(content::install),
+        )
+        .route("/servers/{id}/content/plan", post(content::plan))
+        .route(
+            "/servers/{id}/content/upload",
+            post(content::upload)
+                .layer(DefaultBodyLimit::max(files::upload_body_limit(
+                    upload_max_bytes,
+                )))
+                .layer(axum::middleware::from_fn_with_state(
+                    upload_max_bytes,
+                    files::inject_upload_limit,
+                )),
+        )
+        .route(
+            "/servers/{id}/content/pending/upload",
+            post(content::upload_pending)
+                .layer(DefaultBodyLimit::max(files::upload_body_limit(
+                    upload_max_bytes,
+                )))
+                .layer(axum::middleware::from_fn_with_state(
+                    upload_max_bytes,
+                    files::inject_upload_limit,
+                )),
+        )
+        .route(
+            "/servers/{id}/content/{file}",
+            axum::routing::patch(content::toggle).delete(content::remove),
+        )
         .route("/app/shutdown", post(jobs::shutdown))
         .route(
             "/settings/access",
             get(access::get_access).put(access::put_access),
+        )
+        .route(
+            "/settings/curseforge",
+            get(curseforge::get_curseforge)
+                .put(curseforge::put_curseforge)
+                .delete(curseforge::delete_curseforge),
         )
         .route("/ws", get(ws::upgrade))
         .fallback(error::api_not_found)
@@ -263,3 +373,5 @@ mod access_tests;
 mod auth_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_curseforge;

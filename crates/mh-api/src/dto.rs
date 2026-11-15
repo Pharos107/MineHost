@@ -2,7 +2,7 @@
 
 use mh_app::jobs::{JobProgress, JobSnapshot, JobState};
 use mh_app::{CatalogVersion, MetricSample, ServerMetrics, ServerView};
-use mh_core::{ConsoleLine, ConsoleStream, ServerState};
+use mh_core::{ConsoleLine, ConsoleStream, ContentKind, ServerState};
 use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use utoipa::ToSchema;
@@ -49,6 +49,22 @@ pub struct CrashDto {
     pub last_lines: Vec<String>,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ContentKindDto {
+    Mods,
+    Plugins,
+}
+
+impl From<ContentKind> for ContentKindDto {
+    fn from(kind: ContentKind) -> Self {
+        match kind {
+            ContentKind::Mods => Self::Mods,
+            ContentKind::Plugins => Self::Plugins,
+        }
+    }
+}
+
 /// Một server trong danh sách. Server đang cài hoặc bị hỏng chỉ có một phần thông tin.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ServerDto {
@@ -56,9 +72,15 @@ pub struct ServerDto {
     pub state: StateDto,
     pub name: Option<String>,
     pub loader: Option<String>,
+    /// `mods`, `plugins`, hoặc `null` với Vanilla / server hỏng.
+    pub content_kind: Option<ContentKindDto>,
     pub minecraft: Option<String>,
     pub build: Option<u32>,
+    /// Bản mod loader; chỉ có với Fabric, Quilt, Forge, NeoForge.
+    pub loader_version: Option<String>,
     pub java_major: Option<u16>,
+    /// Bản Java Mojang yêu cầu cho phiên bản Minecraft này; `null` khi chưa biết (spec P3, mục 3.10).
+    pub java_recommended: Option<u16>,
     pub port: Option<u16>,
     pub memory_mb: Option<MemoryDto>,
     pub autostart: Option<bool>,
@@ -80,6 +102,10 @@ pub struct ServerDto {
     pub slow_start: bool,
     /// Đang chờ tự khởi động lại sau crash.
     pub restart_pending: bool,
+    /// Có `user_jvm_args.txt` chứa cờ ngoài chú thích mà MineHost bỏ qua.
+    pub ignored_jvm_args: bool,
+    /// Có lỗi preflight đang chặn bật server (còn thiếu mod hoặc file CurseForge pending).
+    pub preflight_blocking: bool,
 }
 
 impl From<ServerView> for ServerDto {
@@ -89,9 +115,12 @@ impl From<ServerView> for ServerDto {
             state: view.state.into(),
             name: None,
             loader: None,
+            content_kind: None,
             minecraft: None,
             build: None,
+            loader_version: None,
             java_major: None,
+            java_recommended: None,
             port: None,
             memory_mb: None,
             autostart: None,
@@ -106,20 +135,26 @@ impl From<ServerView> for ServerDto {
             pid: None,
             slow_start: false,
             restart_pending: false,
+            ignored_jvm_args: view.ignored_jvm_args,
+            preflight_blocking: view.preflight_blocking,
         };
         if let Some(info) = view.installing {
             dto.name = Some(info.name.to_string());
-            dto.loader = Some(info.loader.to_string());
-            dto.minecraft = Some(info.minecraft.to_string());
+            dto.loader = info.loader.map(|l| l.to_string());
+            dto.content_kind = info.loader.and_then(|l| l.content_kind()).map(Into::into);
+            dto.minecraft = info.minecraft.map(|m| m.to_string());
             dto.port = Some(info.port.get());
             dto.job_id = info.job_id;
         }
         if let Some(spec) = view.spec {
             dto.name = Some(spec.name.to_string());
             dto.loader = Some(spec.game.loader.to_string());
+            dto.content_kind = spec.game.loader.content_kind().map(Into::into);
             dto.minecraft = Some(spec.game.minecraft.to_string());
             dto.build = spec.game.build;
+            dto.loader_version = spec.game.loader_version.as_ref().map(ToString::to_string);
             dto.java_major = Some(spec.game.java_major);
+            dto.java_recommended = mh_core::mojang_java_major(&spec.game.minecraft);
             dto.port = Some(spec.network.port.get());
             let memory = spec.runtime.memory_mb;
             dto.memory_mb = Some(MemoryDto {
@@ -162,9 +197,11 @@ impl From<ServerView> for ServerDto {
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateServerBody {
     pub name: String,
-    /// P1 chỉ có `paper`.
+    /// `paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`.
     pub loader: String,
     pub minecraft: String,
+    /// Chỉ với mod loader; không gửi thì dùng bản đề xuất.
+    pub loader_version: Option<String>,
     pub memory_mb: Option<MemoryDto>,
     pub port: Option<u16>,
 }
@@ -186,6 +223,8 @@ pub struct PatchServerBody {
     pub restart_at: Option<Vec<String>>,
     /// Lịch sao lưu tự động; trường nào thiếu thì giữ nguyên.
     pub backup: Option<BackupSettingsBody>,
+    /// Phiên bản Java chính (`8`, `11`, `17`, `21`, `25`).
+    pub java_major: Option<u16>,
 }
 
 /// Sao lưu tự động của một server (spec P2, mục 4.1).
@@ -266,6 +305,23 @@ pub struct PropertiesDto {
     pub properties: Vec<PropertyDto>,
 }
 
+/// Một bản mod loader (spec P3, mục 5.8).
+#[derive(Debug, Serialize, ToSchema)]
+pub struct LoaderVersionDto {
+    pub version: String,
+    /// Bản ổn định theo nguồn của loader; bản đề xuất luôn đứng đầu danh sách.
+    pub stable: bool,
+}
+
+impl From<mh_app::sources::LoaderRelease> for LoaderVersionDto {
+    fn from(r: mh_app::sources::LoaderRelease) -> Self {
+        Self {
+            version: r.version.to_string(),
+            stable: r.stable,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct CatalogVersionDto {
     pub id: String,
@@ -315,6 +371,10 @@ pub struct JobDto {
     /// Có khi `state` là `failed`.
     pub error: Option<ErrorBody>,
     pub progress: Option<ProgressDto>,
+    /// Kết quả tóm tắt tùy theo loại Job (ví dụ thống kê modpack đã cài).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[schema(value_type = Option<Object>)]
+    pub result: Option<serde_json::Value>,
     /// RFC 3339, lúc Job được tạo.
     pub started_at: String,
     /// RFC 3339, lúc Job sang trạng thái kết thúc. Không có khi còn chạy.
@@ -346,6 +406,7 @@ impl From<JobSnapshot> for JobDto {
             state,
             error,
             progress: job.progress.map(progress_dto),
+            result: job.result,
             started_at: rfc3339(job.started_at).unwrap_or_default(),
             finished_at: job.finished_at.and_then(rfc3339),
         }

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>net.minecraftforge</groupId>
+  <artifactId>forge</artifactId>
+  <versioning>
+    <latest>26.3-66.1.8</latest>
+    <release>26.3-66.1.8</release>
+    <versions>
+      <version>1.21.4-54.1.6</version>
+      <version>1.21.4-54.1.5</version>
+      <version>1.21.4-54.1.4</version>
+      <version>1.21.4-54.1.3</version>
+      <version>1.20.1-47.4.28</version>
+      <version>1.20.1-47.4.5</version>
+      <version>1.20.1-47.4.4</version>
+      <version>1.20.1-47.4.3</version>
+      <version>1.16.5-36.2.42</version>
+      <version>1.16.5-36.2.34</version>
+      <version>1.16.5-36.2.41</version>
+      <version>1.16.5-36.2.40</version>
+      <version>1.12.2-14.23.5.2860</version>
+      <version>1.12.2-14.23.5.2859</version>
+      <version>1.12.2-14.23.5.2858</version>
+      <version>1.7.10-10.13.4.1614-1.7.10</version>
+      <version>1.7.10-10.13.4.1566-1.7.10</version>
+      <version>26.3-66.0.0</version>
+      <version>26.3-66.0.2</version>
+      <version>1.21-51.0.33</version>
+      <version>1.21.4-54.1.22</version>
+    </versions>
+  </versioning>
+</metadata>

@@ -14,6 +14,10 @@
     "allServers": "Tất cả máy chủ",
     "overview": "Tổng quan",
     "console": "Console",
+    "content": {
+      "mods": "Mod",
+      "plugins": "Plugin"
+    },
     "files": "Tệp",
     "players": "Người chơi",
     "backups": "Sao lưu",
@@ -59,7 +63,11 @@
   "loaders": {
     "paper": "Paper",
     "vanilla": "Vanilla",
-    "purpur": "Purpur"
+    "purpur": "Purpur",
+    "fabric": "Fabric",
+    "quilt": "Quilt",
+    "forge": "Forge",
+    "neoforge": "NeoForge"
   },
   "servers": {
     "heading": "Server của bạn",
@@ -97,8 +105,22 @@
       "importName": "Tên"
     },
     "loader": "Chọn loại server",
+    "kind": "Kiểu server",
+    "kindStandard": "Server thường",
+    "kindStandardDescription": "Chơi bản gốc hoặc cài thêm plugin nhẹ.",
+    "kindModded": "Server có mod",
+    "kindModdedDescription": "Tự chọn từng mod với Fabric, NeoForge, Forge hoặc Quilt.",
+    "kindModpack": "Từ modpack",
+    "kindModpackDescription": "Cài trọn bộ mod đóng gói sẵn từ Modrinth hoặc CurseForge.",
+    "soon": "Sắp có",
     "paperDescription": "Nhanh, hỗ trợ plugin.",
     "vanillaDescription": "Bản gốc của Mojang, không có plugin.",
+    "fabricDescription": "Nhẹ, cập nhật nhanh, có rất nhiều mod mới.",
+    "neoforgeDescription": "Nhánh mới của Forge cho các bản Minecraft gần đây, nhiều mod lớn.",
+    "forgeDescription": "Loader lâu đời, cần cho nhiều mod và phiên bản Minecraft cũ.",
+    "quiltDescription": "Phát triển từ Fabric, chạy được hầu hết mod của Fabric.",
+    "loaderVersion": "Phiên bản mod loader",
+    "loaderVersionHint": "Mặc định là bản ổn định đề xuất cho phiên bản Minecraft đã chọn.",
     "recommended": "Khuyên dùng",
     "version": "Phiên bản Minecraft",
     "versionHint": "Bạn bè cần dùng đúng phiên bản này để vào chơi.",
@@ -133,7 +155,9 @@
     "importInspect": "Kiểm tra thư mục",
     "importUnknown": "Không nhận ra",
     "importJar": "File jar",
+    "importArgsFile": "File tham số (args_file)",
     "importNoJar": "Không thấy file .jar nào trong thư mục này.",
+    "importIgnoredJvmArgs": "Thư mục có file user_jvm_args.txt. MineHost bỏ qua file này để quản lý RAM an toàn.",
     "importPickLoader": "Chọn loại server",
     "importPickVersion": "Phiên bản Minecraft",
     "importPickVersionHint": "Ví dụ 1.21.4.",
@@ -155,7 +179,13 @@
       "before_restore": "Sao lưu hiện trạng",
       "unpack": "Giải nén bản sao lưu",
       "swap": "Thay world",
-      "copy_files": "Chép thư mục server"
+      "copy_files": "Chép thư mục server",
+      "run_installer": "Cài {{loader}}",
+      "resolve_content": "Đọc thông tin mod",
+      "download_content": "Tải {{name}}",
+      "download_modpack": "Tải modpack {{name}}",
+      "download_pack_file": "Tải file modpack ({{index}}/{{total}}): {{name}}",
+      "apply_overrides": "Áp dụng cấu hình modpack"
     }
   },
   "server": {
@@ -186,6 +216,7 @@
     "PORT_IN_USE": "Cổng của server đang bị chương trình khác dùng. Hãy đổi cổng trong mục Cài đặt server.",
     "EULA_NOT_ACCEPTED": "Bạn cần đồng ý EULA của Minecraft rồi bật lại server.",
     "GAME_ERROR": "Game hoặc một plugin bị lỗi. Xem console để biết chi tiết rồi thử khởi động lại.",
+    "MEMORY_LIMIT": "MineHost đã dừng server vì dùng quá giới hạn RAM. Có thể một mod hoặc plugin bị rò bộ nhớ; xem console, hoặc tăng RAM trong mục Cài đặt server.",
     "unknown": "Không rõ nguyên nhân. Xem console để biết chi tiết."
   },
   "eula": {
@@ -256,7 +287,13 @@
     "restartAtRemove": "Bỏ giờ {{time}}",
     "restartAtTime": "Giờ khởi động lại {{n}}",
     "restartAtInvalid": "Hãy chọn đủ giờ và phút cho mọi mốc.",
-    "restartAtDuplicate": "Hai mốc trùng giờ."
+    "restartAtDuplicate": "Hai mốc trùng giờ.",
+    "ignoredJvmArgs": "Thư mục server có user_jvm_args.txt nhưng MineHost bỏ qua file này để quản lý RAM theo cài đặt bên dưới.",
+    "java": "Phiên bản Java",
+    "javaHint": "Mặc định dùng bản Java đề xuất cho phiên bản Minecraft của server. Chỉ đổi khi mod hoặc plugin yêu cầu.",
+    "javaOption": "Java {{major}}",
+    "javaRecommended": "Java {{major}} (đề xuất)",
+    "javaWarning": "Minecraft này thường dùng Java {{recommended}}. Chọn bản khác có thể khiến server không khởi động được."
   },
   "delete": {
     "title": "Xóa server",
@@ -287,7 +324,8 @@
     },
     "openMenu": "Mở menu",
     "closeMenu": "Đóng menu",
-    "morePlayers": "và {{count}} người nữa"
+    "morePlayers": "và {{count}} người nữa",
+    "downloads": "{{value}} lượt tải"
   },
   "serverState": {
     "installing": "Đang cài",
@@ -331,7 +369,19 @@
     "FILE_EXISTS": "Đã có file hoặc thư mục trùng tên.",
     "BACKUP_PROTECTED": "Bản sao lưu này đang được bảo vệ. Hãy bỏ bảo vệ trước khi xóa.",
     "MODS_NOT_SUPPORTED": "Server này có mod (thư mục mods). Bản này chưa hỗ trợ mod; sẽ có ở bản sau.",
-    "SERVER_NOT_RUNNING": "Server chưa chạy. Bật server rồi thử lại."
+    "SERVER_NOT_RUNNING": "Server chưa chạy. Bật server rồi thử lại.",
+    "LOADER_INSTALL_FAILED": "Không cài được mod loader. Xem log của tác vụ để biết chi tiết.",
+    "CONTENT_INCOMPATIBLE": "Mod hoặc plugin này không có bản cho loại server và phiên bản Minecraft này.",
+    "CONTENT_NOT_FOUND": "Không tìm thấy mod, plugin hoặc modpack này. Có thể nó đã bị gỡ khỏi trang nguồn.",
+    "DEPENDENCY_MISSING": "Còn thiếu mod bắt buộc. Cài các mod còn thiếu rồi bật lại.",
+    "DEPENDENCY_MISSING_LIST": "Còn thiếu mod bắt buộc: {{list}}. Cài các mod còn thiếu rồi bật lại.",
+    "CURSEFORGE_UNAVAILABLE": "Chưa dùng được CurseForge: chưa có key hoặc key bị từ chối. Xem mục CurseForge trong Cài đặt.",
+    "CURSEFORGE_FILES_PENDING": "Còn file từ CurseForge cần tự tải. Mở trang Mod để tải và kéo file vào.",
+    "UPLOAD_HASH_MISMATCH": "File vừa tải lên không khớp file cần. Hãy tải đúng phiên bản từ trang mod.",
+    "UPLOAD_HASH_MISMATCH_EXPECTED": "File vừa tải lên không khớp hash — cần file {{expected}}. Hãy tải đúng phiên bản từ trang mod.",
+    "MODPACK_INVALID": "File modpack không hợp lệ hoặc bị hỏng.",
+    "DOWNLOAD_HOST_NOT_ALLOWED": "Có file cần tải từ một trang không được phép, nên MineHost không tải.",
+    "UPSTREAM_RATE_LIMITED": "Trang nguồn đang giới hạn số lần truy cập. Thử lại sau {{retry_after_s}} giây."
   },
   "jobsPage": {
     "description": "Việc MineHost đang làm hoặc vừa làm xong, như tạo server hay sao lưu.",
@@ -347,9 +397,12 @@
     "cancel": "Hủy",
     "kinds": {
       "create_server": "Tạo server",
+      "create_modpack": "Cài modpack",
       "backup": "Sao lưu",
       "restore": "Khôi phục",
-      "import_server": "Nhập server"
+      "import_server": "Nhập server",
+      "install_java": "Tải Java",
+      "install_content": "Cài mod"
     },
     "states": {
       "running": "Đang chạy",
@@ -463,6 +516,16 @@
     "lanNoAddress": "Chưa mở được địa chỉ LAN nào. Máy có thể chưa nối mạng LAN, hoặc cổng đang bị chương trình khác dùng.",
     "lanUrl": "Địa chỉ trong mạng LAN",
     "lanDescription": "Cho điện thoại, máy tính khác trong nhà mở MineHost qua mạng LAN.",
+    "curseforge": "CurseForge",
+    "curseforgeDescription": "Tải mod và modpack từ CurseForge.",
+    "curseforgeBuiltin": "Đang dùng key của MineHost.",
+    "curseforgeUser": "Đang dùng key của bạn.",
+    "curseforgeNone": "Chưa có key CurseForge: bản tự build này không nhúng key của MineHost, nên nguồn CurseForge đang tắt.",
+    "curseforgeKey": "API key riêng",
+    "curseforgeKeyHint": "Lưu riêng trên máy này, ưu tiên hơn key có sẵn của MineHost.",
+    "curseforgeSave": "Lưu",
+    "curseforgeRemove": "Xóa",
+    "curseforgeSaved": "Đã lưu API key CurseForge.",
     "description": "Mật khẩu, truy cập từ máy khác trong nhà, và thông tin máy đang chạy MineHost."
   },
   "backups": {
@@ -601,5 +664,123 @@
     "count": "{{count}} / {{max}}",
     "starting": "Chờ server bật xong",
     "openConsole": "Mở console"
+  },
+  "preflight": {
+    "blockingTitle": "Cần xử lý trước khi bật server",
+    "warningTitle": "Lưu ý về mod trước khi bật",
+    "startAnyway": "Vẫn bật",
+    "missingItem": "Thiếu {{id}} {{version}} (do {{by}} yêu cầu)",
+    "missingItemAny": "Thiếu {{id}} (do {{by}} yêu cầu)",
+    "mismatchItem": "{{by}} cần {{id}} {{version}}, hiện có {{installed}}",
+    "wrongLoaderItem": "{{name}} ({{file}}) không khớp loại server hiện tại",
+    "pendingItem": "Chờ tải tay từ CurseForge: {{file}}",
+    "clientOnlyItem": "{{name}} chỉ chạy ở máy người chơi (có thể bỏ qua hoặc tắt bớt)"
+  },
+  "content": {
+    "name": "Tên",
+    "version": "Phiên bản",
+    "source": "Nguồn",
+    "enabled": "Bật",
+    "toggleLabel": "Bật {{name}}",
+    "clientOnly": "Chỉ chạy ở client",
+    "sources": {
+      "modrinth": "Modrinth",
+      "curseforge": "CurseForge",
+      "modpack": "Modpack",
+      "manual": "Thêm tay"
+    },
+    "upload": "Tải lên .jar",
+    "uploadHint": "hoặc kéo thả file .jar vào đây, tối đa 512 MiB. Chỉ tải file từ nguồn tin cậy vì mod/plugin chạy code tùy ý.",
+    "uploading": "Đang tải lên {{names}}",
+    "uploaded_one": "Đã tải lên {{count}} file.",
+    "uploaded_other": "Đã tải lên {{count}} file.",
+    "uploadInvalid": "File không phải .jar hợp lệ hoặc bị hỏng.",
+    "pending": {
+      "title_one": "Cần tải tay {{count}} file CurseForge",
+      "title_other": "Cần tải tay {{count}} file CurseForge",
+      "description": "Tác giả không cho phép tải tự động qua API. Mở từng trang để tải đúng phiên bản rồi kéo thả tất cả vào vùng bên dưới.",
+      "openPage": "Mở trang tải",
+      "waiting": "Chờ",
+      "ready": "Đã có",
+      "dropLabel": "Chọn file CurseForge",
+      "dropHint": "hoặc kéo thả một hoặc nhiều file .jar vừa tải vào đây để đối chiếu SHA-1.",
+      "uploading": "Đang đối chiếu {{names}}",
+      "allDone": "Đã có đủ các file CurseForge cần tải tay. Bạn có thể bật server ngay.",
+      "startWithout": "Bật mà không có các mod này"
+    },
+    "remove": "Gỡ",
+    "removeTitle": "Gỡ {{name}}?",
+    "removeBody": "File {{file}} được chuyển vào thùng rác của MineHost, bạn có thể tự lấy lại sau.",
+    "unsupported": "Loại server này không hỗ trợ cài mod hoặc plugin.",
+    "add": "Thêm",
+    "addDialog": {
+      "sourceLabel": "Nguồn tải",
+      "sourceModrinth": "Modrinth",
+      "sourceCurseforge": "CurseForge",
+      "curseforgeUnavailableHint": "CurseForge chưa sẵn sàng vì chưa cấu hình API key trong Cài đặt.",
+      "loadMore": "Xem thêm",
+      "noResults": "Không tìm thấy kết quả",
+      "noResultsHint": "Thử từ khóa khác phù hợp với phiên bản và loader của server.",
+      "version": "Phiên bản",
+      "planning": "Đang kiểm tra các file cần cài…",
+      "planTitle": "Danh sách sẽ cài",
+      "dependencies_one": "Dependency cài kèm ({{count}})",
+      "dependencies_other": "Dependency cài kèm ({{count}})",
+      "replacesExisting": "Thay bản cũ",
+      "manualDownload": "Cần tải tay",
+      "manualDownloadHint": "Một số file bị tác giả chặn tải tự động qua API. MineHost vẫn cài các file còn lại và ghi nhớ mục cần bạn tải tay ở trang tải.",
+      "openDownloadPage": "Mở trang tải",
+      "clientOnlyHint": "Mod chỉ chạy ở client sẽ được cài ở trạng thái tắt; bạn có thể tự bật lại nếu muốn.",
+      "back": "Quay lại",
+      "install": "Cài",
+      "failedTitle": "Không cài được",
+      "cancelledTitle": "Đã hủy cài đặt."
+    },
+    "mods": {
+      "table": "Danh sách mod",
+      "runningHint": "Server đang chạy: tắt server trước khi bật, tắt, tải lên hoặc gỡ mod.",
+      "empty": "Chưa có mod nào",
+      "emptyHint": "Tải file .jar lên ở trên hoặc chép vào thư mục mods/ của server.",
+      "openPage": "Mở trang mod",
+      "addTitle": "Thêm mod",
+      "searchPlaceholder": "Tìm mod trên Modrinth…",
+      "searchPlaceholderCurseforge": "Tìm mod trên CurseForge…",
+      "mainItem": "Mod sẽ cài"
+    },
+    "plugins": {
+      "table": "Danh sách plugin",
+      "runningHint": "Server đang chạy: tắt server trước khi bật, tắt, tải lên hoặc gỡ plugin.",
+      "empty": "Chưa có plugin nào",
+      "emptyHint": "Tải file .jar lên ở trên hoặc chép vào thư mục plugins/ của server.",
+      "openPage": "Mở trang plugin",
+      "addTitle": "Thêm plugin",
+      "searchPlaceholder": "Tìm plugin trên Modrinth…",
+      "searchPlaceholderCurseforge": "Tìm plugin trên CurseForge…",
+      "mainItem": "Plugin sẽ cài"
+    }
+  },
+  "modpack": {
+    "title": "Tạo server từ modpack",
+    "description": "Tìm modpack trên Modrinth hoặc tải lên file .mrpack có sẵn.",
+    "dropTitle": "Tải lên file modpack",
+    "dropLabel": "Chọn file modpack",
+    "dropHint": "hoặc kéo thả file .mrpack hoặc .zip vào đây, tối đa 512 MiB.",
+    "searchTitle": "Tìm modpack",
+    "searchPlaceholder": "Tìm modpack trên Modrinth…",
+    "curseforgeNoKey": "CurseForge chưa sẵn sàng vì chưa cấu hình API key trong Cài đặt.",
+    "noResults": "Không tìm thấy modpack nào",
+    "noResultsHint": "Thử từ khóa khác hoặc tải lên file .mrpack có sẵn ở trên.",
+    "version": "Phiên bản modpack",
+    "fileLabel": "File modpack",
+    "fileSize": "Dung lượng",
+    "creatingTitle": "Đang cài modpack",
+    "creatingDescription": "MineHost đang tải Java, cài loader và các file trong modpack.",
+    "doneTitle": "Đã cài xong modpack",
+    "doneDescription": "Server đã sẵn sàng. Mở trang server để đồng ý EULA và bật chơi.",
+    "summaryInstalled": "Số mod đã cài",
+    "summarySkippedClient": "Bỏ qua (chỉ chạy ở client)",
+    "summaryPendingCf": "File CurseForge còn chờ",
+    "pendingCfHint": "Một số file CurseForge cần tự tải trên trang Mod trước khi bật server.",
+    "openServer": "Mở trang server"
   }
 }

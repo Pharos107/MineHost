@@ -36,6 +36,7 @@ export function ServerActions({ server }: { server: Server }) {
   const pending = (action: ServerAction) => run.isPending && run.variables === action;
   const busy = run.isPending || state === "stopping";
   const start = () => (server.eula_accepted ? run.mutate("start") : setEulaOpen(true));
+  const hideStaleStartError = run.variables === "start" && WITH_PROCESS.includes(state);
 
   return (
     <Stack gap={2} align="end">
@@ -62,7 +63,9 @@ export function ServerActions({ server }: { server: Server }) {
           ]}
         />
       </Stack>
-      {run.isError && !isEulaError(run.error) && <Notice tone="danger">{errorMessage(t, run.error)}</Notice>}
+      {run.isError && !isEulaError(run.error) && !hideStaleStartError && (
+        <Notice tone="danger">{errorMessage(t, run.error)}</Notice>
+      )}
       <ConfirmDialog
         open={killOpen}
         title={t("server.killTitle")}

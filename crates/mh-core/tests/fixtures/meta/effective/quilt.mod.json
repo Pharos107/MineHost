@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "quilt_loader": {
+    "group": "ladysnake",
+    "id": "effective",
+    "version": "2.1.1+1.19.2",
+    "metadata": {
+      "name": "Effective",
+      "description": "Client-side mod designed to improve Minecraft\u0027s ambience through particles, visual effects and sounds",
+      "contributors": {
+        "doctor4t": "Owner",
+        "Pyrofab": "Contributor",
+        "lonefelidae16": "Contributor"
+      },
+      "contact": {
+        "homepage": "https://doctor4t.uuid.gg/",
+        "sources": "https://github.com/Ladysnake/Effective",
+        "issues": "https://github.com/Ladysnake/Effective/issues"
+      },
+      "icon": "assets/effective/effective.png"
+    },
+    "intermediate_mappings": "net.fabricmc:intermediary",
+    "entrypoints": {
+      "client_init": [
+        "ladysnake.effective.Effective",
+        "ladysnake.effective.cosmetics.EffectiveCosmetics"
+      ]
+    },
+    "depends": [
+      {
+        "id": "quilt_loader",
+        "versions": "\u003e\u003d0.17.0-"
+      },
+      {
+        "id": "quilted_fabric_api",
+        "versions": "\u003e\u003d4.0.0-"
+      },
+      {
+        "id": "minecraft",
+        "versions": "1.19.2"
+      },
+      {
+        "id": "lodestone",
+        "versions": "*"
+      }
+    ],
+    "jars": [
+      "META-INF/jars/midnightlib-1.0.0-fabric.jar",
+      "META-INF/jars/satin-1.9.0.jar",
+      "META-INF/jars/LodestoneLib-Quilt-9fe9aea.jar",
+      "META-INF/jars/mixinextras-fabric-0.2.0-beta.8.jar"
+    ]
+  },
+  "mixin": [
+    "effective.mixins.json",
+    "effective_cosmetics.mixins.json"
+  ],
+  "access_widener": [
+    "effective.accesswidener"
+  ]
+}

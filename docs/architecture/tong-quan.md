@@ -68,15 +68,25 @@ Hai dòng "Không" là lỗ hổng đã biết, xem [rà soát 2026-11-11](../ra
 
 ## Giới hạn tài nguyên và cô lập
 
-Hiện không có. Server là process con chạy cùng user với controller, giới hạn duy nhất là `-Xmx` của
-JVM (giới hạn mềm, chỉ tính heap). Job Object trên Windows chỉ đặt cờ kill-khi-đóng, không đặt giới
-hạn RAM hay CPU. Linux không dùng cgroup. Hệ quả về bảo mật: [bao-mat.md](bao-mat.md).
+Server là process con chạy cùng user với controller, không bị chặn đọc file. Giới hạn tài nguyên
+(spec P3, mục 3.8):
+
+- **Windows:** mỗi process có Job Object riêng: kill khi đóng handle, bộ nhớ commit tối đa
+  `-Xmx × 1,5 + 1024 MB`, tối đa 16 process. Chạm giới hạn bộ nhớ thì crash có gợi ý `MEMORY_LIMIT`
+  và không tự bật lại.
+- **Linux:** khi cgroup hiện tại được giao quyền (unit có `Delegate=yes`, hoặc `systemd-run --user`),
+  controller chuyển vào `<cgroup>/minehost-controller` và tạo một cgroup anh em cho mỗi process với
+  `memory.max` cùng công thức, `memory.swap.max = 0`, `pids.max = 2048`. Kernel kill vì vượt
+  `memory.max` thì crash có gợi ý `MEMORY_LIMIT`. Không được giao quyền (ví dụ chạy từ terminal
+  thường) thì chỉ có `-Xmx` và log một cảnh báo.
+
+Không giới hạn CPU. Hệ quả về bảo mật: [bao-mat.md](bao-mat.md).
 
 ## Đang có và chưa có
 
 | Phần | Trạng thái |
 | --- | --- |
-| Loại server | Paper, Purpur (kiểm tra md5), Vanilla (jar của Mojang). Mod loader: P3 |
+| Loại server | Paper, Purpur (kiểm tra md5), Vanilla (jar của Mojang). Fabric, Quilt, Forge (từ 1.12.2), NeoForge (từ 1.20.2): Job tải installer chính thức, chạy bằng Java của server trong `.minehost-install/`, kiểm tra file chạy trên đĩa rồi mới ghi `instance.toml` ([ADR 0006](../adr/0006-provider-tra-ke-hoach-app-chay-installer.md)). Tạo được qua API; wizard ở PR-10 của P3 |
 | Runtime | Chỉ process con. Docker: P4 |
 | Java | Temurin JRE do MineHost tải, chọn major theo Mojang. Không dùng Java có sẵn trên máy |
 | Lưu trữ | File trên đĩa. Không có SQLite ([ADR 0004](../adr/0004-chua-dung-sqlite.md)) |
@@ -107,5 +117,6 @@ Spec gốc viết trước khi code. Các điểm dưới đây code (và spec g
 | Test dùng `cargo-nextest`, `insta`; API thật chạy hằng đêm; fuzz hằng tuần | `cargo test`; không có workflow chạy theo lịch nào ([ops/kiem-thu-va-ci.md](../ops/kiem-thu-va-ci.md)) |
 | CHANGELOG sinh tự động | Không có file CHANGELOG; ghi chú phát hành do GitHub sinh |
 | Không chạy dưới root hoặc Administrator | Code không kiểm tra điều này |
-| Chỉ tải từ danh sách domain được phép | `mh-net` không có danh sách domain; mỗi provider tự ghi URL. Riêng skin sẽ giới hạn domain (spec P2 mục 8) |
+| Chỉ tải từ danh sách domain được phép | Chỉ khi người gọi truyền `HostAllowlist` (mod, modpack, loader của P3; skin của P2). Mojang, Paper, Purpur, Adoptium vẫn tải theo URL do provider ghi |
 | P2 có bảng `users` | P2 chỉ có một mật khẩu admin, không có tài khoản |
+| Provider có `install(ctx, version)` tự chạy installer của loader | Provider trả `InstallPlan`; `mh-app` chạy installer qua `mh-runtime` ([ADR 0006](../adr/0006-provider-tra-ke-hoach-app-chay-installer.md)) |

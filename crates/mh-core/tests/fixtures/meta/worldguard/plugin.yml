@@ -1,0 +1,6 @@
+name: WorldGuard
+main: com.sk89q.worldguard.bukkit.WorldGuardPlugin
+version: "7.0.21+2424-da30a99"
+depend: [WorldEdit]
+api-version: "26.3"
+folia-supported: true

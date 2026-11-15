@@ -11,13 +11,14 @@ interface FileDropProps {
   /** Dòng gợi ý trong vùng kéo thả. */
   hint: string;
   onFiles: (files: File[]) => void;
+  accept?: string;
   disabled?: boolean;
   /** Danh sách tiến độ hoặc thông báo hiện bên dưới. */
   children?: ReactNode;
 }
 
 /** Vùng kéo thả file kèm nút chọn file. Không tự tải lên: trang quyết định làm gì với file. */
-export function FileDrop({ label, hint, onFiles, disabled = false, children }: FileDropProps) {
+export function FileDrop({ label, hint, onFiles, accept, disabled = false, children }: FileDropProps) {
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
 
@@ -51,6 +52,7 @@ export function FileDrop({ label, hint, onFiles, disabled = false, children }: F
       <input
         ref={input}
         type="file"
+        accept={accept}
         multiple
         hidden
         aria-label={label}

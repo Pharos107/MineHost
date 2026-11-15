@@ -18,6 +18,8 @@ import {
   IconButton,
   Notice,
   PageHeader,
+  ProjectCard,
+  ProjectCardGrid,
   SegmentedControl,
   ServerCard,
   ServerCardGrid,
@@ -46,6 +48,7 @@ export function Gallery() {
         <ButtonSection />
         <BadgeSection />
         <ServerCardSection />
+        <ProjectCardSection />
         <NoticeSection />
         <CardSection />
         <TableSection />
@@ -186,6 +189,33 @@ function ServerCardSection() {
           { icon: Server, label: "RAM", value: "16 GB / 31 GB" },
         ]}
       />
+    </Card>
+  );
+}
+
+function ProjectCardSection() {
+  const [selected, setSelected] = useState("sodium");
+  return (
+    <Card title="ProjectCard">
+      <ProjectCardGrid>
+        <ProjectCard
+          title="Sodium"
+          description="Tối ưu render cho Minecraft, tăng FPS đáng kể mà không đổi hình ảnh gốc."
+          downloads={48_500_000}
+          loaders={["Fabric", "Quilt", "NeoForge"]}
+          version="1.21.4"
+          selected={selected === "sodium"}
+          onSelect={() => setSelected("sodium")}
+        />
+        <ProjectCard
+          title="Fabulously Optimized"
+          description="Modpack tối ưu hiệu năng kèm đầy đủ tính năng tiện ích."
+          downloads={6_200_000}
+          loaders={["Fabric"]}
+          version="1.21.4"
+          actions={<Button size="sm" variant="primary">Cài modpack</Button>}
+        />
+      </ProjectCardGrid>
     </Card>
   );
 }

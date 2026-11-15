@@ -114,6 +114,7 @@ async fn create(app: &Arc<App>) -> ServerId {
         name: ServerName::parse("Lịch").unwrap(),
         loader: LoaderKind::Paper,
         minecraft: McVersion::parse("1.21.4").unwrap(),
+        loader_version: None,
         memory_mb: None,
         port: None,
     };

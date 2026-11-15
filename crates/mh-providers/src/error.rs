@@ -26,6 +26,17 @@ pub enum ProviderError {
         version: String,
     },
 
+    /// Project hoặc file không còn trên Modrinth hay CurseForge (spec P3, mục 4.4).
+    #[error("{source_name} không có nội dung {id}")]
+    ContentNotFound {
+        source_name: &'static str,
+        id: String,
+    },
+
+    /// Không có key CurseForge, hoặc key bị từ chối (spec P3, mục 3.6, 4.4).
+    #[error("CurseForge hiện không khả dụng")]
+    CurseforgeUnavailable,
+
     /// API trả dữ liệu thiếu hoặc sai (thường là API đổi cấu trúc); chi tiết nằm trong log.
     #[error("dữ liệu từ {source_name} không hợp lệ: {reason}")]
     Invalid {
@@ -40,9 +51,21 @@ pub enum ProviderError {
     /// Hồ sơ không có ảnh. App dùng skin mặc định; không phải `PLAYER_NOT_FOUND`.
     #[error("không có skin")]
     NoSkin,
+
+    /// File modpack thiếu index, sai định dạng, vượt giới hạn hoặc có đường dẫn thoát thư mục.
+    #[error("modpack không hợp lệ: {reason}")]
+    ModpackInvalid { reason: String },
 }
 
 impl ProviderError {
+    /// Tham số đi kèm mã lỗi; chỉ lỗi mạng mới có (ví dụ `retry_after_s`).
+    pub fn params(&self) -> serde_json::Value {
+        match self {
+            Self::Net(e) => e.params(),
+            _ => serde_json::Value::Object(serde_json::Map::new()),
+        }
+    }
+
     pub fn code(&self) -> ErrorCode {
         match self {
             // API của Paper trả 404 cho phiên bản không có. 404 của hồ sơ người chơi
@@ -52,10 +75,26 @@ impl ProviderError {
             Self::Platform(e) => e.code(),
             Self::Io { .. } => ErrorCode::Internal,
             Self::VersionNotFound { .. } => ErrorCode::VersionNotFound,
+            Self::ContentNotFound { .. } => ErrorCode::ContentNotFound,
+            Self::CurseforgeUnavailable => ErrorCode::CurseforgeUnavailable,
             Self::Invalid { .. } => ErrorCode::NetworkUnavailable,
             Self::PlayerNotFound(_) => ErrorCode::PlayerNotFound,
             // Người gọi phải khớp biến thể này để lấy skin mặc định, không dựa vào mã HTTP.
             Self::NoSkin => ErrorCode::NotFound,
+            Self::ModpackInvalid { .. } => ErrorCode::ModpackInvalid,
+        }
+    }
+
+    pub(crate) fn io(path: impl Into<PathBuf>, source: io::Error) -> Self {
+        Self::Io {
+            path: path.into(),
+            source,
+        }
+    }
+
+    pub(crate) fn modpack_invalid(reason: impl Into<String>) -> Self {
+        Self::ModpackInvalid {
+            reason: reason.into(),
         }
     }
 

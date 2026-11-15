@@ -15,7 +15,7 @@ Mỗi dòng: ý tưởng, vì sao đáng làm, nguồn (ai đề xuất hoặc t
 
 | Ý tưởng | Vì sao | Nguồn | Gợi ý |
 | --- | --- | --- | --- |
-| Cô lập process server không cần Docker: Job Object giới hạn RAM và số process (Windows); Landlock và cgroup v2 (Linux) | Plugin, mod đang chạy với toàn quyền của user. Pterodactyl bắt buộc Docker, Crafty chạy trần: đây là chỗ MineHost có thể đi trước. Lưu ý: Job Object chỉ giới hạn tài nguyên, **không** chặn mod đọc file của user (mã độc kiểu Fractureiser chạy ngay trong JVM). Chặn file trên Windows cần AppContainer hoặc token mức thấp, chưa rõ có chạy được với JVM không; trên Linux thì Landlock làm được | Rà soát A1 | Trước P3 |
+| Cô lập process server không cần Docker: Job Object giới hạn RAM và số process (Windows); Landlock và cgroup v2 (Linux) | Plugin, mod đang chạy với toàn quyền của user. Pterodactyl bắt buộc Docker, Crafty chạy trần: đây là chỗ MineHost có thể đi trước. Lưu ý: Job Object chỉ giới hạn tài nguyên, **không** chặn mod đọc file của user (mã độc kiểu Fractureiser chạy ngay trong JVM). Chặn file trên Windows cần AppContainer hoặc token mức thấp, chưa rõ có chạy được với JVM không; trên Linux thì Landlock làm được | Rà soát A1 | Giới hạn RAM và số process đã vào [spec P3](specs/p3-mod-va-modpack.md#38-giới-hạn-tài-nguyên-của-process-server-rà-soát-a1-phần-đầu); còn lại chặn đọc file: sau P3 |
 | Thư mục backup thứ hai (ổ khác, NAS, thư mục đồng bộ đám mây) | Backup cùng ổ với world thì hỏng ổ là mất cả hai. Dùng thư mục đồng bộ sẵn có nên không cần tích hợp API đám mây nào | Rà soát A4 | P3 |
 | Backup lưu theo hash từng file | File region ít thay đổi; tránh chép lại cả world mỗi lần | Rà soát A4 | P3 trở đi |
 | Tự kiểm tra backup định kỳ (hash, mở được `level.dat`) | Backup chỉ có giá trị khi khôi phục được | Rà soát, phần lợi thế | P3 |
@@ -31,9 +31,6 @@ Mỗi dòng: ý tưởng, vì sao đáng làm, nguồn (ai đề xuất hoặc t
 | "Bác sĩ server": đọc `crash-reports/` và `hs_err_pid*.log`, chỉ ra mod gây lỗi, thiếu dependency, sai Java, kèm nút sửa | Khung `ErrorCode` kèm gợi ý sửa đã có; các panel khác chỉ đưa log thô | Rà soát, phần lợi thế | P3 (cùng mod) |
 | Tích hợp Spark profiler | Chuẩn chẩn đoán lag của cộng đồng | Yêu cầu rà soát | P5 |
 | Lịch sử chỉ số dài hơn 1 giờ | Hiện mất khi tắt controller | Spec P2, "không làm" | Cùng lúc với SQLite (P5) |
-| Cập nhật build Paper cho server đã tạo, có backup trước | Bản vá bảo mật không tới server cũ | Rà soát B4 | P2 hoặc đầu P3 |
-| Chọn Java riêng cho từng server trong giao diện | Modpack cũ đôi khi cần đúng một bản Java | Rà soát B1 | P3 |
-| Cách chạy server ngoài `-jar`: Forge và NeoForge từ 1.17 chạy bằng `java @user_jvm_args.txt @libraries/…/<os>_args.txt`, không qua `-jar server.jar` | `JavaLaunch` và `instance.toml` hiện chỉ có `jar`. Thêm được một bảng `launch` có mặc định là `jar` mà vẫn ở schema 1 (khóa lạ được giữ). Forge bản mới có thể có shim jar để chạy bằng `-jar`; cần kiểm tra | Đánh giá bên ngoài (2026-11-12) | Quyết định trong spec P3, trước khi code loader |
 
 ## Mạng và người chơi
 

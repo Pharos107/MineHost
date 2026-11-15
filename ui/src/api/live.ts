@@ -30,7 +30,10 @@ export function useServersLive() {
         const event = message.data as ServerEvent;
         queryClient.setQueryData<Server[]>(SERVERS_KEY, (list) => applyServerEvent(list, event));
         if ("removed" in event) queryClient.removeQueries({ queryKey: [...SERVERS_KEY, event.id] });
-        else queryClient.setQueryData([...SERVERS_KEY, event.id], event);
+        else {
+          queryClient.setQueryData([...SERVERS_KEY, event.id], event);
+          void queryClient.invalidateQueries({ queryKey: [...SERVERS_KEY, event.id, "preflight"] });
+        }
       }),
     [queryClient],
   );

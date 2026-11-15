@@ -9,6 +9,10 @@
   color: var(--mh-text);
 }
 
+.lg {
+  width: min(44rem, calc(100vw - 32px));
+}
+
 .dialog::backdrop {
   background: rgb(3 8 15 / 0.6);
 }
@@ -16,6 +20,7 @@
 .content {
   display: flex;
   flex-direction: column;
+  max-height: inherit;
 }
 
 .header {
@@ -37,6 +42,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--mh-space-4);
+  overflow-y: auto;
   padding: var(--mh-space-4) var(--mh-space-5);
 }
 

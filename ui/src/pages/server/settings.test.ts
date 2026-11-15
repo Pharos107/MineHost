@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Server } from "../../api/client";
 import { getProperty, sameProperties, setProperty } from "./properties";
-import { settingsErrors, settingsFrom, settingsPatch } from "./settings";
+import { javaChoices, settingsErrors, settingsFrom, settingsPatch } from "./settings";
 
 const server: Server = {
   id: "01JB",
@@ -15,6 +15,8 @@ const server: Server = {
   eula_accepted: true,
   restart_pending: false,
   slow_start: false,
+  ignored_jvm_args: false,
+  preflight_blocking: false,
 };
 
 describe("cài đặt server", () => {
@@ -42,6 +44,14 @@ describe("cài đặt server", () => {
     expect(settingsErrors({ ...settingsFrom(server), port: "" }).port).toBe("wizard.portInvalid");
     expect(settingsErrors({ ...settingsFrom(server), port: "25570" }).port).toBeUndefined();
     expect(settingsPatch(server, { ...settingsFrom(server), port: "25570" })).toEqual({ port: 25570 });
+  });
+
+  it("ô chọn Java giữ bản đang dùng và gửi java_major khi đổi", () => {
+    expect(javaChoices([8, 17, 21], 17)).toEqual([8, 17, 21]);
+    expect(javaChoices([8, 17, 21], 16)).toEqual([8, 16, 17, 21]);
+    const s = { ...server, minecraft: "1.21.4", java_major: 21, java_recommended: 21 };
+    expect(settingsFrom(s).javaMajor).toBe(21);
+    expect(settingsPatch(s, { ...settingsFrom(s), javaMajor: 17 })).toEqual({ java_major: 17 });
   });
 });
 

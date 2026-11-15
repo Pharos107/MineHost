@@ -24,6 +24,10 @@ pub struct ServerView {
     pub installing: Option<Installing>,
     pub broken: Option<BrokenReason>,
     pub status: Option<Status>,
+    /// Thư mục server có `user_jvm_args.txt` không rỗng mà MineHost không đọc.
+    pub ignored_jvm_args: bool,
+    /// Có lỗi preflight đang chặn bật (thiếu dependency hoặc file CurseForge pending).
+    pub preflight_blocking: bool,
 }
 
 /// Các cài đặt sửa được trong tab "Cài đặt server". Có hiệu lực từ lần bật sau.
@@ -40,6 +44,8 @@ pub struct SettingsPatch {
     pub backup_schedule: Option<BackupSchedule>,
     /// Số bản tự động giữ lại, 1..=100.
     pub backup_keep: Option<u16>,
+    /// Phiên bản Java chính (8, 11, 17, 21, 25). Có hiệu lực từ lần bật sau.
+    pub java_major: Option<u16>,
 }
 
 impl App {
@@ -104,6 +110,16 @@ impl App {
         if let Some(keep) = patch.backup_keep {
             spec.backup.keep = check_keep(keep)?;
         }
+        if let Some(major) = patch.java_major {
+            if !mh_core::is_supported_java_major(major) {
+                return Err(AppError::new(
+                    ErrorCode::InvalidInput,
+                    format!("không hỗ trợ Java {major}"),
+                )
+                .with_params(serde_json::json!({ "field": "java_major" })));
+            }
+            spec.game.java_major = major;
+        }
         self.store.save(&spec)?;
         self.notify_changed(id);
         Ok(spec)
@@ -157,7 +173,26 @@ impl App {
     }
 
     pub async fn start(&self, id: ServerId) -> Result<(), AppError> {
-        Ok(self.handle(id)?.start().await?)
+        self.start_with(id, false).await
+    }
+
+    /// Bật server theo thao tác của người dùng; kiểm tra preflight trừ khi `ignore_preflight = true`.
+    /// Tự bật khi mở controller / sau crash / theo lịch gọi thẳng `SupervisorHandle`, không đi qua đây.
+    pub async fn start_with(&self, id: ServerId, ignore_preflight: bool) -> Result<(), AppError> {
+        let handle = self.handle(id)?;
+        if handle.status().state.has_process() {
+            return Err(AppError::new(
+                ErrorCode::ServerBusy,
+                "server đang chạy hoặc đang bật/tắt",
+            ));
+        }
+        if !ignore_preflight {
+            let report = self.preflight(id).await?;
+            if let Some(err) = crate::content::preflight_block_error(&report) {
+                return Err(err);
+            }
+        }
+        Ok(handle.start().await?)
     }
 
     pub async fn stop(&self, id: ServerId) -> Result<(), AppError> {
@@ -228,6 +263,7 @@ impl App {
                 id,
                 store: self.store.clone(),
                 java: Arc::clone(&self.java),
+                jobs: Arc::clone(&self.jobs),
                 port_free: Arc::clone(&self.port_free),
             };
             let handle = mh_supervisor::spawn(config, Arc::clone(&self.runtime), launcher);
@@ -284,6 +320,9 @@ impl App {
 
     fn ready_view(&self, spec: InstanceSpec) -> ServerView {
         let status = self.supervisor(spec.id).status();
+        let ignored_jvm_args =
+            crate::import::detect::has_ignored_jvm_args(&self.store.paths(spec.id).server_dir);
+        let preflight_blocking = self.has_preflight_blocking(&spec);
         ServerView {
             id: spec.id,
             state: status.state,
@@ -291,6 +330,8 @@ impl App {
             installing: None,
             broken: None,
             status: Some(status),
+            ignored_jvm_args,
+            preflight_blocking,
         }
     }
 }
@@ -341,6 +382,8 @@ fn installing_view(id: ServerId, info: Installing) -> ServerView {
         installing: Some(info),
         broken: None,
         status: None,
+        ignored_jvm_args: false,
+        preflight_blocking: false,
     }
 }
 
@@ -352,5 +395,7 @@ fn broken_view(id: ServerId, reason: BrokenReason) -> ServerView {
         installing: None,
         broken: Some(reason),
         status: None,
+        ignored_jvm_args: false,
+        preflight_blocking: false,
     }
 }

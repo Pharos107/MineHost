@@ -3,11 +3,13 @@
 use std::sync::Arc;
 
 use axum::Json;
+use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, StatusCode};
 use mh_app::{App, CreateRequest, SettingsPatch};
 use mh_core::{
-    BackupSchedule, DailyTime, GamePort, LoaderKind, McVersion, MemoryLimits, ServerName,
+    BackupSchedule, DailyTime, GamePort, LoaderKind, LoaderVersion, McVersion, MemoryLimits,
+    ServerName,
 };
 use serde::Deserialize;
 use time::OffsetDateTime;
@@ -18,8 +20,13 @@ use crate::dto::{
     PropertiesDto, PropertyDto, ServerDto, ServerMetricsDto, TrashedDto,
 };
 use crate::error::{ApiError, ApiJson, ErrorBody, IdPath};
+use crate::preflight::{StartActionBody, parse_optional_start_body};
 
 type ApiResult<T> = Result<T, ApiError>;
+
+pub(crate) fn parse_loader(s: &str) -> Result<LoaderKind, ApiError> {
+    LoaderKind::parse(s).map_err(|_| ApiError::invalid("loader"))
+}
 
 #[utoipa::path(get, path = "/api/v1/servers", tag = "servers",
     responses((status = 200, body = [ServerDto])))]
@@ -38,8 +45,14 @@ pub async fn create(
 ) -> ApiResult<(StatusCode, Json<CreatedDto>)> {
     let req = CreateRequest {
         name: ServerName::parse(&body.name).map_err(|_| ApiError::invalid("name"))?,
-        loader: LoaderKind::parse(&body.loader).map_err(|_| ApiError::invalid("loader"))?,
+        loader: parse_loader(&body.loader)?,
         minecraft: McVersion::parse(&body.minecraft).map_err(|_| ApiError::invalid("minecraft"))?,
+        loader_version: body
+            .loader_version
+            .as_deref()
+            .map(LoaderVersion::parse)
+            .transpose()
+            .map_err(|_| ApiError::invalid("loader_version"))?,
         memory_mb: body.memory_mb.map(memory).transpose()?,
         port: body.port.map(port).transpose()?,
     };
@@ -82,6 +95,7 @@ pub async fn patch(
             .transpose()
             .map_err(|_| ApiError::invalid("backup.schedule"))?,
         backup_keep: body.backup.as_ref().and_then(|b| b.keep),
+        java_major: body.java_major,
     };
     app.update_settings(id, patch)?;
     Ok(Json(app.get(id)?.into()))
@@ -130,14 +144,18 @@ pub async fn eula(
 
 #[utoipa::path(post, path = "/api/v1/servers/{id}/actions/{action}", tag = "servers",
     params(("id" = String, Path), ("action" = String, Path, description = "start, stop, restart, kill")),
+    request_body = Option<StartActionBody>,
     responses((status = 204, description = "Đã nhận lệnh"), (status = 409, body = ErrorBody)))]
 pub async fn action(
     State(app): State<Arc<App>>,
     IdPath(id): IdPath,
     Path((_, action)): Path<(String, String)>,
+    headers: HeaderMap,
+    body: Bytes,
 ) -> ApiResult<StatusCode> {
+    let opts = parse_optional_start_body(&headers, &body)?;
     match action.as_str() {
-        "start" => app.start(id).await?,
+        "start" => app.start_with(id, opts.ignore_preflight).await?,
         "stop" => app.stop(id).await?,
         "restart" => app.restart(id).await?,
         "kill" => app.kill(id).await?,
@@ -241,10 +259,10 @@ fn parse_since(text: &str) -> Result<OffsetDateTime, ApiError> {
     OffsetDateTime::parse(text, &Rfc3339).map_err(|_| ApiError::invalid("since"))
 }
 
-fn memory(m: MemoryDto) -> ApiResult<MemoryLimits> {
+pub(crate) fn memory(m: MemoryDto) -> ApiResult<MemoryLimits> {
     MemoryLimits::new(m.min, m.max).map_err(|_| ApiError::invalid("memory_mb"))
 }
 
-fn port(p: u16) -> ApiResult<GamePort> {
+pub(crate) fn port(p: u16) -> ApiResult<GamePort> {
     GamePort::new(p).map_err(|_| ApiError::invalid("port"))
 }

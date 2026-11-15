@@ -211,7 +211,7 @@
           {
             "name": "loader",
             "in": "path",
-            "description": "`paper`, `vanilla` hoặc `purpur`",
+            "description": "`paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`",
             "required": true,
             "schema": {
               "type": "string"
@@ -243,6 +243,373 @@
             }
           },
           "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog/{loader}/{minecraft}/loader-versions": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "operationId": "loader_versions",
+        "parameters": [
+          {
+            "name": "loader",
+            "in": "path",
+            "description": "`fabric`, `quilt`, `forge` hoặc `neoforge`",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "minecraft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bản loader, bản đề xuất đứng đầu",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LoaderVersionDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Loại server không có bản loader",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Loader không có bản cho phiên bản này",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/content/search": {
+      "get": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "search",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "description": "Nguồn tìm kiếm; mặc định `modrinth`.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "description": "`mod`, `plugin` hoặc `modpack`.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "server_id",
+            "in": "path",
+            "description": "Lọc theo loader, Minecraft của server và `server_side != unsupported`.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "path",
+            "description": "Trang (từ 1), mỗi trang 20 kết quả.",
+            "required": true,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/content/{source}/projects/{pid}": {
+      "get": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "project",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/content/{source}/projects/{pid}/versions": {
+      "get": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "versions",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContentVersionDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
             "content": {
               "application/json": {
                 "schema": {
@@ -594,6 +961,120 @@
         }
       }
     },
+    "/api/v1/servers/modpack": {
+      "post": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateModpackBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Job cài modpack đã chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/modpack/upload": {
+      "post": {
+        "tags": [
+          "servers"
+        ],
+        "description": "multipart/form-data, một file .mrpack hoặc .zip tối đa 512 MiB kèm trường name (tùy chọn memory_mb, port).",
+        "operationId": "upload",
+        "responses": {
+          "202": {
+            "description": "Job cài modpack đã chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}": {
       "get": {
         "tags": [
@@ -748,6 +1229,22 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/StartActionBody"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "204": {
             "description": "Đã nhận lệnh"
@@ -1134,6 +1631,467 @@
         "responses": {
           "204": {
             "description": "Đã gửi lệnh"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/content": {
+      "get": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerContentDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "install",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentInstallBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Job cài mod/plugin đã chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStartedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/content/pending/upload": {
+      "post": {
+        "tags": [
+          "content"
+        ],
+        "description": "multipart/form-data, một hoặc nhiều phần `file` (.jar ≤ 512 MiB) khớp SHA-1 các mục CurseForge đang chờ.",
+        "operationId": "upload_pending",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingUploadResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/content/plan": {
+      "post": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "plan",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentInstallBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentPlanDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/content/upload": {
+      "post": {
+        "tags": [
+          "content"
+        ],
+        "description": "multipart/form-data, một file .jar tối đa 512 MiB.",
+        "operationId": "upload",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstalledContentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/content/{file}": {
+      "delete": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "remove",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "file",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Đã chuyển vào thùng rác"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "content"
+        ],
+        "operationId": "toggle",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "file",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleContentBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Đã cập nhật trạng thái"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           },
           "409": {
             "content": {
@@ -1781,6 +2739,45 @@
         }
       }
     },
+    "/api/v1/servers/{id}/preflight": {
+      "get": {
+        "tags": [
+          "content"
+        ],
+        "summary": "Kiểm tra điều kiện mod/plugin trước khi bật server.",
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreflightDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}/properties": {
       "get": {
         "tags": [
@@ -1922,6 +2919,132 @@
           },
           "409": {
             "description": "Bật LAN khi chưa có mật khẩu",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/curseforge": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "get_curseforge",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurseforgeSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "put_curseforge",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CurseforgeKeyBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurseforgeSettingsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "delete_curseforge",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurseforgeSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
             "content": {
               "application/json": {
                 "schema": {
@@ -2118,6 +3241,21 @@
           }
         }
       },
+      "ClientOnlyDto": {
+        "type": "object",
+        "required": [
+          "file_name",
+          "name"
+        ],
+        "properties": {
+          "file_name": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "CommandBody": {
         "type": "object",
         "required": [
@@ -2160,6 +3298,133 @@
             "$ref": "#/components/schemas/StreamDto"
           },
           "text": {
+            "type": "string"
+          }
+        }
+      },
+      "ContentInstallBody": {
+        "type": "object",
+        "required": [
+          "source",
+          "project_id"
+        ],
+        "properties": {
+          "project_id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "version_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ContentKindDto": {
+        "type": "string",
+        "enum": [
+          "mods",
+          "plugins"
+        ]
+      },
+      "ContentPlanDto": {
+        "type": "object",
+        "required": [
+          "kind",
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlannedContentDto"
+            }
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ContentKindDto"
+          }
+        }
+      },
+      "ContentSourceDto": {
+        "type": "string",
+        "enum": [
+          "modrinth",
+          "curseforge",
+          "modpack",
+          "upload"
+        ]
+      },
+      "ContentVersionDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "name",
+          "version_type",
+          "game_versions",
+          "loaders",
+          "date_published",
+          "manual_download"
+        ],
+        "properties": {
+          "date_published": {
+            "type": "string",
+            "description": "RFC 3339."
+          },
+          "download_page_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "file_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "file_size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "game_versions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "loaders": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "manual_download": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "version_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version_type": {
             "type": "string"
           }
         }
@@ -2210,6 +3475,50 @@
           }
         }
       },
+      "CreateModpackBody": {
+        "type": "object",
+        "required": [
+          "source",
+          "project_id",
+          "name"
+        ],
+        "properties": {
+          "memory_mb": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MemoryDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "port": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "description": "`modrinth` hoặc `curseforge`."
+          },
+          "version_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "CreateServerBody": {
         "type": "object",
         "required": [
@@ -2220,7 +3529,14 @@
         "properties": {
           "loader": {
             "type": "string",
-            "description": "P1 chỉ có `paper`."
+            "description": "`paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`."
+          },
+          "loader_version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Chỉ với mod loader; không gửi thì dùng bản đề xuất."
           },
           "memory_mb": {
             "oneOf": [
@@ -2276,29 +3592,74 @@
           }
         }
       },
+      "CurseforgeKeyBody": {
+        "type": "object",
+        "required": [
+          "api_key"
+        ],
+        "properties": {
+          "api_key": {
+            "type": "string"
+          }
+        }
+      },
+      "CurseforgeKeySourceDto": {
+        "type": "string",
+        "enum": [
+          "builtin",
+          "user",
+          "none"
+        ]
+      },
+      "CurseforgeSettingsDto": {
+        "type": "object",
+        "required": [
+          "available",
+          "source"
+        ],
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "source": {
+            "$ref": "#/components/schemas/CurseforgeKeySourceDto"
+          }
+        }
+      },
       "DetectedDto": {
         "type": "object",
         "required": [
-          "has_mods"
+          "has_mods",
+          "ignored_jvm_args"
         ],
         "properties": {
           "has_mods": {
             "type": "boolean",
-            "description": "Có `mods/`: chưa hỗ trợ ở bản này."
+            "description": "Có `mods/`: cần chọn mod loader để nhập."
+          },
+          "ignored_jvm_args": {
+            "type": "boolean",
+            "description": "Có `user_jvm_args.txt` chứa cờ ngoài chú thích mà MineHost bỏ qua."
           },
           "jar": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Jar sẽ chạy. `null` nghĩa là thư mục không có jar nào, không nhập được."
+            "description": "Jar sẽ chạy. `null` nghĩa là không có jar (trừ Forge/NeoForge dùng `args_file`)."
           },
           "loader": {
             "type": [
               "string",
               "null"
             ],
-            "description": "`paper`, `purpur`, `vanilla`; không nhận ra thì `null`, người dùng chọn tay."
+            "description": "`paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge`, `neoforge`; không nhận ra thì `null`."
+          },
+          "loader_version": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "minecraft": {
             "type": [
@@ -2464,6 +3825,78 @@
           }
         }
       },
+      "InstalledContentDto": {
+        "type": "object",
+        "required": [
+          "file_name",
+          "name",
+          "enabled",
+          "size",
+          "manual",
+          "client_only",
+          "from_modpack"
+        ],
+        "properties": {
+          "client_only": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "from_modpack": {
+            "type": "boolean"
+          },
+          "icon_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "manual": {
+            "type": "boolean",
+            "description": "`true` khi người dùng chép trực tiếp vào thư mục mà chưa có bản ghi nguồn."
+          },
+          "name": {
+            "type": "string"
+          },
+          "project_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "source": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ContentSourceDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "JobDto": {
         "type": "object",
         "required": [
@@ -2510,6 +3943,13 @@
               }
             ]
           },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Kết quả tóm tắt tùy theo loại Job (ví dụ thống kê modpack đã cài)."
+          },
           "server_id": {
             "type": [
               "string",
@@ -2546,6 +3986,23 @@
           "failed",
           "cancelled"
         ]
+      },
+      "LoaderVersionDto": {
+        "type": "object",
+        "description": "Một bản mod loader (spec P3, mục 5.8).",
+        "required": [
+          "version",
+          "stable"
+        ],
+        "properties": {
+          "stable": {
+            "type": "boolean",
+            "description": "Bản ổn định theo nguồn của loader; bản đề xuất luôn đứng đầu danh sách."
+          },
+          "version": {
+            "type": "string"
+          }
+        }
       },
       "LoginBody": {
         "type": "object",
@@ -2606,6 +4063,25 @@
             "format": "int32",
             "description": "`null` cho tới khi có theo dõi người chơi.",
             "minimum": 0
+          }
+        }
+      },
+      "MissingDepDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "version_req",
+          "required_by"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "required_by": {
+            "type": "string"
+          },
+          "version_req": {
+            "type": "string"
           }
         }
       },
@@ -2675,6 +4151,15 @@
               }
             ]
           },
+          "java_major": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Phiên bản Java chính (`8`, `11`, `17`, `21`, `25`).",
+            "minimum": 0
+          },
           "memory_mb": {
             "oneOf": [
               {
@@ -2714,6 +4199,150 @@
               "boolean",
               "null"
             ]
+          }
+        }
+      },
+      "PendingContentDto": {
+        "type": "object",
+        "required": [
+          "path",
+          "name",
+          "file_name",
+          "project_id",
+          "file_id",
+          "sha1",
+          "page_url"
+        ],
+        "properties": {
+          "file_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "page_url": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "project_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "sha1": {
+            "type": "string"
+          }
+        }
+      },
+      "PendingUploadItemDto": {
+        "type": "object",
+        "description": "Kết quả tải lên từng file trong vùng kéo thả mục CurseForge đang chờ.",
+        "required": [
+          "file_name",
+          "ok"
+        ],
+        "properties": {
+          "error": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "installed": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/InstalledContentDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PendingUploadResultDto": {
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingUploadItemDto"
+            }
+          }
+        }
+      },
+      "PlannedContentDto": {
+        "type": "object",
+        "required": [
+          "project_id",
+          "project_name",
+          "version_id",
+          "version_number",
+          "file_name",
+          "file_size",
+          "client_only",
+          "replaces_existing",
+          "is_dependency",
+          "manual_download"
+        ],
+        "properties": {
+          "client_only": {
+            "type": "boolean"
+          },
+          "download_page_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "file_size": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "is_dependency": {
+            "type": "boolean"
+          },
+          "manual_download": {
+            "type": "boolean"
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "project_name": {
+            "type": "string"
+          },
+          "replaces_existing": {
+            "type": "boolean"
+          },
+          "version_id": {
+            "type": "string"
+          },
+          "version_number": {
+            "type": "string"
           }
         }
       },
@@ -2864,6 +4493,49 @@
           }
         }
       },
+      "PreflightDto": {
+        "type": "object",
+        "description": "Báo cáo kiểm tra trước khi bật server.",
+        "required": [
+          "missing_deps",
+          "version_mismatches",
+          "wrong_loader",
+          "pending",
+          "client_only"
+        ],
+        "properties": {
+          "client_only": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClientOnlyDto"
+            }
+          },
+          "missing_deps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MissingDepDto"
+            }
+          },
+          "pending": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingContentDto"
+            }
+          },
+          "version_mismatches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VersionMismatchDto"
+            }
+          },
+          "wrong_loader": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WrongLoaderDto"
+            }
+          }
+        }
+      },
       "ProgressDto": {
         "type": "object",
         "required": [
@@ -2901,6 +4573,128 @@
             "type": "integer",
             "format": "int32",
             "minimum": 0
+          }
+        }
+      },
+      "ProjectDto": {
+        "type": "object",
+        "required": [
+          "source",
+          "project_id",
+          "slug",
+          "kind",
+          "title",
+          "description",
+          "downloads",
+          "loaders",
+          "game_versions",
+          "links"
+        ],
+        "properties": {
+          "body": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "client_side": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SideSupportDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "downloads": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "game_versions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "icon_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "type": "string"
+          },
+          "links": {
+            "$ref": "#/components/schemas/ProjectLinksDto"
+          },
+          "loaders": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "server_side": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SideSupportDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "slug": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "ProjectLinksDto": {
+        "type": "object",
+        "required": [
+          "page"
+        ],
+        "properties": {
+          "discord": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "issues": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "page": {
+            "type": "string"
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "wiki": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -2961,6 +4755,131 @@
           }
         }
       },
+      "SearchHitDto": {
+        "type": "object",
+        "required": [
+          "source",
+          "project_id",
+          "slug",
+          "kind",
+          "title",
+          "description",
+          "downloads",
+          "categories",
+          "game_versions"
+        ],
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "downloads": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "game_versions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "icon_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "type": "string"
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "server_side": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SideSupportDto",
+                "description": "Chỉ Modrinth trả thông tin này; CurseForge để `null`."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "slug": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "SearchResultDto": {
+        "type": "object",
+        "required": [
+          "hits",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchHitDto"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "ServerContentDto": {
+        "type": "object",
+        "required": [
+          "kind",
+          "files",
+          "pending"
+        ],
+        "properties": {
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InstalledContentDto"
+            }
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ContentKindDto"
+          },
+          "pending": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingContentDto"
+            }
+          }
+        }
+      },
       "ServerDto": {
         "type": "object",
         "description": "Một server trong danh sách. Server đang cài hoặc bị hỏng chỉ có một phần thông tin.",
@@ -2969,7 +4888,9 @@
           "state",
           "eula_accepted",
           "slow_start",
-          "restart_pending"
+          "restart_pending",
+          "ignored_jvm_args",
+          "preflight_blocking"
         ],
         "properties": {
           "autostart": {
@@ -3003,6 +4924,17 @@
             "format": "int32",
             "minimum": 0
           },
+          "content_kind": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ContentKindDto",
+                "description": "`mods`, `plugins`, hoặc `null` với Vanilla / server hỏng."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "crash": {
             "oneOf": [
               {
@@ -3026,12 +4958,25 @@
           "id": {
             "type": "string"
           },
+          "ignored_jvm_args": {
+            "type": "boolean",
+            "description": "Có `user_jvm_args.txt` chứa cờ ngoài chú thích mà MineHost bỏ qua."
+          },
           "java_major": {
             "type": [
               "integer",
               "null"
             ],
             "format": "int32",
+            "minimum": 0
+          },
+          "java_recommended": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Bản Java Mojang yêu cầu cho phiên bản Minecraft này; `null` khi chưa biết (spec P3, mục 3.10).",
             "minimum": 0
           },
           "job_id": {
@@ -3048,6 +4993,13 @@
               "string",
               "null"
             ]
+          },
+          "loader_version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Bản mod loader; chỉ có với Fabric, Quilt, Forge, NeoForge."
           },
           "memory_mb": {
             "oneOf": [
@@ -3086,6 +5038,10 @@
             ],
             "format": "int32",
             "minimum": 0
+          },
+          "preflight_blocking": {
+            "type": "boolean",
+            "description": "Có lỗi preflight đang chặn bật server (còn thiếu mod hoặc file CurseForge pending)."
           },
           "restart_at": {
             "type": [
@@ -3167,6 +5123,23 @@
           }
         }
       },
+      "SideSupportDto": {
+        "type": "string",
+        "enum": [
+          "required",
+          "optional",
+          "unsupported",
+          "unknown"
+        ]
+      },
+      "StartActionBody": {
+        "type": "object",
+        "properties": {
+          "ignore_preflight": {
+            "type": "boolean"
+          }
+        }
+      },
       "StateDto": {
         "type": "string",
         "enum": [
@@ -3202,7 +5175,9 @@
           "memory_used_bytes",
           "data_dir",
           "suggested_memory_mb",
-          "lan_addresses"
+          "suggested_modpack_memory_mb",
+          "lan_addresses",
+          "java_majors"
         ],
         "properties": {
           "arch": {
@@ -3242,6 +5217,15 @@
             "description": "Byte còn trống trên ổ chứa thư mục dữ liệu. Trùng `data_disk.available_bytes`.",
             "minimum": 0
           },
+          "java_majors": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "description": "Bản Java chọn được cho từng server, tăng dần."
+          },
           "lan_addresses": {
             "type": "array",
             "items": {
@@ -3277,6 +5261,10 @@
           "suggested_memory_mb": {
             "$ref": "#/components/schemas/MemoryDto",
             "description": "RAM đề xuất cho server mới (spec P1, mục 4.3)."
+          },
+          "suggested_modpack_memory_mb": {
+            "$ref": "#/components/schemas/MemoryDto",
+            "description": "RAM đề xuất cho server dựng từ modpack (spec P3, mục 5.7)."
           },
           "version": {
             "type": "string"
@@ -3315,6 +5303,17 @@
           }
         }
       },
+      "ToggleContentBody": {
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
       "TrashedDto": {
         "type": "object",
         "required": [
@@ -3324,6 +5323,51 @@
           "trash_path": {
             "type": "string",
             "description": "Thư mục trong thùng rác, để người dùng tự lấy lại."
+          }
+        }
+      },
+      "VersionMismatchDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "version_req",
+          "installed_version",
+          "required_by"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "installed_version": {
+            "type": "string"
+          },
+          "required_by": {
+            "type": "string"
+          },
+          "version_req": {
+            "type": "string"
+          }
+        }
+      },
+      "WrongLoaderDto": {
+        "type": "object",
+        "required": [
+          "file_name",
+          "name",
+          "formats"
+        ],
+        "properties": {
+          "file_name": {
+            "type": "string"
+          },
+          "formats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "type": "string"
           }
         }
       }

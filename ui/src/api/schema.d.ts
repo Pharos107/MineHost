@@ -100,6 +100,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalog/{loader}/{minecraft}/loader-versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["loader_versions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/{source}/projects/{pid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["project"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/{source}/projects/{pid}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["versions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -228,6 +292,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/modpack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/modpack/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description multipart/form-data, một file .mrpack hoặc .zip tối đa 512 MiB kèm trường name (tùy chọn memory_mb, port). */
+        post: operations["upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}": {
         parameters: {
             query?: never;
@@ -338,6 +435,88 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put?: never;
+        post: operations["install"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/content/pending/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description multipart/form-data, một hoặc nhiều phần `file` (.jar ≤ 512 MiB) khớp SHA-1 các mục CurseForge đang chờ. */
+        post: operations["upload_pending"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/content/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["plan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/content/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description multipart/form-data, một file .jar tối đa 512 MiB. */
+        post: operations["upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/content/{file}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["remove"];
+        options?: never;
+        head?: never;
+        patch: operations["toggle"];
         trace?: never;
     };
     "/api/v1/servers/{id}/eula": {
@@ -501,6 +680,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/preflight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Kiểm tra điều kiện mod/plugin trước khi bật server. */
+        get: operations["get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}/properties": {
         parameters: {
             query?: never;
@@ -528,6 +724,22 @@ export interface paths {
         put: operations["put_access"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings/curseforge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_curseforge"];
+        put: operations["put_curseforge"];
+        post?: never;
+        delete: operations["delete_curseforge"];
         options?: never;
         head?: never;
         patch?: never;
@@ -609,6 +821,10 @@ export interface components {
         ClearPasswordBody: {
             current: string;
         };
+        ClientOnlyDto: {
+            file_name: string;
+            name: string;
+        };
         CommandBody: {
             command: string;
         };
@@ -620,6 +836,35 @@ export interface components {
             seq: number;
             stream: components["schemas"]["StreamDto"];
             text: string;
+        };
+        ContentInstallBody: {
+            project_id: string;
+            source: string;
+            version_id?: string | null;
+        };
+        /** @enum {string} */
+        ContentKindDto: "mods" | "plugins";
+        ContentPlanDto: {
+            items: components["schemas"]["PlannedContentDto"][];
+            kind: components["schemas"]["ContentKindDto"];
+        };
+        /** @enum {string} */
+        ContentSourceDto: "modrinth" | "curseforge" | "modpack" | "upload";
+        ContentVersionDto: {
+            /** @description RFC 3339. */
+            date_published: string;
+            download_page_url?: string | null;
+            file_name?: string | null;
+            /** Format: int64 */
+            file_size?: number | null;
+            game_versions: string[];
+            id: string;
+            loaders: string[];
+            manual_download: boolean;
+            name: string;
+            project_id: string;
+            version_number?: string | null;
+            version_type: string;
         };
         CrashDto: {
             /** Format: int32 */
@@ -633,9 +878,21 @@ export interface components {
             /** @description Bản được bảo vệ không bị tự xóa và không xóa được cho tới khi bỏ bảo vệ. */
             protected?: boolean | null;
         };
+        CreateModpackBody: {
+            memory_mb?: components["schemas"]["MemoryDto"] | null;
+            name: string;
+            /** Format: int32 */
+            port?: number | null;
+            project_id: string;
+            /** @description `modrinth` hoặc `curseforge`. */
+            source: string;
+            version_id?: string | null;
+        };
         CreateServerBody: {
-            /** @description P1 chỉ có `paper`. */
+            /** @description `paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`. */
             loader: string;
+            /** @description Chỉ với mod loader; không gửi thì dùng bản đề xuất. */
+            loader_version?: string | null;
             memory_mb?: components["schemas"]["MemoryDto"] | null;
             minecraft: string;
             name: string;
@@ -650,13 +907,25 @@ export interface components {
         CsrfDto: {
             csrf_token: string;
         };
+        CurseforgeKeyBody: {
+            api_key: string;
+        };
+        /** @enum {string} */
+        CurseforgeKeySourceDto: "builtin" | "user" | "none";
+        CurseforgeSettingsDto: {
+            available: boolean;
+            source: components["schemas"]["CurseforgeKeySourceDto"];
+        };
         DetectedDto: {
-            /** @description Có `mods/`: chưa hỗ trợ ở bản này. */
+            /** @description Có `mods/`: cần chọn mod loader để nhập. */
             has_mods: boolean;
-            /** @description Jar sẽ chạy. `null` nghĩa là thư mục không có jar nào, không nhập được. */
+            /** @description Có `user_jvm_args.txt` chứa cờ ngoài chú thích mà MineHost bỏ qua. */
+            ignored_jvm_args: boolean;
+            /** @description Jar sẽ chạy. `null` nghĩa là không có jar (trừ Forge/NeoForge dùng `args_file`). */
             jar?: string | null;
-            /** @description `paper`, `purpur`, `vanilla`; không nhận ra thì `null`, người dùng chọn tay. */
+            /** @description `paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge`, `neoforge`; không nhận ra thì `null`. */
             loader?: string | null;
+            loader_version?: string | null;
             minecraft?: string | null;
         };
         DiskDto: {
@@ -705,6 +974,22 @@ export interface components {
             /** @description Đường dẫn tuyệt đối tới thư mục server trên máy chạy MineHost. */
             path: string;
         };
+        InstalledContentDto: {
+            client_only: boolean;
+            enabled: boolean;
+            file_name: string;
+            from_modpack: boolean;
+            icon_url?: string | null;
+            /** @description `true` khi người dùng chép trực tiếp vào thư mục mà chưa có bản ghi nguồn. */
+            manual: boolean;
+            name: string;
+            project_id?: string | null;
+            /** Format: int64 */
+            size: number;
+            source?: components["schemas"]["ContentSourceDto"] | null;
+            version?: string | null;
+            version_id?: string | null;
+        };
         JobDto: {
             error?: components["schemas"]["ErrorBody"] | null;
             /** @description RFC 3339, lúc Job sang trạng thái kết thúc. Không có khi còn chạy. */
@@ -714,6 +999,8 @@ export interface components {
             /** @description Ví dụ `create_server`. */
             kind: string;
             progress?: components["schemas"]["ProgressDto"] | null;
+            /** @description Kết quả tóm tắt tùy theo loại Job (ví dụ thống kê modpack đã cài). */
+            result?: Record<string, never> | null;
             server_id?: string | null;
             /** @description RFC 3339, lúc Job được tạo. */
             started_at: string;
@@ -725,6 +1012,12 @@ export interface components {
         };
         /** @enum {string} */
         JobStateDto: "running" | "succeeded" | "failed" | "cancelled";
+        /** @description Một bản mod loader (spec P3, mục 5.8). */
+        LoaderVersionDto: {
+            /** @description Bản ổn định theo nguồn của loader; bản đề xuất luôn đứng đầu danh sách. */
+            stable: boolean;
+            version: string;
+        };
         LoginBody: {
             password: string;
         };
@@ -747,6 +1040,11 @@ export interface components {
              */
             players?: number | null;
         };
+        MissingDepDto: {
+            id: string;
+            required_by: string;
+            version_req: string;
+        };
         MkdirBody: {
             path: string;
         };
@@ -762,6 +1060,11 @@ export interface components {
         PatchServerBody: {
             autostart?: boolean | null;
             backup?: components["schemas"]["BackupSettingsBody"] | null;
+            /**
+             * Format: int32
+             * @description Phiên bản Java chính (`8`, `11`, `17`, `21`, `25`).
+             */
+            java_major?: number | null;
             memory_mb?: components["schemas"]["MemoryDto"] | null;
             name?: string | null;
             /** Format: int32 */
@@ -769,6 +1072,41 @@ export interface components {
             /** @description Giờ khởi động lại hằng ngày, `HH:MM`, tối đa 4 mốc. `[]` là tắt lịch. */
             restart_at?: string[] | null;
             restart_on_crash?: boolean | null;
+        };
+        PendingContentDto: {
+            /** Format: int64 */
+            file_id: number;
+            file_name: string;
+            name: string;
+            page_url: string;
+            path: string;
+            /** Format: int64 */
+            project_id: number;
+            sha1: string;
+        };
+        /** @description Kết quả tải lên từng file trong vùng kéo thả mục CurseForge đang chờ. */
+        PendingUploadItemDto: {
+            error?: components["schemas"]["ErrorBody"] | null;
+            file_name: string;
+            installed?: components["schemas"]["InstalledContentDto"] | null;
+            ok: boolean;
+        };
+        PendingUploadResultDto: {
+            results: components["schemas"]["PendingUploadItemDto"][];
+        };
+        PlannedContentDto: {
+            client_only: boolean;
+            download_page_url?: string | null;
+            file_name: string;
+            /** Format: int64 */
+            file_size: number;
+            is_dependency: boolean;
+            manual_download: boolean;
+            project_id: string;
+            project_name: string;
+            replaces_existing: boolean;
+            version_id: string;
+            version_number: string;
         };
         PlayerActionBody: {
             action: components["schemas"]["PlayerActionKind"];
@@ -808,6 +1146,14 @@ export interface components {
             running: boolean;
             whitelist_enabled: boolean;
         };
+        /** @description Báo cáo kiểm tra trước khi bật server. */
+        PreflightDto: {
+            client_only: components["schemas"]["ClientOnlyDto"][];
+            missing_deps: components["schemas"]["MissingDepDto"][];
+            pending: components["schemas"]["PendingContentDto"][];
+            version_mismatches: components["schemas"]["VersionMismatchDto"][];
+            wrong_loader: components["schemas"]["WrongLoaderDto"][];
+        };
         ProgressDto: {
             /** Format: int64 */
             bytes_done?: number | null;
@@ -819,6 +1165,30 @@ export interface components {
             step_count: number;
             /** Format: int32 */
             step_index: number;
+        };
+        ProjectDto: {
+            body?: string | null;
+            client_side?: components["schemas"]["SideSupportDto"] | null;
+            description: string;
+            /** Format: int64 */
+            downloads: number;
+            game_versions: string[];
+            icon_url?: string | null;
+            kind: string;
+            links: components["schemas"]["ProjectLinksDto"];
+            loaders: string[];
+            project_id: string;
+            server_side?: components["schemas"]["SideSupportDto"] | null;
+            slug: string;
+            source: string;
+            title: string;
+        };
+        ProjectLinksDto: {
+            discord?: string | null;
+            issues?: string | null;
+            page: string;
+            source?: string | null;
+            wiki?: string | null;
         };
         PropertiesDto: {
             /** @description Theo thứ tự trong file. */
@@ -836,6 +1206,34 @@ export interface components {
             /** @description Phải là `true`: người dùng đã tích "Tôi hiểu" trong hộp thoại. */
             confirm: boolean;
         };
+        SearchHitDto: {
+            categories: string[];
+            description: string;
+            /** Format: int64 */
+            downloads: number;
+            game_versions: string[];
+            icon_url?: string | null;
+            kind: string;
+            project_id: string;
+            server_side?: components["schemas"]["SideSupportDto"] | null;
+            slug: string;
+            source: string;
+            title: string;
+        };
+        SearchResultDto: {
+            hits: components["schemas"]["SearchHitDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            page_size: number;
+            /** Format: int32 */
+            total: number;
+        };
+        ServerContentDto: {
+            files: components["schemas"]["InstalledContentDto"][];
+            kind: components["schemas"]["ContentKindDto"];
+            pending: components["schemas"]["PendingContentDto"][];
+        };
         /** @description Một server trong danh sách. Server đang cài hoặc bị hỏng chỉ có một phần thông tin. */
         ServerDto: {
             autostart?: boolean | null;
@@ -844,19 +1242,29 @@ export interface components {
             broken?: Record<string, never> | null;
             /** Format: int32 */
             build?: number | null;
+            content_kind?: components["schemas"]["ContentKindDto"] | null;
             crash?: components["schemas"]["CrashDto"] | null;
             /** @description RFC 3339. */
             created_at?: string | null;
             eula_accepted: boolean;
             id: string;
+            /** @description Có `user_jvm_args.txt` chứa cờ ngoài chú thích mà MineHost bỏ qua. */
+            ignored_jvm_args: boolean;
             /** Format: int32 */
             java_major?: number | null;
+            /**
+             * Format: int32
+             * @description Bản Java Mojang yêu cầu cho phiên bản Minecraft này; `null` khi chưa biết (spec P3, mục 3.10).
+             */
+            java_recommended?: number | null;
             /**
              * Format: int64
              * @description Job đang cài server này.
              */
             job_id?: number | null;
             loader?: string | null;
+            /** @description Bản mod loader; chỉ có với Fabric, Quilt, Forge, NeoForge. */
+            loader_version?: string | null;
             memory_mb?: components["schemas"]["MemoryDto"] | null;
             minecraft?: string | null;
             name?: string | null;
@@ -864,6 +1272,8 @@ export interface components {
             pid?: number | null;
             /** Format: int32 */
             port?: number | null;
+            /** @description Có lỗi preflight đang chặn bật server (còn thiếu mod hoặc file CurseForge pending). */
+            preflight_blocking: boolean;
             /** @description Giờ khởi động lại hằng ngày (giờ máy), dạng `HH:MM`, đã sắp xếp. */
             restart_at?: string[] | null;
             restart_on_crash?: boolean | null;
@@ -885,6 +1295,11 @@ export interface components {
             csrf_token?: string | null;
             logged_in: boolean;
             password_set: boolean;
+        };
+        /** @enum {string} */
+        SideSupportDto: "required" | "optional" | "unsupported" | "unknown";
+        StartActionBody: {
+            ignore_preflight?: boolean;
         };
         /** @enum {string} */
         StateDto: "installing" | "stopped" | "starting" | "running" | "stopping" | "crashed" | "broken";
@@ -913,6 +1328,8 @@ export interface components {
              * @description Byte còn trống trên ổ chứa thư mục dữ liệu. Trùng `data_disk.available_bytes`.
              */
             disk_free_bytes?: number | null;
+            /** @description Bản Java chọn được cho từng server, tăng dần. */
+            java_majors: number[];
             /** @description Địa chỉ IPv4 trong mạng LAN, để bạn bè vào chơi. */
             lan_addresses: string[];
             /** Format: int64 */
@@ -928,6 +1345,8 @@ export interface components {
             os_version?: string | null;
             /** @description RAM đề xuất cho server mới (spec P1, mục 4.3). */
             suggested_memory_mb: components["schemas"]["MemoryDto"];
+            /** @description RAM đề xuất cho server dựng từ modpack (spec P3, mục 5.7). */
+            suggested_modpack_memory_mb: components["schemas"]["MemoryDto"];
             version: string;
         };
         TextBody: {
@@ -939,9 +1358,23 @@ export interface components {
             size: number;
             text: string;
         };
+        ToggleContentBody: {
+            enabled: boolean;
+        };
         TrashedDto: {
             /** @description Thư mục trong thùng rác, để người dùng tự lấy lại. */
             trash_path: string;
+        };
+        VersionMismatchDto: {
+            id: string;
+            installed_version: string;
+            required_by: string;
+            version_req: string;
+        };
+        WrongLoaderDto: {
+            file_name: string;
+            formats: string[];
+            name: string;
         };
     };
     responses: never;
@@ -1144,7 +1577,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description `paper`, `vanilla` hoặc `purpur` */
+                /** @description `paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge` */
                 loader: string;
             };
             cookie?: never;
@@ -1170,6 +1603,242 @@ export interface operations {
                 };
             };
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    loader_versions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description `fabric`, `quilt`, `forge` hoặc `neoforge` */
+                loader: string;
+                minecraft: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bản loader, bản đề xuất đứng đầu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoaderVersionDto"][];
+                };
+            };
+            /** @description Loại server không có bản loader */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Loader không có bản cho phiên bản này */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    search: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nguồn tìm kiếm; mặc định `modrinth`. */
+                source: string | null;
+                /** @description `mod`, `plugin` hoặc `modpack`. */
+                kind: string | null;
+                q: string | null;
+                /** @description Lọc theo loader, Minecraft của server và `server_side != unsupported`. */
+                server_id: string | null;
+                /** @description Trang (từ 1), mỗi trang 20 kết quả. */
+                page: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResultDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    project: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source: string;
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    versions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source: string;
+                pid: string;
+                server_id: string | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentVersionDto"][];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1457,6 +2126,106 @@ export interface operations {
             };
         };
     };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateModpackBody"];
+            };
+        };
+        responses: {
+            /** @description Job cài modpack đã chạy */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Job cài modpack đã chạy */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     get: {
         parameters: {
             query?: never;
@@ -1561,7 +2330,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StartActionBody"] | null;
+            };
+        };
         responses: {
             /** @description Đã nhận lệnh */
             204: {
@@ -1833,6 +2606,366 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerContentDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    install: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentInstallBody"];
+            };
+        };
+        responses: {
+            /** @description Job cài mod/plugin đã chạy */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStartedDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    upload_pending: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingUploadResultDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    plan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentInstallBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentPlanDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstalledContentDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                file: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã chuyển vào thùng rác */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    toggle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                file: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToggleContentBody"];
+            };
+        };
+        responses: {
+            /** @description Đã cập nhật trạng thái */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
             };
             409: {
                 headers: {
@@ -2278,6 +3411,35 @@ export interface operations {
             };
         };
     };
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreflightDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     get_properties: {
         parameters: {
             query?: never;
@@ -2397,6 +3559,123 @@ export interface operations {
             };
             /** @description Bật LAN khi chưa có mật khẩu */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    get_curseforge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurseforgeSettingsDto"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    put_curseforge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CurseforgeKeyBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurseforgeSettingsDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    delete_curseforge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurseforgeSettingsDto"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

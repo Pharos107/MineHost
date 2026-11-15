@@ -187,6 +187,7 @@ async fn downloads_and_verifies_hash() {
         checksum: &sum,
         dest: &dest,
         size: None,
+        allowed_hosts: None,
     };
 
     client(&fx.tmp)
@@ -208,6 +209,7 @@ async fn wrong_hash_removes_part_file() {
         checksum: &sum,
         dest: &dest,
         size: None,
+        allowed_hosts: None,
     };
 
     let err = client(&fx.tmp)
@@ -230,6 +232,7 @@ async fn cancel_midway_leaves_nothing() {
         checksum: &sum,
         dest: &dest,
         size: None,
+        allowed_hosts: None,
     };
 
     let err = client(&fx.tmp)
@@ -255,6 +258,7 @@ async fn second_download_comes_from_cache() {
             checksum: &sum,
             dest: &dest,
             size: None,
+            allowed_hosts: None,
         };
         http.download(req, |_, _| {}, &CancellationToken::new())
             .await
@@ -274,6 +278,7 @@ async fn refuses_when_disk_is_almost_full() {
         checksum: &sum,
         dest: &dest,
         size: None,
+        allowed_hosts: None,
     };
 
     let err = http
@@ -296,6 +301,7 @@ async fn md5_download_is_verified() {
         checksum: &bad,
         dest: &dest,
         size: None,
+        allowed_hosts: None,
     };
     let err = client(&fx.tmp)
         .download(req, |_, _| {}, &CancellationToken::new())
@@ -345,4 +351,120 @@ async fn checked_json_rejects_wrong_hash() {
         .await
         .unwrap_err();
     assert_eq!(err.code(), ErrorCode::ChecksumMismatch);
+}
+
+#[tokio::test]
+async fn post_json_sends_body_and_user_agent() {
+    use wiremock::matchers::body_json;
+
+    let server = MockServer::start().await;
+    let payload = serde_json::json!({ "hashes": ["abc"], "algorithm": "sha1" });
+    Mock::given(method("POST"))
+        .and(path("/lookup"))
+        .and(header("user-agent", USER_AGENT))
+        .and(header("content-type", "application/json"))
+        .and(body_json(&payload))
+        .respond_with(ResponseTemplate::new(200).set_body_string(r#"{"ok":true}"#))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let tmp = tempfile::tempdir().unwrap();
+
+    let got: serde_json::Value = client(&tmp)
+        .post_json(&format!("{}/lookup", server.uri()), &payload)
+        .await
+        .unwrap();
+    assert_eq!(got["ok"], true);
+}
+
+#[tokio::test]
+async fn post_json_handles_429_like_get() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/retry"))
+        .respond_with(ResponseTemplate::new(429).insert_header("X-Ratelimit-Reset", "0"))
+        .up_to_n_times(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(path("/retry"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("[42]"))
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(path("/blocked"))
+        .respond_with(ResponseTemplate::new(429).insert_header("Retry-After", "30"))
+        .mount(&server)
+        .await;
+    let tmp = tempfile::tempdir().unwrap();
+    let http = client(&tmp);
+    let body = serde_json::json!({});
+
+    let got: Vec<u8> = http
+        .post_json(&format!("{}/retry", server.uri()), &body)
+        .await
+        .unwrap();
+    assert_eq!(got, [42]);
+
+    let err = http
+        .post_json::<_, Vec<u8>>(&format!("{}/blocked", server.uri()), &body)
+        .await
+        .unwrap_err();
+    assert_eq!(err.code(), ErrorCode::UpstreamRateLimited);
+    assert_eq!(err.params()["retry_after_s"], 30);
+}
+
+#[tokio::test]
+async fn json_with_headers_sends_headers_and_separates_cache() {
+    use wiremock::matchers::body_json;
+
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/auth"))
+        .and(header("x-api-key", "good-key"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("[1]"))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/auth"))
+        .and(header("x-api-key", "bad-key"))
+        .respond_with(ResponseTemplate::new(403))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(path("/auth-post"))
+        .and(header("x-api-key", "good-key"))
+        .and(body_json(serde_json::json!({ "ids": [1, 2] })))
+        .respond_with(ResponseTemplate::new(200).set_body_string("[2]"))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let tmp = tempfile::tempdir().unwrap();
+    let http = client(&tmp);
+    let get_url = format!("{}/auth", server.uri());
+
+    let ok = http
+        .get_json_with_headers::<Vec<u8>>(&get_url, TTL, &[("x-api-key", "good-key")])
+        .await
+        .unwrap();
+    assert_eq!(ok.value, [1]);
+    // Key khác không ăn nhầm cache của key đúng.
+    let err = http
+        .get_json_with_headers::<Vec<u8>>(&get_url, TTL, &[("x-api-key", "bad-key")])
+        .await
+        .unwrap_err();
+    assert_eq!(err.code(), ErrorCode::NetworkUnavailable);
+
+    let post_url = format!("{}/auth-post", server.uri());
+    let posted: Vec<u8> = http
+        .post_json_with_headers(
+            &post_url,
+            &serde_json::json!({ "ids": [1, 2] }),
+            &[("x-api-key", "good-key")],
+        )
+        .await
+        .unwrap();
+    assert_eq!(posted, [2]);
 }

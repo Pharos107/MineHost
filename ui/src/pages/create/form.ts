@@ -1,10 +1,20 @@
 import type { CreateServer, Loader } from "../../api/client";
 import { memoryFor } from "../../memory";
 
+export const STANDARD_LOADERS: readonly Loader[] = ["paper", "purpur", "vanilla"];
+/** Thứ tự theo spec P3 mục 6.1 và 11.7. */
+export const MOD_LOADERS: readonly Loader[] = ["fabric", "neoforge", "forge", "quilt"];
+
+export function isModLoader(loader: Loader): boolean {
+  return (MOD_LOADERS as readonly string[]).includes(loader);
+}
+
 export interface WizardForm {
   loader: Loader;
   /** Rỗng: chưa chọn, dùng bản mới nhất. */
   version: string;
+  /** Rỗng hoặc undefined: dùng bản đề xuất đầu danh sách. */
+  loaderVersion?: string;
   name: string;
   /** `null`: dùng mức đề xuất của backend. */
   memoryMb: number | null;
@@ -29,11 +39,15 @@ export function portError(port: string): string | undefined {
 }
 
 export function toRequest(form: WizardForm, version: string): CreateServer {
-  return {
+  const req: CreateServer = {
     name: form.name.trim(),
     loader: form.loader,
     minecraft: version,
     memory_mb: form.memoryMb === null ? null : memoryFor(form.memoryMb),
     port: form.port.trim() === "" ? null : Number(form.port),
   };
+  if (isModLoader(form.loader) && form.loaderVersion) {
+    req.loader_version = form.loaderVersion;
+  }
+  return req;
 }

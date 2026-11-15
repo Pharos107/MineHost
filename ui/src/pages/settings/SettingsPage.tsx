@@ -5,10 +5,11 @@ import { authApi, SESSION_KEY } from "../../api/auth";
 import { errorMessage } from "../../api/client";
 import { SystemCard } from "../../components/SystemCard";
 import { Notice, PageHeader, Spinner, Stack } from "../../ui";
+import { CurseforgeCard } from "./CurseforgeCard";
 import { LanCard } from "./LanCard";
 import { SecurityCard } from "./SecurityCard";
 
-/** Trang Cài đặt (spec P2, mục 6.10): bảo mật, truy cập từ LAN, thông tin máy. */
+/** Trang Cài đặt (spec P2, mục 6.10; spec P3, mục 6.5): bảo mật, LAN, CurseForge, thông tin máy. */
 export function SettingsPage() {
   const { t } = useTranslation();
   const session = useQuery({ queryKey: SESSION_KEY, queryFn: authApi.session });
@@ -22,6 +23,7 @@ export function SettingsPage() {
         <Stack gap={5}>
           <SecurityCard session={session.data} />
           <LanCard session={session.data} />
+          <CurseforgeCard />
           <SystemCard />
         </Stack>
       )}

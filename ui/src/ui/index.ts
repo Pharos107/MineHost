@@ -22,6 +22,7 @@ export { Menu, type MenuItem } from "./Menu";
 export { NavItem, NavSection } from "./Nav";
 export { Notice, type NoticeTone } from "./Notice";
 export { ProgressBar, Steps } from "./progress";
+export { ProjectCard, ProjectCardGrid, type ProjectCardProps } from "./ProjectCard";
 export { SegmentedControl, type Segment } from "./SegmentedControl";
 export { ServerCard, ServerCardGrid } from "./ServerCard";
 export { Slider } from "./Slider";

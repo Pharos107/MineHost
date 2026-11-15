@@ -22,12 +22,17 @@
   cursor: pointer;
 }
 
-.segment:hover {
+.segment:hover:not(:disabled) {
   color: var(--mh-text);
 }
 
+.segment:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .active,
-.active:hover {
+.active:hover:not(:disabled) {
   background: var(--mh-surface);
   color: var(--mh-text);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);

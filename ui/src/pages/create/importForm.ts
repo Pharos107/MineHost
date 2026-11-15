@@ -1,4 +1,5 @@
 import type { Detected, ImportServer, Loader } from "../../api/client";
+import { isModLoader } from "./form";
 
 /** Giá trị đang nhập ở luồng "Nhập thư mục có sẵn". `loader`/`minecraft` chỉ dùng khi chọn tay. */
 export interface ImportChoice {
@@ -8,12 +9,15 @@ export interface ImportChoice {
   name: string;
 }
 
-/** Đi tiếp được khi đã xem thư mục, không có mod, có jar, và biết loại cùng phiên bản. */
+/** Đi tiếp được khi đã xem thư mục, có cách chạy (jar hoặc args_file), biết loại + bản MC, và không có mod ở server thường. */
 export function importReady(choice: ImportChoice, found: Detected | undefined): boolean {
-  if (!found || found.has_mods || !found.jar) return false;
-  const loader = found.loader ?? choice.loader;
+  if (!found) return false;
+  const loader = (found.loader ?? choice.loader) as Loader | "";
   const minecraft = found.minecraft ?? choice.minecraft.trim();
-  return loader !== "" && minecraft !== "";
+  const hasLaunch = Boolean(found.jar) || found.loader === "forge" || found.loader === "neoforge";
+  if (!hasLaunch || loader === "" || minecraft === "") return false;
+  if (found.has_mods && !isModLoader(loader)) return false;
+  return true;
 }
 
 /** Chỉ gửi loại và phiên bản khi người dùng chọn tay; còn lại để backend dùng kết quả nhận diện. */
