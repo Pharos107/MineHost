@@ -170,6 +170,11 @@ async fn overrides_beat_downloads_and_server_overrides_win() {
             ("overrides/config/a.txt", b"override-a"),
             ("server-overrides/config/a.txt", b"server-a"),
             ("server-overrides/config/only-srv.txt", b"srv-only"),
+            (
+                "server-overrides/server.properties",
+                b"allow-flight=true\nmotd=Pack MOTD\nserver-port=1\n",
+            ),
+            ("overrides/eula.txt", b"eula=true\n"),
         ],
     );
     cat.add_pack_version(
@@ -202,6 +207,19 @@ async fn overrides_beat_downloads_and_server_overrides_win() {
         std::fs::read(root.join("server/config/only-srv.txt")).unwrap(),
         b"srv-only"
     );
+    // Cấu hình của pack được giữ, chỉ cổng là của MineHost; EULA của pack bị bỏ.
+    let port = app
+        .get(created.server_id)
+        .unwrap()
+        .spec
+        .unwrap()
+        .network
+        .port;
+    let props = std::fs::read_to_string(root.join("server/server.properties")).unwrap();
+    assert!(props.contains("allow-flight=true"), "{props}");
+    assert!(props.contains("motd=Pack MOTD"), "{props}");
+    assert!(props.contains(&format!("server-port={port}")), "{props}");
+    assert!(!root.join("server/eula.txt").exists());
 
     let manifest = ContentManifest::load(&root.join("content.toml")).unwrap();
     let rec = manifest

@@ -8,8 +8,7 @@ use std::sync::Arc;
 use mh_core::{ContentKind, ErrorCode, ServerId};
 use mh_platform::SafeRoot;
 use mh_store::{
-    ContentManifest, ContentRecord, ContentScanner, ContentSource, PendingContent, ServerStore,
-    inspect_jar_file,
+    ContentManifest, ContentRecord, ContentScanner, PendingContent, ServerStore, inspect_jar_file,
 };
 use time::OffsetDateTime;
 use ulid::Ulid;
@@ -224,7 +223,7 @@ fn apply_staged(
     let content_source = source.to_content_source();
     let replaced_pids: HashSet<&str> = staged.iter().map(|s| s.project_id.as_str()).collect();
     let (to_trash, was_enabled) =
-        collect_replaced(&scanned, &safe_root, kind, content_source, &replaced_pids)?;
+        collect_replaced(&scanned, &safe_root, kind, source, &replaced_pids)?;
     let trash_set: HashSet<&Path> = to_trash.iter().map(|(_, p)| p.as_path()).collect();
     let dests = prepare_dests(&safe_root, kind, &staged, &trash_set, &was_enabled)?;
 
@@ -233,7 +232,7 @@ fn apply_staged(
     }
     manifest
         .file
-        .retain(|rec| !matches_replaced(rec, content_source, &replaced_pids));
+        .retain(|rec| !matches_replaced(rec, source, &replaced_pids));
     if source == CatalogSource::Curseforge {
         manifest
             .pending
@@ -274,10 +273,10 @@ fn apply_staged(
 
 fn matches_replaced(
     rec: &ContentRecord,
-    source: ContentSource,
+    source: CatalogSource,
     replaced_pids: &HashSet<&str>,
 ) -> bool {
-    rec.source == source
+    source.owns_record(rec.source, rec.project_id.as_ref())
         && rec
             .project_id
             .as_ref()
@@ -291,7 +290,7 @@ fn collect_replaced(
     scanned: &[mh_store::ContentFile],
     safe_root: &SafeRoot,
     kind: ContentKind,
-    source: ContentSource,
+    source: CatalogSource,
     replaced_pids: &HashSet<&str>,
 ) -> Result<Replaced, AppError> {
     let mut to_trash = Vec::new();

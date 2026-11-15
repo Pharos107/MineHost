@@ -97,3 +97,41 @@ fn plan_rejects_reserved_windows_name_without_touching_disk() {
     let err = plan_mrpack(&pack).unwrap_err();
     assert_eq!(err.code(), ErrorCode::ModpackInvalid);
 }
+
+#[test]
+fn extract_skips_eula_but_keeps_server_properties() {
+    let tmp = tempfile::tempdir().unwrap();
+    let idx = json!({
+        "formatVersion": 1,
+        "game": "minecraft",
+        "versionId": "1.0.0",
+        "name": "Eula",
+        "files": [],
+        "dependencies": { "minecraft": "1.21.4" }
+    })
+    .to_string();
+    let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+    let opts = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
+    for (entry, data) in [
+        ("modrinth.index.json", idx.as_bytes()),
+        ("overrides/eula.txt", b"eula=true" as &[u8]),
+        ("server-overrides/EULA.TXT", b"eula=true"),
+        ("overrides/server.properties", b"allow-flight=true\n"),
+        ("overrides/config/eula.txt", b"not-the-real-one"),
+    ] {
+        writer.start_file(entry, opts).unwrap();
+        writer.write_all(data).unwrap();
+    }
+    let pack = tmp.path().join("eula.mrpack");
+    fs::write(&pack, writer.finish().unwrap().into_inner()).unwrap();
+    let dest = tmp.path().join("server");
+
+    extract_mrpack_overrides(&pack, &dest).unwrap();
+    let names: Vec<_> = fs::read_dir(&dest)
+        .unwrap()
+        .map(|e| e.unwrap().file_name().to_string_lossy().to_lowercase())
+        .collect();
+    assert!(!names.contains(&"eula.txt".to_owned()), "{names:?}");
+    assert!(dest.join("server.properties").is_file());
+    assert!(dest.join("config/eula.txt").is_file());
+}
