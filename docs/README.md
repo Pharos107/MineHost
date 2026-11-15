@@ -47,6 +47,7 @@ code ghi ở [architecture/tong-quan.md](architecture/tong-quan.md#chỗ-lệch-
 | [ops/kiem-thu-va-ci.md](ops/kiem-thu-va-ci.md) | Lớp test nào có, chạy khi nào, thiếu gì so với spec |
 | [ops/phat-hanh.md](ops/phat-hanh.md) | Các bước phát hành một phiên bản |
 | [ops/linux-systemd.md](ops/linux-systemd.md) | Chạy MineHost bền trên Linux bằng systemd |
+| [ops/runner-modpack.md](ops/runner-modpack.md) | Runner tự host cho workflow modpack: giới hạn, cài, gỡ |
 | [../crates/minehost/README.md](../crates/minehost/README.md) | Chế độ e2e của binary |
 | [../fuzz/README.md](../fuzz/README.md) | Chạy fuzz bộ giải nén backup |
 
