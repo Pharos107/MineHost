@@ -232,16 +232,20 @@ fn push_quilt_dep(depends: &mut Vec<ModDependency>, entry: &Value, self_id: &str
 
 /// Đọc `META-INF/mods.toml` hoặc `META-INF/neoforge.mods.toml`.
 ///
-/// Nếu jar khai báo nhiều `[[mods]]` (ví dụ kèm stub tương thích), chỉ lấy phần tử đầu tiên
-/// làm mod chính vì một file jar tương ứng một mục `ContentFile`.
+/// Nếu jar khai báo nhiều `[[mods]]`, phần tử đầu là mod chính (một jar ứng với một
+/// `ContentFile`); id của các phần tử sau được tính vào `provides`, vì loader nạp cả chúng
+/// (CBMultipart khai `cb_multipart` và `cb_microblock` trong cùng một jar).
 fn parse_forge_toml(text: &str) -> Result<ModMeta, ModMetaError> {
     let raw: RawForgeToml =
         toml::from_str(strip_bom(text)).map_err(|e| ModMetaError::Toml(e.to_string()))?;
-    let primary = raw
-        .mods
-        .into_iter()
-        .next()
-        .ok_or(ModMetaError::MissingField("mods"))?;
+    let mut mods = raw.mods.into_iter();
+    let mut primary = mods.next().ok_or(ModMetaError::MissingField("mods"))?;
+    for extra in mods {
+        primary
+            .provides
+            .extend(opt_non_empty(extra.mod_id.as_deref()));
+        primary.provides.extend(extra.provides);
+    }
     let id = require_field(primary.mod_id.as_deref(), "id")?;
     let name = opt_non_empty(primary.display_name.as_deref()).unwrap_or_else(|| id.clone());
     let raw_deps: Vec<&RawForgeDep> = raw

@@ -135,3 +135,28 @@ side = " client "
     assert_eq!(required, vec!["curios", "serverlib"]);
     assert!(meta.depends.iter().any(|d| d.id == "iris" && !d.required));
 }
+
+/// CBMultipart khai hai mod trong một `mods.toml`; mod sau phải được tính là đã có.
+#[test]
+fn extra_forge_mods_in_one_jar_count_as_provided() {
+    let toml = r#"
+[[mods]]
+modId = "cb_multipart"
+[[dependencies.cb_multipart]]
+modId = "codechickenlib"
+mandatory = true
+side = "BOTH"
+[[mods]]
+modId = "cb_microblock"
+provides = ["microblocks"]
+[[mods]]
+modId = " "
+"#;
+    let meta = parse_mod_meta(ModMetaFormat::ModsToml, toml).unwrap();
+    assert_eq!(meta.id, "cb_multipart");
+    assert_eq!(
+        meta.provides,
+        vec!["cb_microblock".to_owned(), "microblocks".to_owned()]
+    );
+    assert_eq!(meta.depends.len(), 1);
+}
