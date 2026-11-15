@@ -10,10 +10,12 @@ use serde_json::Value;
 
 mod lenient;
 mod nested;
+mod overrides;
 mod version_req;
 mod yaml;
 
 pub use nested::parse_jarjar_metadata;
+pub use overrides::{FabricDepOverrides, parse_fabric_dep_overrides};
 pub use version_req::matches_version_req;
 
 /// Phía chạy được của mod hoặc plugin theo metadata trong jar.

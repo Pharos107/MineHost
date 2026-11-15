@@ -37,8 +37,8 @@ pub use instance::{InstanceError, InstanceSpec};
 pub use launch::{ArgsFilePath, ArgsOs, Launch};
 pub use memory::{MemoryLimits, memory_limit_mb, suggest_memory_mb, suggest_modpack_memory_mb};
 pub use mod_meta::{
-    ModDependency, ModMeta, ModMetaError, ModMetaFormat, ModSide, matches_version_req,
-    parse_jarjar_metadata, parse_mod_meta,
+    FabricDepOverrides, ModDependency, ModMeta, ModMetaError, ModMetaFormat, ModSide,
+    matches_version_req, parse_fabric_dep_overrides, parse_jarjar_metadata, parse_mod_meta,
 };
 pub use mrpack::{
     MrpackDependencies, MrpackEnv, MrpackEnvSupport, MrpackError, MrpackFile, MrpackHashes,
