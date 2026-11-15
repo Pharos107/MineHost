@@ -1,18 +1,19 @@
 import type { TFunction } from "i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Package, Plus, RotateCw, Trash2 } from "lucide-react";
+import { ArrowUpCircle, ExternalLink, Package, Plus, RotateCw, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 
 import { errorMessage } from "../../../api/client";
-import { contentApi, contentKey, type InstalledContent } from "../../../api/content";
+import { contentApi, contentKey, type InstalledContent, type UpdateCandidate, type UpdateReport } from "../../../api/content";
 import { SERVERS_KEY } from "../../../api/live";
 import { Avatar, Badge, Button, ConfirmDialog, DataTable, EmptyState, Notice, Stack, Switch, type Column, type RowAction } from "../../../ui";
 import { useServer } from "../ServerLayout";
-import { contentSourceKind, isContentLocked, modrinthProjectUrl } from "./content";
+import { contentSourceKind, isContentLocked, modrinthProjectUrl, updateFor } from "./content";
 import { ContentAddDialog } from "./ContentAddDialog";
 import { ContentPendingBox } from "./ContentPendingBox";
+import { ContentUpdates } from "./ContentUpdates";
 import { ContentUpload } from "./ContentUpload";
 
 /** Trang Mod hoặc Plugin (spec P3, mục 6.3): liệt kê, lọc, thêm, tải lên, bật/tắt và gỡ vào thùng rác. */
@@ -35,6 +36,8 @@ export function ContentPage() {
   }, [queryClient, server.id]);
 
   const [removing, setRemoving] = useState<InstalledContent | null>(null);
+  const [report, setReport] = useState<UpdateReport | null>(null);
+  const [confirming, setConfirming] = useState<UpdateCandidate[] | null>(null);
   const toggle = useMutation({
     mutationFn: ({ file, enabled }: { file: string; enabled: boolean }) => contentApi.toggle(server.id, file, enabled),
     onSuccess: refresh,
@@ -65,8 +68,17 @@ export function ContentPage() {
     );
   };
   const busyFile = toggle.isPending ? toggle.variables.file : null;
-  const columns = buildColumns(t, locked, busyFile, (item, enabled) => toggle.mutate({ file: item.file_name, enabled }));
+  const columns = buildColumns(t, locked, busyFile, report, (item, enabled) => toggle.mutate({ file: item.file_name, enabled }));
   const actions: RowAction<InstalledContent>[] = [
+    {
+      label: t("content.updates.updateOne"),
+      icon: ArrowUpCircle,
+      hidden: (item) => updateFor(report, item) === undefined,
+      onSelect: (item) => {
+        const candidate = updateFor(report, item);
+        if (candidate) setConfirming([candidate]);
+      },
+    },
     {
       label: t(`content.${kind}.openPage`),
       icon: ExternalLink,
@@ -101,6 +113,15 @@ export function ContentPage() {
         </Button>
       </Stack>
       <ContentUpload serverId={server.id} locked={locked} onDone={refresh} />
+      <ContentUpdates
+        serverId={server.id}
+        kind={kind}
+        report={report}
+        onReport={setReport}
+        confirming={confirming}
+        onConfirming={setConfirming}
+        onUpdated={refresh}
+      />
       {toggle.isError && <Notice tone="danger">{errorMessage(t, toggle.error)}</Notice>}
       {list.isError ? (
         <Notice
@@ -152,6 +173,7 @@ function buildColumns(
   t: TFunction,
   locked: boolean,
   busyFile: string | null,
+  report: UpdateReport | null,
   onToggle: (item: InstalledContent, enabled: boolean) => void,
 ): Column<InstalledContent>[] {
   return [
@@ -163,6 +185,7 @@ function buildColumns(
           <Avatar name={item.name} imageUrl={item.icon_url} icon={Package} size="sm" />
           <span>{item.name}</span>
           {item.client_only && <Badge tone="warning">{t("content.clientOnly")}</Badge>}
+          {updateFor(report, item) && <Badge tone="info">{t("content.updates.badge")}</Badge>}
         </Stack>
       ),
       sortValue: (item) => item.name.toLowerCase(),

@@ -17,6 +17,9 @@ export type PendingUploadResult = components["schemas"]["PendingUploadResultDto"
 export type ContentInstallBody = components["schemas"]["ContentInstallBody"];
 export type CreateModpackBody = components["schemas"]["CreateModpackBody"];
 export type JobStarted = components["schemas"]["JobStartedDto"];
+export type UpdateReport = components["schemas"]["UpdateReportDto"];
+export type UpdateCandidate = components["schemas"]["UpdateCandidateDto"];
+export type UpdateItemBody = components["schemas"]["UpdateItemBody"];
 
 export interface ModpackSummary {
   installed_mods: number;
@@ -62,6 +65,11 @@ export const contentApi = {
   install: (serverId: string, body: ContentInstallBody) =>
     request<JobStarted>("POST", `${serverPath(serverId)}/content`, body),
   list: (serverId: string) => request<ServerContent>("GET", `${serverPath(serverId)}/content`),
+  /** Job hỏi nguồn mod xem có bản mới; kết quả (`UpdateReport`) nằm trong `result` của Job. */
+  checkUpdates: (serverId: string) => request<JobStarted>("POST", `${serverPath(serverId)}/updates/check`),
+  /** Job tắt server, sao lưu `before_update` rồi cài các bản đã chọn. */
+  applyUpdates: (serverId: string, items: UpdateItemBody[]) =>
+    request<JobStarted>("POST", `${serverPath(serverId)}/updates`, { items }),
   toggle: (serverId: string, fileName: string, enabled: boolean) =>
     request<void>("PATCH", filePath(serverId, fileName), { enabled }),
   remove: (serverId: string, fileName: string) => request<void>("DELETE", filePath(serverId, fileName)),

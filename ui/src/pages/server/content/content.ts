@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 
 import { ApiError, errorMessage, type Server } from "../../../api/client";
-import type { ContentKind, ContentVersion, InstalledContent } from "../../../api/content";
+import type { ContentKind, ContentVersion, InstalledContent, UpdateCandidate, UpdateItemBody, UpdateReport } from "../../../api/content";
 
 export type ContentSourceLabel = "modrinth" | "curseforge" | "modpack" | "manual";
 
@@ -75,4 +75,24 @@ export function versionOptionLabel(
   const num = version.version_number ?? version.name ?? "";
   if (version.version_type === "release") return num;
   return `${num} (${version.version_type})`;
+}
+
+/** Tên file từ đường dẫn `mods/x.jar` của kết quả kiểm tra cập nhật. */
+export function fileNameOf(path: string): string {
+  return path.slice(path.lastIndexOf("/") + 1);
+}
+
+/** Bản mới của một dòng trong bảng, nếu lần kiểm tra gần nhất tìm thấy. */
+export function updateFor(report: UpdateReport | null, item: Pick<InstalledContent, "file_name">): UpdateCandidate | undefined {
+  return report?.updates.find((u) => fileNameOf(u.file) === item.file_name);
+}
+
+/** Body gửi `POST /servers/{id}/updates`: cài đúng bản mới nhất đã thấy lúc kiểm tra. */
+export function updateItems(candidates: UpdateCandidate[]): UpdateItemBody[] {
+  return candidates.map((c) => ({
+    file: c.file,
+    source: c.source,
+    project_id: c.project_id,
+    version_id: c.latest_version_id,
+  }));
 }

@@ -742,7 +742,25 @@
       "failedTitle": "Could not install",
       "cancelledTitle": "Installation cancelled."
     },
+    "updates": {
+      "check": "Check for updates",
+      "found_one": "{{count}} update available.",
+      "found_other": "{{count}} updates available.",
+      "updateAll_one": "Update {{count}} item",
+      "updateAll_other": "Update {{count}} items",
+      "updateOne": "Update",
+      "badge": "Update available",
+      "done_one": "Updated {{count}} item. The server was not started again.",
+      "done_other": "Updated {{count}} items. The server was not started again.",
+      "failedWithBackup": "The update failed. The \"Before update\" backup on the Backups page lets you go back.",
+      "confirmTitle_one": "Update {{count}} item?",
+      "confirmTitle_other": "Update {{count}} items?",
+      "confirm": "Update",
+      "confirmBody": "The server stops if it is running. MineHost makes a \"Before update\" backup first, then installs the new versions. The server is not started again.",
+      "item": "{{file}} → {{version}}"
+    },
     "mods": {
+      "upToDate": "All mods are up to date. {{unknown}} files were not found on Modrinth or CurseForge.",
       "table": "Installed mods",
       "runningHint": "The server is running: stop it before enabling, disabling, uploading, or removing mods.",
       "empty": "No mods yet",
@@ -754,6 +772,7 @@
       "mainItem": "Selected mod"
     },
     "plugins": {
+      "upToDate": "All plugins are up to date. {{unknown}} files were not found on Modrinth or CurseForge.",
       "table": "Installed plugins",
       "runningHint": "The server is running: stop it before enabling, disabling, uploading, or removing plugins.",
       "empty": "No plugins yet",

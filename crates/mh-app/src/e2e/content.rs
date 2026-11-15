@@ -286,6 +286,23 @@ impl ContentCatalog for E2eContent {
         })()))
     }
 
+    fn versions_by_hash<'a>(
+        &'a self,
+        sha1: &'a [String],
+    ) -> BoxFut<'a, Result<HashMap<String, ContentVersion>, AppError>> {
+        // Hash tính trên đúng byte jar giả, nên mod cài từ catalog này hay chép tay đều nhận ra được.
+        let found = self
+            .versions
+            .iter()
+            .filter_map(|v| {
+                let url = v.files.first()?.url.as_ref()?;
+                let hash = mh_store::sha1_hex(self.files.get(url)?);
+                sha1.contains(&hash).then(|| (hash, v.clone()))
+            })
+            .collect();
+        Box::pin(std::future::ready(Ok(found)))
+    }
+
     fn version<'a>(&'a self, id: &'a str) -> BoxFut<'a, Result<ContentVersion, AppError>> {
         Box::pin(std::future::ready(
             self.versions
