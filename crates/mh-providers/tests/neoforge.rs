@@ -5,7 +5,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use mh_core::{ArgsOs, ErrorCode, Launch, McVersion};
+use mh_core::{ArgsOs, ErrorCode, Launch, LoaderVersion, McVersion};
 use mh_net::{HostAllowlist, HttpClient, NetConfig};
 use mh_providers::{NeoForge, Release};
 use time::macros::datetime;
@@ -108,6 +108,27 @@ async fn plan_runs_from_args_file() {
         args.for_os(ArgsOs::Windows),
         "libraries/net/neoforged/neoforge/21.4.161/win_args.txt"
     );
+}
+
+#[tokio::test]
+async fn pinned_beta_installs_even_when_a_stable_build_exists() {
+    let (server, _t, neo) = neoforge().await;
+    Mock::given(path(
+        "/maven/26.3.0.1-beta/neoforge-26.3.0.1-beta-installer.jar.sha256",
+    ))
+    .respond_with(
+        ResponseTemplate::new(200)
+            .set_body_string(fixture("neoforge-21.4.161-installer.jar.sha256")),
+    )
+    .mount(&server)
+    .await;
+    let wanted = LoaderVersion::parse("26.3.0.1-beta").unwrap();
+    let plan = neo.plan(&v("26.3"), Some(&wanted)).await.unwrap();
+    assert_eq!(plan.loader_version.as_str(), "26.3.0.1-beta");
+    // Danh sách để người dùng chọn vẫn ẩn beta.
+    let shown = neo.loader_versions(&v("26.3")).await.unwrap();
+    assert_eq!(shown[0].version.as_str(), "26.3.0.103");
+    assert!(shown.iter().all(|r| r.stable));
 }
 
 #[tokio::test]

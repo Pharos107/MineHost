@@ -158,7 +158,7 @@ song song được. Chỗ dễ đụng nhau vẫn là `ui/src/i18n/{vi,en}.json`
 #### PR-08 · `feat(providers)`: NeoForge
 
 - Phạm vi: `maven-metadata.xml`, ánh xạ phiên bản cả kiểu cũ (`21.4.140`) và kiểu mới (`26.1.2.76`),
-  bỏ bản `-beta` trừ khi không còn bản nào khác.
+  bỏ bản `-beta` khỏi danh sách chọn trừ khi không còn bản nào khác; modpack ghim đúng một bản beta thì vẫn cài bản đó.
 - Test: fixture metadata thật; ánh xạ hai chiều.
 
 #### PR-09 · `feat(app)`: Job tạo server có loader
