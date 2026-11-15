@@ -110,7 +110,7 @@ pub fn plan_mrpack_with(
         skipped_client,
         server_unsupported,
         planned_bytes: mut index_bytes,
-        index_count: mut index_count,
+        mut index_count,
     } = plan_index_files(index.files, hosts, limits)?;
     // Quét trước để bắt zip bomb / tên file không hợp lệ trước khi tải loader hay file.
     let _ = scan_prefixed_layers(
