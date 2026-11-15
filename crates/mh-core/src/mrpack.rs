@@ -73,6 +73,10 @@ pub enum MrpackEnvSupport {
     Required,
     Optional,
     Unsupported,
+    /// Giá trị ngoài đặc tả (có pack ghi `"unknown"`, giống trường `server_side` của Modrinth).
+    /// Coi như không biết: file vẫn được cài trên server, thay vì từ chối cả pack.
+    #[serde(other)]
+    Unknown,
 }
 
 /// Khai báo phiên bản Minecraft và mod loader trong `modrinth.index.json`.
