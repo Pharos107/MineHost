@@ -44,11 +44,11 @@ chính PR ấy.
 | 29 | Modpack CurseForge | Đã merge | [#95](https://github.com/Pharos107/MineHost/pull/95) |
 | 30 | Tải tay file CurseForge | Đã merge | [#96](https://github.com/Pharos107/MineHost/pull/96) |
 | 31 | Bản `before_update`, chép `content.toml` | Đã merge | [#101](https://github.com/Pharos107/MineHost/pull/101) |
-| 32 | Kiểm tra và cập nhật mod | Đã merge | PR32LINK |
-| 33 | Đổi phiên bản, cập nhật build (33a) | Đã merge | PR33LINK |
-| 33b | Cập nhật modpack Modrinth | Đã merge | PR33BLINK |
-| 34 | Giao diện cập nhật mod (34a) | Đã merge | PR34ALINK |
-| 34b | Mục Phiên bản, cập nhật modpack | Đã merge | PR34BLINK |
+| 32 | Kiểm tra và cập nhật mod | Đã merge | [#102](https://github.com/Pharos107/MineHost/pull/102) |
+| 33 | Đổi phiên bản, cập nhật build (33a) | Đã merge | [#103](https://github.com/Pharos107/MineHost/pull/103) |
+| 33b | Cập nhật modpack Modrinth | Đã merge | [#104](https://github.com/Pharos107/MineHost/pull/104) |
+| 34 | Giao diện cập nhật mod (34a) | Đã merge | [#105](https://github.com/Pharos107/MineHost/pull/105) |
+| 34b | Mục Phiên bản, cập nhật modpack | Đã merge | [#106](https://github.com/Pharos107/MineHost/pull/106) |
 | 35 | Bộ nhớ đệm tải về, trạng thái giới hạn tài nguyên | Đã merge | PR35LINK |
 | 36–38 | Nhóm H · Kiểm thử modpack, `v0.5.0` | Chưa bắt đầu | |
 
