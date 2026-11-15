@@ -74,8 +74,27 @@ impl App {
         let install = ctx
             .cancellable(self.catalog.plan(loader, mc, wanted))
             .await?;
+        let paths = self.store.create_dir(id)?;
+        let game = self
+            .fetch_loader(ctx, &paths, loader, &install, step_base + 1, step_count)
+            .await?;
+        Ok((paths, game))
+    }
+
+    /// Tải Java, file của loader và chạy installer trong `paths.server_dir` có sẵn. Đổi phiên bản
+    /// gọi lại hàm này: installer ghi đè file của bản cũ, thư viện cũ để nguyên.
+    pub(crate) async fn fetch_loader(
+        &self,
+        ctx: &JobContext,
+        paths: &ServerPaths,
+        loader: LoaderKind,
+        install: &LoaderInstall,
+        step_base: u8,
+        step_count: u8,
+    ) -> Result<GameSection, AppError> {
+        let minecraft = install.plan.minecraft.to_string();
         let major = install.java_major;
-        ctx.step(JobStep::DownloadJava { major }, step_base + 1, step_count);
+        ctx.step(JobStep::DownloadJava { major }, step_base, step_count);
         let java = {
             let _permit = ctx.download_permit().await?;
             let mut progress = |done: u64, total: Option<u64>| ctx.bytes(done, total);
@@ -83,25 +102,24 @@ impl App {
         };
         ctx.step(
             JobStep::DownloadServer { minecraft },
-            step_base + 2,
+            step_base + 1,
             step_count,
         );
-        let paths = self.store.create_dir(id)?;
         let root = SafeRoot::new(&paths.server_dir)?;
-        self.download_plan_files(ctx, &root, &install).await?;
+        self.download_plan_files(ctx, &root, install).await?;
         ctx.step(
             JobStep::RunInstaller {
                 loader: loader.to_string(),
             },
-            step_base + 3,
+            step_base + 2,
             step_count,
         );
         if let Some(run) = &install.plan.installer {
             self.run_installer(ctx, &java.java_bin, &root, run).await?;
         }
-        let game = loader_game(loader, &install, &root)?;
+        let game = loader_game(loader, install, &root)?;
         remove_install_dir(&root);
-        Ok((paths, game))
+        Ok(game)
     }
 
     async fn download_plan_files(

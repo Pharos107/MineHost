@@ -405,7 +405,8 @@
       "install_java": "Tải Java",
       "install_content": "Cài mod",
       "check_updates": "Kiểm tra cập nhật mod",
-      "update_content": "Cập nhật mod"
+      "update_content": "Cập nhật mod",
+      "change_version": "Đổi phiên bản"
     },
     "states": {
       "running": "Đang chạy",

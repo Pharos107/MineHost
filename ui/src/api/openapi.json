@@ -2980,6 +2980,73 @@
         }
       }
     },
+    "/api/v1/servers/{id}/version": {
+      "post": {
+        "tags": [
+          "servers"
+        ],
+        "description": "Đổi phiên bản Minecraft hoặc loader, cập nhật build. Kết quả nằm trong `result` của Job: `{ changed, minecraft, build, loader_version, backup_id }`.",
+        "operationId": "change_version",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStartedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/settings/access": {
       "get": {
         "tags": [
@@ -5558,6 +5625,29 @@
             "items": {
               "$ref": "#/components/schemas/UpdateCandidateDto"
             }
+          }
+        }
+      },
+      "VersionBody": {
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": "boolean",
+            "description": "Phải là `true`: người dùng đã đồng ý tắt server và sao lưu trước."
+          },
+          "loader_version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Chỉ cho Fabric, Quilt, Forge, NeoForge; bỏ trống là bản đề xuất."
+          },
+          "minecraft": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Bỏ trống là giữ bản Minecraft hiện tại (cập nhật build Paper, Purpur hoặc bản loader)."
           }
         }
       },
