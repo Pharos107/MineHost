@@ -15,7 +15,7 @@ use serde::Deserialize;
 
 use crate::loader::{
     InstallPlan, InstallerRun, LoaderRelease, PlannedFile, check_loader_url, compare_versions,
-    installer_path, maven_versions, pick, recommended_first,
+    installer_checksum, installer_path, maven_versions, pick, recommended_first,
 };
 use crate::{ProviderError, Release};
 
@@ -26,7 +26,6 @@ const SOURCE: &str = "Forge";
 const TTL: Duration = Duration::from_secs(60 * 60);
 /// `maven-metadata.xml` của Forge khoảng 200 KB; chừa rộng cho vài năm nữa.
 const MAX_METADATA: usize = 8 * 1024 * 1024;
-const MAX_HASH_FILE: usize = 256;
 
 #[derive(Debug, Clone)]
 pub struct Forge {
@@ -176,17 +175,7 @@ impl Forge {
     }
 
     async fn installer_sha256(&self, jar_url: &str) -> Result<Checksum, ProviderError> {
-        let body = self
-            .http
-            .get_bytes(&format!("{jar_url}.sha256"), MAX_HASH_FILE)
-            .await?;
-        let text = String::from_utf8_lossy(&body);
-        text.split_whitespace()
-            .next()
-            .and_then(Checksum::sha256)
-            .ok_or_else(|| {
-                ProviderError::invalid(SOURCE, "file .sha256 của installer sai định dạng")
-            })
+        installer_checksum(&self.http, SOURCE, jar_url).await
     }
 }
 

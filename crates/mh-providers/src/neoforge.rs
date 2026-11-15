@@ -12,14 +12,13 @@ use mh_net::{Checksum, HostAllowlist, HttpClient, hosts};
 
 use crate::loader::{
     InstallPlan, InstallerRun, LoaderRelease, PlannedFile, check_loader_url, compare_versions,
-    installer_path, maven_versions, pick, recommended_first,
+    installer_checksum, installer_path, maven_versions, pick, recommended_first,
 };
 use crate::{ProviderError, Release};
 
 pub const MAVEN_BASE: &str = "https://maven.neoforged.net/releases/net/neoforged/neoforge";
 const SOURCE: &str = "NeoForge";
 const MAX_METADATA: usize = 8 * 1024 * 1024;
-const MAX_HASH_FILE: usize = 256;
 
 #[derive(Debug, Clone)]
 pub struct NeoForge {
@@ -134,17 +133,7 @@ impl NeoForge {
     }
 
     async fn installer_sha256(&self, jar_url: &str) -> Result<Checksum, ProviderError> {
-        let body = self
-            .http
-            .get_bytes(&format!("{jar_url}.sha256"), MAX_HASH_FILE)
-            .await?;
-        let text = String::from_utf8_lossy(&body);
-        text.split_whitespace()
-            .next()
-            .and_then(Checksum::sha256)
-            .ok_or_else(|| {
-                ProviderError::invalid(SOURCE, "file .sha256 của installer sai định dạng")
-            })
+        installer_checksum(&self.http, SOURCE, jar_url).await
     }
 }
 
