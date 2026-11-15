@@ -16,8 +16,9 @@ giai đoạn trong `docs/specs/` và ADR trong `docs/adr/` là bản đúng. M�
 - [Spec P3](docs/specs/p3-mod-va-modpack.md) (đã duyệt) và
   [kế hoạch PR](docs/specs/p3-ke-hoach-pr.md): 38 PR, nhóm A → H, hai bản phát hành `v0.4.0` (sau
   nhóm D) và `v0.5.0`. Tiến độ ghi ở đầu kế hoạch PR; PR nào merge thì sửa bảng đó trong chính PR ấy.
-- Còn mở từ P2: PR-34 (10 server chạy 72 giờ, phát hành `v0.3.0`), xem
-  [kế hoạch PR P2](docs/specs/p2-ke-hoach-pr.md). Spec P2: [p2-nhieu-server-va-van-hanh.md](docs/specs/p2-nhieu-server-va-van-hanh.md).
+- P2 đã phát hành `v0.3.0` ([kết quả chạy dài](docs/specs/p2-ket-qua-chay-dai.md)). Còn nợ test
+  Playwright cho Console, Tệp, Cài đặt game/server, Nhập server: xem tiêu chí 5 trong
+  [spec P2](docs/specs/p2-nhieu-server-va-van-hanh.md#tiêu-chí-hoàn-thành).
 - Còn mở từ P1: lần thử tay 5 phút trên Windows mới cài
   ([kết quả thử tay](docs/specs/p1-ket-qua-thu-tay.md)). Lỗi tìm được ở đó sửa trước việc của P3.
 - Quyết định từ P1, P2 vẫn giữ: chưa dùng SQLite (ADR 0004); chỉ dùng Java do MineHost tải; icon khay

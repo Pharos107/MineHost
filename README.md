@@ -3,15 +3,16 @@
 Host server Minecraft cho bạn bè ngay trên máy của bạn, không cần biết dòng lệnh, không cần cài
 Java hay Docker. Chạy trên Windows 10/11 và Linux (x64, arm64).
 
-Bản hiện tại (v0.2.0) tạo và chạy được server **Paper**: MineHost tự tải Java và Paper, có console
-realtime, sửa `server.properties`, và chạy nền với icon ở khay hệ thống trên Windows.
+Bản hiện tại (v0.3.0) chạy nhiều server **Paper**, **Vanilla** và **Purpur** cùng lúc. MineHost tự tải
+Java và server, có console realtime, quản lý tệp và người chơi, sao lưu và khôi phục, đặt mật khẩu
+admin, mở giao diện cho máy khác trong LAN, và chạy nền với icon ở khay hệ thống trên Windows.
 
 ## Tải và chạy
 
 1. Vào trang [Releases](https://github.com/Pharos107/MineHost/releases) và tải bản cho máy của bạn:
-   - Windows: `minehost-v0.2.0-x86_64-pc-windows-msvc.zip`
-   - Linux x64: `minehost-v0.2.0-x86_64-unknown-linux-gnu.tar.gz`
-   - Linux arm64 (ví dụ Raspberry Pi 5): `minehost-v0.2.0-aarch64-unknown-linux-gnu.tar.gz`
+   - Windows: `minehost-v0.3.0-x86_64-pc-windows-msvc.zip`
+   - Linux x64: `minehost-v0.3.0-x86_64-unknown-linux-gnu.tar.gz`
+   - Linux arm64 (ví dụ Raspberry Pi 5): `minehost-v0.3.0-aarch64-unknown-linux-gnu.tar.gz`
 2. Giải nén vào một thư mục bất kỳ.
 3. Windows: bấm đúp `minehost.exe`. Linux: chạy `./minehost` trong terminal.
 4. Trình duyệt tự mở `http://127.0.0.1:7878`. Bấm **Tạo server đầu tiên** và làm theo 3 bước.
@@ -25,7 +26,7 @@ Bản này chưa được ký số nên Windows SmartScreen có thể chặn l�
 có thể so mã SHA-256 với file `.sha256` đi kèm:
 
 ```powershell
-Get-FileHash .\minehost-v0.2.0-x86_64-pc-windows-msvc.zip -Algorithm SHA256
+Get-FileHash .\minehost-v0.3.0-x86_64-pc-windows-msvc.zip -Algorithm SHA256
 ```
 
 Một số phần mềm diệt virus cảnh báo vì MineHost chạy Java ở chế độ ẩn. Đó là server Minecraft
@@ -67,6 +68,8 @@ Bạn bè không vào được:
   không mã hóa, nên chỉ bật trên mạng nhà bạn tin tưởng.
 
 ## Mod, plugin và modpack
+
+Phần này có từ bản `v0.4.0` (chưa phát hành); bản `v0.3.0` chưa có.
 
 - **Server có mod**: ở bước đầu của **Tạo server**, chọn **Server có mod** rồi chọn Fabric, NeoForge,
   Forge hoặc Quilt. MineHost tải Java và installer chính thức của loader rồi cài giúp bạn.

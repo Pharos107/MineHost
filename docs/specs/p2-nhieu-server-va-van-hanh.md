@@ -1,7 +1,6 @@
 # Spec P2 — Nhiều server và vận hành hằng ngày
 
-- Trạng thái: đã duyệt, đang làm. Tiến độ từng PR: [kế hoạch PR](p2-ke-hoach-pr.md#tiến-độ)
-  (cập nhật 2026-11-12). Vấn đề mở sau lần rà soát: mục 12.
+- Trạng thái: đã phát hành `v0.3.0` (2026-11-15). Tiến độ từng PR: [kế hoạch PR](p2-ke-hoach-pr.md#tiến-độ). Vấn đề mở sau lần rà soát: mục 12.
 - Ngày: 2026-10-26
 - Spec gốc: "MineHost v2 — Spec kiến trúc (Rust)", phần Lộ trình P2
 - Kế hoạch PR: [p2-ke-hoach-pr.md](p2-ke-hoach-pr.md)
@@ -17,13 +16,18 @@ Giao diện làm trước: các trang giống dự án cũ (mục 6), mỗi tran
 
 ### Tiêu chí hoàn thành
 
-- [ ] 10 server Paper chạy song song liên tục 72 giờ trên một máy Linux. Bộ nhớ controller sau
-      giờ thứ nhất không tăng quá 20%, không server nào bị kill ngoài ý muốn.
-- [ ] Test tự động: tạo world, đặt một khối, backup, phá khối, khôi phục, bật lại server thì khối còn đó.
-- [ ] Test fuzz `SafeRoot::join` và bộ giải nén backup chạy 30 phút không tìm ra lỗi thoát thư mục.
-- [ ] Đã đặt mật khẩu thì mọi API (kể cả từ `127.0.0.1`) trả `AUTH_REQUIRED` khi chưa đăng nhập.
-      Bật LAN thì một máy khác trong LAN đăng nhập và điều khiển được server.
-- [ ] Mỗi trang ở mục 6 có ít nhất một test Playwright chạy với API thật.
+- [x] 10 server Paper chạy song song liên tục 72 giờ trên một máy Linux. Bộ nhớ controller sau
+      giờ thứ nhất không tăng quá 20%, không server nào bị kill ngoài ý muốn. Đã chạy 56 giờ 38 phút
+      (chủ dự án quyết định rút ngắn), controller tăng 0,12%:
+      [kết quả](p2-ket-qua-chay-dai.md).
+- [x] Test tự động: tạo world, đặt một khối, backup, phá khối, khôi phục, bật lại server thì khối còn đó.
+- [x] Test fuzz `SafeRoot::join` và bộ giải nén backup chạy 30 phút không tìm ra lỗi thoát thư mục.
+- [x] Đã đặt mật khẩu thì mọi API (kể cả từ `127.0.0.1`) trả `AUTH_REQUIRED` khi chưa đăng nhập.
+      Bật LAN thì một máy khác trong LAN đăng nhập và điều khiển được server. Đã thử qua địa chỉ LAN
+      từ một container, vì tường lửa máy thử chặn máy thật: [kết quả](p2-ket-qua-chay-dai.md#thử-lan-tiêu-chí-4).
+- [ ] Mỗi trang ở mục 6 có ít nhất một test Playwright chạy với API thật. Mới có cho 6.1, 6.3, 6.4,
+      6.7, 6.8, 6.10. Còn thiếu Console (6.5), Tệp (6.6), Cài đặt game và server (6.9), Nhập server
+      (6.11); trang Máy chủ (6.2) mới chỉ được mở qua link. Phát hành `v0.3.0` với khoảng trống này.
 
 ### Không làm trong P2
 
