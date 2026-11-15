@@ -40,7 +40,7 @@ bảng dưới đây (Job, chỉ số, bộ đệm console) chỉ ở trong RAM 
 | `config.toml` | Controller tạo lần đầu; người dùng sửa tay | `listen`, `open_browser`, `log_level` | Thiếu file: tạo lại với mặc định (`127.0.0.1:7878`). Hỏng hoặc có khóa lạ: controller báo `CONFIG_INVALID` và không khởi động |
 | `minehost.lock`, `runtime.json` | Controller | Bản thứ hai đọc `runtime.json` để mở trình duyệt rồi thoát | Tự tạo lại |
 | `java/<major>/` | `mh-java` | Giải nén vào thư mục tạm rồi đổi tên | Tải lại khi cần |
-| `cache/` | `mh-net` | Theo hash | Xóa được; chỉ phải tải lại |
+| `cache/` | `mh-net` | Theo hash (`<thuật toán>/<2 ký tự>/<hash>`), JSON dự phòng ở `meta/` | Xóa được; chỉ phải tải lại. Nút "Xóa bộ nhớ đệm tải về" trong Cài đặt xóa phần theo hash, giữ `meta/` |
 | `instance.toml` | `mh-store`, ghi nguyên tử | Schema 1: [spec P1 mục 4.1](../specs/p1-mot-server-chay-duoc.md#41-instancetoml-schema-1), thêm `[backup]` và `policy.restart_at` ở [spec P2 mục 4.1](../specs/p2-nhieu-server-va-van-hanh.md#41-thêm-vào-instancetoml-vẫn-schema-1). Khóa lạ được giữ nguyên | Server hiện là `Broken`. `schema` lớn hơn bản hiện tại cũng là `Broken` |
 | `.running` | Supervisor | File rỗng | Server không tự bật lại sau khi controller chết (trừ khi `autostart`) |
 | `server/eula.txt` | Controller, **chỉ sau khi** người dùng bấm đồng ý | `eula=true` | Ghi lại lúc bật nếu `instance.toml` có `eula.accepted_at` |

@@ -8,8 +8,9 @@ import { Notice, PageHeader, Spinner, Stack } from "../../ui";
 import { CurseforgeCard } from "./CurseforgeCard";
 import { LanCard } from "./LanCard";
 import { SecurityCard } from "./SecurityCard";
+import { DownloadCacheCard, ResourceLimitsCard } from "./StorageCards";
 
-/** Trang Cài đặt (spec P2, mục 6.10; spec P3, mục 6.5): bảo mật, LAN, CurseForge, thông tin máy. */
+/** Trang Cài đặt (spec P2, mục 6.10; spec P3, mục 6.5): bảo mật, LAN, CurseForge, bộ nhớ đệm, giới hạn tài nguyên, thông tin máy. */
 export function SettingsPage() {
   const { t } = useTranslation();
   const session = useQuery({ queryKey: SESSION_KEY, queryFn: authApi.session });
@@ -24,6 +25,8 @@ export function SettingsPage() {
           <SecurityCard session={session.data} />
           <LanCard session={session.data} />
           <CurseforgeCard />
+          <DownloadCacheCard />
+          <ResourceLimitsCard />
           <SystemCard />
         </Stack>
       )}

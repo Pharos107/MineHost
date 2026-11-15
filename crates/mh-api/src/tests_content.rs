@@ -1,5 +1,7 @@
 //! Route mod/plugin và tìm kiếm (spec P3, mục 5.8; kế hoạch PR-18).
 
+#[path = "tests_cache.rs"]
+mod cache;
 #[path = "tests_content_catalog.rs"]
 mod catalog;
 #[path = "tests_content_pending.rs"]

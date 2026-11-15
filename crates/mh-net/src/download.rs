@@ -12,6 +12,10 @@ use crate::{HostAllowlist, HttpClient, NetError};
 /// Dưới mức này thì không tải gì nữa (spec P1, mục 4.5 `NOT_ENOUGH_DISK`).
 pub const MIN_FREE_BYTES: u64 = 1024 * 1024 * 1024;
 
+/// Thư mục con của `cache/` chứa file tải về theo hash (`cache/<algo>/<2 ký tự>/<hash>`). Xóa chúng
+/// chỉ làm lần cài sau phải tải lại; `cache/meta/` (JSON dự phòng) không nằm trong đây.
+pub const CACHE_ALGOS: &[&str] = &["md5", "sha1", "sha256", "sha512"];
+
 /// Hash mà file tải về phải khớp. Chuỗi hex đã kiểm tra, nên dùng làm tên file cache an toàn.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Checksum {
@@ -41,6 +45,7 @@ impl Checksum {
         valid_hex(hex, 128).map(Self::Sha512)
     }
 
+    /// Thư mục con trong `cache/` giữ file theo thuật toán này; danh sách đủ ở [`CACHE_ALGOS`].
     fn algo(&self) -> &'static str {
         match self {
             Self::Md5(_) => "md5",
@@ -253,5 +258,25 @@ fn download_error(url: &str, err: &reqwest::Error) -> NetError {
     NetError::Download {
         url: url.to_owned(),
         reason: err.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used)]
+
+    use super::*;
+
+    #[test]
+    fn cache_algos_cover_every_checksum() {
+        let all = [
+            Checksum::md5(&"0".repeat(32)).unwrap(),
+            Checksum::sha1(&"0".repeat(40)).unwrap(),
+            Checksum::sha256(&"0".repeat(64)).unwrap(),
+            Checksum::sha512(&"0".repeat(128)).unwrap(),
+        ];
+        for checksum in all {
+            assert!(CACHE_ALGOS.contains(&checksum.algo()), "{checksum:?}");
+        }
     }
 }

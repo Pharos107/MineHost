@@ -3,6 +3,7 @@
 mod access;
 mod auth;
 mod backups;
+mod cache;
 mod content;
 mod content_dto;
 mod curseforge;
@@ -100,6 +101,8 @@ pub use lan::{LanState, lan_listener};
         content::toggle,
         content::remove,
         updates::check,
+        cache::get,
+        cache::clear,
         updates::update,
         updates::change_version,
         preflight::get,
@@ -192,6 +195,9 @@ pub use lan::{LanState, lan_listener};
         updates::UpdateCandidateDto,
         updates::UpdateReportDto,
         updates::VersionBody,
+        cache::DownloadCacheDto,
+        cache::ClearedCacheDto,
+        system::ResourceLimitsDto,
         content::ServerModpackDto,
     ))
 )]
@@ -370,6 +376,10 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
             get(curseforge::get_curseforge)
                 .put(curseforge::put_curseforge)
                 .delete(curseforge::delete_curseforge),
+        )
+        .route(
+            "/settings/download-cache",
+            get(cache::get).delete(cache::clear),
         )
         .route("/ws", get(ws::upgrade))
         .fallback(error::api_not_found)

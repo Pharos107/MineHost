@@ -47,6 +47,15 @@ pub struct SystemDto {
     pub lan_addresses: Vec<String>,
     /// Bản Java chọn được cho từng server, tăng dần.
     pub java_majors: Vec<u16>,
+    pub resource_limits: ResourceLimitsDto,
+}
+
+/// Giới hạn RAM và số process của từng server (spec P3, mục 3.8).
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ResourceLimitsDto {
+    /// `true` khi Job Object (Windows) hoặc cgroup v2 (Linux) giới hạn được. `false` thì server vẫn
+    /// chạy, nhưng một server ngốn RAM có thể làm chậm cả máy.
+    pub enforced: bool,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -87,6 +96,7 @@ pub async fn system_info(State(app): State<Arc<App>>) -> Result<Json<SystemDto>,
         .iter()
         .map(ToString::to_string)
         .collect();
+    let enforced = app.resource_limits_enforced();
     let info = tokio::task::spawn_blocking(move || app.system_info())
         .await
         .map_err(ApiError::internal)?;
@@ -119,5 +129,6 @@ pub async fn system_info(State(app): State<Arc<App>>) -> Result<Json<SystemDto>,
         },
         lan_addresses,
         java_majors: mh_core::JAVA_MAJORS.to_vec(),
+        resource_limits: ResourceLimitsDto { enforced },
     }))
 }

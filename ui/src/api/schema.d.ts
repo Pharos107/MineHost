@@ -796,6 +796,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settings/download-cache": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get"];
+        put?: never;
+        post?: never;
+        /** @description Xóa file tải về theo hash. Đang có Job tải file thì trả `SERVER_BUSY`. */
+        delete: operations["clear"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system": {
         parameters: {
             query?: never;
@@ -871,6 +888,10 @@ export interface components {
         };
         ClearPasswordBody: {
             current: string;
+        };
+        ClearedCacheDto: {
+            /** Format: int64 */
+            freed_bytes: number;
         };
         ClientOnlyDto: {
             file_name: string;
@@ -985,6 +1006,13 @@ export interface components {
             mount_point: string;
             /** Format: int64 */
             total_bytes: number;
+        };
+        DownloadCacheDto: {
+            /**
+             * Format: int64
+             * @description Tổng byte file mod, plugin, installer, jar server đã tải, lưu theo hash.
+             */
+            size_bytes: number;
         };
         /** @description Thân response khi có lỗi. Frontend dịch theo `code`; backend không gửi câu chữ đã dịch. */
         ErrorBody: {
@@ -1253,6 +1281,14 @@ export interface components {
             from: string;
             to: string;
         };
+        /** @description Giới hạn RAM và số process của từng server (spec P3, mục 3.8). */
+        ResourceLimitsDto: {
+            /**
+             * @description `true` khi Job Object (Windows) hoặc cgroup v2 (Linux) giới hạn được. `false` thì server vẫn
+             *     chạy, nhưng một server ngốn RAM có thể làm chậm cả máy.
+             */
+            enforced: boolean;
+        };
         RestoreBody: {
             /** @description Phải là `true`: người dùng đã tích "Tôi hiểu" trong hộp thoại. */
             confirm: boolean;
@@ -1404,6 +1440,7 @@ export interface components {
             memory_used_bytes: number;
             os: string;
             os_version?: string | null;
+            resource_limits: components["schemas"]["ResourceLimitsDto"];
             /** @description RAM đề xuất cho server mới (spec P1, mục 4.3). */
             suggested_memory_mb: components["schemas"]["MemoryDto"];
             /** @description RAM đề xuất cho server dựng từ modpack (spec P3, mục 5.7). */
@@ -3923,6 +3960,52 @@ export interface operations {
                 };
             };
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadCacheDto"];
+                };
+            };
+        };
+    };
+    clear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClearedCacheDto"];
+                };
+            };
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

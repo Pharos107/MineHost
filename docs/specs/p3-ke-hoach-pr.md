@@ -8,7 +8,7 @@ Một bản phát hành: `v0.5.0` (PR-38) chốt cả P3. Kế hoạch ban đầ
 
 ## Tiến độ
 
-Cập nhật 2026-11-15, khi làm PR-34b. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-15, khi làm PR-35. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -49,7 +49,7 @@ chính PR ấy.
 | 33b | Cập nhật modpack Modrinth | Đã merge | [#104](https://github.com/Pharos107/MineHost/pull/104) |
 | 34 | Giao diện cập nhật mod (34a) | Đã merge | [#105](https://github.com/Pharos107/MineHost/pull/105) |
 | 34b | Mục Phiên bản, cập nhật modpack | Đã merge | [#106](https://github.com/Pharos107/MineHost/pull/106) |
-| 35 | Nhóm G · Bộ nhớ đệm và trạng thái giới hạn | Chưa bắt đầu | |
+| 35 | Bộ nhớ đệm tải về, trạng thái giới hạn tài nguyên | Đã merge | [#107](https://github.com/Pharos107/MineHost/pull/107) |
 | 36–38 | Nhóm H · Kiểm thử modpack, `v0.5.0` | Chưa bắt đầu | |
 
 Khi bắt đầu một nhóm thì tách dòng của nhóm thành từng PR.
