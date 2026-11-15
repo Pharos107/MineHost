@@ -12,6 +12,11 @@ on:
         description: "Chỉ chạy các pack này (id, cách nhau dấu phẩy); để trống là chạy tất cả"
         required: false
         default: ""
+      ignore_preflight:
+        description: "Chỉ để chẩn đoán: bật bất chấp preflight để xem loader thật có từ chối không"
+        type: boolean
+        required: false
+        default: false
 
 concurrency:
   group: modpacks
@@ -32,6 +37,7 @@ jobs:
       MINEHOST_E2E_DIR: /srv/mh-runner/modpack-data
       MINEHOST_MODPACK_REPORT: ${{ github.workspace }}/modpack-report.jsonl
       MINEHOST_MODPACKS: ${{ inputs.packs }}
+      MINEHOST_MODPACK_IGNORE_PREFLIGHT: ${{ inputs.ignore_preflight && '1' || '' }}
       # Key nhúng lúc build; thiếu thì pack CurseForge được ghi là `skipped`.
       MINEHOST_CURSEFORGE_KEY: ${{ secrets.MINEHOST_CURSEFORGE_KEY }}
     steps:
