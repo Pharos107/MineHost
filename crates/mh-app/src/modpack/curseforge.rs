@@ -9,7 +9,7 @@ use mh_platform::SafeRoot;
 use mh_providers::modpack::PackPlan;
 use mh_providers::{
     extract_curseforge_overrides_after, extract_curseforge_server_pack_with,
-    inspect_curseforge_pack_with,
+    inspect_curseforge_pack_with, server_pack_has_mods,
 };
 
 use super::finish::sanitize_upstream;
@@ -73,15 +73,31 @@ impl App {
             .await?
         {
             if !sp_file.manual_download && sp_file.url.is_some() {
-                return self
-                    .install_cf_server_pack(ctx, target, catalog.as_ref(), &sp_file, spec)
-                    .await;
+                let stage_sp = self
+                    .dirs
+                    .cache()
+                    .join(format!("modpack-{}-server.zip", target.id));
+                let _cleanup_sp = TempFileCleanup(Some(stage_sp.clone()));
+                if self
+                    .download_server_pack(ctx, catalog.as_ref(), &sp_file, &stage_sp)
+                    .await?
+                {
+                    return self
+                        .install_cf_server_pack(ctx, target, &stage_sp, spec)
+                        .await;
+                }
+                tracing::info!(
+                    project_id,
+                    version_id = %ver.id,
+                    "server pack CurseForge không có mod (kiểu tải mod lúc chạy), dựng từ manifest"
+                );
+            } else {
+                tracing::info!(
+                    project_id,
+                    version_id = %ver.id,
+                    "server pack CurseForge cấm phân phối hoặc thiếu downloadUrl, dựng từ manifest"
+                );
             }
-            tracing::info!(
-                project_id,
-                version_id = %ver.id,
-                "server pack CurseForge cấm phân phối hoặc thiếu downloadUrl, quay về dựng từ manifest"
-            );
         }
 
         self.install_cf_from_manifest(ctx, target, Some(catalog), &stage_pack, spec)
@@ -123,29 +139,37 @@ impl App {
             .await
     }
 
-    async fn install_cf_server_pack(
+    /// Tải server pack về `stage_sp`. Trả `false` khi pack không có jar nào trong `mods/`.
+    async fn download_server_pack(
         &self,
         ctx: &JobContext,
-        target: PackTarget,
         catalog: &dyn ContentCatalog,
         sp_file: &ContentFileInfo,
-        spec: CfPackSpec,
-    ) -> Result<(), AppError> {
+        stage_sp: &Path,
+    ) -> Result<bool, AppError> {
         self.check_disk_for(sp_file.size)?;
-        let stage_sp = self
-            .dirs
-            .cache()
-            .join(format!("modpack-{}-server.zip", target.id));
-        let _cleanup_sp = TempFileCleanup(Some(stage_sp.clone()));
         {
             let _permit = ctx.download_permit().await?;
             let mut progress = |done: u64, total: Option<u64>| ctx.bytes(done, total);
             catalog
-                .download(sp_file, &stage_sp, &mut progress, &ctx.cancel)
+                .download(sp_file, stage_sp, &mut progress, &ctx.cancel)
                 .await?;
         }
         ctx.check_cancel()?;
+        let path = stage_sp.to_path_buf();
+        ctx.cancellable(blocking(move || {
+            server_pack_has_mods(&path).map_err(AppError::from)
+        }))
+        .await
+    }
 
+    async fn install_cf_server_pack(
+        &self,
+        ctx: &JobContext,
+        target: PackTarget,
+        stage_sp: &Path,
+        spec: CfPackSpec,
+    ) -> Result<(), AppError> {
         let plan = empty_cf_plan(&spec.manifest, spec.runtime);
         self.update_installing_runtime(target.id, &plan);
         let (step_count, step_apply) = if plan.loader.is_mod_loader() {
@@ -159,7 +183,7 @@ impl App {
 
         ctx.step(JobStep::ApplyOverrides, step_apply, step_count);
         let dest_dir = paths.server_dir.clone();
-        let sp_path = stage_sp.clone();
+        let sp_path = stage_sp.to_path_buf();
         let skipped = ctx
             .cancellable(blocking(move || {
                 extract_curseforge_server_pack_with(

@@ -27,7 +27,7 @@ pub use modpack::{
     extract_curseforge_server_pack, extract_curseforge_server_pack_with, extract_mrpack_overrides,
     extract_mrpack_overrides_with, inspect_curseforge_pack, inspect_curseforge_pack_with,
     plan_curseforge_pack, plan_curseforge_pack_with, plan_mrpack, plan_mrpack_with, read_mrpack,
-    read_mrpack_with, resolve_curseforge_files, skipped_server_pack_reason,
+    read_mrpack_with, resolve_curseforge_files, server_pack_has_mods, skipped_server_pack_reason,
 };
 pub use modrinth::Modrinth;
 pub use mojang::{Mojang, Profile, Release, ServerJar, VersionDetail};

@@ -264,11 +264,18 @@ fn parse_forge_toml(text: &str) -> Result<ModMeta, ModMetaError> {
         {
             continue;
         }
-        let required = dep.mandatory.unwrap_or_else(|| {
-            dep.dep_type
-                .as_deref()
-                .is_none_or(|t| !t.eq_ignore_ascii_case("optional"))
-        });
+        // Forge và NeoForge chỉ ép dependency khi `side` khớp phía đang chạy: dependency
+        // `side = "CLIENT"` không bắt buộc trên server (ATM10 cần `iris` chỉ ở client).
+        let client_side = dep
+            .side
+            .as_deref()
+            .is_some_and(|s| s.trim().eq_ignore_ascii_case("CLIENT"));
+        let required = !client_side
+            && dep.mandatory.unwrap_or_else(|| {
+                dep.dep_type
+                    .as_deref()
+                    .is_none_or(|t| !t.eq_ignore_ascii_case("optional"))
+            });
         depends.push(ModDependency {
             id: dep.mod_id.clone(),
             version_req: opt_non_empty(dep.version_range.as_deref())
