@@ -43,7 +43,7 @@ chính PR ấy.
 | 28 | Cài mod từ CurseForge | Đã merge | [#92](https://github.com/Pharos107/MineHost/pull/92) |
 | 29 | Modpack CurseForge | Đã merge | [#95](https://github.com/Pharos107/MineHost/pull/95) |
 | 30 | Tải tay file CurseForge | Đã merge | [#96](https://github.com/Pharos107/MineHost/pull/96) |
-| 31 | Bản `before_update`, chép `content.toml` | Đã merge | PR31LINK |
+| 31 | Bản `before_update`, chép `content.toml` | Đã merge | [#101](https://github.com/Pharos107/MineHost/pull/101) |
 | 32 | Kiểm tra và cập nhật mod | Chưa bắt đầu | |
 | 33 | Cập nhật modpack, đổi phiên bản | Chưa bắt đầu | |
 | 34 | Giao diện cập nhật và mục Phiên bản | Chưa bắt đầu | |
