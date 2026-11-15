@@ -49,7 +49,7 @@ chính PR ấy.
 | 33b | Cập nhật modpack Modrinth | Đã merge | [#104](https://github.com/Pharos107/MineHost/pull/104) |
 | 34 | Giao diện cập nhật mod (34a) | Đã merge | [#105](https://github.com/Pharos107/MineHost/pull/105) |
 | 34b | Mục Phiên bản, cập nhật modpack | Đã merge | [#106](https://github.com/Pharos107/MineHost/pull/106) |
-| 35 | Bộ nhớ đệm tải về, trạng thái giới hạn tài nguyên | Đã merge | PR35LINK |
+| 35 | Bộ nhớ đệm tải về, trạng thái giới hạn tài nguyên | Đã merge | [#107](https://github.com/Pharos107/MineHost/pull/107) |
 | 36–38 | Nhóm H · Kiểm thử modpack, `v0.5.0` | Chưa bắt đầu | |
 
 Khi bắt đầu một nhóm thì tách dòng của nhóm thành từng PR.
