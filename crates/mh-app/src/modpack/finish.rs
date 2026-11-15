@@ -224,6 +224,7 @@ pub(super) fn write_pack_records(
         file_id: b.file_id,
         sha1: b.sha1.clone(),
         page_url: b.page_url.clone(),
+        from_modpack: true,
         extra: Default::default(),
     }));
     let manifest = ContentManifest {

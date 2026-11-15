@@ -198,6 +198,7 @@ fn build_pending(kind: ContentKind, item: &PlannedContent) -> Result<PendingCont
         file_id: parse_cf_id(&item.version_id, "version_id")?,
         sha1: item.file.sha1.clone().unwrap_or_default(),
         page_url: item.file.download_page_url.clone().unwrap_or_default(),
+        from_modpack: false,
         extra: Default::default(),
     })
 }
