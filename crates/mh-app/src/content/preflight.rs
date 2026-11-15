@@ -14,10 +14,11 @@ use crate::{App, AppError};
 
 /// Báo cáo kiểm tra mod/plugin trước khi bật server.
 ///
-/// Giới hạn đã biết: chỉ kiểm tra được các file `.jar` nằm trực tiếp trong `mods/` (`plugins/`).
-/// Các id nền tảng (`minecraft`, `java`, `fabricloader`, `forge`, `neoforge`, `quilt_loader`, `fml`)
-/// đã được lọc bỏ tại `mh_core::mod_meta`; các mod con đóng gói kiểu jar-in-jar bên trong jar khác
-/// chưa được giải nén để đối chiếu nên không nên dựa hoàn toàn vào danh sách này nếu mod dùng cơ chế đó.
+/// Một dependency coi là đã có khi trùng `id`, một mục `provides`, hoặc một mod trong jar lồng của
+/// mod đang bật, giống cách loader giải quyết. Jar đa loader được đối chiếu bằng metadata mà loader
+/// của server đọc (Fabric chỉ đọc `fabric.mod.json` dù jar có cả `quilt.mod.json`). Các id nền tảng
+/// (`minecraft`, `java`, `fabricloader`, `forge`, `neoforge`, `quilt_loader`, `fml`) đã được lọc bỏ
+/// tại `mh_core::mod_meta`.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct PreflightReport {
     pub missing_deps: Vec<MissingDependency>,
@@ -162,7 +163,7 @@ fn build_report(
     files: &[ContentFile],
     pending: Vec<PendingContent>,
 ) -> PreflightReport {
-    let (missing_deps, version_mismatches) = check_dependencies(files);
+    let (missing_deps, version_mismatches) = check_dependencies(loader, files);
     let mut wrong_loader = Vec::new();
     let mut client_only = Vec::new();
 
@@ -194,23 +195,26 @@ fn build_report(
     }
 }
 
-fn check_dependencies(files: &[ContentFile]) -> (Vec<MissingDependency>, Vec<VersionMismatch>) {
-    let mut by_id: HashMap<String, Vec<&ModMeta>> = HashMap::new();
-    let enabled_metas: Vec<&ModMeta> = files
+fn check_dependencies(
+    loader: LoaderKind,
+    files: &[ContentFile],
+) -> (Vec<MissingDependency>, Vec<VersionMismatch>) {
+    let enabled: Vec<&ContentFile> = files.iter().filter(|f| f.enabled).collect();
+    let metas: Vec<&ModMeta> = enabled
         .iter()
-        .filter(|f| f.enabled)
-        .filter_map(|f| f.meta.as_ref().ok())
+        .filter_map(|f| loader_meta(loader, f))
         .collect();
-    for meta in &enabled_metas {
-        by_id
-            .entry(meta.id.to_ascii_lowercase())
-            .or_default()
-            .push(meta);
+    let mut by_id: HashMap<String, Vec<&ModMeta>> = HashMap::new();
+    let bundled = enabled.iter().flat_map(|f| f.bundled.iter());
+    for meta in metas.iter().copied().chain(bundled) {
+        for id in std::iter::once(&meta.id).chain(&meta.provides) {
+            by_id.entry(id.to_ascii_lowercase()).or_default().push(meta);
+        }
     }
 
     let mut missing = Vec::new();
     let mut mismatches = Vec::new();
-    for meta in enabled_metas {
+    for meta in metas {
         for dep in meta.depends.iter().filter(|d| d.required) {
             match by_id.get(&dep.id.to_ascii_lowercase()) {
                 None => missing.push(MissingDependency {
@@ -227,6 +231,28 @@ fn check_dependencies(files: &[ContentFile]) -> (Vec<MissingDependency>, Vec<Ver
         }
     }
     (missing, mismatches)
+}
+
+/// Metadata mà loader của server sẽ đọc; jar không có định dạng đó thì dùng bản chính.
+fn loader_meta(loader: LoaderKind, file: &ContentFile) -> Option<&ModMeta> {
+    use ModMetaFormat as F;
+    let preferred: &[ModMetaFormat] = match loader {
+        LoaderKind::Fabric => &[F::FabricModJson],
+        LoaderKind::Quilt => &[F::QuiltModJson, F::FabricModJson],
+        LoaderKind::Forge => &[F::ModsToml],
+        LoaderKind::NeoForge => &[F::NeoForgeModsToml, F::ModsToml],
+        LoaderKind::Paper | LoaderKind::Purpur => &[F::PaperPluginYml, F::PluginYml],
+        LoaderKind::Vanilla | _ => &[],
+    };
+    preferred
+        .iter()
+        .find_map(|want| {
+            file.format_metas
+                .iter()
+                .find(|(fmt, _)| fmt == want)
+                .map(|(_, meta)| meta)
+        })
+        .or_else(|| file.meta.as_ref().ok())
 }
 
 fn check_version_match(

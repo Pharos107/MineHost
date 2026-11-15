@@ -192,6 +192,8 @@ fn build_server_meta(
         version: normalize_version(version.as_deref()),
         side: ModSide::Server,
         depends,
+        provides: Vec::new(),
+        nested_jars: Vec::new(),
     })
 }
 

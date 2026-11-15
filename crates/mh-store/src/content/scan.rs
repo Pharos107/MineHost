@@ -10,39 +10,13 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::SystemTime;
 
-use mh_core::{ContentKind, ModMeta, ModMetaError, ModMetaFormat, parse_mod_meta};
+use mh_core::{ContentKind, ModMeta, ModMetaFormat};
 use mh_platform::SafeRoot;
 use sha1::{Digest, Sha1};
-use zip::ZipArchive;
-use zip::result::ZipError;
 
+use super::jar::{ContentMetaError, JarMetadata, read_jar_metadata};
 use super::{CONTENT_FILE, ContentManifest, ContentRecord};
 use crate::StoreError;
-
-const MAX_META_BYTES: usize = 1024 * 1024;
-const META_PRIORITY: [&str; 6] = [
-    "quilt.mod.json",
-    "fabric.mod.json",
-    "META-INF/neoforge.mods.toml",
-    "META-INF/mods.toml",
-    "paper-plugin.yml",
-    "plugin.yml",
-];
-
-/// Lỗi khi đọc metadata mod/plugin từ một file jar cụ thể.
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-pub enum ContentMetaError {
-    #[error("jar không phải file zip hợp lệ: {0}")]
-    InvalidArchive(String),
-    #[error("jar không có file metadata mod/plugin")]
-    MissingMetadata,
-    #[error("file metadata trong jar lớn quá {MAX_META_BYTES} byte")]
-    MetadataTooLarge,
-    #[error("file metadata không phải UTF-8 hợp lệ")]
-    InvalidUtf8,
-    #[error(transparent)]
-    Parse(#[from] ModMetaError),
-}
 
 /// Thông tin một file `.jar` sau khi quét đĩa và ghép với `content.toml`.
 #[derive(Debug, Clone, PartialEq)]
@@ -56,6 +30,10 @@ pub struct ContentFile {
     /// Các file metadata tìm thấy trong jar theo thứ tự `META_PRIORITY` (để nhận biết jar đa loader).
     pub formats: Vec<ModMetaFormat>,
     pub meta: Result<ModMeta, ContentMetaError>,
+    /// Mọi metadata đọc được trong jar, mỗi định dạng một bản (jar đa loader có nhiều bản).
+    pub format_metas: Vec<(ModMetaFormat, ModMeta)>,
+    /// Mod nằm trong jar lồng (jar-in-jar); loader coi chúng là đã cài.
+    pub bundled: Vec<ModMeta>,
     pub record: Option<ContentRecord>,
     /// `true` khi jar không có bản ghi tương ứng trong `content.toml`.
     pub manual: bool,
@@ -71,8 +49,7 @@ struct CacheKey {
 #[derive(Debug, Clone)]
 struct CachedJar {
     sha1: String,
-    formats: Vec<ModMetaFormat>,
-    meta: Result<ModMeta, ContentMetaError>,
+    jar: JarMetadata,
 }
 
 /// Thông tin SHA-1 và metadata đọc từ một file `.jar`.
@@ -81,15 +58,19 @@ pub struct JarInfo {
     pub sha1: String,
     pub formats: Vec<ModMetaFormat>,
     pub meta: Result<ModMeta, ContentMetaError>,
+    pub format_metas: Vec<(ModMetaFormat, ModMeta)>,
+    pub bundled: Vec<ModMeta>,
 }
 
 /// Tính SHA-1 và đọc metadata của một file `.jar` tại `path`.
 pub fn inspect_jar_file(path: &Path) -> Result<JarInfo, StoreError> {
-    let jar = inspect_jar(path)?;
+    let CachedJar { sha1, jar } = inspect_jar(path)?;
     Ok(JarInfo {
-        sha1: jar.sha1,
+        sha1,
         formats: jar.formats,
         meta: jar.meta,
+        format_metas: jar.format_metas,
+        bundled: jar.bundled,
     })
 }
 
@@ -338,14 +319,17 @@ fn reconcile_records(
         .enumerate()
         .map(|(ji, jar)| {
             let record = matched[ji].map(|ri| manifest.file[ri].clone());
+            let CachedJar { sha1, jar: meta } = jar.cached;
             ContentFile {
                 file_name: jar.file_name,
                 path: jar.path,
                 enabled: jar.enabled,
                 size: jar.size,
-                sha1: jar.cached.sha1,
-                formats: jar.cached.formats,
-                meta: jar.cached.meta,
+                sha1,
+                formats: meta.formats,
+                meta: meta.meta,
+                format_metas: meta.format_metas,
+                bundled: meta.bundled,
                 manual: record.is_none(),
                 record,
             }
@@ -363,11 +347,9 @@ fn inspect_jar(path: &Path) -> Result<CachedJar, StoreError> {
     let mut file = File::open(path).map_err(|e| StoreError::io(path, e))?;
     let sha1 = compute_sha1(&mut file).map_err(|e| StoreError::io(path, e))?;
     file.rewind().map_err(|e| StoreError::io(path, e))?;
-    let (formats, meta) = read_jar_metadata(file);
     Ok(CachedJar {
         sha1,
-        formats,
-        meta,
+        jar: read_jar_metadata(file),
     })
 }
 
@@ -385,89 +367,4 @@ fn compute_sha1(reader: &mut impl Read) -> io::Result<String> {
 
 pub(super) fn to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
-}
-
-fn read_jar_metadata(file: File) -> (Vec<ModMetaFormat>, Result<ModMeta, ContentMetaError>) {
-    let mut archive = match ZipArchive::new(file) {
-        Ok(a) => a,
-        Err(e) => {
-            return (
-                Vec::new(),
-                Err(ContentMetaError::InvalidArchive(e.to_string())),
-            );
-        }
-    };
-    let mut formats = Vec::new();
-    let mut primary = None;
-    for entry_name in META_PRIORITY {
-        let Some(format) = ModMetaFormat::from_archive_path(entry_name) else {
-            continue;
-        };
-        let text = match read_zip_text(&mut archive, entry_name) {
-            Ok(Some(text)) => text,
-            Ok(None) => continue,
-            Err(err) => {
-                primary.get_or_insert(Err(err));
-                continue;
-            }
-        };
-        formats.push(format);
-        if primary.is_none() {
-            let mut parsed = parse_mod_meta(format, &text).map_err(ContentMetaError::from);
-            if let Ok(meta) = &mut parsed
-                && meta.version.is_none()
-            {
-                meta.version = read_manifest_impl_version(&mut archive);
-            }
-            primary = Some(parsed);
-        }
-    }
-    (
-        formats,
-        primary.unwrap_or(Err(ContentMetaError::MissingMetadata)),
-    )
-}
-
-fn read_zip_text(
-    archive: &mut ZipArchive<File>,
-    entry_name: &str,
-) -> Result<Option<String>, ContentMetaError> {
-    let entry = match archive.by_name(entry_name) {
-        Ok(entry) => entry,
-        Err(ZipError::FileNotFound) => return Ok(None),
-        Err(e) => return Err(ContentMetaError::InvalidArchive(e.to_string())),
-    };
-    if entry.is_dir() {
-        return Ok(None);
-    }
-    if entry.size() > MAX_META_BYTES as u64 {
-        return Err(ContentMetaError::MetadataTooLarge);
-    }
-    let mut buf = Vec::new();
-    entry
-        .take((MAX_META_BYTES + 1) as u64)
-        .read_to_end(&mut buf)
-        .map_err(|e| ContentMetaError::InvalidArchive(e.to_string()))?;
-    if buf.len() > MAX_META_BYTES {
-        return Err(ContentMetaError::MetadataTooLarge);
-    }
-    String::from_utf8(buf)
-        .map(Some)
-        .map_err(|_| ContentMetaError::InvalidUtf8)
-}
-
-fn read_manifest_impl_version(archive: &mut ZipArchive<File>) -> Option<String> {
-    let text = read_zip_text(archive, "META-INF/MANIFEST.MF")
-        .ok()
-        .flatten()?;
-    // Định dạng MANIFEST.MF cho phép xuống dòng tiếp nối bằng một dấu cách ở đầu dòng kế tiếp.
-    let normalized = text.replace("\r\n", "\n").replace("\n ", "");
-    normalized.split(['\n', '\r']).find_map(|line| {
-        let (key, val) = line.split_once(':')?;
-        key.trim()
-            .eq_ignore_ascii_case("Implementation-Version")
-            .then(|| val.trim())
-            .filter(|v| !v.is_empty())
-            .map(str::to_owned)
-    })
 }

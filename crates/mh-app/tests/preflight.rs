@@ -270,3 +270,68 @@ async fn pending_blocks_start_and_vanilla_skips_preflight() {
     app.stop(vanilla).await.unwrap();
     wait_state(&app, vanilla, ServerState::Stopped).await;
 }
+
+fn nested_jar(entries: &[(&str, &[u8])]) -> Vec<u8> {
+    let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    for (name, data) in entries {
+        zip.start_file(*name, SimpleFileOptions::default()).unwrap();
+        zip.write_all(data).unwrap();
+    }
+    zip.finish().unwrap().into_inner()
+}
+
+/// Lỗi gặp khi tự host Prominence II: `fabric` (provides của Fabric API), thư viện trong jar lồng
+/// và dependency chỉ có trong `quilt.mod.json` đều bị báo thiếu sai trên server Fabric.
+#[tokio::test]
+async fn provides_nested_jars_and_loader_specific_meta_count_as_installed() {
+    let (_tmp, app) = test_app(Arc::new(NoContentCatalog) as Arc<dyn ContentCatalog>);
+    let id = make_server(&app, LoaderKind::Fabric);
+    prepare_runnable(&app, id);
+    let mods = server_paths(&app, id).server_dir.join("mods");
+
+    let lib = nested_jar(&[(
+        "fabric.mod.json",
+        br#"{"id":"bundled-lib","version":"5.2.0"}"#,
+    )]);
+    write_jar(
+        &mods.join("fabric-api.jar"),
+        &[
+            (
+                "fabric.mod.json",
+                br#"{"id":"fabric-api","version":"0.92.0","provides":["fabric"],"jars":[{"file":"META-INF/jars/lib.jar"}]}"#,
+            ),
+            ("META-INF/jars/lib.jar", &lib),
+        ],
+    );
+    write_jar(
+        &mods.join("consumer.jar"),
+        &[(
+            "fabric.mod.json",
+            br#"{"id":"consumer","name":"Consumer","depends":{"fabric":"*","bundled-lib":">=5.0.0"}}"#,
+        )],
+    );
+    write_jar(
+        &mods.join("dual.jar"),
+        &[
+            (
+                "quilt.mod.json",
+                br#"{"schema_version":1,"quilt_loader":{"id":"dual","version":"1.0","depends":["quilt_resource_loader"]}}"#,
+            ),
+            ("fabric.mod.json", br#"{"id":"dual","version":"1.0"}"#),
+        ],
+    );
+
+    let report = app.preflight(id).await.unwrap();
+    assert!(report.missing_deps.is_empty(), "{:?}", report.missing_deps);
+    assert!(report.version_mismatches.is_empty());
+    assert!(!report.is_blocking());
+
+    // Server Quilt đọc `quilt.mod.json` nên vẫn báo thiếu đúng.
+    let quilt = make_server(&app, LoaderKind::Quilt);
+    let quilt_mods = server_paths(&app, quilt).server_dir.join("mods");
+    fs::create_dir_all(&quilt_mods).unwrap();
+    fs::copy(mods.join("dual.jar"), quilt_mods.join("dual.jar")).unwrap();
+    let report = app.preflight(quilt).await.unwrap();
+    let missing: Vec<&str> = report.missing_deps.iter().map(|d| d.id.as_str()).collect();
+    assert_eq!(missing, vec!["quilt_resource_loader"]);
+}

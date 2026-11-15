@@ -8,9 +8,11 @@ use std::collections::BTreeMap;
 use serde::Deserialize;
 use serde_json::Value;
 
+mod nested;
 mod version_req;
 mod yaml;
 
+pub use nested::parse_jarjar_metadata;
 pub use version_req::matches_version_req;
 
 /// Phía chạy được của mod hoặc plugin theo metadata trong jar.
@@ -52,6 +54,11 @@ pub struct ModMeta {
     pub version: Option<String>,
     pub side: ModSide,
     pub depends: Vec<ModDependency>,
+    /// Id khác mà mod này đứng thay (`provides` của Fabric, Quilt, Forge).
+    pub provides: Vec<String>,
+    /// Đường dẫn jar lồng trong jar này do metadata khai báo (`jars` của Fabric, Quilt). Jar lồng
+    /// của Forge/NeoForge nằm ở `META-INF/jarjar/metadata.json`, xem `parse_jarjar_metadata`.
+    pub nested_jars: Vec<String>,
 }
 
 /// Định dạng file metadata nằm trong jar.
@@ -132,6 +139,8 @@ fn parse_fabric_mod_json(text: &str) -> Result<ModMeta, ModMetaError> {
         version: normalize_version(root.get("version").and_then(Value::as_str)),
         side,
         depends,
+        provides: nested::json_provides(root.get("provides")),
+        nested_jars: nested::json_jars(root.get("jars")),
     })
 }
 
@@ -165,6 +174,8 @@ fn parse_quilt_mod_json(text: &str) -> Result<ModMeta, ModMetaError> {
         version: normalize_version(loader.get("version").and_then(Value::as_str)),
         side: env_to_side(env),
         depends,
+        provides: nested::json_provides(loader.get("provides")),
+        nested_jars: nested::json_jars(loader.get("jars")),
     })
 }
 
@@ -263,6 +274,8 @@ fn parse_forge_toml(text: &str) -> Result<ModMeta, ModMetaError> {
         version: normalize_version(primary.version.as_deref()),
         side,
         depends,
+        provides: primary.provides,
+        nested_jars: Vec::new(),
     })
 }
 
@@ -389,6 +402,8 @@ struct RawForgeMod {
     mod_id: Option<String>,
     version: Option<String>,
     display_name: Option<String>,
+    #[serde(default)]
+    provides: Vec<String>,
 }
 
 #[derive(Deserialize)]
