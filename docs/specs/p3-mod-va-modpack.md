@@ -262,6 +262,7 @@ project_id = 238222
 file_id = 4912345
 sha1 = "…"
 page_url = "https://www.curseforge.com/minecraft/mc-mods/…/download/4912345"
+from_modpack = true                     # chỉ ghi khi file thuộc modpack
 ```
 
 ### 4.3 `<data>/secrets.toml`
@@ -434,7 +435,9 @@ CurseForge còn chờ (mục 6.4).
 
 Hộp ở đầu trang Mod khi `pending` không rỗng: mỗi dòng có tên mod, nút "Mở trang tải" (tab mới),
 trạng thái. Một vùng kéo thả chung nhận nhiều file cùng lúc; file khớp hash thì dòng chuyển "Đã có",
-sai thì báo `UPLOAD_HASH_MISMATCH` kèm tên file đúng. Có nút "Bật mà không có các mod này".
+sai thì báo `UPLOAD_HASH_MISMATCH` kèm tên file đúng. CurseForge không trả SHA-1 cho mục nào thì mục
+đó khớp theo tên file. File khớp mà chỉ chạy ở client (nguồn 3, mục 3.5) vào `mods-disabled/`; file
+của modpack vẫn ghi `source = "modpack"`. Có nút "Bật mà không có các mod này".
 
 ### 6.5 Cài đặt server và Cài đặt chung
 

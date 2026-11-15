@@ -231,6 +231,7 @@ async fn pending_blocks_start_and_vanilla_skips_preflight() {
             file_id: 222,
             sha1: "abc".to_owned(),
             page_url: "https://example.invalid/mod".to_owned(),
+            from_modpack: false,
             extra: toml::Table::new(),
         }],
         extra: toml::Table::new(),

@@ -351,6 +351,7 @@ fn reconciles_renames_deletes_and_toggles_preserving_extra_keys() {
             file_id: 88,
             sha1: "deadbeef".into(),
             page_url: "https://example.com".into(),
+            from_modpack: false,
             extra: toml::Table::new(),
         }],
         extra: toml::Table::from_iter([("root_extra".into(), toml::Value::Boolean(true))]),

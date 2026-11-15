@@ -44,6 +44,7 @@ async fn content_list_returns_files_and_pending_and_rejects_vanilla() {
         file_id: 1,
         sha1: "a".repeat(40),
         page_url: "https://example.invalid".to_owned(),
+        from_modpack: false,
         extra: Default::default(),
     });
     manifest.save(&paths.content_file).unwrap();

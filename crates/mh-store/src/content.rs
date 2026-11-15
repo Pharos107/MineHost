@@ -83,6 +83,10 @@ pub struct PendingContent {
     pub file_id: u64,
     pub sha1: String,
     pub page_url: String,
+    /// File thuộc modpack: khi người dùng tải tay lên, bản ghi vẫn là của pack để lần cập nhật
+    /// pack sau thay được nó.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub from_modpack: bool,
     #[serde(flatten)]
     pub extra: Table,
 }
