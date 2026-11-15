@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Preflight, Server } from "../../api/client";
@@ -32,7 +33,12 @@ function renderBanner(s: Server, preflight: Preflight, onContentPage = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <PreflightBanner server={s} onContentPage={onContentPage} />
+      <MemoryRouter initialEntries={["/servers/01JB"]}>
+        <Routes>
+          <Route path="/servers/:id" element={<PreflightBanner server={s} onContentPage={onContentPage} />} />
+          <Route path="/servers/:id/content" element={<p>trang-mod</p>} />
+        </Routes>
+      </MemoryRouter>
     </QueryClientProvider>,
   );
   return fetchMock;
@@ -77,6 +83,19 @@ describe("PreflightBanner", () => {
     expect(screen.getByText(/Iris cần cloth >=15\.0, hiện có 14\.0/)).toBeTruthy();
     expect(screen.getByText(/Bad \(bad\.jar\) không khớp loại server hiện tại/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Vẫn bật" })).toBeNull();
+  });
+
+  it("nút Mở trang Mod dẫn tới trang Mod của server", async () => {
+    renderBanner(server({ preflight_blocking: true }), {
+      missing_deps: [{ id: "fabric-api", version_req: "*", required_by: "Sodium" }],
+      version_mismatches: [],
+      wrong_loader: [],
+      pending: [],
+      client_only: [],
+    });
+
+    await userEvent.click(await screen.findByRole("button", { name: "Mở trang Mod" }));
+    expect(await screen.findByText("trang-mod")).toBeTruthy();
   });
 
   it("bỏ qua server Vanilla và server đang chạy", () => {
@@ -124,6 +143,7 @@ describe("PreflightBanner", () => {
 
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mở trang Mod" })).toBeNull();
     expect(screen.queryByText(/optifine\.jar/)).toBeNull();
   });
 });

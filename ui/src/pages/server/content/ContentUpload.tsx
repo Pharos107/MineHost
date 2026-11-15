@@ -30,10 +30,11 @@ export function ContentUpload({ serverId, locked, onDone }: ContentUploadProps) 
         await contentApi.upload(serverId, file);
         done += 1;
       }
-      setUploadedCount(done);
     } catch (err) {
       setError(err);
     } finally {
+      // Báo cả số file đã lên trước khi file sau lỗi.
+      setUploadedCount(done);
       setUploading(null);
       if (done > 0) onDone();
     }

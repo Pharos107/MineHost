@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Play } from "lucide-react";
+import { Package, Play } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 
 import { api, errorMessage, type Preflight, type Server } from "../../api/client";
 import { Button, Notice, Stack } from "../../ui";
@@ -22,6 +23,7 @@ function hasAnyIssues(data: Preflight, onContentPage: boolean): boolean {
  */
 export function PreflightBanner({ server, onContentPage = false }: { server: Server; onContentPage?: boolean }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const canStart = server.state === "stopped" || server.state === "crashed";
   const enabled = canStart && server.content_kind != null;
 
@@ -40,6 +42,16 @@ export function PreflightBanner({ server, onContentPage = false }: { server: Ser
   const data = query.data;
   const pending = onContentPage ? [] : data.pending;
   const blocking = data.missing_deps.length > 0 || pending.length > 0;
+  const openContent = !onContentPage && (
+    <Button variant="secondary" icon={Package} onClick={() => void navigate(`/servers/${server.id}/content`)}>
+      {t("preflight.openContent")}
+    </Button>
+  );
+  const startButton = blocking && (
+    <Button variant="secondary" icon={Play} loading={startAnyway.isPending} onClick={() => startAnyway.mutate()}>
+      {t("preflight.startAnyway")}
+    </Button>
+  );
 
   return (
     <Stack gap={2}>
@@ -47,15 +59,11 @@ export function PreflightBanner({ server, onContentPage = false }: { server: Ser
         tone={blocking ? "danger" : "warning"}
         title={blocking ? t("preflight.blockingTitle") : t("preflight.warningTitle")}
         action={
-          blocking ? (
-            <Button
-              variant="secondary"
-              icon={Play}
-              loading={startAnyway.isPending}
-              onClick={() => startAnyway.mutate()}
-            >
-              {t("preflight.startAnyway")}
-            </Button>
+          openContent || startButton ? (
+            <Stack direction="row" gap={2}>
+              {openContent}
+              {startButton}
+            </Stack>
           ) : undefined
         }
       >

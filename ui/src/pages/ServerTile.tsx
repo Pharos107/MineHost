@@ -20,7 +20,8 @@ export function ServerTile({ server, lan }: { server: Server; lan: string[] | un
   const navigate = useNavigate();
   const address = playAddress(server, lan);
   const ready = server.state !== "installing" && server.state !== "broken";
-  const version = server.minecraft ? `${t(`loaders.${server.loader ?? "paper"}`)} ${server.minecraft}` : null;
+  const game = server.minecraft ? `${t(`loaders.${server.loader ?? "paper"}`)} ${server.minecraft}` : null;
+  const version = game && server.modpack ? t("tile.withModpack", { modpack: server.modpack.name, version: game }) : game;
   const memory = server.memory_mb ? formatMemoryMb(server.memory_mb.max, i18n.language) : null;
   const meta = version && memory ? t("tile.meta", { version, memory }) : version;
 
