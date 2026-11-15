@@ -17,6 +17,7 @@ use tokio::task::JoinSet;
 
 mod curseforge;
 mod finish;
+mod server_libs;
 mod update;
 
 pub use update::ModpackUpdateResult;
@@ -169,7 +170,7 @@ impl App {
 
         let hosts = catalog.pack_hosts();
         let plan_path = mrpack_path.clone();
-        let plan = ctx
+        let mut plan = ctx
             .cancellable(crate::files::blocking(move || {
                 plan_mrpack_with(&plan_path, hosts, PackLimits::default()).map_err(AppError::from)
             }))
@@ -197,6 +198,15 @@ impl App {
             &paths.server_dir,
             step_packs + 1,
             step_count,
+        )
+        .await?;
+        self.restore_server_libs(
+            ctx,
+            &catalog,
+            &paths,
+            target.id,
+            &mut plan,
+            (step_packs, step_count),
         )
         .await?;
 

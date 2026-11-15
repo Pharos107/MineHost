@@ -2,6 +2,7 @@
 
 #![allow(clippy::unwrap_used, clippy::panic)]
 
+mod server_libs;
 mod support;
 mod update;
 

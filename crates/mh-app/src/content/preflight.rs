@@ -1,13 +1,13 @@
 //! Kiểm tra điều kiện mod/plugin trước khi bật server (spec P3, mục 3.5 & 4.4).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 
 use mh_core::instance::GameSection;
 use mh_core::{
-    ErrorCode, FabricDepOverrides, InstanceSpec, LoaderKind, ModMeta, ModMetaFormat, ServerId,
-    matches_version_req, parse_fabric_dep_overrides,
+    ErrorCode, FabricDepOverrides, InstanceSpec, LoaderKind, McVersion, ModMeta, ModMetaFormat,
+    ServerId, matches_version_req, parse_fabric_dep_overrides,
 };
 use mh_store::{ContentFile, ContentManifest, PendingContent};
 use serde_json::json;
@@ -196,11 +196,11 @@ fn load_dep_overrides(loader: LoaderKind, server_dir: &Path, id: ServerId) -> Fa
 /// Forge cho Minecraft 1.12.2 trở xuống đọc dependency từ `mcmod.info` và annotation `@Mod`, không
 /// đọc `mods.toml`. MineHost không đọc được các nguồn đó, còn `mods.toml` sót lại trong jar (có ở
 /// EnhancedVisuals 1.12.2) khai dependency của bản mới, nên so dependency ở đây chỉ ra kết quả sai.
-fn reads_mods_toml_deps(game: &GameSection) -> bool {
-    if game.loader != LoaderKind::Forge {
+pub(crate) fn reads_mods_toml_deps(loader: LoaderKind, minecraft: &McVersion) -> bool {
+    if loader != LoaderKind::Forge {
         return true;
     }
-    let mut parts = game.minecraft.as_str().split('.');
+    let mut parts = minecraft.as_str().split('.');
     match (
         parts.next(),
         parts.next().and_then(|m| m.parse::<u32>().ok()),
@@ -210,6 +210,27 @@ fn reads_mods_toml_deps(game: &GameSection) -> bool {
     }
 }
 
+/// Id (chữ thường) của dependency bắt buộc còn thiếu khi chỉ tính mod sẽ chạy trên server, tức bỏ
+/// mod chỉ chạy ở client vì chúng sắp bị tắt. Dùng cho bước tìm lại thư viện mà modpack gắn cờ sai.
+pub(crate) fn missing_server_deps(
+    loader: LoaderKind,
+    server_dir: &Path,
+    id: ServerId,
+    files: &[ContentFile],
+) -> HashSet<String> {
+    let server_side: Vec<ContentFile> = files
+        .iter()
+        .filter(|f| f.enabled && !f.meta.as_ref().is_ok_and(|m| m.side.is_client_only()))
+        .cloned()
+        .collect();
+    let overrides = load_dep_overrides(loader, server_dir, id);
+    check_dependencies(loader, &server_side, &overrides)
+        .0
+        .into_iter()
+        .map(|d| d.id.to_ascii_lowercase())
+        .collect()
+}
+
 fn build_report(
     game: &GameSection,
     files: &[ContentFile],
@@ -217,7 +238,7 @@ fn build_report(
     pending: Vec<PendingContent>,
 ) -> PreflightReport {
     let loader = game.loader;
-    let (missing_deps, version_mismatches) = if reads_mods_toml_deps(game) {
+    let (missing_deps, version_mismatches) = if reads_mods_toml_deps(loader, &game.minecraft) {
         check_dependencies(loader, files, overrides)
     } else {
         (Vec::new(), Vec::new())
@@ -370,21 +391,23 @@ fn display_name(file: &ContentFile) -> String {
 
 #[cfg(test)]
 mod tests {
-    use mh_core::McVersion;
-
     use super::*;
 
-    fn game(loader: LoaderKind, mc: &str) -> GameSection {
-        GameSection::new(loader, McVersion::parse(mc).unwrap(), Some(1), 8)
+    fn game(loader: LoaderKind, mc: &str) -> (LoaderKind, McVersion) {
+        (loader, McVersion::parse(mc).unwrap())
+    }
+
+    fn reads(pair: &(LoaderKind, McVersion)) -> bool {
+        reads_mods_toml_deps(pair.0, &pair.1)
     }
 
     #[test]
     fn legacy_forge_skips_mods_toml_dependencies() {
-        assert!(!reads_mods_toml_deps(&game(LoaderKind::Forge, "1.12.2")));
-        assert!(!reads_mods_toml_deps(&game(LoaderKind::Forge, "1.7.10")));
-        assert!(reads_mods_toml_deps(&game(LoaderKind::Forge, "1.13.2")));
-        assert!(reads_mods_toml_deps(&game(LoaderKind::Forge, "1.20.1")));
-        assert!(reads_mods_toml_deps(&game(LoaderKind::Fabric, "1.12.2")));
-        assert!(reads_mods_toml_deps(&game(LoaderKind::NeoForge, "1.21.1")));
+        assert!(!reads(&game(LoaderKind::Forge, "1.12.2")));
+        assert!(!reads(&game(LoaderKind::Forge, "1.7.10")));
+        assert!(reads(&game(LoaderKind::Forge, "1.13.2")));
+        assert!(reads(&game(LoaderKind::Forge, "1.20.1")));
+        assert!(reads(&game(LoaderKind::Fabric, "1.12.2")));
+        assert!(reads(&game(LoaderKind::NeoForge, "1.21.1")));
     }
 }

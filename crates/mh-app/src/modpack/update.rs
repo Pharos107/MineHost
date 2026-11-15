@@ -135,7 +135,7 @@ impl App {
     ) -> Result<ModpackUpdateResult, AppError> {
         let hosts = catalog.pack_hosts();
         let plan_path = stage.to_path_buf();
-        let plan = ctx
+        let mut plan = ctx
             .cancellable(blocking(move || {
                 plan_mrpack_with(&plan_path, hosts, PackLimits::default()).map_err(AppError::from)
             }))
@@ -155,6 +155,8 @@ impl App {
         self.download_pack_files(ctx, catalog, &root, &plan.files, 8, STEPS)
             .await?;
         self.apply_pack_overrides(ctx, stage, &paths.server_dir, 9, STEPS)
+            .await?;
+        self.restore_server_libs(ctx, catalog, &paths, id, &mut plan, (8, STEPS))
             .await?;
         ctx.step(JobStep::PrepareFiles, STEPS, STEPS);
         let kept_count = kept.records.len() + kept.manual.len();
