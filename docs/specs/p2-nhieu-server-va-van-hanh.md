@@ -25,9 +25,7 @@ Giao diện làm trước: các trang giống dự án cũ (mục 6), mỗi tran
 - [x] Đã đặt mật khẩu thì mọi API (kể cả từ `127.0.0.1`) trả `AUTH_REQUIRED` khi chưa đăng nhập.
       Bật LAN thì một máy khác trong LAN đăng nhập và điều khiển được server. Đã thử qua địa chỉ LAN
       từ một container, vì tường lửa máy thử chặn máy thật: [kết quả](p2-ket-qua-chay-dai.md#thử-lan-tiêu-chí-4).
-- [ ] Mỗi trang ở mục 6 có ít nhất một test Playwright chạy với API thật. Mới có cho 6.1, 6.3, 6.4,
-      6.7, 6.8, 6.10. Còn thiếu Console (6.5), Tệp (6.6), Cài đặt game và server (6.9), Nhập server
-      (6.11); trang Máy chủ (6.2) mới chỉ được mở qua link. Phát hành `v0.3.0` với khoảng trống này.
+- [x] Mỗi trang ở mục 6 có ít nhất một test Playwright chạy với API thật (`ui/e2e/`).
 
 ### Không làm trong P2
 
