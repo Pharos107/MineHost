@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use md5::Md5;
 use sha1::Sha1;
@@ -11,6 +12,9 @@ use crate::{HostAllowlist, HttpClient, NetError};
 
 /// Dưới mức này thì không tải gì nữa (spec P1, mục 4.5 `NOT_ENOUGH_DISK`).
 pub const MIN_FREE_BYTES: u64 = 1024 * 1024 * 1024;
+
+/// Khi không biết trước cỡ file, kiểm tra lại chỗ trống sau mỗi chừng này byte.
+const SPACE_CHECK_EVERY: u64 = 64 * 1024 * 1024;
 
 /// Thư mục con của `cache/` chứa file tải về theo hash (`cache/<algo>/<2 ký tự>/<hash>`). Xóa chúng
 /// chỉ làm lần cài sau phải tải lại; `cache/meta/` (JSON dự phòng) không nằm trong đây.
@@ -178,6 +182,11 @@ impl HttpClient {
             resp = self.send_download(req.url, req.allowed_hosts) => resp?,
         };
         let total = resp.content_length().or(req.size);
+        // Cỡ khai báo (index modpack, API) có trước thì làm trần; nguồn gửi nhiều hơn là hỏng
+        // hoặc cố ý làm đầy đĩa, không đợi tới lúc so hash.
+        let limit = req.size.or(resp.content_length());
+        let dir = part.parent().unwrap_or(Path::new("."));
+        let mut next_space_check = SPACE_CHECK_EVERY;
         let mut file = tokio::fs::File::create(part)
             .await
             .map_err(|e| NetError::io(part, e))?;
@@ -194,6 +203,16 @@ impl HttpClient {
                 .map_err(|e| NetError::io(part, e))?;
             hasher.update(&chunk);
             done += chunk.len() as u64;
+            if let Some(max) = limit.filter(|&max| done > max) {
+                return Err(NetError::Download {
+                    url: req.url.to_owned(),
+                    reason: format!("nhận hơn {max} byte đã khai báo"),
+                });
+            }
+            if done >= next_space_check {
+                self.check_free_space(dir)?;
+                next_space_check = done.saturating_add(SPACE_CHECK_EVERY);
+            }
             progress(done, total);
         }
         // Người dùng có thể hủy ngay trong `progress` của đoạn cuối.
@@ -245,13 +264,30 @@ async fn copy_replace(from: &Path, to: &Path) -> Result<(), NetError> {
             .await
             .map_err(|e| NetError::io(dir, e))?;
     }
-    let tmp = to.with_extension("tmp");
-    tokio::fs::copy(from, &tmp)
-        .await
-        .map_err(|e| NetError::io(&tmp, e))?;
-    tokio::fs::rename(&tmp, to)
-        .await
-        .map_err(|e| NetError::io(to, e))
+    let tmp = unique_tmp(to);
+    let result = async {
+        tokio::fs::copy(from, &tmp)
+            .await
+            .map_err(|e| NetError::io(&tmp, e))?;
+        tokio::fs::rename(&tmp, to)
+            .await
+            .map_err(|e| NetError::io(to, e))
+    }
+    .await;
+    if result.is_err() {
+        let _ = tokio::fs::remove_file(&tmp).await;
+    }
+    result
+}
+
+/// File tạm riêng cho từng lần ghi, nằm cạnh `path`. `with_extension("tmp")` làm `foo.json` và
+/// `foo.toml` (hay hai lượt tải song song cùng hash vào cache) dùng chung một file tạm.
+pub(crate) fn unique_tmp(path: &Path) -> PathBuf {
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    let n = SEQ.fetch_add(1, Ordering::Relaxed);
+    let mut name = path.file_name().unwrap_or_default().to_os_string();
+    name.push(format!(".{}-{n}.tmp", std::process::id()));
+    path.with_file_name(name)
 }
 
 fn download_error(url: &str, err: &reqwest::Error) -> NetError {
