@@ -17,6 +17,9 @@ use tokio::task::JoinSet;
 
 mod curseforge;
 mod finish;
+mod update;
+
+pub use update::ModpackUpdateResult;
 
 use crate::content::{CatalogSource, ContentCatalog, ContentFileInfo, ContentVersion, parse_cf_id};
 use crate::jobs::{JobContext, JobKind, JobStep};

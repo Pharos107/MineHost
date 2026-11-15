@@ -3,6 +3,7 @@
 #![allow(clippy::unwrap_used, clippy::panic)]
 
 mod support;
+mod update;
 
 use std::collections::HashMap;
 use std::sync::Arc;

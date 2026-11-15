@@ -185,6 +185,9 @@ khôi phục, vì khôi phục cũng có thể lỗi và người dùng cần th
 
 Cùng luồng này lo luôn việc cập nhật build Paper và Purpur cho server đã tạo (rà soát B4).
 
+Cập nhật modpack hiện chỉ làm cho modpack Modrinth (PR-33b). Modpack CurseForge và pack tải lên
+trả `CONTENT_INCOMPATIBLE`; muốn bản mới thì tạo server mới từ bản đó.
+
 ### 3.10 Chọn Java cho từng server
 
 `game.java_major` vẫn lấy theo Mojang khi tạo. Trang Cài đặt server (chế độ Nâng cao) cho chọn major

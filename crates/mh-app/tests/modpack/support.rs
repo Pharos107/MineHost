@@ -286,12 +286,21 @@ pub fn sha512_hex(bytes: &[u8]) -> String {
 }
 
 pub fn make_mrpack(name: &str, files: &[Value], extras: &[(&str, &[u8])]) -> Vec<u8> {
+    make_mrpack_for(name, "0.16.9", files, extras)
+}
+
+pub fn make_mrpack_for(
+    name: &str,
+    fabric: &str,
+    files: &[Value],
+    extras: &[(&str, &[u8])],
+) -> Vec<u8> {
     let index = json!({
         "formatVersion": 1,
         "game": "minecraft",
         "versionId": "1.0.0",
         "name": name,
-        "dependencies": { "minecraft": "1.21.4", "fabric-loader": "0.16.9" },
+        "dependencies": { "minecraft": "1.21.4", "fabric-loader": fabric },
         "files": files,
     });
     let mut zip = ZipWriter::new(Cursor::new(Vec::new()));

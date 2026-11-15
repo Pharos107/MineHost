@@ -722,7 +722,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Tắt server nếu đang chạy, tạo bản `before_update`, rồi cài các bản đã chọn. Lỗi sau bước sao lưu có `backup_id` trong `params`. */
+        /** @description Tắt server nếu đang chạy, tạo bản `before_update`, rồi cài các bản mod đã chọn hoặc bản modpack mới. Lỗi sau bước sao lưu có `backup_id` trong `params`. */
         post: operations["update"];
         delete?: never;
         options?: never;
@@ -1416,8 +1416,11 @@ export interface components {
             /** @description Thư mục trong thùng rác, để người dùng tự lấy lại. */
             trash_path: string;
         };
+        /** @description Gửi đúng một trong hai: `items` (cập nhật từng mod) hoặc `modpack_version_id` (cập nhật modpack). */
         UpdateBody: {
-            items: components["schemas"]["UpdateItemBody"][];
+            items?: components["schemas"]["UpdateItemBody"][];
+            /** @description Bản modpack Modrinth muốn chuyển tới. Kết quả Job có `removed`, `kept`, `backup_id`. */
+            modpack_version_id?: string | null;
         };
         /** @description Dạng `result` của Job `check_updates`. Chỉ để sinh kiểu cho UI; backend ghi bằng `UpdateReport`. */
         UpdateCandidateDto: {

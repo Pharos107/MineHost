@@ -1,6 +1,6 @@
 //! Hoàn tất tải song song file modpack, tắt mod client-only, ghi `content.toml` và `[modpack]`.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 use std::sync::Arc;
@@ -134,7 +134,43 @@ pub(super) fn write_content_manifest(
     pack_files: &[PackFile],
     blocked: &[BlockedPackFile],
 ) -> Result<usize, AppError> {
-    disable_client_only_mods(scanner, server_dir, content_file)?;
+    let keep = KeptContent::default();
+    write_pack_records(
+        scanner,
+        server_dir,
+        content_file,
+        pack_files,
+        blocked,
+        &keep,
+        Vec::new(),
+    )
+}
+
+/// Mod người dùng có trước lần cập nhật modpack: giữ nguyên bản ghi, hoặc giữ là "Thêm tay".
+#[derive(Debug, Default, Clone)]
+pub(super) struct KeptContent {
+    pub records: HashMap<String, ContentRecord>,
+    pub manual: HashSet<String>,
+}
+
+impl KeptContent {
+    fn owns(&self, path: &str) -> bool {
+        self.records.contains_key(path) || self.manual.contains(path)
+    }
+}
+
+/// Ghi `content.toml` sau khi cài pack. Mọi file trên đĩa không thuộc `keep` đều coi là của pack
+/// (file tải về hoặc jar trong `overrides/`).
+pub(super) fn write_pack_records(
+    scanner: &ContentScanner,
+    server_dir: &Path,
+    content_file: &Path,
+    pack_files: &[PackFile],
+    blocked: &[BlockedPackFile],
+    keep: &KeptContent,
+    user_pending: Vec<PendingContent>,
+) -> Result<usize, AppError> {
+    disable_client_only_mods(scanner, server_dir, content_file, keep)?;
 
     let by_path: HashMap<&str, (&str, Option<ProjectId>, Option<String>)> = pack_files
         .iter()
@@ -150,13 +186,22 @@ pub(super) fn write_content_manifest(
     let now = OffsetDateTime::now_utc();
     let now = now.replace_nanosecond(0).unwrap_or(now);
     let mut records = Vec::new();
+    let mut count = 0;
     for kind in [ContentKind::Mods, ContentKind::Plugins] {
         for item in scanner.scan_dirs(server_dir, content_file, kind)? {
+            if let Some(rec) = keep.records.get(&item.path) {
+                records.push(rec.clone());
+                continue;
+            }
+            if keep.manual.contains(&item.path) {
+                continue;
+            }
             // Chỉ gắn ID nguồn nếu hash trên đĩa còn khớp bản đã tải (tránh gắn nhầm khi override ghi đè).
             let (project_id, version_id) = match by_path.get(item.path.as_str()) {
                 Some((sha1, pid, vid)) if *sha1 == item.sha1 => (pid.clone(), vid.clone()),
                 _ => (None, None),
             };
+            count += 1;
             records.push(ContentRecord {
                 path: item.path,
                 sha1: item.sha1,
@@ -170,20 +215,17 @@ pub(super) fn write_content_manifest(
             });
         }
     }
-    let pending: Vec<PendingContent> = blocked
-        .iter()
-        .map(|b| PendingContent {
-            path: b.path.clone(),
-            // Manifest CurseForge chỉ có id, không có tên mod; UI dùng tên file thay thế.
-            name: None,
-            project_id: b.project_id,
-            file_id: b.file_id,
-            sha1: b.sha1.clone(),
-            page_url: b.page_url.clone(),
-            extra: Default::default(),
-        })
-        .collect();
-    let count = records.len();
+    let mut pending = user_pending;
+    pending.extend(blocked.iter().map(|b| PendingContent {
+        path: b.path.clone(),
+        // Manifest CurseForge chỉ có id, không có tên mod; UI dùng tên file thay thế.
+        name: None,
+        project_id: b.project_id,
+        file_id: b.file_id,
+        sha1: b.sha1.clone(),
+        page_url: b.page_url.clone(),
+        extra: Default::default(),
+    }));
     let manifest = ContentManifest {
         file: records,
         pending,
@@ -194,10 +236,12 @@ pub(super) fn write_content_manifest(
 }
 
 /// Dựa vào metadata trong `.jar` để chuyển mod chỉ chạy client sang `mods-disabled/` (spec P3, mục 3.5).
+/// Mod người dùng giữ lại sau lần cập nhật pack thì không đụng tới.
 fn disable_client_only_mods(
     scanner: &ContentScanner,
     server_dir: &Path,
     content_file: &Path,
+    keep: &KeptContent,
 ) -> Result<(), AppError> {
     if !server_dir.join(ContentKind::Mods.dir()).is_dir() {
         return Ok(());
@@ -205,6 +249,7 @@ fn disable_client_only_mods(
     let items = scanner.scan_dirs(server_dir, content_file, ContentKind::Mods)?;
     let to_disable: Vec<_> = items
         .into_iter()
+        .filter(|i| !keep.owns(&i.path))
         .filter(|i| i.enabled && i.meta.as_ref().is_ok_and(|m| m.side.is_client_only()))
         .collect();
     if to_disable.is_empty() {
