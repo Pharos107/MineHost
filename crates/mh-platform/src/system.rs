@@ -1,3 +1,4 @@
+use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard, OnceLock};
 
@@ -118,19 +119,48 @@ pub fn total_memory_bytes() -> u64 {
 ///
 /// Mở một socket UDP "kết nối" tới một địa chỉ ngoài để OS chọn card mạng mặc định; UDP
 /// không gửi gói tin nào khi `connect`, nên hàm này chạy được cả khi không có Internet.
-pub fn lan_ipv4() -> Vec<std::net::Ipv4Addr> {
-    let probe = || -> std::io::Result<std::net::SocketAddr> {
-        let socket = std::net::UdpSocket::bind(("0.0.0.0", 0))?;
-        socket.connect(("10.255.255.255", 9))?;
-        socket.local_addr()
-    };
-    match probe() {
-        Ok(std::net::SocketAddr::V4(addr))
+pub fn lan_ipv4() -> Vec<Ipv4Addr> {
+    route_source(Ipv4Addr::new(10, 255, 255, 255))
+        .into_iter()
+        .collect()
+}
+
+/// Địa chỉ mở giao diện khi bật công tắc LAN: địa chỉ LAN cộng IP Tailscale nếu máy có.
+///
+/// Tailscale chỉ nối các máy cùng tài khoản của người dùng, nên coi như một LAN riêng; vẫn cần
+/// mật khẩu admin như LAN thường.
+pub fn ui_ipv4() -> Vec<Ipv4Addr> {
+    let mut addrs = lan_ipv4();
+    if let Some(ip) = tailscale_ipv4().filter(|ip| !addrs.contains(ip)) {
+        addrs.push(ip);
+    }
+    addrs
+}
+
+/// IP Tailscale của máy. 100.100.100.100 là DNS của Tailscale, chỉ có đường qua card Tailscale;
+/// máy không có Tailscale thì OS chọn card mặc định và IP đó nằm ngoài dải Tailscale.
+pub fn tailscale_ipv4() -> Option<Ipv4Addr> {
+    route_source(Ipv4Addr::new(100, 100, 100, 100)).filter(|ip| is_tailscale_ip(*ip))
+}
+
+/// Dải 100.64.0.0/10 (CGNAT) mà Tailscale cấp cho từng máy.
+pub fn is_tailscale_ip(ip: Ipv4Addr) -> bool {
+    let [a, b, ..] = ip.octets();
+    a == 100 && (64..=127).contains(&b)
+}
+
+/// IP nguồn OS sẽ dùng để đi tới `target`. "Kết nối" một socket UDP không gửi gói tin nào, nên
+/// chạy được cả khi không có Internet.
+fn route_source(target: Ipv4Addr) -> Option<Ipv4Addr> {
+    let socket = std::net::UdpSocket::bind(("0.0.0.0", 0)).ok()?;
+    socket.connect((target, 9)).ok()?;
+    match socket.local_addr().ok()? {
+        std::net::SocketAddr::V4(addr)
             if !addr.ip().is_loopback() && !addr.ip().is_unspecified() =>
         {
-            vec![*addr.ip()]
+            Some(*addr.ip())
         }
-        _ => Vec::new(),
+        _ => None,
     }
 }
 
@@ -177,5 +207,25 @@ mod tests {
         let dir = std::env::current_dir().unwrap();
         assert!(free_space(&dir).is_some_and(|b| b > 0));
         assert!(total_memory_bytes() > 0);
+    }
+
+    #[test]
+    fn tailscale_range_is_100_64_slash_10() {
+        assert!(is_tailscale_ip(Ipv4Addr::new(100, 64, 0, 1)));
+        assert!(is_tailscale_ip(Ipv4Addr::new(100, 72, 46, 54)));
+        assert!(is_tailscale_ip(Ipv4Addr::new(100, 127, 255, 254)));
+        assert!(!is_tailscale_ip(Ipv4Addr::new(100, 63, 255, 255)));
+        assert!(!is_tailscale_ip(Ipv4Addr::new(100, 128, 0, 1)));
+        assert!(!is_tailscale_ip(Ipv4Addr::new(192, 168, 1, 22)));
+    }
+
+    #[test]
+    fn ui_addresses_have_no_duplicates_or_loopback() {
+        let addrs = ui_ipv4();
+        assert!(addrs.iter().all(|ip| !ip.is_loopback()));
+        let mut unique = addrs.clone();
+        unique.dedup();
+        assert_eq!(unique.len(), addrs.len());
+        assert!(tailscale_ipv4().is_none_or(is_tailscale_ip));
     }
 }

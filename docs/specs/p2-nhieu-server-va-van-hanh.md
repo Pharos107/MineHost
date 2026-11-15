@@ -312,6 +312,9 @@ REST mới (mọi thao tác dài trả `202` kèm `job_id`):
 
 - Lệnh `minehost reset-password` (mục 3.3).
 - **LAN:** bật thì mở thêm một listener trên từng địa chỉ IPv4 trong LAN, cùng cổng với `127.0.0.1`.
+  Máy có Tailscale thì mở thêm trên IP Tailscale (dải `100.64.0.0/10`): Tailscale chỉ nối các máy
+  của chính người dùng, nên coi như một LAN riêng, vẫn cần mật khẩu admin. Mở bằng IP
+  (`http://100.x.y.z:<cổng>`); tên MagicDNS bị kiểm tra `Host` chặn.
   Quét lại địa chỉ mỗi 60 giây (DHCP đổi IP). Tắt thì đóng các listener đó, không cần khởi động lại.
   Kiểm tra `Host` chấp nhận thêm `<ip-lan>:<cổng>` của chính các listener đang mở.
 - Menu khay thêm "Đặt lại mật khẩu" (Windows).
