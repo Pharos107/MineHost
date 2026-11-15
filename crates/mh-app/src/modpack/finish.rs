@@ -10,8 +10,8 @@ use mh_core::{ContentKind, ErrorCode};
 use mh_platform::SafeRoot;
 use mh_providers::modpack::{BlockedPackFile, PackFile, PackPlan};
 use mh_store::{
-    ContentManifest, ContentRecord, ContentScanner, ContentSource, PendingContent, ProjectId,
-    ServerPaths,
+    ContentFile, ContentManifest, ContentRecord, ContentScanner, ContentSource, PendingContent,
+    ProjectId, ServerPaths,
 };
 use time::OffsetDateTime;
 use tokio::task::JoinSet;
@@ -28,11 +28,14 @@ impl App {
         target: PackTarget,
         game: GameSection,
         paths: &ServerPaths,
-        plan: PackPlan,
+        pack: InstalledPack,
         meta: ModpackMeta,
     ) -> Result<(), AppError> {
+        let InstalledPack { plan, client_sha1 } = pack;
         let pending_curseforge: Vec<String> = plan.blocked.iter().map(|b| b.path.clone()).collect();
-        let installed_mods = self.record_modpack_content(paths, &plan).await?;
+        let installed_mods = self
+            .record_modpack_content(paths, &plan, client_sha1)
+            .await?;
         let modpack = build_modpack_section(&plan, meta)?;
         self.write_server_spec(
             &paths.server_dir,
@@ -59,6 +62,7 @@ impl App {
         &self,
         paths: &ServerPaths,
         plan: &PackPlan,
+        client_sha1: HashSet<String>,
     ) -> Result<usize, AppError> {
         let server_dir = paths.server_dir.clone();
         let content_file = paths.content_file.clone();
@@ -66,9 +70,30 @@ impl App {
         let blocked = plan.blocked.clone();
         let scanner = Arc::clone(&self.content_scanner);
         crate::files::blocking(move || {
-            write_content_manifest(&scanner, &server_dir, &content_file, &files, &blocked)
+            let pack = PackOutput {
+                files: &files,
+                blocked: &blocked,
+                client_sha1: &client_sha1,
+            };
+            write_content_manifest(&scanner, &server_dir, &content_file, &pack)
         })
         .await
+    }
+}
+
+/// Pack đã tải xong, kèm SHA-1 (chữ thường) của mod mà nguồn ngoài jar cho biết chỉ chạy ở client
+/// (spec P3, mục 3.5, nguồn 4). Pack không tra nguồn ngoài thì tập này rỗng.
+pub(super) struct InstalledPack {
+    pub plan: PackPlan,
+    pub client_sha1: HashSet<String>,
+}
+
+impl From<PackPlan> for InstalledPack {
+    fn from(plan: PackPlan) -> Self {
+        Self {
+            plan,
+            client_sha1: HashSet::new(),
+        }
     }
 }
 
@@ -131,19 +156,25 @@ pub(super) fn write_content_manifest(
     scanner: &ContentScanner,
     server_dir: &Path,
     content_file: &Path,
-    pack_files: &[PackFile],
-    blocked: &[BlockedPackFile],
+    pack: &PackOutput<'_>,
 ) -> Result<usize, AppError> {
     let keep = KeptContent::default();
-    write_pack_records(
-        scanner,
-        server_dir,
-        content_file,
-        pack_files,
-        blocked,
-        &keep,
-        Vec::new(),
-    )
+    write_pack_records(scanner, server_dir, content_file, pack, &keep, Vec::new())
+}
+
+/// File của pack vừa cài: file đã tải, file chờ tải tay, và SHA-1 (chữ thường) của mod mà nguồn
+/// ngoài jar cho biết chỉ chạy ở client (spec P3, mục 3.5, nguồn 4).
+pub(super) struct PackOutput<'a> {
+    pub files: &'a [PackFile],
+    pub blocked: &'a [BlockedPackFile],
+    pub client_sha1: &'a HashSet<String>,
+}
+
+impl PackOutput<'_> {
+    fn is_client_only(&self, item: &ContentFile) -> bool {
+        item.meta.as_ref().is_ok_and(|m| m.side.is_client_only())
+            || self.client_sha1.contains(&item.sha1.to_ascii_lowercase())
+    }
 }
 
 /// Mod người dùng có trước lần cập nhật modpack: giữ nguyên bản ghi, hoặc giữ là "Thêm tay".
@@ -165,14 +196,14 @@ pub(super) fn write_pack_records(
     scanner: &ContentScanner,
     server_dir: &Path,
     content_file: &Path,
-    pack_files: &[PackFile],
-    blocked: &[BlockedPackFile],
+    pack: &PackOutput<'_>,
     keep: &KeptContent,
     user_pending: Vec<PendingContent>,
 ) -> Result<usize, AppError> {
-    disable_client_only_mods(scanner, server_dir, content_file, keep)?;
+    disable_client_only_mods(scanner, server_dir, content_file, keep, pack)?;
 
-    let by_path: HashMap<&str, (&str, Option<ProjectId>, Option<String>)> = pack_files
+    let by_path: HashMap<&str, (&str, Option<ProjectId>, Option<String>)> = pack
+        .files
         .iter()
         .map(|f| {
             let (pid, vid) = match f.cf_ids {
@@ -202,13 +233,14 @@ pub(super) fn write_pack_records(
                 _ => (None, None),
             };
             count += 1;
+            let client_only = pack.is_client_only(&item);
             records.push(ContentRecord {
                 path: item.path,
                 sha1: item.sha1,
                 source: ContentSource::Modpack,
                 project_id,
                 version_id,
-                client_only: item.meta.as_ref().is_ok_and(|m| m.side.is_client_only()),
+                client_only,
                 from_modpack: true,
                 installed_at: now,
                 extra: Default::default(),
@@ -216,7 +248,7 @@ pub(super) fn write_pack_records(
         }
     }
     let mut pending = user_pending;
-    pending.extend(blocked.iter().map(|b| PendingContent {
+    pending.extend(pack.blocked.iter().map(|b| PendingContent {
         path: b.path.clone(),
         // Manifest CurseForge chỉ có id, không có tên mod; UI dùng tên file thay thế.
         name: None,
@@ -225,6 +257,7 @@ pub(super) fn write_pack_records(
         sha1: b.sha1.clone(),
         page_url: b.page_url.clone(),
         from_modpack: true,
+        client_only: pack.client_sha1.contains(&b.sha1.to_ascii_lowercase()),
         extra: Default::default(),
     }));
     let manifest = ContentManifest {
@@ -236,13 +269,14 @@ pub(super) fn write_pack_records(
     Ok(count)
 }
 
-/// Dựa vào metadata trong `.jar` để chuyển mod chỉ chạy client sang `mods-disabled/` (spec P3, mục 3.5).
-/// Mod người dùng giữ lại sau lần cập nhật pack thì không đụng tới.
+/// Chuyển mod chỉ chạy client (metadata trong `.jar`, hoặc nguồn ngoài qua `client_sha1`) sang
+/// `mods-disabled/` (spec P3, mục 3.5). Mod người dùng giữ lại sau lần cập nhật pack thì không đụng tới.
 fn disable_client_only_mods(
     scanner: &ContentScanner,
     server_dir: &Path,
     content_file: &Path,
     keep: &KeptContent,
+    pack: &PackOutput<'_>,
 ) -> Result<(), AppError> {
     if !server_dir.join(ContentKind::Mods.dir()).is_dir() {
         return Ok(());
@@ -251,7 +285,7 @@ fn disable_client_only_mods(
     let to_disable: Vec<_> = items
         .into_iter()
         .filter(|i| !keep.owns(&i.path))
-        .filter(|i| i.enabled && i.meta.as_ref().is_ok_and(|m| m.side.is_client_only()))
+        .filter(|i| i.enabled && pack.is_client_only(i))
         .collect();
     if to_disable.is_empty() {
         return Ok(());
