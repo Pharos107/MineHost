@@ -8,7 +8,7 @@ mod error;
 pub mod hosts;
 
 pub use client::{Fetched, FreeSpaceFn, HttpClient, NetConfig, USER_AGENT};
-pub use download::{Checksum, Download, MIN_FREE_BYTES};
+pub use download::{CACHE_ALGOS, Checksum, Download, MIN_FREE_BYTES};
 pub use error::NetError;
 pub use hosts::HostAllowlist;
 pub use tokio_util::sync::CancellationToken;

@@ -10,6 +10,7 @@ mod backup_snapshot;
 pub mod content;
 mod create;
 mod curseforge;
+mod download_cache;
 #[cfg(feature = "e2e")]
 pub mod e2e;
 mod error;

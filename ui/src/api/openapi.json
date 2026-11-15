@@ -3247,6 +3247,52 @@
         }
       }
     },
+    "/api/v1/settings/download-cache": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadCacheDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "settings"
+        ],
+        "description": "Xóa file tải về theo hash. Đang có Job tải file thì trả `SERVER_BUSY`.",
+        "operationId": "clear",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClearedCacheDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/system": {
       "get": {
         "tags": [
@@ -3429,6 +3475,19 @@
         "properties": {
           "current": {
             "type": "string"
+          }
+        }
+      },
+      "ClearedCacheDto": {
+        "type": "object",
+        "required": [
+          "freed_bytes"
+        ],
+        "properties": {
+          "freed_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
           }
         }
       },
@@ -3879,6 +3938,20 @@
           "total_bytes": {
             "type": "integer",
             "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "DownloadCacheDto": {
+        "type": "object",
+        "required": [
+          "size_bytes"
+        ],
+        "properties": {
+          "size_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng byte file mod, plugin, installer, jar server đã tải, lưu theo hash.",
             "minimum": 0
           }
         }
@@ -4934,6 +5007,19 @@
           }
         }
       },
+      "ResourceLimitsDto": {
+        "type": "object",
+        "description": "Giới hạn RAM và số process của từng server (spec P3, mục 3.8).",
+        "required": [
+          "enforced"
+        ],
+        "properties": {
+          "enforced": {
+            "type": "boolean",
+            "description": "`true` khi Job Object (Windows) hoặc cgroup v2 (Linux) giới hạn được. `false` thì server vẫn\nchạy, nhưng một server ngốn RAM có thể làm chậm cả máy."
+          }
+        }
+      },
       "RestoreBody": {
         "type": "object",
         "required": [
@@ -5414,7 +5500,8 @@
           "suggested_memory_mb",
           "suggested_modpack_memory_mb",
           "lan_addresses",
-          "java_majors"
+          "java_majors",
+          "resource_limits"
         ],
         "properties": {
           "arch": {
@@ -5494,6 +5581,9 @@
               "string",
               "null"
             ]
+          },
+          "resource_limits": {
+            "$ref": "#/components/schemas/ResourceLimitsDto"
           },
           "suggested_memory_mb": {
             "$ref": "#/components/schemas/MemoryDto",
