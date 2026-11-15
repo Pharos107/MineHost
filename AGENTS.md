@@ -14,9 +14,9 @@ giai đoạn trong `docs/specs/` và ADR trong `docs/adr/` là bản đúng. M�
 ## Giai đoạn hiện tại: P3 — Mod, plugin và modpack
 
 - [Spec P3](docs/specs/p3-mod-va-modpack.md) (đã duyệt) và
-  [kế hoạch PR](docs/specs/p3-ke-hoach-pr.md): 38 PR, nhóm A → H, hai bản phát hành `v0.4.0` (sau
-  nhóm D) và `v0.5.0`. Tiến độ ghi ở đầu kế hoạch PR; PR nào merge thì sửa bảng đó trong chính PR ấy.
-- P2 đã phát hành `v0.3.0` ([kết quả chạy dài](docs/specs/p2-ket-qua-chay-dai.md)). Còn nợ test
+  [kế hoạch PR](docs/specs/p3-ke-hoach-pr.md): 38 PR, nhóm A → H, một bản phát hành `v0.5.0` khi
+  xong P3 (bỏ `v0.4.0`). Tiến độ ghi ở đầu kế hoạch PR; PR nào merge thì sửa bảng đó trong chính PR ấy.
+- P2 đã xong, tag `v0.3.0` chỉ để nháp, không công khai ([kết quả chạy dài](docs/specs/p2-ket-qua-chay-dai.md)). Còn nợ test
   Playwright cho Console, Tệp, Cài đặt game/server, Nhập server: xem tiêu chí 5 trong
   [spec P2](docs/specs/p2-nhieu-server-va-van-hanh.md#tiêu-chí-hoàn-thành).
 - Còn mở từ P1: lần thử tay 5 phút trên Windows mới cài

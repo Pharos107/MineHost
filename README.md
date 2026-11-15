@@ -69,7 +69,7 @@ Bạn bè không vào được:
 
 ## Mod, plugin và modpack
 
-Phần này có từ bản `v0.4.0` (chưa phát hành); bản `v0.3.0` chưa có.
+Phần này có từ bản `v0.5.0` (chưa phát hành); bản `v0.3.0` chưa có.
 
 - **Server có mod**: ở bước đầu của **Tạo server**, chọn **Server có mod** rồi chọn Fabric, NeoForge,
   Forge hoặc Quilt. MineHost tải Java và installer chính thức của loader rồi cài giúp bạn.

@@ -564,7 +564,8 @@
     "kinds": {
       "manual": "Tạo tay",
       "scheduled": "Tự động",
-      "before_restore": "Trước khôi phục"
+      "before_restore": "Trước khôi phục",
+      "before_update": "Trước cập nhật"
     },
     "restore": "Khôi phục",
     "download": "Tải xuống",

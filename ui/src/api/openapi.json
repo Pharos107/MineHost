@@ -3141,7 +3141,7 @@
           },
           "kind": {
             "type": "string",
-            "description": "`manual`, `scheduled` hoặc `before_restore`."
+            "description": "`manual`, `scheduled`, `before_restore` hoặc `before_update`."
           },
           "loader": {
             "type": "string"

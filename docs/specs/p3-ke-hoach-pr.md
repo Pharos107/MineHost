@@ -3,11 +3,12 @@
 Spec: [p3-mod-va-modpack.md](p3-mod-va-modpack.md). P3 chia thành 38 PR trong 8 nhóm. Mỗi PR làm một
 việc, khoảng 400 dòng trở xuống (không tính fixture và code sinh tự động), có test, CI xanh mới merge.
 
-Hai bản phát hành (spec mục 11): nhóm A–D ra `v0.4.0` (PR-25), nhóm E–H ra `v0.5.0` (PR-38).
+Một bản phát hành: `v0.5.0` (PR-38) chốt cả P3. Kế hoạch ban đầu có thêm `v0.4.0` sau nhóm D; ngày
+2026-11-15 chủ dự án bỏ bản đó, PR-25 chỉ còn phần tài liệu (spec mục 11).
 
 ## Tiến độ
 
-Cập nhật 2026-11-15, sau khi merge #96. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-15, khi làm PR-31. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -36,13 +37,16 @@ chính PR ấy.
 | 22 | Đọc `.mrpack` | Đã merge | [#90](https://github.com/Pharos107/MineHost/pull/90) |
 | 23 | Job cài modpack | Đã merge | [#93](https://github.com/Pharos107/MineHost/pull/93) |
 | 24 | Tạo server từ modpack | Đã merge | [#94](https://github.com/Pharos107/MineHost/pull/94) |
-| 25 | Phát hành `v0.4.0` | Chờ tag (hỏi chủ dự án) | [#98](https://github.com/Pharos107/MineHost/pull/98) |
+| 25 | Tài liệu nhóm A–D (bỏ tag `v0.4.0`) | Đã merge | [#98](https://github.com/Pharos107/MineHost/pull/98) |
 | 26 | Key CurseForge | Đã merge | [#89](https://github.com/Pharos107/MineHost/pull/89) |
 | 27 | CurseForge | Đã merge | [#91](https://github.com/Pharos107/MineHost/pull/91) |
 | 28 | Cài mod từ CurseForge | Đã merge | [#92](https://github.com/Pharos107/MineHost/pull/92) |
 | 29 | Modpack CurseForge | Đã merge | [#95](https://github.com/Pharos107/MineHost/pull/95) |
 | 30 | Tải tay file CurseForge | Đã merge | [#96](https://github.com/Pharos107/MineHost/pull/96) |
-| 31–34 | Nhóm F · Cập nhật và đổi phiên bản | Chưa bắt đầu | |
+| 31 | Bản `before_update`, chép `content.toml` | Đã merge | PR31LINK |
+| 32 | Kiểm tra và cập nhật mod | Chưa bắt đầu | |
+| 33 | Cập nhật modpack, đổi phiên bản | Chưa bắt đầu | |
+| 34 | Giao diện cập nhật và mục Phiên bản | Chưa bắt đầu | |
 | 35 | Nhóm G · Bộ nhớ đệm và trạng thái giới hạn | Chưa bắt đầu | |
 | 36–38 | Nhóm H · Kiểm thử modpack, `v0.5.0` | Chưa bắt đầu | |
 

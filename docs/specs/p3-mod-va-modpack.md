@@ -501,7 +501,7 @@ Workflow ghi thời gian cài, thời gian tới `Done` và RSS lớn nhất và
 | Giới hạn RAM kill nhầm server modpack lớn | Công thức rộng tay (gấp 1,5 lần heap cộng 1 GB); đo trong workflow modpack; lý do `memory_limit` hiện rõ |
 | Modpack lớn tải lâu, mạng yếu | Cache theo hash dùng chung; tiếp tục từ file đã có khi chạy lại Job |
 | Runner tự host làm chậm dịch vụ khác trên máy | Giới hạn của unit systemd (mục 3.11), mỗi lần một pack, chạy lúc 04:00 |
-| Phạm vi P3 lớn | Hai bản phát hành `v0.4.0` và `v0.5.0` (mục 11) |
+| Phạm vi P3 lớn | Chia 8 nhóm PR, phát hành một lần ở `v0.5.0` (mục 11) |
 
 ## 11. Quyết định khi duyệt (2026-11-13)
 
@@ -511,7 +511,8 @@ Workflow ghi thời gian cài, thời gian tới `Done` và RSS lớn nhất và
 3. Giới hạn RAM và số process vào đầu P3; chặn đọc file để backlog (mục 3.8).
 4. PR-34 của P2 (chạy dài 72 giờ, `v0.3.0`) chạy song song với P3.
 5. P3 chia hai bản phát hành: `v0.4.0` sau nhóm A–D (bốn loader, Modrinth, `.mrpack`), `v0.5.0` sau
-   nhóm E–H (CurseForge, cập nhật, workflow 20 pack).
+   nhóm E–H (CurseForge, cập nhật, workflow 20 pack). Đổi ngày 2026-11-15: bỏ `v0.4.0`, chỉ phát
+   hành `v0.5.0` khi xong P3.
 6. Plugin chỉ lấy từ Modrinth; không cài plugin Bukkit từ CurseForge trong P3.
 7. Thứ tự loader trong wizard: Fabric, NeoForge, Forge, Quilt.
 8. User-Agent ghi URL repo (mục 5.3); đổi khi repo public hoặc có trang web.

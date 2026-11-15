@@ -12,7 +12,7 @@ import { BackupNowCard, ScheduleCard } from "./BackupCards";
 import { JobLine } from "./JobLine";
 import { formatTime, useBackupActions } from "./useBackupActions";
 
-const KIND_TONE: Record<string, BadgeTone> = { manual: "info", scheduled: "neutral", before_restore: "warning" };
+const KIND_TONE: Record<string, BadgeTone> = { manual: "info", scheduled: "neutral", before_restore: "warning", before_update: "warning" };
 
 /** Trang Sao lưu (spec P2, mục 6.8): sao lưu ngay, lịch tự động, bảng các bản và thao tác từng bản. */
 export function BackupsPage() {

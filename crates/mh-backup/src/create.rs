@@ -24,6 +24,14 @@ pub const DEFAULT_EXCLUDE: &[&str] = &["logs/", "crash-reports/", "cache/"];
 /// trên Windows đọc file đó lúc sao lưu server đang chạy là lỗi. Minecraft tự tạo lại file khi bật.
 const SKIP_FILE_NAMES: &[&str] = &["session.lock"];
 
+/// File thêm vào archive mà không lấy từ `src_dir`, ví dụ bản chụp `content.toml` nằm ngoài
+/// thư mục world. `path` tương đối, ngăn bằng `/`.
+#[derive(Debug, Clone, Copy)]
+pub struct Extra<'a> {
+    pub path: &'a str,
+    pub bytes: &'a [u8],
+}
+
 struct Item {
     rel: PathBuf,
     mode: u32,
@@ -41,6 +49,19 @@ pub fn create(
     src_dir: &Path,
     dest: &Path,
     exclude: &[&str],
+    progress: impl FnMut(u64, u64),
+    cancel: &CancellationToken,
+) -> Result<ArchiveInfo, BackupError> {
+    create_with(src_dir, dest, exclude, &[], progress, cancel)
+}
+
+/// Như [`create`], thêm `extras` vào cuối archive sau cây thư mục. Đường dẫn của `extras` không
+/// được trùng file trong `src_dir`: người gọi tự loại thư mục đó qua `exclude`.
+pub fn create_with(
+    src_dir: &Path,
+    dest: &Path,
+    exclude: &[&str],
+    extras: &[Extra<'_>],
     mut progress: impl FnMut(u64, u64),
     cancel: &CancellationToken,
 ) -> Result<ArchiveInfo, BackupError> {
@@ -50,7 +71,13 @@ pub fn create(
     let rules = parse_rules(exclude);
     let (items, total) = collect(src_dir, &rules, cancel)?;
     let part = io_util::part_path(dest);
-    let result = write_part(src_dir, dest, &part, &items, total, &mut progress, cancel);
+    let source = Source {
+        dir: src_dir,
+        items: &items,
+        extras,
+        total,
+    };
+    let result = write_part(&source, dest, &part, &mut progress, cancel);
     if result.is_err() {
         let _ = fs::remove_file(&part);
     }
@@ -115,12 +142,18 @@ fn read_sorted(dir: &Path) -> Result<Vec<fs::DirEntry>, BackupError> {
     Ok(entries)
 }
 
+/// Những gì sẽ ghi vào archive: cây thư mục đã duyệt và file thêm.
+struct Source<'a> {
+    dir: &'a Path,
+    items: &'a [Item],
+    extras: &'a [Extra<'a>],
+    total: u64,
+}
+
 fn write_part(
-    src_dir: &Path,
+    source: &Source<'_>,
     dest: &Path,
     part: &Path,
-    items: &[Item],
-    total: u64,
     progress: &mut dyn FnMut(u64, u64),
     cancel: &CancellationToken,
 ) -> Result<ArchiveInfo, BackupError> {
@@ -130,22 +163,21 @@ fn write_part(
     let file = File::create(part).map_err(|e| BackupError::io(part, e))?;
     let hashed = HashWriter::new(file);
     let mut encoder = Encoder::new(hashed, ZSTD_LEVEL).map_err(|e| BackupError::io(part, e))?;
-    write_tar(&mut encoder, src_dir, items, total, progress, cancel)?;
+    write_tar(&mut encoder, source, progress, cancel)?;
     let hashed = encoder.finish().map_err(|e| map_io(part, e))?;
     finish_part(hashed, part, dest, cancel)
 }
 
 fn write_tar<W: Write>(
     encoder: &mut W,
-    src_dir: &Path,
-    items: &[Item],
-    total: u64,
+    source: &Source<'_>,
     progress: &mut dyn FnMut(u64, u64),
     cancel: &CancellationToken,
 ) -> Result<(), BackupError> {
+    let (src_dir, total) = (source.dir, source.total);
     let mut builder = tar::Builder::new(encoder);
     let mut done = 0u64;
-    for item in items {
+    for item in source.items {
         if cancel.is_cancelled() {
             return Err(BackupError::Cancelled);
         }
@@ -159,8 +191,28 @@ fn write_tar<W: Write>(
             cancel,
         )?;
     }
+    for extra in source.extras {
+        append_extra(&mut builder, extra).map_err(|e| map_io(src_dir, e))?;
+    }
     builder.finish().map_err(|e| map_io(src_dir, e))?;
     Ok(())
+}
+
+fn append_extra<W: Write>(builder: &mut tar::Builder<W>, extra: &Extra<'_>) -> io::Result<()> {
+    let valid = !extra.path.is_empty()
+        && !extra.path.starts_with('/')
+        && extra.path.split('/').all(|part| {
+            !part.is_empty() && part != "." && part != ".." && !part.contains(['\\', ':'])
+        });
+    if !valid {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("đường dẫn file thêm không hợp lệ: {}", extra.path),
+        ));
+    }
+    let len = u64::try_from(extra.bytes.len()).unwrap_or(u64::MAX);
+    let mut header = gnu_header(tar::EntryType::Regular, len, 0o644);
+    builder.append_data(&mut header, extra.path, extra.bytes)
 }
 
 fn finish_part(

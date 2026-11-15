@@ -32,6 +32,8 @@ pub enum BackupKind {
     Manual,
     Scheduled,
     BeforeRestore,
+    /// Trước khi cập nhật mod, modpack hoặc đổi phiên bản (spec P3, mục 3.9). Luôn được bảo vệ.
+    BeforeUpdate,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -160,7 +162,7 @@ impl App {
             ctx.check_cancel()?;
             // Bước cuối: 3/3 khi server đang chạy, 2/2 khi tắt.
             ctx.step(JobStep::Compress, steps, steps);
-            self.archive_world(ctx, &spec, &req).await
+            self.archive_world(ctx, &spec, &req).await.map(|_| ())
         }
         .await;
         let result = if paused {
@@ -202,20 +204,20 @@ impl App {
         })))
     }
 
-    /// Nén `server/` và ghi file mô tả. Không đặt bước Job: khôi phục gọi lại hàm này
-    /// trong cùng một Job, sau khi đã đặt bước `before_restore`.
+    /// Nén `server/` và ghi file mô tả. Không đặt bước Job: khôi phục và cập nhật gọi lại hàm này
+    /// trong Job của mình, sau khi đã đặt bước riêng.
     pub(crate) async fn archive_world(
         &self,
         ctx: &JobContext,
         spec: &InstanceSpec,
         req: &BackupRequest,
-    ) -> Result<(), AppError> {
+    ) -> Result<BackupMeta, AppError> {
         let backup_id = Ulid::generate();
         let dir = backup_dir(&self.dirs, spec.id);
         std::fs::create_dir_all(&dir).map_err(|err| io_at(&dir, err))?;
         let archive = backup_file(&dir, &backup_id, "tar.zst")?;
-        let src = self.store.paths(spec.id).server_dir;
-        let info = compress_dir(ctx, src, archive.clone()).await?;
+        let paths = self.store.paths(spec.id);
+        let info = crate::backup_snapshot::compress_server(ctx, &paths, archive.clone()).await?;
         if ctx.cancel.is_cancelled() {
             let _ = std::fs::remove_file(&archive);
             return Err(AppError::cancelled());
@@ -228,7 +230,7 @@ impl App {
             return Err(err);
         }
         tracing::info!(server = %spec.id, backup = %meta.id, bytes = meta.size, "đã sao lưu");
-        Ok(())
+        Ok(meta)
     }
 
     async fn wait_until_saved(
@@ -275,65 +277,6 @@ async fn restore_autosave(
     result
 }
 
-async fn compress_dir(
-    ctx: &JobContext,
-    src: PathBuf,
-    dest: PathBuf,
-) -> Result<ArchiveInfo, AppError> {
-    let cancel = ctx.cancel.clone();
-    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-    let task = tokio::task::spawn_blocking(move || {
-        mh_backup::create(
-            &src,
-            &dest,
-            mh_backup::DEFAULT_EXCLUDE,
-            |done, total| {
-                let _ = tx.send((done, total));
-            },
-            &cancel,
-        )
-    });
-    tokio::pin!(task);
-    loop {
-        tokio::select! {
-            biased;
-            joined = &mut task => {
-                apply_progress(ctx, &mut rx);
-                return archive_result(joined);
-            }
-            update = rx.recv() => {
-                match update {
-                    Some((done, total)) => ctx.bytes(done, Some(total)),
-                    None => {
-                        let joined = task.await;
-                        apply_progress(ctx, &mut rx);
-                        return archive_result(joined);
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn apply_progress(ctx: &JobContext, rx: &mut tokio::sync::mpsc::UnboundedReceiver<(u64, u64)>) {
-    while let Ok((done, total)) = rx.try_recv() {
-        ctx.bytes(done, Some(total));
-    }
-}
-
-fn archive_result(
-    joined: Result<Result<ArchiveInfo, mh_backup::BackupError>, tokio::task::JoinError>,
-) -> Result<ArchiveInfo, AppError> {
-    match joined {
-        Ok(Ok(info)) => Ok(info),
-        Ok(Err(err)) => Err(err.into()),
-        Err(err) => Err(AppError::new(
-            ErrorCode::Internal,
-            format!("luồng nén dừng: {err}"),
-        )),
-    }
-}
-
 fn make_meta(
     spec: &InstanceSpec,
     req: &BackupRequest,
@@ -351,7 +294,8 @@ fn make_meta(
         minecraft: spec.game.minecraft.to_string(),
         loader: spec.game.loader,
         note: req.note.clone(),
-        protected: req.protected,
+        // Bản trước khi cập nhật là đường lui duy nhất nếu cập nhật hỏng: không cho tự xóa.
+        protected: req.protected || req.kind == BackupKind::BeforeUpdate,
     }
 }
 
