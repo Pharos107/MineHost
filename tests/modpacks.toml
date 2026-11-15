@@ -225,28 +225,10 @@ loader = "forge"
 minecraft = "1.20.1"
 memory_mb = 8192
 done_timeout_s = 1200
+manual_downloads = true
+note = "có 1 mod CurseForge cấm phân phối, test tải tay"
 
-[[pack]]
-id = "cf-beyond-depth"
-name = "Beyond Depth"
-source = "curseforge"
-project_id = "1134605"
-version_id = "9467437"
-loader = "forge"
-minecraft = "1.20.1"
-memory_mb = 8192
-done_timeout_s = 1200
 
-[[pack]]
-id = "cf-deceasedcraft"
-name = "DeceasedCraft"
-source = "curseforge"
-project_id = "490660"
-version_id = "8448820"
-loader = "forge"
-minecraft = "1.20.1"
-memory_mb = 8192
-done_timeout_s = 1200
 
 [[pack]]
 id = "cf-better-mc-forge"
