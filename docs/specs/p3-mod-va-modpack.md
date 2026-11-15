@@ -351,7 +351,8 @@ Không đổi. Phần dò cgroup v2 nằm ở `mh-runtime/src/os/cgroup.rs`, c�
 - **Cài mod:** chọn bản hợp loader và phiên bản; tự cài dependency bắt buộc (Modrinth
   `dependency_type = required`, CurseForge `relationType = 3`); trùng mod đã có thì thay bản cũ.
 - **Kiểm tra trước khi bật** (`preflight`): thiếu dependency bắt buộc (so `depends` trong metadata với
-  id các mod đang bật), sai loader, file CurseForge còn chờ. Có lỗi thì `start` trả
+  id, `provides` và mod trong jar lồng của các mod đang bật; jar đa loader dùng metadata mà loader của
+  server đọc), sai loader, file CurseForge còn chờ. Có lỗi thì `start` trả
   `DEPENDENCY_MISSING` hoặc `CURSEFORGE_FILES_PENDING`, trừ khi gửi `{ "ignore_preflight": true }`.
 - **Cập nhật:** `check_updates` hỏi Modrinth theo hash (`versions_by_hash`) và CurseForge theo file id;
   `update(items)` và `change_version(minecraft?, loader_version?)` đi theo mục 3.9.

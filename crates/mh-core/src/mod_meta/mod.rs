@@ -8,9 +8,12 @@ use std::collections::BTreeMap;
 use serde::Deserialize;
 use serde_json::Value;
 
+mod lenient;
+mod nested;
 mod version_req;
 mod yaml;
 
+pub use nested::parse_jarjar_metadata;
 pub use version_req::matches_version_req;
 
 /// Phía chạy được của mod hoặc plugin theo metadata trong jar.
@@ -52,6 +55,11 @@ pub struct ModMeta {
     pub version: Option<String>,
     pub side: ModSide,
     pub depends: Vec<ModDependency>,
+    /// Id khác mà mod này đứng thay (`provides` của Fabric, Quilt, Forge).
+    pub provides: Vec<String>,
+    /// Đường dẫn jar lồng trong jar này do metadata khai báo (`jars` của Fabric, Quilt). Jar lồng
+    /// của Forge/NeoForge nằm ở `META-INF/jarjar/metadata.json`, xem `parse_jarjar_metadata`.
+    pub nested_jars: Vec<String>,
 }
 
 /// Định dạng file metadata nằm trong jar.
@@ -105,7 +113,12 @@ pub fn parse_mod_meta(format: ModMetaFormat, text: &str) -> Result<ModMeta, ModM
 }
 
 fn parse_json(text: &str) -> Result<Value, ModMetaError> {
-    serde_json::from_str(strip_bom(text)).map_err(|e| ModMetaError::Json(e.to_string()))
+    let text = strip_bom(text);
+    serde_json::from_str(text).or_else(|err| {
+        // Fabric loader chấp nhận xuống dòng thô trong chuỗi; chỉ sửa khi bản gốc hỏng.
+        serde_json::from_str(&lenient::escape_raw_control_chars(text))
+            .map_err(|_| ModMetaError::Json(err.to_string()))
+    })
 }
 
 fn parse_fabric_mod_json(text: &str) -> Result<ModMeta, ModMetaError> {
@@ -132,6 +145,8 @@ fn parse_fabric_mod_json(text: &str) -> Result<ModMeta, ModMetaError> {
         version: normalize_version(root.get("version").and_then(Value::as_str)),
         side,
         depends,
+        provides: nested::json_provides(root.get("provides")),
+        nested_jars: nested::json_jars(root.get("jars")),
     })
 }
 
@@ -165,6 +180,8 @@ fn parse_quilt_mod_json(text: &str) -> Result<ModMeta, ModMetaError> {
         version: normalize_version(loader.get("version").and_then(Value::as_str)),
         side: env_to_side(env),
         depends,
+        provides: nested::json_provides(loader.get("provides")),
+        nested_jars: nested::json_jars(loader.get("jars")),
     })
 }
 
@@ -263,6 +280,8 @@ fn parse_forge_toml(text: &str) -> Result<ModMeta, ModMetaError> {
         version: normalize_version(primary.version.as_deref()),
         side,
         depends,
+        provides: primary.provides,
+        nested_jars: Vec::new(),
     })
 }
 
@@ -389,6 +408,8 @@ struct RawForgeMod {
     mod_id: Option<String>,
     version: Option<String>,
     display_name: Option<String>,
+    #[serde(default)]
+    provides: Vec<String>,
 }
 
 #[derive(Deserialize)]

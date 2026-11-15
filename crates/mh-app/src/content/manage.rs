@@ -274,6 +274,8 @@ fn upload_sync(
         sha1: info.sha1,
         formats: info.formats,
         meta: info.meta,
+        format_metas: info.format_metas,
+        bundled: info.bundled,
         record: Some(record),
         manual: false,
     })
@@ -350,6 +352,8 @@ fn upload_pending_sync(
         sha1: info.sha1,
         formats: info.formats,
         meta: info.meta,
+        format_metas: info.format_metas,
+        bundled: info.bundled,
         record: Some(record),
         manual: false,
     })

@@ -4,6 +4,7 @@
 //! và các file CurseForge còn chờ tải tay (spec P3, mục 4.2). Đĩa vẫn là nguồn dữ liệu chính:
 //! bản ghi không còn file trên đĩa sẽ bị bỏ khi quét (mục 3.3).
 
+mod jar;
 mod scan;
 
 use std::fmt;
@@ -17,10 +18,8 @@ use toml::Table;
 
 use crate::StoreError;
 
-pub use scan::{
-    ContentFile, ContentMetaError, ContentScanner, JarInfo, inspect_jar_file, scan_content,
-    sha1_hex,
-};
+pub use jar::ContentMetaError;
+pub use scan::{ContentFile, ContentScanner, JarInfo, inspect_jar_file, scan_content, sha1_hex};
 
 pub const CONTENT_FILE: &str = "content.toml";
 pub const CONTENT_SCHEMA: u32 = 1;
