@@ -65,6 +65,15 @@ impl NeoForge {
         &self,
         mc: &McVersion,
     ) -> Result<Vec<LoaderRelease>, ProviderError> {
+        let mut releases = self.all_releases(mc).await?;
+        if releases.iter().any(|r| r.stable) {
+            releases.retain(|r| r.stable);
+        }
+        Ok(recommended_first(releases))
+    }
+
+    /// Mọi bản NeoForge cho `mc`, kể cả beta, mới nhất trước.
+    async fn all_releases(&self, mc: &McVersion) -> Result<Vec<LoaderRelease>, ProviderError> {
         let all = self.all_versions().await?;
         let mut releases: Vec<LoaderRelease> = all
             .iter()
@@ -75,11 +84,8 @@ impl NeoForge {
                 version,
             })
             .collect();
-        if releases.iter().any(|r| r.stable) {
-            releases.retain(|r| r.stable);
-        }
         releases.sort_by(|a, b| compare_versions(b.version.as_str(), a.version.as_str()));
-        Ok(recommended_first(releases))
+        Ok(releases)
     }
 
     pub async fn plan(
@@ -87,7 +93,12 @@ impl NeoForge {
         mc: &McVersion,
         wanted: Option<&LoaderVersion>,
     ) -> Result<InstallPlan, ProviderError> {
-        let releases = self.loader_versions(mc).await?;
+        // Modpack ghim đúng một bản thì cài bản đó, kể cả beta: pack được làm và thử với bản ấy.
+        // Danh sách ẩn beta chỉ để chọn bản đề xuất khi người dùng không ghim.
+        let releases = match wanted {
+            Some(_) => self.all_releases(mc).await?,
+            None => self.loader_versions(mc).await?,
+        };
         let loader = pick(&releases, wanted)
             .ok_or_else(|| ProviderError::VersionNotFound {
                 source_name: SOURCE,
