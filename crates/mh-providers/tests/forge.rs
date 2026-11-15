@@ -155,3 +155,23 @@ async fn installer_must_come_from_listed_host() {
     let err = strict.plan(&v("1.21.4"), None).await.unwrap_err();
     assert_eq!(err.code(), ErrorCode::DownloadHostNotAllowed, "{err}");
 }
+
+#[tokio::test]
+async fn falls_back_to_sha1_when_maven_has_no_sha256() {
+    let (s, _t, forge) = forge().await;
+    let jar = "/maven/1.12.2-14.23.5.2859/forge-1.12.2-14.23.5.2859-installer.jar";
+    Mock::given(path(format!("{jar}.sha256")))
+        .respond_with(ResponseTemplate::new(404))
+        .with_priority(1)
+        .mount(&s)
+        .await;
+    let sha1 = "0123456789abcdef0123456789abcdef01234567";
+    Mock::given(path(format!("{jar}.sha1")))
+        .respond_with(ResponseTemplate::new(200).set_body_string(format!("{sha1}  forge.jar\n")))
+        .mount(&s)
+        .await;
+
+    let plan = forge.plan(&v("1.12.2"), None).await.unwrap();
+    assert!(matches!(plan.files[0].checksum, mh_net::Checksum::Sha1(_)));
+    assert_eq!(plan.files[0].checksum.hex(), sha1);
+}
