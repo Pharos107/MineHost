@@ -742,7 +742,25 @@
       "failedTitle": "Không cài được",
       "cancelledTitle": "Đã hủy cài đặt."
     },
+    "updates": {
+      "check": "Kiểm tra cập nhật",
+      "found_one": "Có {{count}} bản mới.",
+      "found_other": "Có {{count}} bản mới.",
+      "updateAll_one": "Cập nhật {{count}} mục",
+      "updateAll_other": "Cập nhật {{count}} mục",
+      "updateOne": "Cập nhật",
+      "badge": "Có bản mới",
+      "done_one": "Đã cập nhật {{count}} mục. Server không tự bật lại.",
+      "done_other": "Đã cập nhật {{count}} mục. Server không tự bật lại.",
+      "failedWithBackup": "Cập nhật lỗi. Bản sao lưu \"Trước cập nhật\" ở trang Sao lưu giúp bạn quay về.",
+      "confirmTitle_one": "Cập nhật {{count}} mục?",
+      "confirmTitle_other": "Cập nhật {{count}} mục?",
+      "confirm": "Cập nhật",
+      "confirmBody": "Server sẽ tắt nếu đang chạy. MineHost sao lưu trước (bản \"Trước cập nhật\"), rồi cài bản mới. Server không tự bật lại.",
+      "item": "{{file}} → {{version}}"
+    },
     "mods": {
+      "upToDate": "Mọi mod đều là bản mới nhất. Có {{unknown}} file không nhận ra trên Modrinth, CurseForge.",
       "table": "Danh sách mod",
       "runningHint": "Server đang chạy: tắt server trước khi bật, tắt, tải lên hoặc gỡ mod.",
       "empty": "Chưa có mod nào",
@@ -754,6 +772,7 @@
       "mainItem": "Mod sẽ cài"
     },
     "plugins": {
+      "upToDate": "Mọi plugin đều là bản mới nhất. Có {{unknown}} file không nhận ra trên Modrinth, CurseForge.",
       "table": "Danh sách plugin",
       "runningHint": "Server đang chạy: tắt server trước khi bật, tắt, tải lên hoặc gỡ plugin.",
       "empty": "Chưa có plugin nào",
