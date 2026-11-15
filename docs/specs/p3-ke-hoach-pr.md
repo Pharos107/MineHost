@@ -8,7 +8,7 @@ Một bản phát hành: `v0.5.0` (PR-38) chốt cả P3. Kế hoạch ban đầ
 
 ## Tiến độ
 
-Cập nhật 2026-11-15, khi làm PR-36. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-15, khi làm PR-37a. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -51,7 +51,7 @@ chính PR ấy.
 | 34b | Mục Phiên bản, cập nhật modpack | Đã merge | [#106](https://github.com/Pharos107/MineHost/pull/106) |
 | 35 | Bộ nhớ đệm tải về, trạng thái giới hạn tài nguyên | Đã merge | [#107](https://github.com/Pharos107/MineHost/pull/107) |
 | 36 | Runner tự host cho modpack | Đã merge | [#112](https://github.com/Pharos107/MineHost/pull/112) |
-| 37 | Workflow 20 modpack | Đang làm | |
+| 37 | Workflow 20 modpack | Đang làm: 37a (test, workflow, 11 pack Modrinth) | [#113](https://github.com/Pharos107/MineHost/pull/113) |
 | 38 | Phát hành `v0.5.0` | Chưa bắt đầu | |
 
 Ngoài kế hoạch, sửa lỗi tìm ra khi chạy thử modpack thật cho PR-37: [#108](https://github.com/Pharos107/MineHost/pull/108), [#109](https://github.com/Pharos107/MineHost/pull/109), [#110](https://github.com/Pharos107/MineHost/pull/110), [#111](https://github.com/Pharos107/MineHost/pull/111).

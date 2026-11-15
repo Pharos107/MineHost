@@ -1,0 +1,157 @@
+# Modpack cố định cho workflow `modpacks` (spec P3 mục 9.2, test `crates/minehost/tests/modpacks.rs`).
+#
+# Mỗi pack ghim một bản (`version_id`) để test không đỏ chỉ vì tác giả ra bản mới. Thêm hay đổi bản
+# thì chạy thử riêng pack đó trước: workflow `modpacks` với input `packs=<id>`.
+#
+# Trường: `memory_mb` là heap tối đa (tối thiểu lấy min(4096, memory_mb)); `done_timeout_s` là thời
+# gian chờ từ lúc bấm bật tới `Done`; `install_timeout_s` (mặc định 1800) cho Job cài; `note` ghi vì
+# sao chọn pack, hiện trong báo cáo.
+#
+# Mỗi pack dưới đây đã chạy thử tới `Done` trên máy của runner (dangserver) ngày 2026-11-15; dòng `# đo:` ghi số đo lần đó.
+# Pack CurseForge thêm ở PR-37b (cần key, chỉ có trong workflow).
+
+# --- Fabric ---
+
+[[pack]]
+id = "cobblemon-fabric"
+name = "Cobblemon Official"
+source = "modrinth"
+project_id = "cobblemon-fabric"
+version_id = "YQpPe5Iu" # 1.8.4
+loader = "fabric"
+minecraft = "1.21.1"
+memory_mb = 6144
+done_timeout_s = 600
+note = "pack Fabric phổ biến nhất trên Modrinth"
+# đo: cài 27 s, Done 45 s, RSS 3,6 GB
+
+[[pack]]
+id = "vanilla-perfected"
+name = "Vanilla Perfected"
+source = "modrinth"
+project_id = "vanilla-perfected"
+version_id = "IFYAmjXO" # 1.0.0+26.3
+loader = "fabric"
+minecraft = "26.3"
+memory_mb = 4096
+done_timeout_s = 600
+note = "bản Minecraft mới nhất có pack (Java 25)"
+# đo: cài 18 s, Done 31 s, RSS 3,6 GB
+
+[[pack]]
+id = "aged"
+name = "Aged"
+source = "modrinth"
+project_id = "aged"
+version_id = "9Js910iu" # 4.0.2
+loader = "fabric"
+minecraft = "1.21.1"
+memory_mb = 6144
+done_timeout_s = 600
+# đo: cài 19 s, Done 51 s, RSS 3,7 GB
+
+[[pack]]
+id = "slimes-adventure"
+name = "Slimes Adventure"
+source = "modrinth"
+project_id = "slimes-adventure"
+version_id = "ylSYr50H" # 1.13.4
+loader = "fabric"
+minecraft = "1.21.1"
+memory_mb = 6144
+done_timeout_s = 600
+# đo: cài 17 s, Done 70 s, RSS 4,1 GB
+
+[[pack]]
+id = "ardacraft"
+name = "ArdaCraft"
+source = "modrinth"
+project_id = "ardacraft"
+version_id = "EnpdeID9" # 26
+loader = "fabric"
+minecraft = "1.20.1"
+memory_mb = 8192
+done_timeout_s = 900
+note = "file .mrpack lớn (312 MB)"
+# đo: cài 44 s, Done 62 s, RSS 4,3 GB
+
+[[pack]]
+id = "sensible-mc"
+name = "Sensible MC"
+source = "modrinth"
+project_id = "sensible-modpack"
+version_id = "KTFGPfY9" # 6.0.6
+loader = "fabric"
+minecraft = "26.2"
+memory_mb = 8192
+done_timeout_s = 900
+note = "pack lớn"
+# đo: cài 129 s, Done 143 s, RSS 4,7 GB
+
+# --- NeoForge ---
+
+[[pack]]
+id = "cobblemon-neoforge"
+name = "Cobblemon NeoForge"
+source = "modrinth"
+project_id = "cobblemon-neoforge"
+version_id = "fF4SbfGc" # 1.8.4
+loader = "neoforge"
+minecraft = "1.21.1"
+memory_mb = 6144
+done_timeout_s = 600
+# đo: cài 57 s, Done 45 s, RSS 3,9 GB
+
+[[pack]]
+id = "technical-electrical"
+name = "Technical Electrical"
+source = "modrinth"
+project_id = "technical-electrical"
+version_id = "u9mjHu0N" # 26.1.10
+loader = "neoforge"
+minecraft = "26.1.2"
+memory_mb = 6144
+done_timeout_s = 600
+note = "NeoForge trên Minecraft 26.x"
+# đo: cài 18 s, Done 42 s, RSS 3,9 GB
+
+# --- Forge ---
+
+[[pack]]
+id = "parasites-reloaded"
+name = "Parasites Reloaded"
+source = "modrinth"
+project_id = "parasites-reloaded"
+version_id = "A3ktvMQw" # 1.3.0
+loader = "forge"
+minecraft = "1.12.2"
+memory_mb = 6144
+done_timeout_s = 900
+note = "Minecraft 1.12.2, Java 8"
+# đo: cài 14 s, Done 45 s, RSS 2,7 GB
+
+[[pack]]
+id = "kimetsu-no-yaiba"
+name = "Kimetsu no Yaiba"
+source = "modrinth"
+project_id = "kimetsunoyaiba"
+version_id = "36Ckoq3u" # 2.1.5
+loader = "forge"
+minecraft = "1.20.1"
+memory_mb = 6144
+done_timeout_s = 600
+# đo: cài 31 s, Done 36 s, RSS 3,7 GB
+
+# --- Quilt ---
+
+[[pack]]
+id = "simply-optimized-quilt"
+name = "Simply Optimized Reloaded"
+source = "modrinth"
+project_id = "simply-optimized-reloaded"
+version_id = "4jFPjeni" # 26.3-Quilt
+loader = "quilt"
+minecraft = "26.3"
+memory_mb = 4096
+done_timeout_s = 600
+# đo: cài 11 s, Done 18 s, RSS 2,6 GB

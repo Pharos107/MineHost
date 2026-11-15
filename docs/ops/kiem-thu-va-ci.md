@@ -6,8 +6,8 @@
 ## CI chạy khi nào
 
 **Chỉ khi có người bấm chạy.** `ci.yml` có duy nhất trigger `workflow_dispatch`; đẩy code hay mở PR
-không tự chạy gì. Không có workflow nào chạy theo lịch. `release.yml` chạy khi đẩy tag `v*` và chỉ
-build, không chạy test.
+không tự chạy gì. Chạy theo lịch chỉ có `fuzz.yml` (Chủ nhật) và `modpacks.yml` (04:00 giờ Việt Nam
+mỗi ngày, trên runner tự host). `release.yml` chạy khi đẩy tag `v*` và chỉ build, không chạy test.
 
 Chạy CI cho một nhánh trước khi merge:
 
@@ -43,6 +43,7 @@ Bỏ test tích hợp Paper thật (nhanh hơn vài phút mỗi OS) bằng `-f i
 | Giao diện | `ui/src` | Vitest, Testing Library | Không |
 | E2E | `ui/e2e` | Playwright, binary thật ở chế độ e2e ([README của binary](../../crates/minehost/README.md)) | Không |
 | Tích hợp | `crates/minehost/tests/paper.rs`, `loaders.rs` | Server, mod loader và Java thật; test đánh dấu `#[ignore]` | Có |
+| Modpack | `crates/minehost/tests/modpacks.rs`, danh sách `tests/modpacks.toml` | Cài từng pack qua API modpack, bật tới `Done` (preflight phải qua), ghi thời gian và RSS cao nhất; workflow `modpacks.yml` trên [runner tự host](runner-modpack.md), chọn pack bằng input `packs` | Có |
 | Fuzz | `fuzz/` | `cargo-fuzz`, target `safe_root_join` và `backup_restore`; workflow `fuzz.yml` chạy mỗi Chủ nhật, mỗi target 15 phút ([README](../../fuzz/README.md)) | Không |
 
 Quy tắc: test thường không được gọi mạng thật. Test gọi mạng phải đánh dấu `#[ignore]`.
