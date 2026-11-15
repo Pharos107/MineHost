@@ -1,10 +1,12 @@
 //! Kiểm tra điều kiện mod/plugin trước khi bật server (spec P3, mục 3.5 & 4.4).
 
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::Arc;
 
 use mh_core::{
-    ErrorCode, InstanceSpec, LoaderKind, ModMeta, ModMetaFormat, ServerId, matches_version_req,
+    ErrorCode, FabricDepOverrides, InstanceSpec, LoaderKind, ModMeta, ModMetaFormat, ServerId,
+    matches_version_req, parse_fabric_dep_overrides,
 };
 use mh_store::{ContentFile, ContentManifest, PendingContent};
 use serde_json::json;
@@ -16,7 +18,8 @@ use crate::{App, AppError};
 ///
 /// Một dependency coi là đã có khi trùng `id`, một mục `provides`, hoặc một mod trong jar lồng của
 /// mod đang bật, giống cách loader giải quyết. Jar đa loader được đối chiếu bằng metadata mà loader
-/// của server đọc (Fabric chỉ đọc `fabric.mod.json` dù jar có cả `quilt.mod.json`). Các id nền tảng
+/// của server đọc (Fabric chỉ đọc `fabric.mod.json` dù jar có cả `quilt.mod.json`). Server Fabric áp
+/// thêm `config/fabric_loader_dependencies.json` như loader. Các id nền tảng
 /// (`minecraft`, `java`, `fabricloader`, `forge`, `neoforge`, `quilt_loader`, `fml`) đã được lọc bỏ
 /// tại `mh_core::mod_meta`.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -85,7 +88,13 @@ impl App {
             let paths = store.paths(id);
             let files = scanner.scan_dirs(&paths.server_dir, &paths.content_file, kind)?;
             let manifest = ContentManifest::load(&paths.content_file)?;
-            Ok(build_report(spec.game.loader, &files, manifest.pending))
+            let overrides = load_dep_overrides(spec.game.loader, &paths.server_dir, id);
+            Ok(build_report(
+                spec.game.loader,
+                &files,
+                &overrides,
+                manifest.pending,
+            ))
         })
         .await?;
         crate::lock(&self.preflight_missing).insert(id, !report.missing_deps.is_empty());
@@ -158,12 +167,38 @@ pub(crate) fn preflight_block_error(report: &PreflightReport) -> Option<AppError
     None
 }
 
+/// Đường dẫn file ghi đè dependency của Fabric loader, tính từ thư mục `server/`.
+const FABRIC_DEP_OVERRIDES: &str = "config/fabric_loader_dependencies.json";
+
+/// Đọc ghi đè dependency mà Fabric loader sẽ áp dụng. Thiếu file là bình thường; file hỏng thì
+/// Fabric cũng từ chối khởi động, nên chỉ ghi log và kiểm tra như không có ghi đè.
+fn load_dep_overrides(loader: LoaderKind, server_dir: &Path, id: ServerId) -> FabricDepOverrides {
+    if loader != LoaderKind::Fabric {
+        return FabricDepOverrides::default();
+    }
+    let path = server_dir.join(FABRIC_DEP_OVERRIDES);
+    let text = match std::fs::read_to_string(&path) {
+        Ok(text) => text,
+        Err(err) => {
+            if err.kind() != std::io::ErrorKind::NotFound {
+                tracing::warn!(server = %id, %err, "không đọc được {FABRIC_DEP_OVERRIDES}");
+            }
+            return FabricDepOverrides::default();
+        }
+    };
+    parse_fabric_dep_overrides(&text).unwrap_or_else(|err| {
+        tracing::warn!(server = %id, %err, "{FABRIC_DEP_OVERRIDES} không hợp lệ, bỏ qua");
+        FabricDepOverrides::default()
+    })
+}
+
 fn build_report(
     loader: LoaderKind,
     files: &[ContentFile],
+    overrides: &FabricDepOverrides,
     pending: Vec<PendingContent>,
 ) -> PreflightReport {
-    let (missing_deps, version_mismatches) = check_dependencies(loader, files);
+    let (missing_deps, version_mismatches) = check_dependencies(loader, files, overrides);
     let mut wrong_loader = Vec::new();
     let mut client_only = Vec::new();
 
@@ -198,6 +233,7 @@ fn build_report(
 fn check_dependencies(
     loader: LoaderKind,
     files: &[ContentFile],
+    overrides: &FabricDepOverrides,
 ) -> (Vec<MissingDependency>, Vec<VersionMismatch>) {
     let enabled: Vec<&ContentFile> = files.iter().filter(|f| f.enabled).collect();
     let metas: Vec<&ModMeta> = enabled
@@ -215,7 +251,8 @@ fn check_dependencies(
     let mut missing = Vec::new();
     let mut mismatches = Vec::new();
     for meta in metas {
-        for dep in meta.depends.iter().filter(|d| d.required) {
+        let depends = overrides.effective_depends(meta);
+        for dep in depends.iter().filter(|d| d.required) {
             match by_id.get(&dep.id.to_ascii_lowercase()) {
                 None => missing.push(MissingDependency {
                     id: dep.id.clone(),

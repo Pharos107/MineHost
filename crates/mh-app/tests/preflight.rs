@@ -335,3 +335,60 @@ async fn provides_nested_jars_and_loader_specific_meta_count_as_installed() {
     let missing: Vec<&str> = report.missing_deps.iter().map(|d| d.id.as_str()).collect();
     assert_eq!(missing, vec!["quilt_resource_loader"]);
 }
+
+/// Prominence II bỏ `modmenu` (chỉ có ở client) của Forge Config Screens qua file ghi đè của Fabric.
+#[tokio::test]
+async fn fabric_dependency_overrides_file_is_applied() {
+    let (_tmp, app) = test_app(Arc::new(NoContentCatalog) as Arc<dyn ContentCatalog>);
+    let id = make_server(&app, LoaderKind::Fabric);
+    prepare_runnable(&app, id);
+    let server_dir = server_paths(&app, id).server_dir;
+    write_jar(
+        &server_dir.join("mods/screens.jar"),
+        &[(
+            "fabric.mod.json",
+            br#"{"id":"forgeconfigscreens","name":"Forge Config Screens","depends":{"modmenu":"*"}}"#,
+        )],
+    );
+    let missing = |r: &mh_app::content::PreflightReport| -> Vec<String> {
+        r.missing_deps.iter().map(|d| d.id.clone()).collect()
+    };
+    assert_eq!(missing(&app.preflight(id).await.unwrap()), vec!["modmenu"]);
+
+    let overrides = server_dir.join("config/fabric_loader_dependencies.json");
+    fs::create_dir_all(overrides.parent().unwrap()).unwrap();
+    fs::write(&overrides, "{ not json").unwrap();
+    assert_eq!(
+        missing(&app.preflight(id).await.unwrap()),
+        vec!["modmenu"],
+        "file hỏng thì kiểm tra như không có ghi đè"
+    );
+
+    fs::write(
+        &overrides,
+        r#"{"version":1,"overrides":{"forgeconfigscreens":{"-depends":{"modmenu":"IGNORED"}}}}"#,
+    )
+    .unwrap();
+    assert!(app.preflight(id).await.unwrap().missing_deps.is_empty());
+
+    // Server Forge không đọc file ghi đè của Fabric.
+    let forge = make_server(&app, LoaderKind::Forge);
+    let forge_dir = server_paths(&app, forge).server_dir;
+    fs::create_dir_all(forge_dir.join("config")).unwrap();
+    fs::copy(
+        &overrides,
+        forge_dir.join("config/fabric_loader_dependencies.json"),
+    )
+    .unwrap();
+    write_jar(
+        &forge_dir.join("mods/a.jar"),
+        &[(
+            "META-INF/mods.toml",
+            b"[[mods]]\nmodId=\"forgeconfigscreens\"\n[[dependencies.forgeconfigscreens]]\nmodId=\"modmenu\"\nmandatory=true\n",
+        )],
+    );
+    assert_eq!(
+        missing(&app.preflight(forge).await.unwrap()),
+        vec!["modmenu"]
+    );
+}
