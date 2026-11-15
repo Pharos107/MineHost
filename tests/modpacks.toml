@@ -155,3 +155,106 @@ minecraft = "26.3"
 memory_mb = 4096
 done_timeout_s = 600
 # đo: cài 11 s, Done 18 s, RSS 2,6 GB
+
+# --- CurseForge (đang thử ở PR-37b) ---
+
+[[pack]]
+id = "cf-atm10"
+name = "All the Mods 10"
+source = "curseforge"
+project_id = "925200"
+version_id = "9620701"
+loader = "neoforge"
+minecraft = "1.21.1"
+memory_mb = 8192
+done_timeout_s = 1200
+note = "khoảng 500 mod"
+
+[[pack]]
+id = "cf-atm10-sky"
+name = "All the Mods 10 Sky"
+source = "curseforge"
+project_id = "1298402"
+version_id = "9368148"
+loader = "neoforge"
+minecraft = "1.21.1"
+memory_mb = 8192
+done_timeout_s = 1200
+
+[[pack]]
+id = "cf-craftoria"
+name = "Craftoria"
+source = "curseforge"
+project_id = "1039252"
+version_id = "8874369"
+loader = "neoforge"
+minecraft = "1.21.1"
+memory_mb = 8192
+done_timeout_s = 1200
+
+[[pack]]
+id = "cf-atm9"
+name = "All the Mods 9"
+source = "curseforge"
+project_id = "715572"
+version_id = "7097953"
+loader = "forge"
+minecraft = "1.20.1"
+memory_mb = 8192
+done_timeout_s = 1200
+note = "trên 400 mod"
+
+[[pack]]
+id = "cf-rlcraft"
+name = "RLCraft"
+source = "curseforge"
+project_id = "285109"
+version_id = "4612979"
+loader = "forge"
+minecraft = "1.12.2"
+memory_mb = 6144
+done_timeout_s = 900
+
+[[pack]]
+id = "cf-monifactory"
+name = "Monifactory"
+source = "curseforge"
+project_id = "1004602"
+version_id = "9567883"
+loader = "forge"
+minecraft = "1.20.1"
+memory_mb = 8192
+done_timeout_s = 1200
+
+[[pack]]
+id = "cf-beyond-depth"
+name = "Beyond Depth"
+source = "curseforge"
+project_id = "1134605"
+version_id = "9467437"
+loader = "forge"
+minecraft = "1.20.1"
+memory_mb = 8192
+done_timeout_s = 1200
+
+[[pack]]
+id = "cf-deceasedcraft"
+name = "DeceasedCraft"
+source = "curseforge"
+project_id = "490660"
+version_id = "8448820"
+loader = "forge"
+minecraft = "1.20.1"
+memory_mb = 8192
+done_timeout_s = 1200
+
+[[pack]]
+id = "cf-better-mc-forge"
+name = "Better MC Forge"
+source = "curseforge"
+project_id = "876781"
+version_id = "9554990"
+loader = "forge"
+minecraft = "1.20.1"
+memory_mb = 8192
+done_timeout_s = 1200
