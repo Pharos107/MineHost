@@ -40,13 +40,12 @@ struct QueueItem {
 }
 
 pub(crate) fn installed_projects(files: &[ContentFile], source: CatalogSource) -> InstalledMap {
-    let want = source.to_content_source();
     let mut map: InstalledMap = HashMap::new();
     for file in files {
         let Some(rec) = file.record.as_ref() else {
             continue;
         };
-        if rec.source != want {
+        if !source.owns_record(rec.source, rec.project_id.as_ref()) {
             continue;
         }
         if let Some(pid) = rec.project_id.as_ref() {

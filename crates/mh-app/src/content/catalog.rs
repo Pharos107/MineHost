@@ -54,6 +54,21 @@ impl CatalogSource {
         }
     }
 
+    /// Bản ghi có ID project của nguồn này không. Mod cài theo modpack mang `source = "modpack"`
+    /// nhưng ID vẫn là của Modrinth (chuỗi) hoặc CurseForge (số); bỏ sót chúng thì cài thêm mod sẽ
+    /// tải trùng dependency mà pack đã có.
+    pub fn owns_record(self, source: ContentSource, project_id: Option<&ProjectId>) -> bool {
+        if source == self.to_content_source() {
+            return true;
+        }
+        source == ContentSource::Modpack
+            && matches!(
+                (self, project_id),
+                (Self::Modrinth, Some(ProjectId::Str(_)))
+                    | (Self::Curseforge, Some(ProjectId::Int(_)))
+            )
+    }
+
     pub fn project_id(self, raw: &str) -> Result<ProjectId, AppError> {
         match self {
             Self::Modrinth => Ok(ProjectId::Str(raw.to_owned())),
