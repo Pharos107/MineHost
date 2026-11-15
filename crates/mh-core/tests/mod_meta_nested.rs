@@ -85,3 +85,19 @@ fn reads_forge_jarjar_metadata() {
     assert!(parse_jarjar_metadata("{}").unwrap().is_empty());
     assert!(parse_jarjar_metadata("not json").is_err());
 }
+
+#[test]
+fn accepts_raw_newlines_in_strings_like_fabric_loader() {
+    let text = "{
+  \"schemaVersion\": 1,
+  \"id\": \"betterend\",
+  \"version\": \"4.0.11\",
+  \"description\": \"More content
+Made by:
+- paulevs\"
+}";
+    let meta = parse_mod_meta(ModMetaFormat::FabricModJson, text).unwrap();
+    assert_eq!(meta.id, "betterend");
+    assert_eq!(meta.version.as_deref(), Some("4.0.11"));
+    assert!(parse_mod_meta(ModMetaFormat::FabricModJson, "{\"id\": ").is_err());
+}

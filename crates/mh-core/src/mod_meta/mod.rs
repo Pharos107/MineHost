@@ -8,6 +8,7 @@ use std::collections::BTreeMap;
 use serde::Deserialize;
 use serde_json::Value;
 
+mod lenient;
 mod nested;
 mod version_req;
 mod yaml;
@@ -112,7 +113,12 @@ pub fn parse_mod_meta(format: ModMetaFormat, text: &str) -> Result<ModMeta, ModM
 }
 
 fn parse_json(text: &str) -> Result<Value, ModMetaError> {
-    serde_json::from_str(strip_bom(text)).map_err(|e| ModMetaError::Json(e.to_string()))
+    let text = strip_bom(text);
+    serde_json::from_str(text).or_else(|err| {
+        // Fabric loader chấp nhận xuống dòng thô trong chuỗi; chỉ sửa khi bản gốc hỏng.
+        serde_json::from_str(&lenient::escape_raw_control_chars(text))
+            .map_err(|_| ModMetaError::Json(err.to_string()))
+    })
 }
 
 fn parse_fabric_mod_json(text: &str) -> Result<ModMeta, ModMetaError> {
