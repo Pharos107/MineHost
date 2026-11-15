@@ -250,13 +250,22 @@ fn plan_index_files(
         planned_bytes: 0,
         index_count,
     };
+    // File dự phòng có ngân sách riêng, cùng mức trần với pack; vượt thì bỏ bớt dự phòng thay vì
+    // từ chối pack, vì chúng chỉ được tải khi thật sự cần.
+    let mut fallback_bytes = 0u64;
     for item in dedupe_entries(entries)? {
         validate_archive_path(&item.path)?;
         if item.is_client_only() {
-            if is_mod_jar(&item.path) {
+            let within_budget = fallback_bytes
+                .checked_add(item.file_size)
+                .filter(|total| *total <= limits.max_total_bytes);
+            if let Some(total) = within_budget.filter(|_| is_mod_jar(&item.path)) {
                 // Chỉ là dự phòng: file hỏng (thiếu URL, sai host) thì bỏ, không làm hỏng cả pack.
                 match pack_file(&item, hosts) {
-                    Ok(file) => plan.server_unsupported.push(file),
+                    Ok(file) => {
+                        fallback_bytes = total;
+                        plan.server_unsupported.push(file);
+                    }
                     Err(err) => tracing::debug!(path = item.path, %err, "bỏ file dự phòng hỏng"),
                 }
             }

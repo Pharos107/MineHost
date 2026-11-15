@@ -85,6 +85,7 @@ impl App {
                 ..f.clone()
             })
             .collect();
+        self.check_disk_for(staged.iter().map(|f| f.size).sum())?;
         let root = SafeRoot::new(&paths.server_dir)?;
         self.download_pack_files(ctx, catalog, &root, &staged, step_idx, step_count)
             .await?;
