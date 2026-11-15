@@ -1,6 +1,6 @@
 //! Nguồn danh mục Modrinth: tra API và tải file qua `HttpClient` (có cache theo hash).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 
@@ -90,6 +90,31 @@ impl ContentCatalog for ModrinthCatalog {
             Ok(found
                 .into_iter()
                 .map(|(hash, ver)| (hash.to_ascii_lowercase(), modrinth_version(ver)))
+                .collect())
+        })
+    }
+
+    fn server_unsupported_by_hash<'a>(
+        &'a self,
+        sha1: &'a [String],
+    ) -> BoxFut<'a, Result<HashSet<String>, AppError>> {
+        Box::pin(async move {
+            let found = self.modrinth.versions_by_hash(sha1).await?;
+            let mut ids: Vec<&str> = found.values().map(|v| v.project_id.as_str()).collect();
+            ids.sort_unstable();
+            ids.dedup();
+            let unsupported: HashSet<String> = self
+                .modrinth
+                .projects(&ids)
+                .await?
+                .into_iter()
+                .filter(|p| p.server_side.is_unsupported())
+                .map(|p| p.id)
+                .collect();
+            Ok(found
+                .iter()
+                .filter(|(_, v)| unsupported.contains(&v.project_id))
+                .map(|(hash, _)| hash.to_ascii_lowercase())
                 .collect())
         })
     }

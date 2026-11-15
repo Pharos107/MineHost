@@ -1,6 +1,6 @@
 //! Nguồn danh mục mod/plugin dùng chung cho Modrinth và CurseForge.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 use mh_core::{CfManifestFile, ErrorCode, LoaderKind, McVersion};
@@ -234,6 +234,16 @@ pub trait ContentCatalog: Send + Sync + 'static {
     ) -> BoxFut<'a, Result<HashMap<String, ContentVersion>, AppError>> {
         let _ = sha1;
         Box::pin(async { Ok(HashMap::new()) })
+    }
+
+    /// Các SHA-1 trong `sha1` mà project chứa file đó ghi `server_side = unsupported` trên nguồn
+    /// (spec P3, mục 3.5, nguồn 4). Nguồn không hỗ trợ trả tập rỗng.
+    fn server_unsupported_by_hash<'a>(
+        &'a self,
+        sha1: &'a [String],
+    ) -> BoxFut<'a, Result<HashSet<String>, AppError>> {
+        let _ = sha1;
+        Box::pin(async { Ok(HashSet::new()) })
     }
 
     fn curseforge_server_pack<'a>(

@@ -15,7 +15,7 @@ use mh_providers::modpack::{PackLimits, PackPlan};
 use mh_providers::plan_mrpack_with;
 use mh_store::{ContentManifest, ContentScanner, ServerStore};
 
-use super::finish::{KeptContent, sanitize_upstream, write_pack_records};
+use super::finish::{KeptContent, PackOutput, sanitize_upstream, write_pack_records};
 use super::{ModpackMeta, TempFileCleanup};
 use crate::content::{CatalogSource, ContentCatalog};
 use crate::files::{blocking, delete_sync};
@@ -240,12 +240,18 @@ impl App {
             let old = ContentManifest::load(&paths.content_file)?;
             // Mục chờ tải tay của pack cũ không có tên (`name = None`); mục người dùng cài thì có.
             let user_pending = old.pending.into_iter().filter(|p| p.name.is_some());
+            // Chỉ cập nhật được pack Modrinth: mod chỉ client đã lọc theo `.mrpack` và metadata jar.
+            let none = std::collections::HashSet::new();
+            let pack = PackOutput {
+                files: &files,
+                blocked: &blocked,
+                client_sha1: &none,
+            };
             write_pack_records(
                 &scanner,
                 &paths.server_dir,
                 &paths.content_file,
-                &files,
-                &blocked,
+                &pack,
                 &kept,
                 user_pending.collect(),
             )

@@ -20,6 +20,7 @@ fn pending(file: &str, sha1: String, from_modpack: bool) -> PendingContent {
         sha1,
         page_url: "https://example.invalid".to_owned(),
         from_modpack,
+        client_only: false,
         extra: Default::default(),
     }
 }
@@ -79,4 +80,28 @@ async fn pending_without_sha1_matches_by_file_name() {
     assert!(file.enabled);
     assert_eq!(file.record.unwrap().source, ContentSource::Curseforge);
     assert!(app.content(id).await.unwrap().pending.is_empty());
+}
+
+#[tokio::test]
+async fn pending_marked_client_only_by_modrinth_goes_to_disabled() {
+    // Jar không tự khai báo chỉ chạy client; lúc cài pack Modrinth đã báo vậy (spec P3, mục 3.5).
+    let (tmp, app) = test_app(Arc::new(FakeModCatalog::default()));
+    let id = make_server(&app, LoaderKind::Forge);
+    let paths = ServerStore::new(app.dirs().servers(), app.dirs().trash()).paths(id);
+    let src = tmp.path().join("watermedia.jar");
+    std::fs::write(&src, build_jar(None, "WATERMEDIA")).unwrap();
+    let sha1 = mh_store::inspect_jar_file(&src).unwrap().sha1;
+    let mut manifest = ContentManifest::load(&paths.content_file).unwrap();
+    let mut entry = pending("watermedia.jar", sha1, true);
+    entry.client_only = true;
+    manifest.pending.push(entry);
+    manifest.save(&paths.content_file).unwrap();
+
+    let file = app
+        .upload_pending_content(id, "watermedia.jar", &src)
+        .await
+        .unwrap();
+    assert_eq!(file.path, "mods-disabled/watermedia.jar");
+    assert!(!file.enabled);
+    assert!(file.record.unwrap().client_only);
 }

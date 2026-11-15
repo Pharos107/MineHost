@@ -87,6 +87,10 @@ pub struct PendingContent {
     /// pack sau thay được nó.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub from_modpack: bool,
+    /// Nguồn ngoài jar (Modrinth) cho biết file chỉ chạy ở client: tải lên thì vào thẳng
+    /// `mods-disabled/` (spec P3, mục 3.5, nguồn 4).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub client_only: bool,
     #[serde(flatten)]
     pub extra: Table,
 }

@@ -343,3 +343,24 @@ async fn project_versions_lists_without_loader_or_mc_filter() {
     assert_eq!(list.len(), 3);
     assert!(list[0].date_published >= list[1].date_published);
 }
+
+#[tokio::test]
+async fn projects_fetches_many_ids_in_one_request() {
+    let (s, _t, mr) = setup().await;
+    Mock::given(method("GET"))
+        .and(path("/v2/projects"))
+        .and(query_param("ids", r#"["AANobbMI","missing"]"#))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_string(format!("[{}]", fixture("project_sodium.json"))),
+        )
+        .expect(1)
+        .mount(&s)
+        .await;
+
+    let got = mr.projects(&["AANobbMI", "missing"]).await.unwrap();
+    assert_eq!(got.len(), 1);
+    assert_eq!(got[0].id, "AANobbMI");
+    assert_eq!(got[0].server_side, SideSupport::Unsupported);
+    assert!(mr.projects::<&str>(&[]).await.unwrap().is_empty());
+}

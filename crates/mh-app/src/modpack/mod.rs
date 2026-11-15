@@ -211,7 +211,8 @@ impl App {
         .await?;
 
         ctx.step(JobStep::PrepareFiles, step_count, step_count);
-        self.finalize_modpack(ctx, target, game, &paths, plan, meta)
+        // `.mrpack` đã tự ghi `env`; mod chỉ client còn lại thì lọc theo metadata jar.
+        self.finalize_modpack(ctx, target, game, &paths, plan.into(), meta)
             .await
     }
 

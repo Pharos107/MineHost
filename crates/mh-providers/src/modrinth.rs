@@ -90,6 +90,22 @@ impl Modrinth {
         self.get_json(url.as_str(), PROJECT_TTL, id_or_slug).await
     }
 
+    /// Nhiều project trong một lần gọi (`/projects?ids=[...]`), mỗi lần tối đa [`MAX_LIMIT`] id
+    /// để URL không quá dài. Id không có trên Modrinth thì vắng mặt trong kết quả.
+    pub async fn projects<S: AsRef<str>>(&self, ids: &[S]) -> Result<Vec<Project>, ProviderError> {
+        let mut out = Vec::new();
+        for chunk in ids.chunks(MAX_LIMIT as usize) {
+            let refs: Vec<&str> = chunk.iter().map(AsRef::as_ref).collect();
+            let encoded = serde_json::to_string(&refs)
+                .map_err(|_| ProviderError::invalid(SOURCE, "không tạo được danh sách id"))?;
+            let mut url = crate::endpoint(SOURCE, &self.base_url, &["projects"])?;
+            url.query_pairs_mut().append_pair("ids", &encoded);
+            let found: Vec<Project> = self.get_json(url.as_str(), PROJECT_TTL, "").await?;
+            out.extend(found);
+        }
+        Ok(out)
+    }
+
     /// Các phiên bản hợp `loader` và `mc`, mới nhất trước.
     pub async fn versions(
         &self,

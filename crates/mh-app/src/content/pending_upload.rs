@@ -52,8 +52,10 @@ pub(super) fn upload_pending_sync(
     let target_name = pending_jar_name(&matched.path)
         .ok_or_else(|| AppError::new(ErrorCode::ConfigInvalid, "đường dẫn mục chờ không hợp lệ"))?;
 
-    // Mod chỉ chạy client (theo metadata trong jar) vào thẳng thư mục tắt (spec P3, mục 3.5).
-    let client_only = info.meta.as_ref().is_ok_and(|m| m.side.is_client_only());
+    // Mod chỉ chạy client (metadata trong jar, hoặc Modrinth lúc cài pack) vào thẳng thư mục tắt
+    // (spec P3, mục 3.5).
+    let client_only =
+        matched.client_only || info.meta.as_ref().is_ok_and(|m| m.side.is_client_only());
     let rel = if client_only && matched.path.starts_with(&format!("{}/", kind.dir())) {
         format!("{}/{target_name}", kind.disabled_dir())
     } else {

@@ -3,6 +3,7 @@
 
 #![allow(clippy::unwrap_used, clippy::panic)]
 
+mod client_via_modrinth;
 mod server_starter;
 mod support;
 
