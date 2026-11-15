@@ -1,0 +1,67 @@
+# Cài và bật tới `Done` từng modpack trong tests/modpacks.toml (spec P3 mục 9.2).
+# Chạy trên runner tự host (docs/ops/runner-modpack.md), lần lượt từng pack.
+name: Modpacks
+
+on:
+  schedule:
+    # 04:00 giờ Việt Nam (UTC+7), lúc server thật trên máy runner ít người chơi nhất.
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+    inputs:
+      packs:
+        description: "Chỉ chạy các pack này (id, cách nhau dấu phẩy); để trống là chạy tất cả"
+        required: false
+        default: ""
+
+concurrency:
+  group: modpacks
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  modpacks:
+    runs-on: [self-hosted, minehost-modpack]
+    timeout-minutes: 360
+    env:
+      CARGO_TERM_COLOR: never
+      CARGO_BUILD_JOBS: "6"
+      # Ngoài thư mục checkout để `actions/checkout` không xóa cache build và cache modpack.
+      CARGO_TARGET_DIR: /srv/mh-runner/cargo-target
+      MINEHOST_E2E_DIR: /srv/mh-runner/modpack-data
+      MINEHOST_MODPACK_REPORT: ${{ github.workspace }}/modpack-report.jsonl
+      MINEHOST_MODPACKS: ${{ inputs.packs }}
+      # Key nhúng lúc build; thiếu thì pack CurseForge được ghi là `skipped`.
+      MINEHOST_CURSEFORGE_KEY: ${{ secrets.MINEHOST_CURSEFORGE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cài rustup cho user runner (lần đầu)
+        run: |
+          if ! command -v rustup >/dev/null 2>&1 && [ ! -x "$HOME/.cargo/bin/rustup" ]; then
+            curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+          fi
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - name: Cài toolchain theo rust-toolchain.toml
+        run: rustup toolchain install
+      - name: UI giả để binary build được (test không dùng giao diện)
+        run: mkdir -p ui/dist && [ -f ui/dist/index.html ] || echo '<!doctype html>' > ui/dist/index.html
+      - name: Build
+        run: cargo test --release --locked -p minehost --test modpacks --no-run
+      - name: Chạy modpack
+        run: cargo test --release --locked -p minehost --test modpacks -- --ignored --nocapture --test-threads=1
+      - name: Tóm tắt
+        if: always()
+        run: |
+          [ -f modpack-report.jsonl ] || exit 0
+          {
+            echo "| Pack | Loader | MC | Kết quả | Cài (s) | Tới Done (s) | RSS max (MB) | Mod |"
+            echo "| --- | --- | --- | --- | --- | --- | --- | --- |"
+            jq -r '"| \(.id) | \(.loader) | \(.minecraft) | \(.status) | \(.install_s) | \(.done_s) | \(.peak_rss_mb) | \(.mods) |"' modpack-report.jsonl
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modpack-report
+          path: modpack-report.jsonl
+          if-no-files-found: ignore
