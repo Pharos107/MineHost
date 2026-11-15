@@ -181,16 +181,6 @@ minecraft = "1.21.1"
 memory_mb = 8192
 done_timeout_s = 1200
 
-[[pack]]
-id = "cf-craftoria"
-name = "Craftoria"
-source = "curseforge"
-project_id = "1039252"
-version_id = "8874369"
-loader = "neoforge"
-minecraft = "1.21.1"
-memory_mb = 8192
-done_timeout_s = 1200
 
 [[pack]]
 id = "cf-atm9"
@@ -240,3 +230,60 @@ loader = "forge"
 minecraft = "1.20.1"
 memory_mb = 8192
 done_timeout_s = 1200
+
+# --- Ứng viên thêm (đang thử ở PR-37b) ---
+
+[[pack]]
+id = "pixelmon"
+name = "The Pixelmon Modpack"
+source = "modrinth"
+project_id = "the-pixelmon-modpack"
+version_id = "3WCE8Wj3" # 9.4.2
+loader = "neoforge"
+minecraft = "1.21.1"
+memory_mb = 6144
+done_timeout_s = 600
+
+[[pack]]
+id = "lucky-block"
+name = "Lucky Block Challenge"
+source = "modrinth"
+project_id = "lucky-block-challenge"
+version_id = "90iuEp0W" # 2.1.2
+loader = "neoforge"
+minecraft = "1.21.1"
+memory_mb = 6144
+done_timeout_s = 600
+
+[[pack]]
+id = "create-train"
+name = "Create Train"
+source = "modrinth"
+project_id = "create_train"
+version_id = "OH9Svq1U" # 8.3.0
+loader = "neoforge"
+minecraft = "1.21.1"
+memory_mb = 8192
+done_timeout_s = 900
+
+[[pack]]
+id = "optimized-fps"
+name = "Optimized FPS"
+source = "modrinth"
+project_id = "optimized-fps"
+version_id = "UTCVjkus" # 4.4.0
+loader = "neoforge"
+minecraft = "26.3"
+memory_mb = 4096
+done_timeout_s = 600
+
+[[pack]]
+id = "cobbleverse"
+name = "Cobbleverse"
+source = "modrinth"
+project_id = "cobbleverse"
+version_id = "4SKGla61" # 1.7.42
+loader = "fabric"
+minecraft = "1.21.1"
+memory_mb = 8192
+done_timeout_s = 900
