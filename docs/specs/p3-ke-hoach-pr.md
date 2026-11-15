@@ -45,7 +45,7 @@ chính PR ấy.
 | 30 | Tải tay file CurseForge | Đã merge | [#96](https://github.com/Pharos107/MineHost/pull/96) |
 | 31 | Bản `before_update`, chép `content.toml` | Đã merge | [#101](https://github.com/Pharos107/MineHost/pull/101) |
 | 32 | Kiểm tra và cập nhật mod | Đã merge | [#102](https://github.com/Pharos107/MineHost/pull/102) |
-| 33 | Đổi phiên bản, cập nhật build (33a) | Đã merge | PR33LINK |
+| 33 | Đổi phiên bản, cập nhật build (33a) | Đã merge | [#103](https://github.com/Pharos107/MineHost/pull/103) |
 | 33b | Cập nhật modpack | Chưa bắt đầu | |
 | 34 | Giao diện cập nhật và mục Phiên bản | Chưa bắt đầu | |
 | 35 | Nhóm G · Bộ nhớ đệm và trạng thái giới hạn | Chưa bắt đầu | |
