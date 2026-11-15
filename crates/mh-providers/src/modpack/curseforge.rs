@@ -237,13 +237,19 @@ pub fn extract_curseforge_overrides_after(
 /// `server-setup-config.yaml`, mod được tải khi chạy script lần đầu. MineHost không chạy script đó,
 /// nên cài pack như vậy cho ra server không có mod; phải dựng từ manifest thay vào.
 pub fn server_pack_has_mods(archive_path: &Path) -> Result<bool, ProviderError> {
-    let archive = open_pack_archive(archive_path, PackLimits::default())?;
-    Ok(archive.file_names().any(|name| {
-        let lower = name.replace('\\', "/").to_ascii_lowercase();
+    let mut archive = open_pack_archive(archive_path, PackLimits::default())?;
+    for index in 0..archive.len() {
+        let entry = read_entry_meta(&mut archive, index, archive_path)?;
+        if entry.is_dir {
+            continue;
+        }
+        let lower = entry.name.replace('\\', "/").to_ascii_lowercase();
         let in_mods = lower.starts_with("mods/") || lower.contains("/mods/");
-        let file = lower.rsplit('/').next().unwrap_or_default();
-        in_mods && file.ends_with(".jar") && !lower.ends_with('/')
-    }))
+        if in_mods && lower.ends_with(".jar") {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 pub fn extract_curseforge_server_pack(
