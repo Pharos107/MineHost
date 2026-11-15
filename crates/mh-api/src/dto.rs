@@ -106,6 +106,8 @@ pub struct ServerDto {
     pub ignored_jvm_args: bool,
     /// Có lỗi preflight đang chặn bật server (còn thiếu mod hoặc file CurseForge pending).
     pub preflight_blocking: bool,
+    /// Nguồn modpack khi server được tạo từ modpack (spec P3, mục 4.1).
+    pub modpack: Option<crate::content_dto::ServerModpackDto>,
 }
 
 impl From<ServerView> for ServerDto {
@@ -137,6 +139,7 @@ impl From<ServerView> for ServerDto {
             restart_pending: false,
             ignored_jvm_args: view.ignored_jvm_args,
             preflight_blocking: view.preflight_blocking,
+            modpack: None,
         };
         if let Some(info) = view.installing {
             dto.name = Some(info.name.to_string());
@@ -176,6 +179,7 @@ impl From<ServerView> for ServerDto {
             });
             dto.eula_accepted = spec.eula_accepted();
             dto.created_at = spec.created_at.format(&Rfc3339).ok();
+            dto.modpack = spec.modpack.as_ref().map(Into::into);
         }
         if let Some(status) = view.status {
             dto.pid = status.pid;

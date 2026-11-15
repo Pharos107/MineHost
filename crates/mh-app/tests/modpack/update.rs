@@ -2,13 +2,15 @@
 //! dùng thêm vẫn còn, có bản `before_update`, khôi phục bản đó thì về đúng bản pack cũ.
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use mh_app::{App, BackupKind, JobState};
-use mh_core::ServerId;
+use mh_core::{ServerId, ServerState};
 use mh_store::ContentManifest;
 
 use super::support::{
-    PackTestCatalog, finish, make_app, make_mrpack_for, modrinth_req, pack_entry, server_root,
+    PackTestCatalog, RunnableJava, finish, make_app_with_java, make_mrpack_for, modrinth_req,
+    pack_entry, server_root,
 };
 
 const PACK: &str = "pack-up";
@@ -46,7 +48,7 @@ async fn installed_v1() -> (tempfile::TempDir, Arc<App>, ServerId) {
         "v1",
     );
     add_pack(&mut cat, "v2", "0.16.10", &[("a2", "A bản 2")], "v2");
-    let (tmp, app) = make_app(16 * 1024, Arc::new(cat));
+    let (tmp, app) = make_app_with_java(16 * 1024, Arc::new(cat), Arc::new(RunnableJava));
     let created = app
         .create_from_modpack(modrinth_req(PACK, Some("v1"), "Pack"))
         .unwrap();
@@ -142,6 +144,17 @@ async fn update_replaces_pack_files_keeps_user_mods_and_restore_goes_back() {
         report.missing_deps.is_empty() && report.pending.is_empty(),
         "{report:?}"
     );
+
+    // ... và bật được: `fake-mc` đóng vai Java, server lên tới `Running` rồi tắt.
+    app.accept_eula(id).unwrap();
+    app.start(id).await.unwrap();
+    let status = app
+        .handle(id)
+        .unwrap()
+        .wait_for(Duration::from_secs(20), |s| s.state == ServerState::Running)
+        .await;
+    assert_eq!(status.state, ServerState::Running, "{status:?}");
+    app.stop(id).await.unwrap();
 }
 
 #[tokio::test]

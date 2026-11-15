@@ -8,7 +8,7 @@ Một bản phát hành: `v0.5.0` (PR-38) chốt cả P3. Kế hoạch ban đầ
 
 ## Tiến độ
 
-Cập nhật 2026-11-15, khi làm PR-34a. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-15, khi làm PR-34b. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -48,7 +48,7 @@ chính PR ấy.
 | 33 | Đổi phiên bản, cập nhật build (33a) | Đã merge | PR33LINK |
 | 33b | Cập nhật modpack Modrinth | Đã merge | PR33BLINK |
 | 34 | Giao diện cập nhật mod (34a) | Đã merge | PR34ALINK |
-| 34b | Mục Phiên bản, cập nhật modpack | Chưa bắt đầu | |
+| 34b | Mục Phiên bản, cập nhật modpack | Đã merge | PR34BLINK |
 | 35 | Nhóm G · Bộ nhớ đệm và trạng thái giới hạn | Chưa bắt đầu | |
 | 36–38 | Nhóm H · Kiểm thử modpack, `v0.5.0` | Chưa bắt đầu | |
 

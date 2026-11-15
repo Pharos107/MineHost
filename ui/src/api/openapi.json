@@ -5208,6 +5208,17 @@
               "null"
             ]
           },
+          "modpack": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ServerModpackDto",
+                "description": "Nguồn modpack khi server được tạo từ modpack (spec P3, mục 4.1)."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "name": {
             "type": [
               "string",
@@ -5289,6 +5300,41 @@
             "items": {
               "$ref": "#/components/schemas/MetricSampleDto"
             }
+          }
+        }
+      },
+      "ServerModpackDto": {
+        "type": "object",
+        "description": "`[modpack]` của server: nguồn, project và bản đang cài.",
+        "required": [
+          "source",
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "project_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "description": "`modrinth`, `curseforge` hoặc `file`."
+          },
+          "version_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version_name": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },

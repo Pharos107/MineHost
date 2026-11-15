@@ -192,6 +192,7 @@ pub use lan::{LanState, lan_listener};
         updates::UpdateCandidateDto,
         updates::UpdateReportDto,
         updates::VersionBody,
+        content::ServerModpackDto,
     ))
 )]
 struct ApiDoc;

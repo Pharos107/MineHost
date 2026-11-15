@@ -10,6 +10,7 @@ import { MEMORY_STEP_MB, memoryRange } from "../../memory";
 import { Button, Card, Field, IconButton, Notice, Select, Slider, Stack, Switch, TextInput } from "../../ui";
 import { DeleteServer } from "./DeleteServer";
 import { javaChoices, MAX_RESTART_TIMES, settingsErrors, settingsFrom, settingsPatch, type SettingsForm } from "./settings";
+import { VersionSection } from "./VersionSection";
 
 /** Tab "Cài đặt server": tên, RAM, cổng, tự bật, tự khởi động lại khi crash, Java, xóa server. */
 export function ServerSettingsTab({ server }: { server: Server }) {
@@ -90,6 +91,7 @@ export function ServerSettingsTab({ server }: { server: Server }) {
           </Stack>
         </Card>
       </form>
+      <VersionSection server={server} />
       <DeleteServer server={server} />
     </Stack>
   );

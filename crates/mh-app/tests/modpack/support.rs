@@ -331,12 +331,42 @@ pub fn make_app(
     total_memory_mb: u64,
     content: Arc<dyn ContentCatalog>,
 ) -> (tempfile::TempDir, Arc<App>) {
+    make_app_with_java(total_memory_mb, content, Arc::new(FakeJava))
+}
+
+/// Java chạy được thật: `fake-mc` in `Done` như server Minecraft, để test bật server.
+pub struct RunnableJava;
+
+impl JavaSource for RunnableJava {
+    fn ensure<'a>(
+        &'a self,
+        major: u16,
+        _: ProgressFn<'a>,
+        _: &'a CancellationToken,
+    ) -> BoxFut<'a, Result<JavaRuntime, AppError>> {
+        Box::pin(async move {
+            let bin = PathBuf::from(env!("CARGO_BIN_EXE_app-fake-mc"));
+            Ok(JavaRuntime {
+                major,
+                home: bin.parent().unwrap().to_path_buf(),
+                java_bin: bin,
+                version: "21.0.5".to_owned(),
+            })
+        })
+    }
+}
+
+pub fn make_app_with_java(
+    total_memory_mb: u64,
+    content: Arc<dyn ContentCatalog>,
+    java: Arc<dyn JavaSource>,
+) -> (tempfile::TempDir, Arc<App>) {
     let tmp = tempfile::tempdir().unwrap();
     let dirs = DataDirs::resolve(Some(tmp.path().to_path_buf())).unwrap();
     dirs.ensure().unwrap();
     let deps = AppDeps {
         catalog: Arc::new(FakeLoaderCatalog),
-        java: Arc::new(FakeJava),
+        java,
         port_free: Arc::new(|_| true),
         free_space: Arc::new(|_| Some(100 * 1024 * 1024 * 1024)),
         total_memory_mb,

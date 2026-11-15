@@ -136,6 +136,12 @@ export const api = {
     request<Job[]>("GET", serverId ? `/jobs?server_id=${encodeURIComponent(serverId)}` : "/jobs"),
   job: (id: number) => request<Job>("GET", `/jobs/${id}`),
   cancelJob: (id: number) => request<void>("POST", `/jobs/${id}/cancel`),
+  /** Job đổi phiên bản Minecraft, bản loader hoặc cập nhật build; luôn sao lưu trước. */
+  changeVersion: (id: string, body: { minecraft?: string; loader_version?: string; confirm: true }) =>
+    request<{ job_id: number }>("POST", `${serverPath(id)}/version`, body),
+  /** Job cập nhật modpack Modrinth lên bản `versionId`. */
+  updateModpack: (id: string, versionId: string) =>
+    request<{ job_id: number }>("POST", `${serverPath(id)}/updates`, { modpack_version_id: versionId }),
 };
 
 interface MissingDepParam {

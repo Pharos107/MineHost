@@ -385,3 +385,32 @@ pub struct PendingUploadItemDto {
 pub struct PendingUploadResultDto {
     pub results: Vec<PendingUploadItemDto>,
 }
+
+/// `[modpack]` của server: nguồn, project và bản đang cài.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ServerModpackDto {
+    /// `modrinth`, `curseforge` hoặc `file`.
+    pub source: String,
+    pub project_id: Option<String>,
+    pub version_id: Option<String>,
+    pub name: String,
+    pub version_name: Option<String>,
+}
+
+impl From<&mh_core::instance::ModpackSection> for ServerModpackDto {
+    fn from(pack: &mh_core::instance::ModpackSection) -> Self {
+        use mh_core::instance::ModpackSource;
+        let source = match pack.source {
+            ModpackSource::Modrinth => "modrinth",
+            ModpackSource::Curseforge => "curseforge",
+            ModpackSource::File => "file",
+        };
+        Self {
+            source: source.to_owned(),
+            project_id: pack.project_id.as_ref().map(|p| p.as_str().to_owned()),
+            version_id: pack.version_id.as_ref().map(|v| v.as_str().to_owned()),
+            name: pack.name.as_str().to_owned(),
+            version_name: pack.version_name.as_ref().map(|v| v.as_str().to_owned()),
+        }
+    }
+}
