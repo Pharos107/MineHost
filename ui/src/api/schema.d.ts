@@ -747,6 +747,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Đổi phiên bản Minecraft hoặc loader, cập nhật build. Kết quả nằm trong `result` của Job: `{ changed, minecraft, build, loader_version, backup_id }`. */
+        post: operations["change_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings/access": {
         parameters: {
             query?: never;
@@ -1430,6 +1447,14 @@ export interface components {
             /** Format: int32 */
             unknown: number;
             updates: components["schemas"]["UpdateCandidateDto"][];
+        };
+        VersionBody: {
+            /** @description Phải là `true`: người dùng đã đồng ý tắt server và sao lưu trước. */
+            confirm?: boolean;
+            /** @description Chỉ cho Fabric, Quilt, Forge, NeoForge; bỏ trống là bản đề xuất. */
+            loader_version?: string | null;
+            /** @description Bỏ trống là giữ bản Minecraft hiện tại (cập nhật build Paper, Purpur hoặc bản loader). */
+            minecraft?: string | null;
         };
         VersionMismatchDto: {
             id: string;
@@ -3641,6 +3666,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobStartedDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    change_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionBody"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStartedDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
             404: {

@@ -101,6 +101,7 @@ pub use lan::{LanState, lan_listener};
         content::remove,
         updates::check,
         updates::update,
+        updates::change_version,
         preflight::get,
     ),
     components(schemas(
@@ -190,6 +191,7 @@ pub use lan::{LanState, lan_listener};
         updates::UpdateBody,
         updates::UpdateCandidateDto,
         updates::UpdateReportDto,
+        updates::VersionBody,
     ))
 )]
 struct ApiDoc;
@@ -330,6 +332,7 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         .route("/servers/{id}/content/plan", post(content::plan))
         .route("/servers/{id}/updates", post(updates::update))
         .route("/servers/{id}/updates/check", post(updates::check))
+        .route("/servers/{id}/version", post(updates::change_version))
         .route(
             "/servers/{id}/content/upload",
             post(content::upload)

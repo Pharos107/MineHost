@@ -405,7 +405,8 @@
       "install_java": "Install Java",
       "install_content": "Install mod",
       "check_updates": "Check mod updates",
-      "update_content": "Update mods"
+      "update_content": "Update mods",
+      "change_version": "Change version"
     },
     "states": {
       "running": "Running",

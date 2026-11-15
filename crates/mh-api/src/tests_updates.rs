@@ -44,3 +44,32 @@ async fn update_body_is_validated() {
         (StatusCode::CONFLICT, Some("CONTENT_INCOMPATIBLE"))
     );
 }
+
+#[tokio::test]
+async fn version_change_needs_confirm_and_valid_versions() {
+    let api = content_api(None);
+    let paper = create_with_loader(&api, "Paper", "paper", 25565).await;
+    let uri = format!("/api/v1/servers/{paper}/version");
+    for (body, field) in [
+        (json!({ "minecraft": "1.21.1" }), "confirm"),
+        (
+            json!({ "minecraft": "../1.21", "confirm": true }),
+            "minecraft",
+        ),
+        (
+            json!({ "loader_version": "0.16.9", "confirm": true }),
+            "loader_version",
+        ),
+    ] {
+        let (status, err) = api.post(&uri, Some(body)).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{err}");
+        assert_eq!(err["params"]["field"], field, "{err}");
+    }
+    let (status, started) = api.post(&uri, Some(json!({ "confirm": true }))).await;
+    assert_eq!(status, StatusCode::ACCEPTED, "{started}");
+    let job = started["job_id"].as_u64().unwrap();
+    wait_job(&api, job).await;
+    let (_, snap) = api.get(&format!("/api/v1/jobs/{job}")).await;
+    assert_eq!(snap["kind"], "change_version");
+    assert_eq!(snap["result"]["changed"], false, "{snap}");
+}

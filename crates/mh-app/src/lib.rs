@@ -15,6 +15,7 @@ pub mod e2e;
 mod error;
 mod files;
 mod import;
+mod job_kinds;
 pub mod jobs;
 mod launcher;
 mod lifecycle;
@@ -27,6 +28,7 @@ mod restore;
 mod servers;
 pub mod sources;
 mod update;
+mod version_change;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -65,6 +67,7 @@ pub use restart_schedule::{RestartAction, RestartPlanner, RestartWarning, Server
 pub use restore::RestoreStarted;
 pub use servers::{ServerView, SettingsPatch};
 pub use sources::{CatalogVersion, JavaSource, ServerCatalog};
+pub use version_change::{VersionChange, VersionChangeResult};
 
 /// Phiên bản controller, lấy từ `Cargo.toml` của workspace.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

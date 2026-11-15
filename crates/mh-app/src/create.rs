@@ -125,9 +125,26 @@ impl App {
             step_count,
         );
         let resolved = ctx.cancellable(self.catalog.resolve(loader, mc)).await?;
+        let paths = self.store.create_dir(id)?;
+        let game = self
+            .fetch_vanilla(ctx, &paths, loader, resolved, step_base + 1, step_count)
+            .await?;
+        Ok((paths, game))
+    }
 
+    /// Tải Java và jar server vào `paths.server_dir` có sẵn. Đổi phiên bản gọi lại hàm này.
+    pub(crate) async fn fetch_vanilla(
+        &self,
+        ctx: &JobContext,
+        paths: &ServerPaths,
+        loader: LoaderKind,
+        resolved: crate::sources::ResolvedServer,
+        step_base: u8,
+        step_count: u8,
+    ) -> Result<GameSection, AppError> {
+        let minecraft = resolved.minecraft.to_string();
         let major = resolved.java_major;
-        ctx.step(JobStep::DownloadJava { major }, step_base + 1, step_count);
+        ctx.step(JobStep::DownloadJava { major }, step_base, step_count);
         {
             let _permit = ctx.download_permit().await?;
             let mut progress = |done: u64, total: Option<u64>| ctx.bytes(done, total);
@@ -136,11 +153,10 @@ impl App {
 
         ctx.step(
             JobStep::DownloadServer { minecraft },
-            step_base + 2,
+            step_base + 1,
             step_count,
         );
-        let paths = self.store.create_dir(id)?;
-        let game = GameSection::new(loader, mc.clone(), resolved.build, major);
+        let game = GameSection::new(loader, resolved.minecraft.clone(), resolved.build, major);
         {
             let _permit = ctx.download_permit().await?;
             let dest = paths.server_dir.join(game.jar.as_str());
@@ -150,7 +166,7 @@ impl App {
                 .await?;
         }
         ctx.check_cancel()?;
-        Ok((paths, game))
+        Ok(game)
     }
 
     /// Bước cuối của mọi kiểu tạo server: `server.properties`, rồi `instance.toml`.

@@ -10,15 +10,17 @@ use crate::restore::server_is_live;
 use crate::{App, AppError};
 
 impl App {
-    /// Tắt server rồi sao lưu, trả bản `before_update`. `steps` là tổng số bước của Job.
+    /// Tắt server rồi sao lưu. `first` là số thứ tự bước đầu, `steps` là tổng số bước của Job.
+    /// Trả bản `before_update` và số thứ tự bước tiếp theo.
     pub(crate) async fn prepare_update(
         &self,
         ctx: &JobContext,
         id: ServerId,
+        first: u8,
         steps: u8,
-    ) -> Result<BackupMeta, AppError> {
+    ) -> Result<(BackupMeta, u8), AppError> {
         let handle = self.handle(id)?;
-        let mut index = 1u8;
+        let mut index = first;
         if server_is_live(&handle) {
             ctx.step(JobStep::StopServer, index, steps);
             self.stop_for_change(&handle).await?;
@@ -34,7 +36,8 @@ impl App {
             protected: true,
             kind: BackupKind::BeforeUpdate,
         };
-        self.archive_world(ctx, &spec, &req).await
+        let backup = self.archive_world(ctx, &spec, &req).await?;
+        Ok((backup, index + 1))
     }
 }
 

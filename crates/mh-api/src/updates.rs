@@ -1,12 +1,13 @@
-//! Route kiểm tra và cập nhật mod/plugin (spec P3, mục 5.8). Cả hai đều chạy thành Job.
+//! Route kiểm tra, cập nhật mod/plugin và đổi phiên bản (spec P3, mục 5.8). Đều chạy thành Job.
 
 use std::sync::Arc;
 
 use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
-use mh_app::App;
 use mh_app::content::{MAX_UPDATE_ITEMS, UpdateItem};
+use mh_app::{App, VersionChange};
+use mh_core::{LoaderVersion, McVersion};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -92,6 +93,52 @@ pub async fn update(
         .map(parse_item)
         .collect::<Result<Vec<_>, _>>()?;
     let job_id = app.update_content(id, items)?;
+    Ok((StatusCode::ACCEPTED, Json(JobStartedDto { job_id })))
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct VersionBody {
+    /// Bỏ trống là giữ bản Minecraft hiện tại (cập nhật build Paper, Purpur hoặc bản loader).
+    pub minecraft: Option<String>,
+    /// Chỉ cho Fabric, Quilt, Forge, NeoForge; bỏ trống là bản đề xuất.
+    pub loader_version: Option<String>,
+    /// Phải là `true`: người dùng đã đồng ý tắt server và sao lưu trước.
+    #[serde(default)]
+    pub confirm: bool,
+}
+
+#[utoipa::path(post, path = "/api/v1/servers/{id}/version", tag = "servers",
+    description = "Đổi phiên bản Minecraft hoặc loader, cập nhật build. Kết quả nằm trong `result` của Job: `{ changed, minecraft, build, loader_version, backup_id }`.",
+    params(("id" = String, Path)), request_body = VersionBody,
+    responses(
+        (status = 202, body = JobStartedDto),
+        (status = 400, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody),
+    ))]
+pub async fn change_version(
+    State(app): State<Arc<App>>,
+    IdPath(id): IdPath,
+    ApiJson(body): ApiJson<VersionBody>,
+) -> Result<(StatusCode, Json<JobStartedDto>), ApiError> {
+    let minecraft = body
+        .minecraft
+        .as_deref()
+        .map(|raw| McVersion::parse(raw.trim()).map_err(|_| ApiError::invalid("minecraft")))
+        .transpose()?;
+    let loader_version = body
+        .loader_version
+        .as_deref()
+        .map(|raw| {
+            LoaderVersion::parse(raw.trim()).map_err(|_| ApiError::invalid("loader_version"))
+        })
+        .transpose()?;
+    let req = VersionChange {
+        minecraft,
+        loader_version,
+        confirm: body.confirm,
+    };
+    let job_id = app.change_version(id, req)?;
     Ok((StatusCode::ACCEPTED, Json(JobStartedDto { job_id })))
 }
 

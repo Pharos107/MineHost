@@ -115,7 +115,7 @@ impl App {
         items: &[UpdateItem],
     ) -> Result<(), AppError> {
         let steps = u8::try_from(items.len().saturating_add(2)).unwrap_or(u8::MAX);
-        let backup = self.prepare_update(ctx, id, steps).await?;
+        let (backup, _) = self.prepare_update(ctx, id, 1, steps).await?;
         let result = async {
             self.adopt_manual(id, items).await?;
             for item in items {
