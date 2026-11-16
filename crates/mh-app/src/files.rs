@@ -4,9 +4,14 @@
 //! Thao tác đĩa chạy trong `spawn_blocking`, trừ `save_upload`: stream multipart của PR-11
 //! là `AsyncRead`, và `tokio::fs` tự đưa từng lần ghi vào `spawn_blocking`.
 
+mod archive;
 mod disk;
+mod ops;
+mod search;
 
 pub(crate) use disk::delete_sync;
+pub use ops::ZipStream;
+pub use search::{FoundEntry, SEARCH_MAX_RESULTS, SearchResult};
 
 use std::path::{Path, PathBuf};
 

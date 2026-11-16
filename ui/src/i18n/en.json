@@ -609,7 +609,9 @@
       "check_updates": "Check mod updates",
       "update_content": "Update mods",
       "change_version": "Change version",
-      "update_modpack": "Update modpack"
+      "update_modpack": "Update modpack",
+      "compress_files": "Compress files",
+      "extract_files": "Extract archive"
     },
     "states": {
       "running": "Running",

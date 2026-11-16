@@ -56,7 +56,10 @@ pub use content::{
 pub use create::{CreateRequest, Created};
 pub use curseforge::{CurseforgeKeySource, CurseforgeStatus};
 pub use error::AppError;
-pub use files::{FileEntry, FileKind, TEXT_LIMIT, TextFile};
+pub use files::{
+    FileEntry, FileKind, FoundEntry, SEARCH_MAX_RESULTS, SearchResult, TEXT_LIMIT, TextFile,
+    ZipStream,
+};
 pub use import::{Detected, ImportRequest};
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};
 pub use metrics::{MetricSample, MetricsConfig, MetricsEvent, ServerMetrics};
