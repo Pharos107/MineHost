@@ -450,7 +450,17 @@
     "diskPending": "Calculating…",
     "cpuChart": "CPU over the last hour",
     "memoryChart": "RAM over the last hour",
-    "offline": "The server is stopped. Start it to see CPU and RAM."
+    "offline": "The server is stopped. Start it to see CPU and RAM.",
+    "players": "Players",
+    "playersOnline": "online",
+    "chartLayout": "Chart layout",
+    "layoutSide": "Side by side",
+    "layoutStacked": "Stacked",
+    "details": "View details",
+    "now": "Now",
+    "average": "Average",
+    "peak": "Peak",
+    "lowest": "Lowest"
   },
   "duration": {
     "days_one": "{{count}} day",

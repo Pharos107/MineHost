@@ -1,14 +1,15 @@
-import { Clock, Cpu, HardDrive, MemoryStick } from "lucide-react";
+import { Clock, Cpu, HardDrive, MemoryStick, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import type { MetricSample, Server } from "../../../api/client";
 import { formatBytes } from "../../../format";
-import { Card, LineChart, Notice, Stack, StatGrid, StatTile, type ChartPoint } from "../../../ui";
+import { Notice, Stack, StatGrid, StatTile } from "../../../ui";
+import { usePlayers } from "../players/usePlayers";
 import { useServer } from "../ServerLayout";
 import { formatUptime } from "./duration";
 import { useServerMetrics } from "./metricsLive";
+import { OverviewCharts } from "./OverviewCharts";
 
-const HOUR_MS = 3_600_000;
 const WITH_PROCESS: Server["state"][] = ["starting", "running", "stopping"];
 
 /** Tổng quan một server (spec P2, mục 6.4): số hiện tại và biểu đồ 1 giờ gần nhất. */
@@ -26,7 +27,7 @@ export function OverviewPage() {
   return (
     <Stack gap={4}>
       <Tiles server={server} samples={samples} disk={metrics.data?.disk_bytes ?? null} since={metrics.data?.running_since ?? null} now={now} />
-      {online ? <Charts server={server} samples={samples} now={now} /> : <Notice tone="info">{t("overview.offline")}</Notice>}
+      {online ? <OverviewCharts server={server} samples={samples} now={now} /> : <Notice tone="info">{t("overview.offline")}</Notice>}
     </Stack>
   );
 }
@@ -54,47 +55,30 @@ function Tiles({ server, samples, disk, since, now }: TilesProps) {
         icon={MemoryStick}
         label={t("overview.memory")}
         value={last ? bytes(last.memory_bytes) : "—"}
+        meter={last && maxMemory ? (last.memory_bytes / maxMemory) * 100 : undefined}
         detail={maxMemory ? t("overview.memoryOf", { max: bytes(maxMemory) }) : undefined}
       />
+      <PlayersTile server={server} />
       <StatTile icon={Clock} label={t("overview.uptime")} value={uptime} />
       <StatTile icon={HardDrive} label={t("overview.disk")} value={disk === null ? "—" : bytes(disk)} detail={disk === null ? t("overview.diskPending") : undefined} />
     </StatGrid>
   );
 }
 
-function Charts({ server, samples, now }: { server: Server; samples: MetricSample[]; now: number }) {
-  const { t, i18n } = useTranslation();
-  const end = now;
-  const start = end - HOUR_MS;
-  const time = new Intl.DateTimeFormat(i18n.language, { hour: "2-digit", minute: "2-digit" });
-  const formatTime = (ms: number) => time.format(ms);
-  const points = (pick: (s: MetricSample) => number): ChartPoint[] => samples.map((s) => ({ t: Date.parse(s.at), v: pick(s) }));
-  const maxMemory = server.memory_mb ? server.memory_mb.max * 1024 * 1024 : undefined;
+/** Chỉ số người đang chơi trên tối đa; danh sách tên nằm ở trang Người chơi. */
+function PlayersTile({ server }: { server: Server }) {
+  const { t } = useTranslation();
+  const players = usePlayers(server.id, server.state);
+  const data = server.state === "running" ? players.data : undefined;
+  const online = data ? data.players.filter((p) => p.online).length : null;
 
   return (
-    <>
-      <Card title={t("overview.cpuChart")}>
-        <LineChart
-          label={t("overview.cpuChart")}
-          points={points((s) => s.cpu_percent)}
-          start={start}
-          end={end}
-          yMax={100}
-          formatValue={(v) => `${Math.round(v)} %`}
-          formatTime={formatTime}
-        />
-      </Card>
-      <Card title={t("overview.memoryChart")}>
-        <LineChart
-          label={t("overview.memoryChart")}
-          points={points((s) => s.memory_bytes)}
-          start={start}
-          end={end}
-          yMax={maxMemory}
-          formatValue={(v) => formatBytes(v, i18n.language)}
-          formatTime={formatTime}
-        />
-      </Card>
-    </>
+    <StatTile
+      icon={Users}
+      label={t("overview.players")}
+      value={online === null ? "—" : String(online)}
+      unit={data ? `/ ${data.max_players}` : undefined}
+      detail={data ? t("overview.playersOnline") : undefined}
+    />
   );
 }

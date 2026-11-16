@@ -9,6 +9,7 @@ export { Breadcrumb, type Crumb } from "./Breadcrumb";
 export { Button, IconButton, type ButtonSize, type ButtonVariant } from "./Button";
 export { Card, PageHeader } from "./Card";
 export { ChoiceGroup, type Choice } from "./ChoiceGroup";
+export { Columns } from "./Columns";
 export { CopyField } from "./CopyField";
 export { DataTable, type Column, type RowAction } from "./DataTable";
 export { ConfirmDialog, Dialog, DialogBody, DialogFooter } from "./Dialog";
