@@ -80,9 +80,9 @@ function mockFetch(handler: Handler) {
   return fetchMock;
 }
 
-function renderPage(server: Server = stoppedFabric) {
-  render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+function pageTree(server: Server, client: QueryClient) {
+  return (
+    <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={["/servers/A/content"]}>
         <Routes>
           <Route path="/servers/:id" element={<Outlet context={server} />}>
@@ -90,8 +90,14 @@ function renderPage(server: Server = stoppedFabric) {
           </Route>
         </Routes>
       </MemoryRouter>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
+}
+
+function renderPage(server: Server = stoppedFabric) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const view = render(pageTree(server, client));
+  return { rerender: (next: Server) => view.rerender(pageTree(next, client)) };
 }
 
 afterEach(() => {
@@ -241,6 +247,20 @@ describe("ContentPage", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Thao tác khác cho Lithium" }));
     expect(screen.getByRole("menuitem", { name: "Gỡ" })).toHaveProperty("disabled", true);
+  });
+
+  it("server đổi trạng thái thì tải lại danh sách, nhãn chờ khởi động lại mất", async () => {
+    let waiting = true;
+    mockFetch((url) =>
+      url === "/api/v1/servers/A/content"
+        ? Response.json({ kind: "mods", files: [{ ...sampleFiles[0], needs_restart: waiting }], pending: [] })
+        : undefined,
+    );
+    const view = renderPage({ ...stoppedFabric, state: "running" });
+    expect(await screen.findByText("Chờ khởi động lại")).toBeTruthy();
+    waiting = false;
+    view.rerender({ ...stoppedFabric, state: "starting" });
+    await waitFor(() => expect(screen.queryByText("Chờ khởi động lại")).toBeNull());
   });
 
   it("server đang cài thì khóa cả Thêm mod và Tải lên", async () => {

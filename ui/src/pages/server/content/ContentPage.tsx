@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowUpCircle, ExternalLink, Package, Plus, RotateCw, Trash2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 
@@ -58,6 +58,10 @@ export function ContentPage() {
     void queryClient.invalidateQueries({ queryKey: [...SERVERS_KEY, server.id] });
     void queryClient.invalidateQueries({ queryKey: [...SERVERS_KEY, server.id, "preflight"] });
   }, [queryClient, server.id]);
+  // Process mới nạp hết mod: tải lại để nhãn "Chờ khởi động lại" mất ngay sau khi khởi động lại.
+  useEffect(() => {
+    void queryClient.invalidateQueries({ queryKey: contentKey(server.id) });
+  }, [queryClient, server.id, server.state]);
 
   const [removing, setRemoving] = useState<InstalledContent | null>(null);
   const [report, setReport] = useState<UpdateReport | null>(null);
