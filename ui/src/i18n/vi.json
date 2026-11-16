@@ -238,7 +238,25 @@
     "resume": "Tiếp tục",
     "clear": "Xóa màn hình",
     "newLines_one": "{{count}} dòng mới",
-    "newLines_other": "{{count}} dòng mới"
+    "newLines_other": "{{count}} dòng mới",
+    "status": {
+      "connecting": "Đang kết nối…",
+      "open": "Đã kết nối",
+      "reconnecting": "Mất kết nối, đang thử lại…"
+    },
+    "quick": {
+      "list": "Ai đang chơi",
+      "save": "Lưu thế giới",
+      "day": "Chuyển ban ngày",
+      "clearWeather": "Tắt mưa",
+      "say": "Thông báo…"
+    },
+    "say": {
+      "title": "Gửi thông báo cho mọi người",
+      "label": "Lời nhắn",
+      "hint": "Hiện trong khung chat của mọi người đang chơi, kèm chữ [Server] phía trước.",
+      "placeholder": "Server sẽ khởi động lại sau 5 phút"
+    }
   },
   "game": {
     "common": "Cài đặt thường dùng",

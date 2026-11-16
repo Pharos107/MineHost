@@ -238,7 +238,25 @@
     "resume": "Resume",
     "clear": "Clear screen",
     "newLines_one": "{{count}} new line",
-    "newLines_other": "{{count}} new lines"
+    "newLines_other": "{{count}} new lines",
+    "status": {
+      "connecting": "Connecting…",
+      "open": "Connected",
+      "reconnecting": "Disconnected, retrying…"
+    },
+    "quick": {
+      "list": "Who's online",
+      "save": "Save world",
+      "day": "Make it day",
+      "clearWeather": "Clear weather",
+      "say": "Announce…"
+    },
+    "say": {
+      "title": "Send an announcement",
+      "label": "Message",
+      "hint": "Shows in every online player's chat, prefixed with [Server].",
+      "placeholder": "Server restarts in 5 minutes"
+    }
   },
   "game": {
     "common": "Common settings",

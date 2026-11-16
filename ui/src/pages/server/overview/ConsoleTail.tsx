@@ -5,9 +5,9 @@ import { useNavigate } from "react-router";
 
 import type { ConsoleLine, Server } from "../../../api/client";
 import { live } from "../../../api/ws";
-import { Button, Card, Terminal, type TerminalHandle, type TerminalTone } from "../../../ui";
+import { Button, Card, Terminal, type TerminalHandle } from "../../../ui";
+import { lineTone } from "../consoleBuffer";
 
-const TONE: Record<ConsoleLine["stream"], TerminalTone> = { stdout: "normal", stderr: "danger", stdin: "primary" };
 /** Chỉ để xem nhanh; muốn cuộn xa hơn thì mở trang Console. */
 const KEEP_LINES = 200;
 
@@ -23,7 +23,7 @@ export function ConsoleTail({ server }: { server: Server }) {
     return live.subscribe(`server.${server.id}.console`, (message) => {
       if (message.error) return;
       const line = message.data as ConsoleLine;
-      terminal.current?.write(line.stream === "stdin" ? `> ${line.text}` : line.text, TONE[line.stream]);
+      terminal.current?.write(line.stream === "stdin" ? `> ${line.text}` : line.text, lineTone(line.stream, line.text));
     });
   }, [server.id]);
 
