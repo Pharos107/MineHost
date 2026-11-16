@@ -33,9 +33,14 @@ CPU / RAM, nút bật / tắt ở thanh bên.
   - Hàng nút lệnh nhanh trên ô lệnh: Ai đang chơi (`list`), Lưu thế giới (`save-all`), Chuyển ban
     ngày (`time set day`), Tắt mưa (`weather clear`), Thông báo… (hộp nhập lời nhắn, gửi `say`).
     Server tắt thì khóa.
+  - Lọc theo mức cạnh ô lọc chữ: Tất cả, Cảnh báo (WARN trở lên), Lỗi, Chat (tin nhắn, người vào / rời).
+  - Nút "Tải log": lưu các dòng trình duyệt đang giữ (tối đa 5.000) thành `<tên>-console-<ngày-giờ>.txt`,
+    bỏ mã màu. Không hỏi server.
+  - Gợi ý lệnh khi gõ tên lệnh: 25 lệnh vanilla hay dùng kèm cách gõ và mô tả. Mũi tên chọn, Tab điền,
+    Esc đóng; Enter luôn gửi đúng chữ đang có; ô trống thì mũi tên vẫn là lịch sử lệnh.
 
 Component: `StatTile` thêm `meter`, `NavSection` thêm `actions` và `extra`, `PageHeader` thêm `eyebrow`,
-`AppShell` thêm `navEnd`, `Terminal` thêm `size="sm"`, `size="fill"` và tông `warning`, thêm `Columns` (1, 2 hoặc 3 cột).
+`AppShell` thêm `navEnd`, `Terminal` thêm `size="sm"`, `size="fill"` và tông `warning`, thêm `SuggestBox`, thêm `Columns` (1, 2 hoặc 3 cột).
 
 ## Tiêu chí chấp nhận
 
@@ -45,7 +50,7 @@ Component: `StatTile` thêm `meter`, `NavSection` thêm `actions` và `extra`, `
 - Thẻ Thông tin server hiện đúng từng cài đặt; lịch sao lưu đọc thành câu; dòng console mới hiện ở thẻ
   Console gần đây; có biểu đồ Người chơi (Vitest).
 - Nhận đúng mức WARN / ERROR theo từng kiểu log; nút lệnh nhanh và Thông báo gửi đúng lệnh; trạng thái
-  kết nối đổi theo socket (Vitest).
+  kết nối đổi theo socket; lọc theo mức đúng; gợi ý lệnh và Tab điền; tên file log an toàn (Vitest).
 - Đổi sang "Từng hàng" thì lần mở sau vẫn là từng hàng; hộp chi tiết có trung bình, cao nhất, thấp nhất (Vitest).
 - Xem tay ở chế độ sáng, tối và bề ngang 375 px: không cuộn ngang.
 

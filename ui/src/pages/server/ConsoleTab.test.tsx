@@ -122,4 +122,24 @@ describe("ConsoleTab", () => {
     await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Gửi" }));
     await vi.waitFor(() => expect(sent).toEqual(["save-all", "say Bảo trì lúc 22h"]));
   });
+
+  it("lọc theo mức: Lỗi chỉ còn dòng ERROR", async () => {
+    renderConsole();
+    emit("[10:20:11 ERROR]: boom");
+    await userEvent.click(screen.getByRole("radio", { name: "Lỗi" }));
+    expect(shownLines()).toEqual(["[10:20:11 ERROR]: boom"]);
+    await userEvent.click(screen.getByRole("radio", { name: "Tất cả" }));
+    expect(shownLines()).toHaveLength(4);
+  });
+
+  it("gõ tên lệnh thì có gợi ý, Tab điền tên lệnh", async () => {
+    mockCommands();
+    renderConsole();
+    const input = screen.getByRole("combobox", { name: "Lệnh" });
+    await userEvent.type(input, "gamem");
+    expect(screen.getByRole("option").textContent).toContain("Đổi chế độ chơi");
+    await userEvent.keyboard("{Tab}");
+    expect((input as HTMLInputElement).value).toBe("gamemode ");
+    expect(screen.queryByRole("listbox")).toBeNull();
+  });
 });

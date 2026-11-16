@@ -34,6 +34,7 @@ import { NavSectionDemo } from "./GalleryNav";
 import { ChartSection } from "./GalleryCharts";
 import { FilesSection } from "./GalleryFiles";
 import { FormSection, OverlaySection, ProgressSection } from "./GallerySections";
+import { SuggestSection } from "./GallerySuggest";
 import { TableSection } from "./GalleryTable";
 
 const STATES: ServerState[] = ["installing", "stopped", "starting", "running", "stopping", "crashed", "broken"];
@@ -55,6 +56,7 @@ export function Gallery() {
         <CardSection />
         <TableSection />
         <FormSection />
+        <SuggestSection />
         <ProgressSection />
         <OverlaySection />
         <FilesSection />

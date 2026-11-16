@@ -268,6 +268,117 @@
       "label": "Lời nhắn",
       "hint": "Hiện trong khung chat của mọi người đang chơi, kèm chữ [Server] phía trước.",
       "placeholder": "Server sẽ khởi động lại sau 5 phút"
+    },
+    "download": "Tải log",
+    "hintsLabel": "Gợi ý lệnh",
+    "level": {
+      "label": "Lọc theo mức",
+      "all": "Tất cả",
+      "warn": "Cảnh báo",
+      "error": "Lỗi",
+      "chat": "Chat"
+    },
+    "hints": {
+      "list": {
+        "usage": "list",
+        "desc": "Xem ai đang chơi"
+      },
+      "say": {
+        "usage": "say <lời nhắn>",
+        "desc": "Gửi thông báo cho mọi người"
+      },
+      "msg": {
+        "usage": "msg <người chơi> <lời nhắn>",
+        "desc": "Nhắn riêng một người"
+      },
+      "tp": {
+        "usage": "tp <người chơi> <đích>",
+        "desc": "Dịch chuyển người chơi"
+      },
+      "give": {
+        "usage": "give <người chơi> <vật phẩm> [số lượng]",
+        "desc": "Tặng vật phẩm"
+      },
+      "gamemode": {
+        "usage": "gamemode <survival|creative|adventure|spectator> [người chơi]",
+        "desc": "Đổi chế độ chơi"
+      },
+      "difficulty": {
+        "usage": "difficulty <peaceful|easy|normal|hard>",
+        "desc": "Đổi độ khó"
+      },
+      "time": {
+        "usage": "time set <day|night|noon|midnight>",
+        "desc": "Đổi giờ trong game"
+      },
+      "weather": {
+        "usage": "weather <clear|rain|thunder>",
+        "desc": "Đổi thời tiết"
+      },
+      "gamerule": {
+        "usage": "gamerule <luật> [giá trị]",
+        "desc": "Xem hoặc đổi luật game"
+      },
+      "op": {
+        "usage": "op <người chơi>",
+        "desc": "Cho quyền quản trị"
+      },
+      "deop": {
+        "usage": "deop <người chơi>",
+        "desc": "Bỏ quyền quản trị"
+      },
+      "kick": {
+        "usage": "kick <người chơi> [lý do]",
+        "desc": "Đá khỏi server"
+      },
+      "ban": {
+        "usage": "ban <người chơi> [lý do]",
+        "desc": "Cấm vào server"
+      },
+      "pardon": {
+        "usage": "pardon <người chơi>",
+        "desc": "Bỏ cấm"
+      },
+      "whitelist": {
+        "usage": "whitelist <add|remove|list|on|off> [người chơi]",
+        "desc": "Quản lý danh sách được vào"
+      },
+      "saveAll": {
+        "usage": "save-all",
+        "desc": "Lưu thế giới ngay"
+      },
+      "kill": {
+        "usage": "kill <mục tiêu>",
+        "desc": "Giết người chơi hoặc sinh vật"
+      },
+      "effect": {
+        "usage": "effect give <người chơi> <hiệu ứng> [giây]",
+        "desc": "Cho hiệu ứng"
+      },
+      "xp": {
+        "usage": "xp add <người chơi> <số> [levels]",
+        "desc": "Cộng kinh nghiệm"
+      },
+      "clear": {
+        "usage": "clear <người chơi> [vật phẩm]",
+        "desc": "Xóa đồ trong túi"
+      },
+      "spawnpoint": {
+        "usage": "spawnpoint [người chơi]",
+        "desc": "Đặt điểm hồi sinh của người chơi"
+      },
+      "setworldspawn": {
+        "usage": "setworldspawn [x y z]",
+        "desc": "Đặt điểm hồi sinh của thế giới"
+      },
+      "seed": {
+        "usage": "seed",
+        "desc": "Xem seed của thế giới"
+      },
+      "locate": {
+        "usage": "locate structure <công trình>",
+        "desc": "Tìm công trình gần nhất"
+      }
     }
   },
   "game": {

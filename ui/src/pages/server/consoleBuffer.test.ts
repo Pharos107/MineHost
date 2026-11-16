@@ -43,3 +43,18 @@ describe("mức của dòng log", () => {
     expect(lineTone("stdin", "list")).toBe("primary");
   });
 });
+
+describe("lọc theo mức", () => {
+  it("Cảnh báo gồm cả lỗi; Chat là tin nhắn và người vào / rời", async () => {
+    const { matchesLevel } = await import("./consoleBuffer");
+    const warn = "[10:20:11 WARN]: Can't keep up!";
+    const error = "[10:20:11] [Server thread/ERROR]: boom";
+    const chat = "[10:19:40] [Server thread/INFO]: <Steve> xin chào";
+    const join = "[10:19:02 INFO]: Steve joined the game";
+    const info = "[10:20:30 INFO]: Saving chunks";
+    expect([warn, error, chat, join, info].filter((l) => matchesLevel(l, "warn"))).toEqual([warn, error]);
+    expect([warn, error, chat, join, info].filter((l) => matchesLevel(l, "error"))).toEqual([error]);
+    expect([warn, error, chat, join, info].filter((l) => matchesLevel(l, "chat"))).toEqual([chat, join]);
+    expect(matchesLevel(info, "all")).toBe(true);
+  });
+});

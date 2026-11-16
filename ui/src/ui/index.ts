@@ -34,6 +34,7 @@ export { Spinner } from "./Spinner";
 export { Stack, type Space } from "./Stack";
 export { StatGrid, StatTile } from "./StatTile";
 export { StatStrip, type StripItem } from "./StatStrip";
+export { SuggestBox, type Suggestion } from "./SuggestBox";
 export { Switch } from "./Switch";
 export { Tabs, type TabItem } from "./Tabs";
 export { filterRows } from "./table-utils";
