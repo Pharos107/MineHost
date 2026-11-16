@@ -48,3 +48,17 @@ export function matchesFilter(text: string, filter: string): boolean {
   if (query === "") return true;
   return text.replace(ANSI, "").toLowerCase().includes(query);
 }
+
+export type LevelFilter = "all" | "warn" | "error" | "chat";
+
+// Chat: `<Steve> xin chào` (có thể kèm `[Not Secure]`), vào / rời server.
+const CHAT = /\]:\s*(\[Not Secure\]\s*)?<[^>]+>|\]:\s*\S+ (joined|left) the game/;
+
+/** "Cảnh báo" gồm cả lỗi (từ WARN trở lên); "Chat" là tin nhắn và người vào / rời. */
+export function matchesLevel(text: string, level: LevelFilter): boolean {
+  if (level === "all") return true;
+  const plain = text.replace(ANSI, "");
+  if (level === "chat") return CHAT.test(plain);
+  const found = lineLevel(plain);
+  return level === "error" ? found === "error" : found !== "info";
+}

@@ -256,6 +256,117 @@
       "label": "Message",
       "hint": "Shows in every online player's chat, prefixed with [Server].",
       "placeholder": "Server restarts in 5 minutes"
+    },
+    "download": "Download log",
+    "hintsLabel": "Command suggestions",
+    "level": {
+      "label": "Filter by level",
+      "all": "All",
+      "warn": "Warnings",
+      "error": "Errors",
+      "chat": "Chat"
+    },
+    "hints": {
+      "list": {
+        "usage": "list",
+        "desc": "See who's online"
+      },
+      "say": {
+        "usage": "say <message>",
+        "desc": "Message everyone"
+      },
+      "msg": {
+        "usage": "msg <player> <message>",
+        "desc": "Message one player"
+      },
+      "tp": {
+        "usage": "tp <player> <target>",
+        "desc": "Teleport a player"
+      },
+      "give": {
+        "usage": "give <player> <item> [count]",
+        "desc": "Give an item"
+      },
+      "gamemode": {
+        "usage": "gamemode <survival|creative|adventure|spectator> [player]",
+        "desc": "Change game mode"
+      },
+      "difficulty": {
+        "usage": "difficulty <peaceful|easy|normal|hard>",
+        "desc": "Change difficulty"
+      },
+      "time": {
+        "usage": "time set <day|night|noon|midnight>",
+        "desc": "Set the time"
+      },
+      "weather": {
+        "usage": "weather <clear|rain|thunder>",
+        "desc": "Set the weather"
+      },
+      "gamerule": {
+        "usage": "gamerule <rule> [value]",
+        "desc": "View or change a game rule"
+      },
+      "op": {
+        "usage": "op <player>",
+        "desc": "Make a player an operator"
+      },
+      "deop": {
+        "usage": "deop <player>",
+        "desc": "Remove operator status"
+      },
+      "kick": {
+        "usage": "kick <player> [reason]",
+        "desc": "Kick a player"
+      },
+      "ban": {
+        "usage": "ban <player> [reason]",
+        "desc": "Ban a player"
+      },
+      "pardon": {
+        "usage": "pardon <player>",
+        "desc": "Unban a player"
+      },
+      "whitelist": {
+        "usage": "whitelist <add|remove|list|on|off> [player]",
+        "desc": "Manage the whitelist"
+      },
+      "saveAll": {
+        "usage": "save-all",
+        "desc": "Save the world now"
+      },
+      "kill": {
+        "usage": "kill <target>",
+        "desc": "Kill a player or entity"
+      },
+      "effect": {
+        "usage": "effect give <player> <effect> [seconds]",
+        "desc": "Give an effect"
+      },
+      "xp": {
+        "usage": "xp add <player> <amount> [levels]",
+        "desc": "Add experience"
+      },
+      "clear": {
+        "usage": "clear <player> [item]",
+        "desc": "Clear a player's inventory"
+      },
+      "spawnpoint": {
+        "usage": "spawnpoint [player]",
+        "desc": "Set a player's spawn point"
+      },
+      "setworldspawn": {
+        "usage": "setworldspawn [x y z]",
+        "desc": "Set the world spawn"
+      },
+      "seed": {
+        "usage": "seed",
+        "desc": "Show the world seed"
+      },
+      "locate": {
+        "usage": "locate structure <structure>",
+        "desc": "Find the nearest structure"
+      }
     }
   },
   "game": {

@@ -49,6 +49,7 @@ khoảng cách; mọi giá trị đó là token trong `ui/src/ui/tokens.css`.
 | | `Tabs` (phím mũi tên chuyển tab) | chi tiết server |
 | | `Menu` (nút "…", Esc và bấm ra ngoài để đóng) | Buộc dừng |
 | | `CopyField` (giá trị kèm nút chép vào clipboard, báo "Đã chép") | địa chỉ LAN |
+| | `SuggestBox` (ô nhập kèm danh sách gợi ý mở lên trên, `listbox` cho trình đọc màn hình) | ô lệnh console |
 | Bảng (13d) | `DataTable` (cột khai báo, sắp xếp, tìm không dấu, thao tác theo hàng, dạng thẻ khi hẹp), `SearchInput` | danh sách server; P2: file, backup, người chơi |
 | Nội dung (P3) | `ProjectCard` (ảnh, tên, mô tả một dòng, số lượt tải, nhãn loader và phiên bản) | tìm mod, tìm modpack |
 
