@@ -58,19 +58,20 @@ test("sửa server.properties rồi mở lại thấy nội dung mới", async (
   await page.goto(`/servers/${id}/files`);
   await page.getByRole("link", { name: "server.properties" }).click();
 
+  // Trình sửa là CodeMirror (spec trang Tệp, mục 1): vùng `contenteditable`, không phải textarea.
   const editor = page.getByRole("textbox", { name: "Nội dung server.properties" });
-  await expect(editor).toHaveValue(/motd=/);
-  const original = await editor.inputValue();
+  await expect(editor).toContainText("motd=");
+  const original = await editor.innerText();
   const edited = original.replace(/^motd=.*$/m, "motd=Đã sửa từ e2e");
   await editor.fill(edited);
-  await expect(page.getByText("Có thay đổi chưa lưu.")).toBeVisible();
-  await page.getByRole("button", { name: "Lưu" }).click();
-  await expect(page.getByText("Đã lưu.")).toBeVisible();
+  await expect(page.getByText("Chưa lưu", { exact: true })).toBeVisible();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByText("Đã lưu", { exact: true })).toBeVisible();
 
   // Quay lại danh sách rồi mở lại, và tải lại trang để chắc nội dung đọc từ đĩa chứ không từ bộ nhớ đệm.
   await page.getByRole("button", { name: "Quay lại thư mục" }).click();
   await page.getByRole("link", { name: "server.properties" }).click();
-  await expect(editor).toHaveValue(/^motd=Đã sửa từ e2e$/m);
+  await expect(editor).toContainText("motd=Đã sửa từ e2e");
   await page.reload();
-  await expect(page.getByRole("textbox", { name: "Nội dung server.properties" })).toHaveValue(/^motd=Đã sửa từ e2e$/m);
+  await expect(page.getByRole("textbox", { name: "Nội dung server.properties" })).toContainText("motd=Đã sửa từ e2e");
 });
