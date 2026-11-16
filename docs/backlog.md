@@ -44,6 +44,13 @@ Mỗi dòng: ý tưởng, vì sao đáng làm, nguồn (ai đề xuất hoặc t
 | Cấp và kiểm tra cổng phụ (UDP của Geyser, voice chat, bản đồ web) | Hiện chỉ quản lý cổng game | Rà soát C6 | P3, P4 |
 | TLS cho giao diện qua LAN | Mật khẩu admin đang đi qua HTTP | Spec P2 mục 3.4; rà soát A3 | Đang đề nghị kéo về P2 |
 
+## Mod và nội dung
+
+| Ý tưởng | Vì sao | Nguồn | Gợi ý |
+| --- | --- | --- | --- |
+| Hàng đợi thay đổi mod khi server đang chạy: bật/tắt, gỡ, cập nhật được ghi lại rồi áp dụng lúc server tắt | Hiện chỉ thêm được mod mới khi đang chạy; jar đang mở không thay được (nhất là trên Windows) | [Spec trình duyệt mod](specs/p3-trinh-duyet-mod.md), mục Không làm | Sau P3 |
+| Thư viện ảnh, changelog từng bản, danh sách mod trong một modpack ở khung chi tiết | Giúp chọn mod và chọn bản pack dễ hơn | Như trên | Sau P3 |
+
 ## Từ spec gốc (P5)
 
 Nhiều tài khoản và phân quyền theo server; nhật ký thao tác; API token; 2FA; MCP để AI điều khiển

@@ -1,6 +1,7 @@
 # Kế hoạch PR cho P3
 
-Spec: [p3-mod-va-modpack.md](p3-mod-va-modpack.md). P3 chia thành 38 PR trong 8 nhóm. Mỗi PR làm một
+Spec: [p3-mod-va-modpack.md](p3-mod-va-modpack.md). P3 chia thành 38 PR trong 8 nhóm, thêm PR-39..46 theo
+[spec trình duyệt mod](p3-trinh-duyet-mod.md) (làm trước PR-38). Mỗi PR làm một
 việc, khoảng 400 dòng trở xuống (không tính fixture và code sinh tự động), có test, CI xanh mới merge.
 
 Một bản phát hành: `v0.5.0` (PR-38) chốt cả P3. Kế hoạch ban đầu có thêm `v0.4.0` sau nhóm D; ngày
@@ -52,6 +53,14 @@ chính PR ấy.
 | 35 | Bộ nhớ đệm tải về, trạng thái giới hạn tài nguyên | Đã merge | [#107](https://github.com/Pharos107/MineHost/pull/107) |
 | 36 | Runner tự host cho modpack | Đã merge | [#112](https://github.com/Pharos107/MineHost/pull/112) |
 | 37 | Workflow 20 modpack | Đang làm: đủ 20 pack (37a, 37b), chờ hai đêm liền xanh | [#113](https://github.com/Pharos107/MineHost/pull/113), [#126](https://github.com/Pharos107/MineHost/pull/126) |
+| 39 | Spec trình duyệt mod, làm gọn trang Mod ([spec](p3-trinh-duyet-mod.md)) | Đang làm | |
+| 40 | Thêm mod khi server đang chạy | Chưa bắt đầu | |
+| 41 | Cài nhiều mục trong một Job, sắp xếp khi tìm | Chưa bắt đầu | |
+| 42 | Mô tả CurseForge, tìm theo loader + Minecraft, tạo server kèm mod | Chưa bắt đầu | |
+| 43 | Trang Mod gọn, kéo thả vào bảng | Chưa bắt đầu | |
+| 44 | Trình duyệt mod có khung chi tiết, danh sách chờ | Chưa bắt đầu | |
+| 45 | Bước Mod khi tạo server | Chưa bắt đầu | |
+| 46 | Trang Từ modpack dùng trình duyệt | Chưa bắt đầu | |
 | 38 | Phát hành `v0.5.0` | Chưa bắt đầu | |
 
 Ngoài kế hoạch, sửa lỗi tìm ra khi chạy thử modpack thật cho PR-37: [#108](https://github.com/Pharos107/MineHost/pull/108), [#109](https://github.com/Pharos107/MineHost/pull/109), [#110](https://github.com/Pharos107/MineHost/pull/110), [#111](https://github.com/Pharos107/MineHost/pull/111), [#114](https://github.com/Pharos107/MineHost/pull/114), [#115](https://github.com/Pharos107/MineHost/pull/115), [#117](https://github.com/Pharos107/MineHost/pull/117), [#123](https://github.com/Pharos107/MineHost/pull/123), [#124](https://github.com/Pharos107/MineHost/pull/124). Theo yêu cầu của chủ dự án: mở giao diện qua Tailscale khi bật LAN [#116](https://github.com/Pharos107/MineHost/pull/116).
