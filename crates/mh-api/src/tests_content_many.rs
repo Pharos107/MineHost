@@ -109,7 +109,7 @@ async fn browse_by_loader_and_create_server_with_content() {
         "loader=fabric",
         "minecraft=1.21.4",
         "loader=nope&minecraft=1.21.4",
-        "loader=fabric&minecraft=x y",
+        "loader=fabric&minecraft=x%20y",
     ] {
         let (status, _) = api.get(&format!("{base}/search?q=&{bad}")).await;
         assert_eq!(status, StatusCode::BAD_REQUEST, "{bad}");
