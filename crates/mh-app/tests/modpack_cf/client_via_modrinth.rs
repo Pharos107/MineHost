@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use mh_app::{JobState, ModpackRequest, ModpackSourceInput};
+use mh_app::{JobState, ModpackRequest, ModpackSourceInput, ModpackSummary};
 use mh_core::{GamePort, ServerName};
 use mh_store::{ContentManifest, ServerStore};
 use serde_json::{Value, json};
@@ -52,6 +52,7 @@ async fn manifest_mod_unsupported_on_modrinth_server_is_disabled() {
             (306612, 5800000, true),
             (869524, 5800001, true),
             (999001, 5800999, true),
+            (999002, 5801000, true),
         ],
         "overrides",
     );
@@ -96,6 +97,17 @@ async fn manifest_mod_unsupported_on_modrinth_server_is_disabled() {
         None,
         false,
     );
+    // Resource pack bị xếp vào mục mod trên CurseForge: cấm phân phối nhưng server không nạp `.zip`.
+    let zip_file = file_json(
+        5801000,
+        999002,
+        "Pretty Textures.zip",
+        None,
+        &"e".repeat(40),
+        4096,
+        None,
+        false,
+    );
     mount_mod(
         &server,
         910002,
@@ -111,11 +123,13 @@ async fn manifest_mod_unsupported_on_modrinth_server_is_disabled() {
             (5800000, fapi_file),
             (5800001, media_file),
             (5800999, blocked_file),
+            (5801000, zip_file),
         ]),
         vec![
             mod_json(306612, "fabric-api", "Fabric API", 6, true),
             mod_json(869524, "watermedia", "WATERMeDIA", 6, true),
             mod_json(999001, "restricted-client", "Restricted Client", 6, false),
+            mod_json(999002, "pretty-textures", "Pretty Textures", 6, false),
         ],
     )
     .await;
@@ -172,6 +186,9 @@ async fn manifest_mod_unsupported_on_modrinth_server_is_disabled() {
         .unwrap();
     let snap = finish(&app, created.job_id).await;
     assert_eq!(snap.state, JobState::Succeeded, "{:?}", snap.result);
+    let summary: ModpackSummary = serde_json::from_value(snap.result.unwrap()).unwrap();
+    assert_eq!(summary.skipped_client, ["mods/Pretty Textures.zip"]);
+    assert_eq!(summary.pending_curseforge, ["mods/restricted-client.jar"]);
 
     let paths = ServerStore::new(tmp.path().join("servers"), tmp.path().join("trash"))
         .paths(created.server_id);
