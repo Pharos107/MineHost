@@ -10,13 +10,18 @@
 //! - `MINEHOST_MODPACK_IGNORE_PREFLIGHT=1`: chỉ để chẩn đoán khi preflight chặn một pack: bật bất
 //!   chấp preflight để xem loader thật có từ chối không (chặn đúng) hay vẫn tới `Done` (chặn sai).
 
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::print_stderr)]
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::print_stderr,
+    clippy::panic
+)]
 
 mod support;
 
 use std::io::Write;
 use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use serde::Deserialize;
@@ -109,8 +114,13 @@ fn run_pack(pack: &Pack) -> Outcome {
     );
     let id = created["server_id"].as_str().unwrap().to_owned();
     let job = wait_job(&controller, created["job_id"].as_u64().unwrap(), pack);
+    // Bước tải tay file cấm phân phối có test tích hợp riêng (spec P3 mục 9.2); pack ở đây phải tự đủ.
+    let pending = &job["result"]["pending_curseforge"];
+    assert!(
+        pending.as_array().is_none_or(Vec::is_empty),
+        "còn file CurseForge chờ tải tay: {pending}"
+    );
     out.install_s = started.elapsed().as_secs_f64();
-    out.mods = job["result"]["installed_mods"].as_u64().unwrap_or(0);
     out.skipped_client = job["result"]["skipped_client"]
         .as_array()
         .map_or(0, |a| a.len() as u64);
@@ -133,6 +143,9 @@ fn run_pack(pack: &Pack) -> Outcome {
     out.done_s = started.elapsed().as_secs_f64();
     let pid = u32::try_from(running["pid"].as_u64().unwrap()).unwrap();
     out.peak_rss_mb = peak_rss_mb(pid);
+    // Bắt lỗi kiểu server pack chỉ có script tải mod lúc chạy: server vẫn lên mà không có mod.
+    out.mods = count_jars(&data.path().join("servers").join(&id).join("server/mods"));
+    assert!(out.mods > 0, "server không có mod nào trong mods/");
 
     controller.post(&format!("/servers/{id}/actions/stop"), json!({}));
     controller.wait_state(&id, "stopped", Duration::from_secs(300));
@@ -151,12 +164,16 @@ fn wait_job(controller: &Controller, job: u64, pack: &Pack) -> Value {
         (job["state"] != "running" && job["state"] != "queued").then_some(job)
     });
     assert_eq!(state["state"], "succeeded", "Job lỗi: {state}");
-    let pending = &state["result"]["pending_curseforge"];
-    assert!(
-        pending.as_array().is_none_or(Vec::is_empty),
-        "còn file CurseForge chờ tải tay: {pending}"
-    );
     state
+}
+
+fn count_jars(dir: &Path) -> u64 {
+    std::fs::read_dir(dir).map_or(0, |entries| {
+        entries
+            .flatten()
+            .filter(|e| e.path().extension().is_some_and(|x| x == "jar"))
+            .count() as u64
+    })
 }
 
 /// RSS cao nhất của process (`VmHWM`), để chỉnh công thức RAM đề xuất (spec P3 mục 3.8).

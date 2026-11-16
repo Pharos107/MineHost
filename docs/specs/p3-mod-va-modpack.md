@@ -216,7 +216,7 @@ trả, UI không tự tính.
 
 Repo private nên runner của GitHub chỉ có khoảng 7 GB RAM và giới hạn phút chạy. Workflow `modpacks`
 chạy trên một runner tự host trên máy Linux thử nghiệm, lúc 04:00 giờ Việt Nam, mỗi lần một pack.
-Runner chạy dưới unit systemd riêng có `MemoryMax=12G`, `CPUWeight=20`, `Nice=10` để không ảnh hưởng
+Runner chạy dưới unit systemd riêng có `MemoryMax=12G`, `CPUWeight=20`, `Nice=10`, dùng tối đa nửa số nhân để không ảnh hưởng
 dịch vụ khác trên máy. Cách cài runner ghi ở `docs/ops/runner-modpack.md` (PR-36).
 
 ## 4. Mô hình dữ liệu
@@ -507,9 +507,14 @@ Chỉ thêm một component; phần còn lại dùng cái đã có: `SegmentedCo
 
 Chốt ở PR-37 trong file `tests/modpacks.toml` (pack, bản cố định, RAM, thời gian chờ `Done`), sau
 khi thử từng pack trên runner. Tiêu chí chọn: đủ bốn loader (Fabric ≥ 6, NeoForge ≥ 5, Forge ≥ 5,
-Quilt ≥ 1), cả Modrinth (≥ 10) và CurseForge (≥ 6), trải từ 1.12.2 tới bản Minecraft mới nhất có
-pack, ít nhất 3 pack có mod chỉ client cần tắt, ít nhất 1 pack CurseForge có mod cấm phân phối (bước
-tải tay dùng file đã cache sẵn trên runner), ít nhất 2 pack trên 200 mod. Mỗi pack cần tối đa 10 GB RAM.
+Quilt ≥ 1), cả Modrinth (≥ 10) và CurseForge (≥ 5), trải từ 1.12.2 tới bản Minecraft mới nhất có
+pack, ít nhất 3 pack có mod chỉ client cần tắt, ít nhất 2 pack trên 200 mod. Mỗi pack cần tối đa 10 GB RAM.
+
+Sửa ngày 2026-11-16 (bản đầu đòi CurseForge ≥ 6 và 1 pack CurseForge có mod cấm phân phối): pack có
+mod cấm phân phối luôn phải dựng từ `manifest.json`, tức bản cho client. Monifactory và Craftoria đều
+còn mod chỉ client mà không nguồn nào ở mục 3.5 nhận ra (bản port Forge của CIT Resewn; Just Enough
+Mekanism Multiblocks cần JEI), nên không khởi động tới `Done` nếu không sửa tay. Bước tải tay được kiểm
+bằng test tích hợp với API giả (`crates/mh-app/tests/modpack_cf`).
 
 Workflow ghi thời gian cài, thời gian tới `Done` và RSS lớn nhất vào artifact, để chỉnh công thức RAM
 ở mục 3.8 và mục 5.7.

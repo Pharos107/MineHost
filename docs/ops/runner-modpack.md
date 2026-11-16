@@ -22,7 +22,7 @@ bị nhốt trong một unit systemd có giới hạn chặt.
 | Thư mục | Mọi thứ trong `/srv/mh-runner` (runner, Rust, cache Java và modpack) | `ProtectSystem=strict`: ngoài thư mục này chỉ đọc được |
 | `/home` | Không thấy (`ProtectHome=yes`) | Dữ liệu thật trên máy nằm trong `/home` |
 | RAM | `MemoryMax=12G`, `MemorySwapMax=0` | Vượt thì kernel kill test, không làm server thật bị hết RAM hay bị đẩy sang swap |
-| CPU, đĩa | `CPUWeight=20`, `IOWeight=20`, `Nice=10` | Khi tranh tài nguyên, runner luôn nhường |
+| CPU, đĩa | `CPUWeight=20`, `IOWeight=20`, `Nice=10`; `AllowedCPUs` và `CPUQuota` bằng nửa số nhân | Khi tranh tài nguyên, runner luôn nhường. Máy có daemon `watchdog` khởi động lại cả máy khi load 1 phút vượt 24; ngày 2026-11-15 Monifactory lúc khởi động đẩy load lên 28 và máy bị khởi động lại giữa lượt chạy |
 | Mạng | Chỉ Internet và localhost; chặn LAN, Docker, Tailscale (`IPAddressDeny`) | Test không với được thiết bị khác trong nhà |
 | Loopback | Kết nối mới của user `mh-runner` chỉ tới DNS (53) và cổng test 25610, 25611 (bảng nftables `inet mh_runner`, nạp khi unit bật, gỡ khi tắt) | Dịch vụ chỉ nghe ở `127.0.0.1` trên máy (MineHost thật ở 7878, password manager, RCON) không bị code trong workflow gọi tới |
 | Process | `KillMode=control-group`, `TasksMax=8192` | Dừng runner là dừng hết Java của test |
@@ -74,6 +74,8 @@ Script dừng và xóa unit, hủy đăng ký runner trên GitHub, xóa user `mh
 
 - Xem log: `journalctl -u mh-runner -n 200`.
 - Server thật bị chậm lúc 04:00: hạ `CPUWeight` hoặc dời giờ chạy trong `modpacks.yml`.
+- Sửa giới hạn trong script thì áp vào máy bằng `sudo bash scripts/modpack-runner.sh update` (không
+  cần token; job đang chạy bị hủy).
 - Test bị kill vì RAM (`memory.events` có `oom_kill`): pack đó cần quá 12 GB, giảm RAM của pack
   trong `tests/modpacks.toml` hoặc bỏ pack khỏi danh sách.
 - Hết chỗ đĩa: xóa `/srv/mh-runner/modpack-data/cache` (lần chạy sau tải lại từ đầu).

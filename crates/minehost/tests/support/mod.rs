@@ -190,6 +190,24 @@ impl Controller {
         }
         text
     }
+
+    /// Server treo hay crash thì lý do nằm trong log của Minecraft, không phải của controller.
+    fn print_server_logs(&self) {
+        let Ok(servers) = std::fs::read_dir(self.dir.join("servers")) else {
+            return;
+        };
+        for server in servers.flatten() {
+            let path = server.path().join("server/logs/latest.log");
+            let Ok(log) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            let tail: Vec<&str> = log.lines().rev().take(60).collect();
+            eprintln!("--- {} (cuối) ---", path.display());
+            for line in tail.iter().rev() {
+                eprintln!("{line}");
+            }
+        }
+    }
 }
 
 impl Drop for Controller {
@@ -202,6 +220,7 @@ impl Drop for Controller {
             for line in tail.iter().rev() {
                 eprintln!("{line}");
             }
+            self.print_server_logs();
         }
         if let Some(mut child) = self.child.take() {
             let _ = child.kill();

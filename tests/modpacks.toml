@@ -7,8 +7,8 @@
 # gian chờ từ lúc bấm bật tới `Done`; `install_timeout_s` (mặc định 1800) cho Job cài; `note` ghi vì
 # sao chọn pack, hiện trong báo cáo.
 #
-# Mỗi pack dưới đây đã chạy thử tới `Done` trên máy của runner (dangserver) ngày 2026-11-15; dòng `# đo:` ghi số đo lần đó.
-# Pack CurseForge thêm ở PR-37b (cần key, chỉ có trong workflow).
+# Mỗi pack dưới đây đã chạy thử tới `Done` trên máy của runner (dangserver) ngày 2026-11-15 và 2026-11-16; dòng `# đo:`
+# ghi số đo lần đó.
 
 # --- Fabric ---
 
@@ -88,6 +88,18 @@ done_timeout_s = 900
 note = "pack lớn"
 # đo: cài 129 s, Done 143 s, RSS 4,7 GB
 
+[[pack]]
+id = "cobbleverse"
+name = "Cobbleverse"
+source = "modrinth"
+project_id = "cobbleverse"
+version_id = "4SKGla61" # 1.7.42
+loader = "fabric"
+minecraft = "1.21.1"
+memory_mb = 8192
+done_timeout_s = 900
+# đo: cài 63 s, Done 76 s, RSS 4,1 GB, 103 mod
+
 # --- NeoForge ---
 
 [[pack]]
@@ -114,6 +126,44 @@ memory_mb = 6144
 done_timeout_s = 600
 note = "NeoForge trên Minecraft 26.x"
 # đo: cài 18 s, Done 42 s, RSS 3,9 GB
+
+[[pack]]
+id = "pixelmon"
+name = "The Pixelmon Modpack"
+source = "modrinth"
+project_id = "the-pixelmon-modpack"
+version_id = "3WCE8Wj3" # 9.4.2
+loader = "neoforge"
+minecraft = "1.21.1"
+memory_mb = 6144
+done_timeout_s = 600
+# đo: cài 293 s, Done 81 s, RSS 3,7 GB
+
+[[pack]]
+id = "lucky-block"
+name = "Lucky Block Challenge"
+source = "modrinth"
+project_id = "lucky-block-challenge"
+version_id = "90iuEp0W" # 2.1.2
+loader = "neoforge"
+minecraft = "1.21.1"
+memory_mb = 6144
+done_timeout_s = 600
+note = "có mod chỉ client cần tắt"
+# đo: cài 61 s, Done 23 s, RSS 1,8 GB; tắt 14 mod chỉ client
+
+[[pack]]
+id = "optimized-fps"
+name = "Optimized FPS"
+source = "modrinth"
+project_id = "optimized-fps"
+version_id = "UTCVjkus" # 4.4.0
+loader = "neoforge"
+minecraft = "26.3"
+memory_mb = 4096
+done_timeout_s = 600
+note = "NeoForge bản beta ghim sẵn, Minecraft mới nhất có pack"
+# đo: cài 18 s, Done 19 s, RSS 2,5 GB; tắt 10 mod chỉ client
 
 # --- Forge ---
 
@@ -155,3 +205,67 @@ minecraft = "26.3"
 memory_mb = 4096
 done_timeout_s = 600
 # đo: cài 11 s, Done 18 s, RSS 2,6 GB
+
+# --- CurseForge (cần key, chỉ chạy trong workflow) ---
+
+[[pack]]
+id = "cf-atm10"
+name = "All the Mods 10"
+source = "curseforge"
+project_id = "925200"
+version_id = "9620701"
+loader = "neoforge"
+minecraft = "1.21.1"
+memory_mb = 8192
+done_timeout_s = 1200
+note = "khoảng 500 mod"
+# đo: cài 43 s, Done 171 s, RSS 7,7 GB, 463 mod
+
+[[pack]]
+id = "cf-atm10-sky"
+name = "All the Mods 10 Sky"
+source = "curseforge"
+project_id = "1298402"
+version_id = "9368148"
+loader = "neoforge"
+minecraft = "1.21.1"
+memory_mb = 8192
+done_timeout_s = 1200
+# đo: cài 36 s, Done 97 s, RSS 5,3 GB, 317 mod
+
+[[pack]]
+id = "cf-atm9"
+name = "All the Mods 9"
+source = "curseforge"
+project_id = "715572"
+version_id = "7097953"
+loader = "forge"
+minecraft = "1.20.1"
+memory_mb = 8192
+done_timeout_s = 1200
+note = "trên 400 mod"
+# đo: cài 69 s, Done 221 s, RSS 9,9 GB, 414 mod
+
+[[pack]]
+id = "cf-rlcraft"
+name = "RLCraft"
+source = "curseforge"
+project_id = "285109"
+version_id = "4612979"
+loader = "forge"
+minecraft = "1.12.2"
+memory_mb = 6144
+done_timeout_s = 900
+# đo: cài 14 s, Done 91 s, RSS 3,1 GB, 178 mod
+
+[[pack]]
+id = "cf-better-mc-forge"
+name = "Better MC Forge"
+source = "curseforge"
+project_id = "876781"
+version_id = "9554990"
+loader = "forge"
+minecraft = "1.20.1"
+memory_mb = 8192
+done_timeout_s = 1200
+# đo: cài 55 s, Done 182 s, RSS 7,4 GB, 324 mod
