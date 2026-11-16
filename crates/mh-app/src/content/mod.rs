@@ -8,6 +8,7 @@ mod modrinth;
 mod pending_upload;
 mod plan;
 mod preflight;
+mod requests;
 mod running;
 mod updates;
 
@@ -33,6 +34,7 @@ pub use preflight::{
     ClientOnlyMod, MissingDependency, PreflightReport, VersionMismatch, WrongLoaderMod,
 };
 pub(crate) use preflight::{missing_server_deps, preflight_block_error, reads_mods_toml_deps};
+pub use requests::{ContentRequest, MAX_INSTALL_ITEMS};
 pub(crate) use running::AddedWhileRunning;
 pub use updates::{MAX_UPDATE_ITEMS, UpdateCandidate, UpdateItem, UpdateReport};
 
@@ -41,6 +43,28 @@ use crate::{App, AppError, lock};
 
 /// Số kết quả mỗi trang tìm kiếm nội dung.
 pub const CONTENT_PAGE_SIZE: u32 = 20;
+
+/// Điều kiện tìm kiếm nội dung từ giao diện.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ContentSearch {
+    pub kind: Option<ProjectType>,
+    /// Lọc theo loader, Minecraft của server và bỏ mod chỉ chạy ở client.
+    pub server_id: Option<ServerId>,
+    /// Trang, từ 1.
+    pub page: u32,
+    pub index: SearchIndex,
+}
+
+impl Default for ContentSearch {
+    fn default() -> Self {
+        Self {
+            kind: None,
+            server_id: None,
+            page: 1,
+            index: SearchIndex::Relevance,
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ContentList {
@@ -95,10 +119,14 @@ impl App {
         &self,
         source: CatalogSource,
         query: &str,
-        kind: Option<ProjectType>,
-        server_id: Option<ServerId>,
-        page: u32,
+        search: &ContentSearch,
     ) -> Result<ContentSearchResult, AppError> {
+        let ContentSearch {
+            kind,
+            server_id,
+            page,
+            index,
+        } = *search;
         if page == 0 {
             return Err(AppError::new(ErrorCode::InvalidInput, "page phải >= 1")
                 .with_params(serde_json::json!({ "field": "page" })));
@@ -107,6 +135,7 @@ impl App {
             project_type: kind,
             limit: CONTENT_PAGE_SIZE,
             offset: page.saturating_sub(1).saturating_mul(CONTENT_PAGE_SIZE),
+            index,
             ..SearchFilters::default()
         };
         if let Some(id) = server_id {
@@ -177,41 +206,6 @@ impl App {
                 needs_restart,
             })
         })
-        .await
-    }
-
-    /// Lập kế hoạch cài đặt (mod chính + dependency bắt buộc), chưa tải file.
-    pub async fn plan_content_install(
-        &self,
-        id: ServerId,
-        source: CatalogSource,
-        project_id: &str,
-        version_id: Option<&str>,
-    ) -> Result<ContentInstallPlan, AppError> {
-        let catalog = self.catalog_for(source)?;
-        let spec = self.store.load(id)?;
-        let kind = content_kind_for(&spec)?;
-        let installed = {
-            let mutex = self.content_lock(id);
-            let _guard = mutex.lock().await;
-            let (store, scanner) = (self.store.clone(), Arc::clone(&self.content_scanner));
-            blocking(move || {
-                let paths = store.paths(id);
-                let files = scanner.scan_dirs(&paths.server_dir, &paths.content_file, kind)?;
-                Ok(plan::installed_projects(&files, source))
-            })
-            .await?
-        };
-        plan::build_plan(
-            source,
-            catalog.as_ref(),
-            kind,
-            spec.game.loader,
-            &spec.game.minecraft,
-            &installed,
-            project_id,
-            version_id,
-        )
         .await
     }
 

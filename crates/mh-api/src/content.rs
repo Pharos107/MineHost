@@ -9,7 +9,10 @@ use axum::extract::{Extension, FromRequestParts, Multipart, Path as AxumPath, Qu
 use axum::http::StatusCode;
 use axum::http::request::Parts;
 use mh_app::App;
-use mh_app::content::{CONTENT_PAGE_SIZE, CatalogSource, ContentSearchResult, ProjectType};
+use mh_app::content::{
+    CONTENT_PAGE_SIZE, CatalogSource, ContentRequest, ContentSearch, ContentSearchResult,
+    MAX_INSTALL_ITEMS, ProjectType, SearchIndex,
+};
 use mh_core::ServerId;
 
 use crate::backups::JobStartedDto;
@@ -67,14 +70,15 @@ pub async fn search(
     if page == 0 {
         return Err(ApiError::invalid("page"));
     }
+    let index = query.sort.as_deref().map(parse_sort).transpose()?;
+    let search = ContentSearch {
+        kind,
+        server_id,
+        page,
+        index: index.unwrap_or_default(),
+    };
     let result: ContentSearchResult = app
-        .search_content(
-            source,
-            query.q.as_deref().unwrap_or(""),
-            kind,
-            server_id,
-            page,
-        )
+        .search_content(source, query.q.as_deref().unwrap_or(""), &search)
         .await?;
     Ok(Json(SearchResultDto {
         hits: result.hits.into_iter().map(Into::into).collect(),
@@ -164,11 +168,13 @@ pub async fn plan(
     IdPath(id): IdPath,
     ApiJson(body): ApiJson<ContentInstallBody>,
 ) -> ApiResult<Json<ContentPlanDto>> {
-    let (source, project_id, version_id) = validate_install_body(&body)?;
-    let plan = app
-        .plan_content_install(id, source, project_id, version_id.as_deref())
-        .await?;
-    Ok(Json(plan.into()))
+    let requests = validate_install_body(&body)?;
+    let plans = app.plan_content_requests(id, &requests).await?;
+    let kind = match plans.first() {
+        Some(plan) => plan.kind,
+        None => return Err(ApiError::invalid("items")),
+    };
+    Ok(Json(ContentPlanDto::merge(kind, plans)))
 }
 
 #[utoipa::path(post, path = "/api/v1/servers/{id}/content", tag = "content",
@@ -185,8 +191,8 @@ pub async fn install(
     IdPath(id): IdPath,
     ApiJson(body): ApiJson<ContentInstallBody>,
 ) -> ApiResult<(StatusCode, Json<JobStartedDto>)> {
-    let (source, project_id, version_id) = validate_install_body(&body)?;
-    let job_id = app.install_content(id, source, project_id, version_id)?;
+    let requests = validate_install_body(&body)?;
+    let job_id = app.install_content_many(id, requests)?;
     Ok((StatusCode::ACCEPTED, Json(JobStartedDto { job_id })))
 }
 
@@ -330,6 +336,15 @@ pub(crate) fn parse_source(source: &str) -> ApiResult<CatalogSource> {
     CatalogSource::parse(source).ok_or_else(|| ApiError::invalid("source"))
 }
 
+fn parse_sort(raw: &str) -> ApiResult<SearchIndex> {
+    match raw {
+        "relevance" => Ok(SearchIndex::Relevance),
+        "downloads" => Ok(SearchIndex::Downloads),
+        "updated" => Ok(SearchIndex::Updated),
+        _ => Err(ApiError::invalid("sort")),
+    }
+}
+
 fn parse_kind(raw: &str) -> ApiResult<ProjectType> {
     match raw {
         "mod" => Ok(ProjectType::Mod),
@@ -339,25 +354,29 @@ fn parse_kind(raw: &str) -> ApiResult<ProjectType> {
     }
 }
 
-fn validate_install_body(
-    body: &ContentInstallBody,
-) -> ApiResult<(CatalogSource, &str, Option<String>)> {
-    let source = parse_source(&body.source)?;
-    let project_id = body.project_id.trim();
+fn validate_install_body(body: &ContentInstallBody) -> ApiResult<Vec<ContentRequest>> {
+    if body.items.is_empty() || body.items.len() > MAX_INSTALL_ITEMS {
+        return Err(ApiError::invalid("items"));
+    }
+    body.items.iter().map(validate_item).collect()
+}
+
+fn validate_item(item: &ContentItemBody) -> ApiResult<ContentRequest> {
+    let source = parse_source(&item.source)?;
+    let project_id = item.project_id.trim();
     if project_id.is_empty() {
         return Err(ApiError::invalid("project_id"));
     }
-    let version_id = match body.version_id.as_deref() {
-        Some(v) => {
-            let trimmed = v.trim();
-            if trimmed.is_empty() {
-                return Err(ApiError::invalid("version_id"));
-            }
-            Some(trimmed.to_owned())
-        }
+    let version_id = match item.version_id.as_deref().map(str::trim) {
+        Some("") => return Err(ApiError::invalid("version_id")),
+        Some(v) => Some(v.to_owned()),
         None => None,
     };
-    Ok((source, project_id, version_id))
+    Ok(ContentRequest {
+        source,
+        project_id: project_id.to_owned(),
+        version_id,
+    })
 }
 
 fn safe_field_name(raw: Option<&str>) -> ApiResult<String> {

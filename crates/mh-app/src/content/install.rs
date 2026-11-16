@@ -15,7 +15,8 @@ use ulid::Ulid;
 
 use super::catalog::{CatalogSource, ContentCatalog};
 use super::curseforge::parse_cf_id;
-use super::plan::PlannedContent;
+use super::plan::{ContentInstallPlan, PlannedContent};
+use super::requests::{ContentRequest, check_count};
 use super::running::replace_while_running;
 use crate::files::{blocking, delete_sync, exists};
 use crate::jobs::{JobContext, JobKind, JobStep};
@@ -29,6 +30,12 @@ impl Drop for StagingGuard {
     }
 }
 
+/// Đếm mục đã xử lý qua mọi nguồn để thanh tiến độ chạy liền một mạch.
+struct Progress {
+    done: usize,
+    total: u8,
+}
+
 struct StagedFile {
     project_id: String,
     version_id: String,
@@ -39,8 +46,7 @@ struct StagedFile {
 }
 
 impl App {
-    /// Tạo Job cài mod/plugin (cùng dependency). Server đang chạy vẫn cài được mod mới; mod chỉ
-    /// có hiệu lực ở lần khởi động sau.
+    /// Tạo Job cài một mod/plugin (cùng dependency).
     pub fn install_content(
         self: &Arc<Self>,
         id: ServerId,
@@ -48,48 +54,57 @@ impl App {
         project_id: impl Into<String>,
         version_id: Option<String>,
     ) -> Result<JobId, AppError> {
+        self.install_content_many(
+            id,
+            vec![ContentRequest {
+                source,
+                project_id: project_id.into(),
+                version_id,
+            }],
+        )
+    }
+
+    /// Tạo một Job cài nhiều mod/plugin cùng dependency. Server đang chạy vẫn cài được mod mới;
+    /// mod chỉ có hiệu lực ở lần khởi động sau.
+    pub fn install_content_many(
+        self: &Arc<Self>,
+        id: ServerId,
+        requests: Vec<ContentRequest>,
+    ) -> Result<JobId, AppError> {
+        check_count(requests.len())?;
         let _ = self.ensure_content_addable(id)?;
-        let _ = self.catalog_for(source)?;
-        let project_id = project_id.into();
+        for req in &requests {
+            let _ = self.catalog_for(req.source)?;
+        }
         let app = Arc::clone(self);
         Ok(self
             .jobs
             .spawn(JobKind::InstallContent, Some(id), move |ctx| async move {
-                app.run_install(&ctx, id, source, &project_id, version_id.as_deref())
-                    .await
+                ctx.step(JobStep::CheckDisk, 1, 3);
+                app.check_disk()?;
+                ctx.step(JobStep::ResolveContent, 2, 3);
+                app.install_now(&ctx, id, &requests).await
             }))
     }
 
-    async fn run_install(
-        &self,
-        ctx: &JobContext,
-        id: ServerId,
-        source: CatalogSource,
-        project_id: &str,
-        version_id: Option<&str>,
-    ) -> Result<(), AppError> {
-        ctx.step(JobStep::CheckDisk, 1, 3);
-        self.check_disk()?;
-
-        ctx.step(JobStep::ResolveContent, 2, 3);
-        self.install_now(ctx, id, source, project_id, version_id)
-            .await
-    }
-
-    /// Lập kế hoạch, tải vào thư mục tạm rồi thay vào `mods/`. Job cập nhật gọi lại hàm này cho
-    /// từng mục sau khi đã sao lưu.
+    /// Lập kế hoạch, tải hết vào thư mục tạm rồi mới thay vào `mods/`: một mục lỗi thì không file
+    /// nào được chép. Job cập nhật gọi lại hàm này cho từng mục sau khi đã sao lưu.
     pub(super) async fn install_now(
         &self,
         ctx: &JobContext,
         id: ServerId,
-        source: CatalogSource,
-        project_id: &str,
-        version_id: Option<&str>,
+        requests: &[ContentRequest],
     ) -> Result<(), AppError> {
-        let catalog = self.catalog_for(source)?;
-        let plan = ctx
-            .cancellable(self.plan_content_install(id, source, project_id, version_id))
+        let plans = ctx
+            .cancellable(self.plan_content_requests(id, requests))
             .await?;
+        let all: Vec<&PlannedContent> = plans.iter().flat_map(|p| &p.items).collect();
+        let mut names = HashSet::new();
+        for item in &all {
+            if !names.insert(&item.file.filename) {
+                return Err(exists(&item.file.filename));
+            }
+        }
         let staging_dir = self
             .store
             .paths(id)
@@ -103,15 +118,25 @@ impl App {
         .await?;
         let _guard = StagingGuard(staging_dir.clone());
 
-        let (staged, pending) = self
-            .download_staged(ctx, catalog.as_ref(), &staging_dir, &plan.items, plan.kind)
-            .await?;
+        let mut progress = Progress {
+            done: 0,
+            total: u8::try_from(all.len().saturating_add(3)).unwrap_or(u8::MAX),
+        };
+        let mut batches = Vec::with_capacity(plans.len());
+        for plan in &plans {
+            let catalog = self.catalog_for(plan.source)?;
+            let (staged, pending) = self
+                .download_staged(ctx, catalog.as_ref(), &staging_dir, plan, &mut progress)
+                .await?;
+            batches.push((plan.kind, plan.source, staged, pending));
+        }
         ctx.check_cancel()?;
 
-        let total = u8::try_from(plan.items.len().saturating_add(3)).unwrap_or(u8::MAX);
-        ctx.step(JobStep::PrepareFiles, total, total);
-        self.commit_staged(id, plan.kind, plan.source, staged, pending)
-            .await?;
+        ctx.step(JobStep::PrepareFiles, progress.total, progress.total);
+        for (kind, source, staged, pending) in batches {
+            self.commit_staged(id, kind, source, staged, pending)
+                .await?;
+        }
         self.refresh_preflight(id).await;
         self.notify_changed(id);
         Ok(())
@@ -122,39 +147,33 @@ impl App {
         ctx: &JobContext,
         catalog: &dyn ContentCatalog,
         staging_dir: &Path,
-        items: &[PlannedContent],
-        kind: ContentKind,
+        plan: &ContentInstallPlan,
+        progress: &mut Progress,
     ) -> Result<(Vec<StagedFile>, Vec<PendingContent>), AppError> {
-        let mut names = HashSet::new();
-        for item in items {
-            if !names.insert(&item.file.filename) {
-                return Err(exists(&item.file.filename));
-            }
-        }
-
-        let total = u8::try_from(items.len().saturating_add(3)).unwrap_or(u8::MAX);
         let mut staged = Vec::new();
         let mut pending = Vec::new();
-        for (idx, item) in items.iter().enumerate() {
+        for item in &plan.items {
             ctx.check_cancel()?;
+            let idx = progress.done;
+            progress.done += 1;
             if item.file.manual_download {
-                pending.push(build_pending(kind, item)?);
+                pending.push(build_pending(plan.kind, item)?);
                 continue;
             }
-            let step = u8::try_from(idx + 3).unwrap_or(total.saturating_sub(1));
+            let step = u8::try_from(idx + 3).unwrap_or(progress.total.saturating_sub(1));
             ctx.step(
                 JobStep::DownloadContent {
                     name: item.project_name.clone(),
                 },
                 step,
-                total,
+                progress.total,
             );
             let staged_path = staging_dir.join(format!("{idx:04}.jar"));
             {
                 let _permit = ctx.download_permit().await?;
-                let mut progress = |done: u64, tot: Option<u64>| ctx.bytes(done, tot);
+                let mut on_bytes = |done: u64, tot: Option<u64>| ctx.bytes(done, tot);
                 catalog
-                    .download(&item.file, &staged_path, &mut progress, &ctx.cancel)
+                    .download(&item.file, &staged_path, &mut on_bytes, &ctx.cancel)
                     .await?;
             }
             let inspect_path = staged_path.clone();

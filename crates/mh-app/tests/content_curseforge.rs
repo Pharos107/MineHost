@@ -8,9 +8,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use content_support::{FakeJava, FakeServerCatalog, build_jar, finish_job, make_server};
-use mh_app::content::{CatalogSource, CurseForge, CurseforgeCatalog, ProjectType};
+use mh_app::content::{CatalogSource, ContentSearch, CurseForge, CurseforgeCatalog, ProjectType};
 use mh_app::{App, AppDeps, JobState, MetricsConfig};
-use mh_core::{CurseforgeKey, ErrorCode, LoaderKind};
+use mh_core::{CurseforgeKey, ErrorCode, LoaderKind, ServerId};
 use mh_net::{HostAllowlist, HttpClient, NetConfig};
 use mh_platform::DataDirs;
 use mh_store::{ContentManifest, ContentSource, ProjectId, ServerStore};
@@ -348,7 +348,7 @@ async fn curseforge_missing_or_rejected_key_returns_unavailable() {
     let id1 = make_server(&no_key_app, LoaderKind::Fabric);
     assert_eq!(
         no_key_app
-            .search_content(CatalogSource::Curseforge, "jei", None, Some(id1), 1)
+            .search_content(CatalogSource::Curseforge, "jei", &for_server(id1))
             .await
             .unwrap_err()
             .code,
@@ -366,7 +366,7 @@ async fn curseforge_missing_or_rejected_key_returns_unavailable() {
     let id2 = make_server(&bad_key_app, LoaderKind::Fabric);
     assert_eq!(
         bad_key_app
-            .search_content(CatalogSource::Curseforge, "jei", None, Some(id2), 1)
+            .search_content(CatalogSource::Curseforge, "jei", &for_server(id2))
             .await
             .unwrap_err()
             .code,
@@ -380,9 +380,10 @@ async fn curseforge_missing_or_rejected_key_returns_unavailable() {
             .search_content(
                 CatalogSource::Curseforge,
                 "",
-                Some(ProjectType::Plugin),
-                Some(paper),
-                1
+                &ContentSearch {
+                    kind: Some(ProjectType::Plugin),
+                    ..for_server(paper)
+                }
             )
             .await
             .unwrap()
@@ -405,4 +406,11 @@ async fn curseforge_missing_or_rejected_key_returns_unavailable() {
             .code,
         ErrorCode::ContentIncompatible
     );
+}
+
+fn for_server(id: ServerId) -> ContentSearch {
+    ContentSearch {
+        server_id: Some(id),
+        ..ContentSearch::default()
+    }
 }
