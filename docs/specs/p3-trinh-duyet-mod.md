@@ -80,10 +80,10 @@ Một khối dùng ở trang thêm mod của server, bước Mod khi tạo serve
 
 ### 4. Danh sách chờ cài trên trang Mod
 
-- Trang thêm mod của server là `/servers/:id/content/add`, thay cho hộp thoại `?add=1`. Trang này dùng
-  trình duyệt ở mục 3 và có nút "Quay lại danh sách mod".
-- "Thêm vào danh sách" ghi bản đã chọn vào danh sách chờ. Thanh dính ở đáy trang hiện "N mod chờ cài ·
-  Xem và cài". Bấm vào thì mở hộp thoại kế hoạch: mod chính và dependency được gộp (trùng thì chỉ một
+- Trang thêm mod của server là `/servers/:id/content/add`, thay cho hộp thoại `?add=1` (link cũ tự chuyển
+  sang trang mới). Trang này dùng trình duyệt ở mục 3 và có nút quay lại danh sách mod.
+- "Thêm vào danh sách" ghi bản đã chọn vào danh sách chờ. Một dòng ở đầu trang hiện "N mục chờ cài: tên…"
+  kèm nút "Xem và cài" (khung chi tiết cũng dính khi cuộn nên luôn thấy nút thêm). Bấm vào thì mở hộp thoại kế hoạch: mod chính và dependency được gộp (trùng thì chỉ một
   dòng), mỗi mod chính có nút bỏ, nút "Cài N mod" chạy **một** Job.
 - Danh sách chờ lưu ở `localStorage` theo từng server. Đây chỉ là tiện ích trên một trình duyệt, mất cũng
   không sao.

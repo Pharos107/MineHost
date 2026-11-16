@@ -839,7 +839,9 @@
       "add": "Thêm mod",
       "lockedHint": "Tắt server để bật, tắt hoặc gỡ mod",
       "restartNotice_one": "{{count}} mod mới sẽ chạy sau khi khởi động lại server.",
-      "restartNotice_other": "{{count}} mod mới sẽ chạy sau khi khởi động lại server."
+      "restartNotice_other": "{{count}} mod mới sẽ chạy sau khi khởi động lại server.",
+      "backToList": "Danh sách mod",
+      "addWhileRunning": "Server đang chạy: mod mới sẽ chạy sau khi khởi động lại."
     },
     "plugins": {
       "upToDate": "Mọi plugin đều là bản mới nhất. Có {{unknown}} file không nhận ra trên Modrinth, CurseForge.",
@@ -854,7 +856,9 @@
       "add": "Thêm plugin",
       "lockedHint": "Tắt server để bật, tắt hoặc gỡ plugin",
       "restartNotice_one": "{{count}} plugin mới sẽ chạy sau khi khởi động lại server.",
-      "restartNotice_other": "{{count}} plugin mới sẽ chạy sau khi khởi động lại server."
+      "restartNotice_other": "{{count}} plugin mới sẽ chạy sau khi khởi động lại server.",
+      "backToList": "Danh sách plugin",
+      "addWhileRunning": "Server đang chạy: plugin mới sẽ chạy sau khi khởi động lại."
     },
     "needsRestart": "Chờ khởi động lại",
     "dropHint": "Thả file .jar để thêm vào server. Chỉ dùng file từ nguồn tin cậy vì mod, plugin chạy code tùy ý."
@@ -883,5 +887,40 @@
     "summaryPendingCf": "File CurseForge còn chờ",
     "pendingCfHint": "Một số file CurseForge cần tự tải trên trang Mod trước khi bật server.",
     "openServer": "Mở trang server"
+  },
+  "catalog": {
+    "pickHint": "Chọn một mục bên trái để xem chi tiết",
+    "backToResults": "Kết quả tìm kiếm",
+    "sort": "Sắp xếp",
+    "sorts": {
+      "relevance": "Liên quan",
+      "downloads": "Lượt tải",
+      "updated": "Mới cập nhật"
+    },
+    "noResults": "Không tìm thấy kết quả",
+    "noResultsHint": "Thử từ khóa khác hoặc đổi nguồn.",
+    "version": "Phiên bản",
+    "latest": "{{version}} (mới nhất)",
+    "noVersions": "Không có bản nào hợp với loader và phiên bản Minecraft này.",
+    "description": "Mô tả",
+    "links": {
+      "source": "Mã nguồn",
+      "wiki": "Wiki",
+      "issues": "Báo lỗi",
+      "discord": "Discord"
+    },
+    "queue": {
+      "add": "Thêm vào danh sách",
+      "added": "Đã có trong danh sách",
+      "undo": "Bỏ khỏi danh sách",
+      "remove": "Bỏ {{name}}",
+      "summary_one": "{{count}} mục chờ cài: {{names}}",
+      "summary_other": "{{count}} mục chờ cài: {{names}}",
+      "review": "Xem và cài",
+      "title": "Danh sách chờ cài",
+      "empty": "Danh sách chờ đang trống.",
+      "install_one": "Cài {{count}} mục",
+      "install_other": "Cài {{count}} mục"
+    }
   }
 }

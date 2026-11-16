@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowUpCircle, ExternalLink, Package, Plus, RotateCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router";
+import { Navigate, useNavigate, useSearchParams } from "react-router";
 
 import { api, errorMessage } from "../../../api/client";
 import {
@@ -32,7 +32,6 @@ import {
 } from "../../../ui";
 import { useServer } from "../ServerLayout";
 import { canAddContent, contentSourceKind, isContentLocked, modrinthProjectUrl, updateFor } from "./content";
-import { ContentAddDialog } from "./ContentAddDialog";
 import { ContentPendingBox } from "./ContentPendingBox";
 import { useContentUpdates } from "./ContentUpdates";
 import { useContentUpload } from "./ContentUpload";
@@ -45,7 +44,8 @@ export function ContentPage() {
   const { t } = useTranslation();
   const server = useServer();
   const kind = server.content_kind ?? null;
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const list = useQuery({
     queryKey: contentKey(server.id),
@@ -91,21 +91,11 @@ export function ContentPage() {
   if (kind === null) {
     return <EmptyState icon={Package} title={t("content.unsupported")} />;
   }
+  // Link cũ `?add=1` (trước khi có trang thêm mod riêng) vẫn dẫn tới đúng chỗ.
+  if (params.get("add") === "1") return <Navigate to="add" replace />;
 
   const locked = isContentLocked(server);
   const canAdd = canAddContent(server);
-  const addOpen = canAdd && params.get("add") === "1";
-  const setAddOpen = (open: boolean) => {
-    setParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        if (open) next.set("add", "1");
-        else next.delete("add");
-        return next;
-      },
-      { replace: true },
-    );
-  };
   const files = list.data?.files ?? [];
   const waiting = files.filter((item) => item.needs_restart).length;
   const busyFile = toggle.isPending ? toggle.variables.file : null;
@@ -114,7 +104,7 @@ export function ContentPage() {
   const actions = buildActions(t, kind, locked, report, setConfirming, setRemoving);
   const toolbar = (
     <>
-      <Button variant="primary" icon={Plus} disabled={!canAdd} onClick={() => setAddOpen(true)}>
+      <Button variant="primary" icon={Plus} disabled={!canAdd} onClick={() => void navigate("add")}>
         {t(`content.${kind}.add`)}
       </Button>
       <FileButton label={t("content.upload")} accept=".jar" disabled={!canAdd} loading={upload.busy} onFiles={upload.start} />
@@ -174,7 +164,6 @@ export function ContentPage() {
         }}
         onConfirm={() => removing && remove.mutate(removing)}
       />
-      <ContentAddDialog open={addOpen} server={server} kind={kind} onClose={() => setAddOpen(false)} onInstalled={refresh} />
     </Stack>
   );
 }

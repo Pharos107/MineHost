@@ -1,5 +1,7 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
+import { installQueued, queueMod } from "./helpers";
+
 const HEADERS = { "X-MineHost": "1" };
 const NAME = "Mod install e2e";
 let serverId: string | null = null;
@@ -30,22 +32,11 @@ test("tìm và cài mod có dependency từ nguồn giả", async ({ page, reque
   const id = await createFabricServer(request);
   serverId = id;
 
-  await page.goto(`/servers/${id}/content`);
-  await expect(page.getByText("Chưa có mod nào")).toBeVisible();
-
-  await page.getByRole("button", { name: "Thêm mod" }).click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("heading", { name: "Thêm mod" })).toBeVisible();
-
-  await dialog.getByRole("searchbox", { name: "Tìm mod trên Modrinth…" }).fill("Lithium");
-  await dialog.getByRole("button", { name: /Lithium/ }).click();
-
+  const dialog = await queueMod(page, id, { search: "Lithium", result: /^Lithium/ });
   await expect(dialog.getByText("Danh sách sẽ cài")).toBeVisible();
   await expect(dialog.getByText(/Dependency cài kèm/)).toBeVisible();
   await expect(dialog.getByText("Fabric API")).toBeVisible();
-
-  await dialog.getByRole("button", { name: "Cài" }).click();
-  await expect(dialog).toBeHidden({ timeout: 30_000 });
+  await installQueued(page, id, dialog);
 
   const table = page.getByRole("table", { name: "Danh sách mod" });
   await expect(table.getByText("Lithium")).toBeVisible();
@@ -57,36 +48,19 @@ test("tìm và cài mod có dependency từ nguồn CurseForge giả", async ({ 
   const id = await createFabricServer(request);
   serverId = id;
 
-  await page.goto(`/servers/${id}/content`);
-  await page.getByRole("button", { name: "Thêm mod" }).click();
-  const dialog = page.getByRole("dialog");
-
-  const cfRadio = dialog.getByRole("radio", { name: "CurseForge" });
-  await expect(cfRadio).toBeEnabled();
-  await cfRadio.click();
-
-  await dialog.getByRole("searchbox", { name: "Tìm mod trên CurseForge…" }).fill("JEI");
-  await dialog.getByRole("button", { name: /Just Enough Items/ }).click();
-
+  const dialog = await queueMod(page, id, { curseforge: true, search: "JEI", result: /^Just Enough Items/ });
   await expect(dialog.getByText("Danh sách sẽ cài")).toBeVisible();
   await expect(dialog.getByText(/Dependency cài kèm/)).toBeVisible();
   await expect(dialog.getByText("Fabric API (CF)")).toBeVisible();
-
-  await dialog.getByRole("button", { name: "Cài" }).click();
-  await expect(dialog).toBeHidden({ timeout: 30_000 });
+  await installQueued(page, id, dialog);
 
   const table = page.getByRole("table", { name: "Danh sách mod" });
   await expect(table.getByText("Just Enough Items", { exact: true })).toBeVisible();
   await expect(table.getByText("Fabric API (CF)", { exact: true })).toBeVisible();
 
   // Kiểm tra màn xác nhận hiển thị nhãn + link tải tay cho mod cấm phân phối.
-  await page.getByRole("button", { name: "Thêm mod" }).click();
-  await dialog.getByRole("radio", { name: "CurseForge" }).click();
-  await dialog.getByRole("searchbox", { name: "Tìm mod trên CurseForge…" }).fill("Restricted");
-  await dialog.getByRole("button", { name: /Restricted Mod/ }).click();
-
-  await expect(dialog.getByText("Cần tải tay")).toBeVisible();
-  await expect(dialog.getByRole("link", { name: "Mở trang tải" })).toHaveAttribute("href", /curseforge\.com\/minecraft\/mc-mods\/restricted-mod/);
-  await dialog.getByRole("button", { name: "Cài" }).click();
-  await expect(dialog).toBeHidden({ timeout: 30_000 });
+  const restricted = await queueMod(page, id, { curseforge: true, search: "Restricted", result: /^Restricted Mod/ });
+  await expect(restricted.getByText("Cần tải tay")).toBeVisible();
+  await expect(restricted.getByRole("link", { name: "Mở trang tải" })).toHaveAttribute("href", /curseforge\.com\/minecraft\/mc-mods\/restricted-mod/);
+  await installQueued(page, id, restricted);
 });

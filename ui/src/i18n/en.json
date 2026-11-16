@@ -839,7 +839,9 @@
       "add": "Add mod",
       "lockedHint": "Stop the server to enable, disable, or remove mods",
       "restartNotice_one": "{{count}} new mod will load after the server restarts.",
-      "restartNotice_other": "{{count}} new mods will load after the server restarts."
+      "restartNotice_other": "{{count}} new mods will load after the server restarts.",
+      "backToList": "Mod list",
+      "addWhileRunning": "The server is running: new mods load after it restarts."
     },
     "plugins": {
       "upToDate": "All plugins are up to date. {{unknown}} files were not found on Modrinth or CurseForge.",
@@ -854,7 +856,9 @@
       "add": "Add plugin",
       "lockedHint": "Stop the server to enable, disable, or remove plugins",
       "restartNotice_one": "{{count}} new plugin will load after the server restarts.",
-      "restartNotice_other": "{{count}} new plugins will load after the server restarts."
+      "restartNotice_other": "{{count}} new plugins will load after the server restarts.",
+      "backToList": "Plugin list",
+      "addWhileRunning": "The server is running: new plugins load after it restarts."
     },
     "needsRestart": "Restart to load",
     "dropHint": "Drop .jar files to add them to the server. Only use files you trust: mods and plugins run arbitrary code."
@@ -883,5 +887,40 @@
     "summaryPendingCf": "Pending CurseForge files",
     "pendingCfHint": "Some CurseForge files must be downloaded manually on the Mods page before starting the server.",
     "openServer": "Open server"
+  },
+  "catalog": {
+    "pickHint": "Select a result to see its details",
+    "backToResults": "Search results",
+    "sort": "Sort by",
+    "sorts": {
+      "relevance": "Relevance",
+      "downloads": "Downloads",
+      "updated": "Recently updated"
+    },
+    "noResults": "No results",
+    "noResultsHint": "Try another keyword or switch the source.",
+    "version": "Version",
+    "latest": "{{version}} (latest)",
+    "noVersions": "No version matches this loader and Minecraft version.",
+    "description": "Description",
+    "links": {
+      "source": "Source code",
+      "wiki": "Wiki",
+      "issues": "Issues",
+      "discord": "Discord"
+    },
+    "queue": {
+      "add": "Add to list",
+      "added": "In the install list",
+      "undo": "Remove from list",
+      "remove": "Remove {{name}}",
+      "summary_one": "{{count}} item waiting to install: {{names}}",
+      "summary_other": "{{count}} items waiting to install: {{names}}",
+      "review": "Review and install",
+      "title": "Install list",
+      "empty": "The install list is empty.",
+      "install_one": "Install {{count}} item",
+      "install_other": "Install {{count}} items"
+    }
   }
 }

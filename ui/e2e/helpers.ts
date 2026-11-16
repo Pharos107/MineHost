@@ -1,6 +1,6 @@
 // Hàm dùng chung cho các spec e2e: tạo, bật và dọn server qua API để mỗi test chỉ đi qua giao diện
 // ở phần nó cần kiểm tra. Không phải file test (Playwright chỉ chạy `*.spec.ts`).
-import { expect, type APIRequestContext } from "@playwright/test";
+import { expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 
 export const HEADERS = { "X-MineHost": "1" };
 
@@ -53,4 +53,31 @@ export async function removeServer(request: APIRequestContext, id: string): Prom
   const name = encodeURIComponent(server.name ?? id);
   const deleted = await request.delete(`/api/v1/servers/${id}?confirm_name=${name}`, { headers: HEADERS });
   expect(deleted.ok()).toBe(true);
+}
+
+/**
+ * Thêm một mod qua trang Thêm mod (spec trình duyệt mod, mục 4): tìm, chọn, đưa vào danh sách chờ,
+ * mở hộp thoại kế hoạch. Trả hộp thoại để test kiểm tra kế hoạch trước khi bấm Cài.
+ */
+export async function queueMod(page: Page, serverId: string, opts: { curseforge?: boolean; search: string; result: RegExp }): Promise<Locator> {
+  await page.goto(`/servers/${serverId}/content`);
+  await page.getByRole("button", { name: "Thêm mod" }).click();
+  await expect(page).toHaveURL(`/servers/${serverId}/content/add`);
+  if (opts.curseforge) {
+    const cf = page.getByRole("radio", { name: "CurseForge" });
+    await expect(cf).toBeEnabled();
+    await cf.click();
+  }
+  const label = opts.curseforge ? "Tìm mod trên CurseForge…" : "Tìm mod trên Modrinth…";
+  await page.getByRole("searchbox", { name: label }).fill(opts.search);
+  await page.getByRole("button", { name: opts.result }).click();
+  await page.getByRole("button", { name: "Thêm vào danh sách" }).click();
+  await page.getByRole("button", { name: "Xem và cài" }).click();
+  return page.getByRole("dialog");
+}
+
+/** Bấm Cài trong hộp thoại kế hoạch và chờ quay về trang Mod. */
+export async function installQueued(page: Page, serverId: string, dialog: Locator): Promise<void> {
+  await dialog.getByRole("button", { name: /^Cài \d+ mục$/ }).click();
+  await expect(page).toHaveURL(`/servers/${serverId}/content`, { timeout: 30_000 });
 }
