@@ -1,5 +1,6 @@
 //! Quản lý mod/plugin: đọc danh sách, lập kế hoạch cài và tải từ Modrinth / CurseForge.
 
+mod browse;
 mod catalog;
 mod curseforge;
 mod install;
@@ -19,6 +20,7 @@ use mh_core::{ContentKind, ErrorCode, InstanceSpec, ServerId};
 use mh_store::ContentManifest;
 pub use mh_store::{ContentFile, ContentSource, PendingContent, ProjectId};
 
+pub use browse::{ContentSearch, ContentTarget};
 pub use catalog::{
     BlockedPackFile, CatalogSource, CfResolvedFiles, ContentCatalog, ContentDependency,
     ContentFileInfo, ContentProject, ContentSearchHit, ContentSearchResult, ContentVersion,
@@ -43,28 +45,6 @@ use crate::{App, AppError, lock};
 
 /// Số kết quả mỗi trang tìm kiếm nội dung.
 pub const CONTENT_PAGE_SIZE: u32 = 20;
-
-/// Điều kiện tìm kiếm nội dung từ giao diện.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ContentSearch {
-    pub kind: Option<ProjectType>,
-    /// Lọc theo loader, Minecraft của server và bỏ mod chỉ chạy ở client.
-    pub server_id: Option<ServerId>,
-    /// Trang, từ 1.
-    pub page: u32,
-    pub index: SearchIndex,
-}
-
-impl Default for ContentSearch {
-    fn default() -> Self {
-        Self {
-            kind: None,
-            server_id: None,
-            page: 1,
-            index: SearchIndex::Relevance,
-        }
-    }
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ContentList {
@@ -111,80 +91,6 @@ impl App {
                 }
             }
         }
-    }
-
-    /// Tìm mod/plugin/modpack trên catalog. Có `server_id` thì lọc theo loader, Minecraft và
-    /// chỉ lấy mục chạy được phía server (`server_side != unsupported` với Modrinth).
-    pub async fn search_content(
-        &self,
-        source: CatalogSource,
-        query: &str,
-        search: &ContentSearch,
-    ) -> Result<ContentSearchResult, AppError> {
-        let ContentSearch {
-            kind,
-            server_id,
-            page,
-            index,
-        } = *search;
-        if page == 0 {
-            return Err(AppError::new(ErrorCode::InvalidInput, "page phải >= 1")
-                .with_params(serde_json::json!({ "field": "page" })));
-        }
-        let mut filters = SearchFilters {
-            project_type: kind,
-            limit: CONTENT_PAGE_SIZE,
-            offset: page.saturating_sub(1).saturating_mul(CONTENT_PAGE_SIZE),
-            index,
-            ..SearchFilters::default()
-        };
-        if let Some(id) = server_id {
-            let spec = self.store.load(id)?;
-            let server_kind = content_kind_for(&spec)?;
-            if filters.project_type.is_none() {
-                filters.project_type = Some(match server_kind {
-                    ContentKind::Mods => ProjectType::Mod,
-                    ContentKind::Plugins => ProjectType::Plugin,
-                });
-            }
-            filters.loader = Some(spec.game.loader);
-            filters.minecraft = Some(spec.game.minecraft);
-            filters.server_only = true;
-        }
-        self.catalog_for(source)?.search(query, &filters).await
-    }
-
-    /// Chi tiết một project từ nguồn nội dung.
-    pub async fn content_project(
-        &self,
-        source: CatalogSource,
-        project_id: &str,
-    ) -> Result<ContentProject, AppError> {
-        self.catalog_for(source)?.project(project_id).await
-    }
-
-    /// Các phiên bản của project hợp với loader và Minecraft của server, mới nhất trước.
-    pub async fn content_versions(
-        &self,
-        source: CatalogSource,
-        project_id: &str,
-        server_id: ServerId,
-    ) -> Result<Vec<ContentVersion>, AppError> {
-        let catalog = self.catalog_for(source)?;
-        let spec = self.store.load(server_id)?;
-        let _ = content_kind_for(&spec)?;
-        catalog
-            .versions(project_id, spec.game.loader, &spec.game.minecraft)
-            .await
-    }
-
-    /// Mọi phiên bản của project khi chưa có server (dùng cho modpack), mới nhất trước.
-    pub async fn project_versions(
-        &self,
-        source: CatalogSource,
-        project_id: &str,
-    ) -> Result<Vec<ContentVersion>, AppError> {
-        self.catalog_for(source)?.project_versions(project_id).await
     }
 
     /// Danh sách mod/plugin hiện trên đĩa cùng các mục `pending`. Vanilla trả `CONTENT_INCOMPATIBLE`.

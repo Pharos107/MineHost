@@ -201,8 +201,21 @@ async fn installs_curseforge_required_dep_recursively_and_records_content_toml()
         .mount(&server)
         .await;
 
+    Mock::given(method("GET"))
+        .and(path("/mods/238222/description"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "<p>JEI</p>" })))
+        .mount(&server)
+        .await;
+
     let (_tmp, app) = cf_app(&server, true);
     let id = make_server(&app, LoaderKind::Fabric);
+
+    // Mô tả HTML lấy thêm từ `/description`; project không có mô tả thì vẫn trả phần còn lại.
+    let cf = CatalogSource::Curseforge;
+    let jei = app.content_project(cf, "238222").await.unwrap();
+    assert_eq!(jei.body.as_deref(), Some("<p>JEI</p>"));
+    let fapi = app.content_project(cf, "306612").await.unwrap();
+    assert_eq!((fapi.title.as_str(), fapi.body), ("Fabric API", None));
 
     let plan = app
         .plan_content_install(id, CatalogSource::Curseforge, "238222", None)

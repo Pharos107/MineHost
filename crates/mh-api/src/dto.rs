@@ -208,6 +208,9 @@ pub struct CreateServerBody {
     pub loader_version: Option<String>,
     pub memory_mb: Option<MemoryDto>,
     pub port: Option<u16>,
+    /// Mod/plugin cài ngay sau khi tạo (tối đa 50); mục lỗi nằm trong `result.content_failed` của Job.
+    #[serde(default)]
+    pub content: Vec<crate::content_dto::ContentItemBody>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

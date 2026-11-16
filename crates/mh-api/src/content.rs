@@ -11,9 +11,9 @@ use axum::http::request::Parts;
 use mh_app::App;
 use mh_app::content::{
     CONTENT_PAGE_SIZE, CatalogSource, ContentRequest, ContentSearch, ContentSearchResult,
-    MAX_INSTALL_ITEMS, ProjectType, SearchIndex,
+    ContentTarget, MAX_INSTALL_ITEMS, ProjectType, SearchIndex,
 };
-use mh_core::ServerId;
+use mh_core::{LoaderKind, McVersion, ServerId};
 
 use crate::backups::JobStartedDto;
 pub(crate) use crate::content_dto::*;
@@ -74,6 +74,7 @@ pub async fn search(
     let search = ContentSearch {
         kind,
         server_id,
+        target: parse_target(query.loader.as_deref(), query.minecraft.as_deref())?,
         page,
         index: index.unwrap_or_default(),
     };
@@ -129,12 +130,14 @@ pub async fn versions(
     if pid.is_empty() {
         return Err(ApiError::invalid("pid"));
     }
-    let list = match query.server_id.as_deref() {
-        Some(raw_id) => {
+    let target = parse_target(query.loader.as_deref(), query.minecraft.as_deref())?;
+    let list = match (query.server_id.as_deref(), target) {
+        (Some(raw_id), _) => {
             let server_id = ServerId::parse(raw_id).map_err(|_| ApiError::invalid("server_id"))?;
             app.content_versions(source, pid, server_id).await?
         }
-        None => app.project_versions(source, pid).await?,
+        (None, Some(target)) => app.target_versions(source, pid, &target).await?,
+        (None, None) => app.project_versions(source, pid).await?,
     };
     Ok(Json(list.into_iter().map(Into::into).collect()))
 }
@@ -336,6 +339,19 @@ pub(crate) fn parse_source(source: &str) -> ApiResult<CatalogSource> {
     CatalogSource::parse(source).ok_or_else(|| ApiError::invalid("source"))
 }
 
+/// `loader` và `minecraft` đi cùng nhau; thiếu một trong hai là lỗi.
+fn parse_target(loader: Option<&str>, minecraft: Option<&str>) -> ApiResult<Option<ContentTarget>> {
+    match (loader, minecraft) {
+        (None, None) => Ok(None),
+        (Some(loader), Some(minecraft)) => Ok(Some(ContentTarget {
+            loader: LoaderKind::parse(loader).map_err(|_| ApiError::invalid("loader"))?,
+            minecraft: McVersion::parse(minecraft).map_err(|_| ApiError::invalid("minecraft"))?,
+        })),
+        (None, Some(_)) => Err(ApiError::invalid("loader")),
+        (Some(_), None) => Err(ApiError::invalid("minecraft")),
+    }
+}
+
 fn parse_sort(raw: &str) -> ApiResult<SearchIndex> {
     match raw {
         "relevance" => Ok(SearchIndex::Relevance),
@@ -361,7 +377,7 @@ fn validate_install_body(body: &ContentInstallBody) -> ApiResult<Vec<ContentRequ
     body.items.iter().map(validate_item).collect()
 }
 
-fn validate_item(item: &ContentItemBody) -> ApiResult<ContentRequest> {
+pub(crate) fn validate_item(item: &ContentItemBody) -> ApiResult<ContentRequest> {
     let source = parse_source(&item.source)?;
     let project_id = item.project_id.trim();
     if project_id.is_empty() {

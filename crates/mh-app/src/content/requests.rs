@@ -2,12 +2,13 @@
 
 use std::sync::Arc;
 
-use mh_core::{ErrorCode, ServerId};
+use mh_core::{ErrorCode, LoaderKind, ServerId};
 
 use super::catalog::CatalogSource;
 use super::content_kind_for;
 use super::plan::{self, ContentInstallPlan};
 use crate::files::blocking;
+use crate::jobs::JobContext;
 use crate::{App, AppError};
 
 /// Số mục tối đa trong một lần cài.
@@ -79,6 +80,62 @@ impl App {
         }
         Ok(plans)
     }
+}
+
+impl App {
+    /// Kiểm tra trước danh sách mod chọn lúc tạo server, để báo lỗi ngay thay vì sau khi cài.
+    pub(crate) fn check_initial_content(
+        &self,
+        loader: LoaderKind,
+        requests: &[ContentRequest],
+    ) -> Result<(), AppError> {
+        check_count(requests.len())?;
+        if loader.content_kind().is_none() {
+            return Err(plan::incompatible(loader.as_str()));
+        }
+        for req in requests {
+            let _ = self.catalog_for(req.source)?;
+        }
+        Ok(())
+    }
+
+    /// Cài mod chọn lúc tạo server. Cả danh sách lỗi thì thử từng mục để cài được phần còn lại;
+    /// mục nào vẫn lỗi được ghi vào kết quả Job (`content_failed`), server vẫn dùng được.
+    pub(crate) async fn install_initial_content(
+        &self,
+        ctx: &JobContext,
+        id: ServerId,
+        requests: &[ContentRequest],
+    ) -> Result<(), AppError> {
+        let Err(err) = self.install_now(ctx, id, requests).await else {
+            return Ok(());
+        };
+        stop_if_cancelled(err)?;
+        let mut failed = Vec::new();
+        for req in requests {
+            ctx.check_cancel()?;
+            if let Err(err) = self.install_now(ctx, id, std::slice::from_ref(req)).await {
+                stop_if_cancelled(err.clone())?;
+                tracing::warn!(server = %id, project = %req.project_id, error = %err, "không cài được mod chọn lúc tạo server");
+                failed.push(serde_json::json!({
+                    "source": req.source.as_str(),
+                    "project_id": req.project_id,
+                    "code": err.code,
+                }));
+            }
+        }
+        if !failed.is_empty() {
+            ctx.set_result(serde_json::json!({ "content_failed": failed }));
+        }
+        Ok(())
+    }
+}
+
+fn stop_if_cancelled(err: AppError) -> Result<(), AppError> {
+    if err.code == ErrorCode::JobCancelled {
+        return Err(err);
+    }
+    Ok(())
 }
 
 pub(super) fn check_count(n: usize) -> Result<(), AppError> {

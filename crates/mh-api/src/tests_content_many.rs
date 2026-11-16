@@ -89,3 +89,58 @@ async fn install_body_and_sort_are_validated() {
         (StatusCode::BAD_REQUEST, Some("INVALID_INPUT"))
     );
 }
+
+#[tokio::test]
+async fn browse_by_loader_and_create_server_with_content() {
+    let api = content_api(None);
+    let base = "/api/v1/content";
+    let (status, res) = api
+        .get(&format!("{base}/search?q=&loader=fabric&minecraft=1.21.4"))
+        .await;
+    assert_eq!(status, StatusCode::OK, "{res}");
+    let (status, versions) = api
+        .get(&format!(
+            "{base}/modrinth/projects/sodium/versions?loader=fabric&minecraft=1.21.4"
+        ))
+        .await;
+    assert_eq!(status, StatusCode::OK, "{versions}");
+    assert_eq!(versions.as_array().unwrap().len(), 2);
+    for bad in [
+        "loader=fabric",
+        "minecraft=1.21.4",
+        "loader=nope&minecraft=1.21.4",
+        "loader=fabric&minecraft=x y",
+    ] {
+        let (status, _) = api.get(&format!("{base}/search?q=&{bad}")).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{bad}");
+    }
+    let (status, err) = api
+        .get(&format!(
+            "{base}/modrinth/projects/sodium/versions?loader=vanilla&minecraft=1.21.4"
+        ))
+        .await;
+    assert_eq!(
+        (status, err["code"].as_str()),
+        (StatusCode::CONFLICT, Some("CONTENT_INCOMPATIBLE"))
+    );
+
+    let body = json!({
+        "name": "Kèm mod", "loader": "fabric", "minecraft": "1.21.4", "port": 25570,
+        "content": [{ "source": "modrinth", "project_id": "sodium" }],
+    });
+    let (status, created) = api.post("/api/v1/servers", Some(body)).await;
+    assert_eq!(status, StatusCode::ACCEPTED, "{created}");
+    wait_job(&api, created["job_id"].as_u64().unwrap()).await;
+    let id = created["server_id"].as_str().unwrap();
+    let (_, list) = api.get(&format!("/api/v1/servers/{id}/content")).await;
+    assert_eq!(list["files"].as_array().unwrap().len(), 2, "{list}");
+
+    let bad = json!({
+        "name": "Sai", "loader": "fabric", "minecraft": "1.21.4",
+        "content": [{ "source": "modrinth", "project_id": " " }],
+    });
+    assert_eq!(
+        api.post("/api/v1/servers", Some(bad)).await.0,
+        StatusCode::BAD_REQUEST
+    );
+}
