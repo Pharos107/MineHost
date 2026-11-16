@@ -3,16 +3,18 @@ import { useTranslation } from "react-i18next";
 
 import type { MetricSample, Server } from "../../../api/client";
 import { formatBytes } from "../../../format";
-import { Notice, Stack, StatGrid, StatTile } from "../../../ui";
+import { Columns, Notice, Stack, StatGrid, StatTile } from "../../../ui";
 import { usePlayers } from "../players/usePlayers";
 import { useServer } from "../ServerLayout";
+import { ConsoleTail } from "./ConsoleTail";
 import { formatUptime } from "./duration";
 import { useServerMetrics } from "./metricsLive";
 import { OverviewCharts } from "./OverviewCharts";
+import { ServerInfoCard } from "./ServerInfoCard";
 
 const WITH_PROCESS: Server["state"][] = ["starting", "running", "stopping"];
 
-/** Tổng quan một server (spec P2, mục 6.4): số hiện tại và biểu đồ 1 giờ gần nhất. */
+/** Tổng quan một server (spec P2, mục 6.4): số hiện tại, biểu đồ 1 giờ gần nhất, thông tin và log cuối. */
 export function OverviewPage() {
   const server = useServer();
   const { t } = useTranslation();
@@ -28,6 +30,10 @@ export function OverviewPage() {
     <Stack gap={4}>
       <Tiles server={server} samples={samples} disk={metrics.data?.disk_bytes ?? null} since={metrics.data?.running_since ?? null} now={now} />
       {online ? <OverviewCharts server={server} samples={samples} now={now} /> : <Notice tone="info">{t("overview.offline")}</Notice>}
+      <Columns count={2}>
+        <ServerInfoCard server={server} />
+        <ConsoleTail server={server} />
+      </Columns>
     </Stack>
   );
 }

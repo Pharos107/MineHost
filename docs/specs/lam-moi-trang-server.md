@@ -18,19 +18,25 @@ CPU / RAM, nút bật / tắt ở thanh bên.
   ghim ở đáy thanh bên, ngay trên phần đổi ngôn ngữ và Thoát.
 - **Ô số:** CPU, RAM (kèm thanh mức so với RAM tối đa, từ 90 % thì đổi màu cảnh báo), Người chơi
   (chỉ số đang chơi / tối đa, không liệt kê tên), Thời gian chạy, Dung lượng. Lưới giãn hết chiều ngang.
-- **Biểu đồ:** vẫn hai biểu đồ CPU và RAM 1 giờ qua. Nút "Cạnh nhau" / "Hai hàng" đổi cách xếp, nhớ trên
-  trình duyệt đó; màn hình hẹp luôn một cột. Nút "Xem chi tiết" trên mỗi biểu đồ mở hộp thoại có biểu
+- **Biểu đồ:** CPU, RAM và số người chơi 1 giờ qua. Nút "Cạnh nhau" / "Từng hàng" đổi cách xếp, nhớ trên
+  trình duyệt đó; cạnh nhau là ba cột trên màn hình rất rộng, hai cột khi vừa; màn hình hẹp luôn một cột. Nút "Xem chi tiết" trên mỗi biểu đồ mở hộp thoại có biểu
   đồ lớn hơn và bốn số của cả giờ: hiện tại, trung bình, cao nhất, thấp nhất.
+- **Dưới biểu đồ** (cả khi server tắt), hai thẻ cạnh nhau:
+  - **Thông tin server:** Java, RAM tối thiểu – tối đa, cổng, tự bật cùng MineHost, tự bật lại khi crash,
+    giờ khởi động lại hằng ngày, lịch sao lưu tự động.
+  - **Console gần đây:** khung log thấp chỉ đọc (giữ 200 dòng), nút "Mở console" sang trang Console.
 
 Component: `StatTile` thêm `meter`, `NavSection` thêm `actions` và `extra`, `PageHeader` thêm `eyebrow`,
-`AppShell` thêm `navEnd`, thêm `Columns`.
+`AppShell` thêm `navEnd`, `Terminal` thêm `size="sm"`, thêm `Columns` (1, 2 hoặc 3 cột).
 
 ## Tiêu chí chấp nhận
 
 - Dòng phiên bản ghép đúng loader, bản loader, Minecraft, modpack (Vitest).
 - Nút ở thanh bên gửi đúng lệnh, bật lần đầu vẫn hỏi EULA, không có menu Buộc dừng (Vitest).
 - Ô Người chơi chỉ hiện số; ô RAM có thanh mức đúng phần trăm (Vitest).
-- Đổi sang "Hai hàng" thì lần mở sau vẫn là hai hàng; hộp chi tiết có trung bình, cao nhất, thấp nhất (Vitest).
+- Thẻ Thông tin server hiện đúng từng cài đặt; lịch sao lưu đọc thành câu; dòng console mới hiện ở thẻ
+  Console gần đây; có biểu đồ Người chơi (Vitest).
+- Đổi sang "Từng hàng" thì lần mở sau vẫn là từng hàng; hộp chi tiết có trung bình, cao nhất, thấp nhất (Vitest).
 - Xem tay ở chế độ sáng, tối và bề ngang 375 px: không cuộn ngang.
 
 ## Không làm

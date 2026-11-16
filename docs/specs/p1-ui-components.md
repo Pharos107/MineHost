@@ -34,7 +34,7 @@ khoảng cách; mọi giá trị đó là token trong `ui/src/ui/tokens.css`.
 | | `HangingSign` (bảng hiệu gỗ treo hai sợi xích có khuy sắt, khung gỗ pixel có ke sắt bốn góc: logo, tiêu đề, mô tả, thân, chân; gỗ sồi khi sáng, gỗ vân sam khi tối) | đăng nhập |
 | | `BlockWordmark` (logo chữ MineHost kiểu tiêu đề MINECRAFT: mặt đá texture pixel, gờ vát, vết nứt, mặt Creeper, khối 3D hội tụ về giữa và viền đen dày; SVG) | đăng nhập |
 | | `PageHeader` (tiêu đề, `eyebrow` phía trên, dòng phụ, vùng nút) | mọi trang |
-| | `Columns` (một hoặc hai cột bằng nhau, hẹp thì một cột) | biểu đồ Tổng quan |
+| | `Columns` (một, hai hoặc ba cột bằng nhau, hẹp thì một cột) | biểu đồ và thẻ ở Tổng quan |
 | | `Notice` (info, success, warning, danger; tiêu đề, nội dung, nút) | lỗi, cảnh báo RAM, "có hiệu lực sau khi khởi động lại" |
 | | `Badge`, `StatusBadge` (ánh xạ 7 trạng thái server ra màu và nhãn đã dịch) | danh sách, chi tiết |
 | | `Spinner`, `EmptyState` | tải dữ liệu, danh sách trống |

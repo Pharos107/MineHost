@@ -13,3 +13,8 @@
     height: 320px;
   }
 }
+
+/* Đặt sau khối @media ở trên để cỡ nhỏ giữ nguyên trên mọi màn hình. */
+.terminal.small {
+  height: 180px;
+}

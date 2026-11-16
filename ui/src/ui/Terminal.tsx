@@ -1,6 +1,7 @@
 import type { ITheme, Terminal as XTerm } from "@xterm/xterm";
 import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
 
+import { cx } from "./cx";
 import { subscribeTheme } from "./theme";
 import styles from "./Terminal.module.css";
 
@@ -21,6 +22,8 @@ interface TerminalProps {
   ref?: Ref<TerminalHandle>;
   /** Số dòng giữ lại để cuộn xem (spec P1: 5.000). */
   maxLines?: number;
+  /** `sm`: khung thấp khoảng 8 dòng, để xem nhanh vài dòng cuối (Tổng quan). */
+  size?: "md" | "sm";
 }
 
 /** Màu của xterm lấy từ token, để console theo đúng bảng màu sáng/tối của app. */
@@ -51,7 +54,7 @@ async function loadXterm() {
 }
 
 /** Vùng log chỉ đọc dựa trên xterm.js: hiểu mã màu ANSI của server, cuộn mượt với hàng nghìn dòng. */
-export function Terminal({ label, ref, maxLines = 5000 }: TerminalProps) {
+export function Terminal({ label, ref, maxLines = 5000, size = "md" }: TerminalProps) {
   const host = useRef<HTMLDivElement>(null);
   const term = useRef<XTerm | null>(null);
   // Dòng đến trước khi xterm tải xong được giữ lại rồi ghi một lượt.
@@ -113,5 +116,5 @@ export function Terminal({ label, ref, maxLines = 5000 }: TerminalProps) {
     };
   }, [maxLines]);
 
-  return <div className={styles.terminal} ref={host} role="log" aria-label={label} />;
+  return <div className={cx(styles.terminal, size === "sm" && styles.small)} ref={host} role="log" aria-label={label} />;
 }
