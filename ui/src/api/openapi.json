@@ -392,6 +392,18 @@
               "format": "int32",
               "minimum": 0
             }
+          },
+          {
+            "name": "sort",
+            "in": "path",
+            "description": "`relevance` (mặc định), `downloads` hoặc `updated`.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
           }
         ],
         "responses": {
@@ -3554,6 +3566,22 @@
       },
       "ContentInstallBody": {
         "type": "object",
+        "description": "Danh sách mod/plugin cần cài cùng lúc (1 đến 50 mục), dependency tự thêm.",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentItemBody"
+            }
+          }
+        }
+      },
+      "ContentItemBody": {
+        "type": "object",
+        "description": "Một mục trong danh sách cài.",
         "required": [
           "source",
           "project_id"
@@ -4563,6 +4591,7 @@
       "PlannedContentDto": {
         "type": "object",
         "required": [
+          "source",
           "project_id",
           "project_name",
           "version_id",
@@ -4606,6 +4635,9 @@
           },
           "replaces_existing": {
             "type": "boolean"
+          },
+          "source": {
+            "type": "string"
           },
           "version_id": {
             "type": "string"
