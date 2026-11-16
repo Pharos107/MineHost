@@ -33,6 +33,7 @@ quy tắc code và lộ trình nằm ở [AGENTS.md](../AGENTS.md).
 | [specs/p2-ket-qua-chay-dai.md](specs/p2-ket-qua-chay-dai.md) | Kết quả chạy 10 server liên tục và thử LAN |
 | [specs/p2-lam-moi-giao-dien.md](specs/p2-lam-moi-giao-dien.md) | Làm mới giao diện các trang chung: thẻ server, bảng màu Đá và cỏ, nút sáng/tối |
 | [specs/lam-moi-trang-server.md](specs/lam-moi-trang-server.md) | Làm mới trang trong một server: dòng phiên bản, nút bật/tắt ở thanh bên, ô Người chơi, biểu đồ |
+| [specs/lam-moi-trang-nguoi-choi.md](specs/lam-moi-trang-nguoi-choi.md) | Làm mới trang Người chơi: ô số, danh sách gộp có lọc, khung chi tiết thay hộp thoại |
 | [specs/p3-mod-va-modpack.md](specs/p3-mod-va-modpack.md) | Spec P3: loader, mod, plugin, modpack (xong nhóm A–E; còn F–H) |
 | [specs/p3-ke-hoach-pr.md](specs/p3-ke-hoach-pr.md) | Kế hoạch PR của P3 |
 | [specs/p3-trinh-duyet-mod.md](specs/p3-trinh-duyet-mod.md) | Bổ sung P3: trình duyệt mod có khung chi tiết, thêm mod khi server đang chạy, chọn mod khi tạo server, trang Mod gọn |

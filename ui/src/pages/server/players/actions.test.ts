@@ -59,6 +59,6 @@ describe("skinview3d tải lười", () => {
     const staticImports = files.filter(([, text]) => /from\s+["']\.\/SkinViewer["']/.test(text)).map(([path]) => path);
     expect(staticImports).toEqual([]);
     const lazy = files.filter(([, text]) => text.includes('import("./SkinViewer")')).map(([path]) => path);
-    expect(lazy).toEqual(["pages/server/players/PlayerDialog.tsx"]);
+    expect(lazy).toEqual(["pages/server/players/PlayerDetail.tsx"]);
   });
 });

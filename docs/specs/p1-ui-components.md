@@ -51,6 +51,7 @@ khoảng cách; mọi giá trị đó là token trong `ui/src/ui/tokens.css`.
 | | `CopyField` (giá trị kèm nút chép vào clipboard, báo "Đã chép") | địa chỉ LAN |
 | Bảng (13d) | `DataTable` (cột khai báo, sắp xếp, tìm không dấu, thao tác theo hàng, dạng thẻ khi hẹp), `SearchInput` | danh sách server; P2: file, backup, người chơi |
 | Nội dung (P3) | `ProjectCard` (ảnh, tên, mô tả một dòng, số lượt tải, nhãn loader và phiên bản) | tìm mod, tìm modpack |
+| Danh sách và chi tiết | `SelectList` (ô tìm, nút, dải lọc), `SelectListGroup` (tiêu đề, số, câu khi trống), `SelectListItem` (ảnh, tên, dòng phụ, huy hiệu, `selected`); `DetailHeader` (ảnh lớn, tên `h2`, dòng phụ), `DetailSection` (tiêu đề có icon, `tone="danger"`); `Avatar` cỡ `xl`, `online` | người chơi |
 
 ### Bảng
 

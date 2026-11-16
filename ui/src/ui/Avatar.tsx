@@ -13,7 +13,9 @@ interface AvatarProps {
   imageUrl?: string | null;
   /** Biểu tượng thay thế khi không có ảnh. */
   icon?: LucideIcon;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
+  /** Chấm xanh ở góc: người chơi đang trong game. */
+  online?: boolean;
 }
 
 interface Loaded {
@@ -21,10 +23,10 @@ interface Loaded {
   hat: boolean;
 }
 
-const ICON_SIZE = { sm: 14, md: 16, lg: 24 } as const;
+const ICON_SIZE = { sm: 14, md: 16, lg: 24, xl: 40 } as const;
 
 /** Đầu skin Minecraft hoặc biểu tượng đại diện (spec P2, mục 6.12; spec P3, mục 6.3). */
-export function Avatar({ name, skinUrl, imageUrl, icon: Icon, size = "md" }: AvatarProps) {
+export function Avatar({ name, skinUrl, imageUrl, icon: Icon, size = "md", online = false }: AvatarProps) {
   // Nhớ URL đã tải được, để đổi người (đổi URL) thì quay về chữ cái cho tới khi ảnh mới tải xong.
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [failedImage, setFailedImage] = useState<string | null>(null);
@@ -32,7 +34,7 @@ export function Avatar({ name, skinUrl, imageUrl, icon: Icon, size = "md" }: Ava
   const showImage = !skinUrl && Boolean(imageUrl) && failedImage !== imageUrl;
   const skin = { "--skin": `url("${skinUrl ?? ""}")` } as CSSProperties;
 
-  return (
+  const avatar = (
     <span className={cx(styles.avatar, styles[size])} role="img" aria-label={name}>
       {skinUrl && !ready && (
         <img className={styles.probe} src={skinUrl} alt="" onLoad={(e) => setLoaded({ url: skinUrl, hat: showsHat(e.currentTarget) })} />
@@ -49,6 +51,14 @@ export function Avatar({ name, skinUrl, imageUrl, icon: Icon, size = "md" }: Ava
       ) : (
         <span aria-hidden>{name.slice(0, 1).toUpperCase()}</span>
       )}
+    </span>
+  );
+  // Chấm nằm ngoài ô ảnh (ô ảnh cắt tràn để phóng skin) nên cần một lớp bọc.
+  if (!online) return avatar;
+  return (
+    <span className={styles.presence}>
+      {avatar}
+      <span className={styles.dot} aria-hidden />
     </span>
   );
 }

@@ -34,6 +34,7 @@ import { NavSectionDemo } from "./GalleryNav";
 import { ChartSection } from "./GalleryCharts";
 import { FilesSection } from "./GalleryFiles";
 import { FormSection, OverlaySection, ProgressSection } from "./GallerySections";
+import { ListSection } from "./GalleryList";
 import { TableSection } from "./GalleryTable";
 
 const STATES: ServerState[] = ["installing", "stopped", "starting", "running", "stopping", "crashed", "broken"];
@@ -54,6 +55,7 @@ export function Gallery() {
         <NoticeSection />
         <CardSection />
         <TableSection />
+        <ListSection />
         <FormSection />
         <ProgressSection />
         <OverlaySection />
@@ -116,6 +118,7 @@ function BadgeSection() {
         <Avatar name="Steve" size="sm" />
         <Avatar name="Alex" />
         <Avatar name="Notch" size="lg" />
+        <Avatar name="jeb_" online />
         <AvatarStack players={["Steve", "Alex", "Notch", "jeb_", "Dinnerbone", "Grumm"].map((name) => ({ name }))} max={4} />
         <BlockBanner seed="server-a" variant="mark" />
         <BlockBanner seed="MineHost" variant="logo" />

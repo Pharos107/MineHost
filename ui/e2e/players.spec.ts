@@ -33,21 +33,24 @@ test.afterEach(async ({ request }) => {
   expect(deleted.ok()).toBe(true);
 });
 
-// Spec P2, kế hoạch PR-18: `fake-mc` in dòng `joined` thì người đó hiện trong bảng Đang online.
-test("người vào server hiện trong bảng Đang online", async ({ page, request }) => {
+// Spec P2, kế hoạch PR-18: `fake-mc` in dòng `joined` thì người đó hiện trong nhóm Đang chơi.
+test("người vào server hiện trong nhóm Đang chơi", async ({ page, request }) => {
   const id = await runningServer(request);
   serverId = id;
   await page.goto(`/servers/${id}/players`);
-  await expect(page.getByText("Chưa có ai online.")).toBeVisible();
+  await expect(page.getByText("Chưa có ai đang chơi.")).toBeVisible();
 
   const sent = await request.post(`/api/v1/servers/${id}/console`, { headers: HEADERS, data: { command: "fake-join Steve" } });
   expect(sent.ok()).toBe(true);
-  const online = page.getByRole("table", { name: "Đang online" });
-  await expect(online.getByText("Steve", { exact: true })).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText("Đang online (1/20)")).toBeVisible();
+  const list = page.getByRole("region", { name: "Người chơi" });
+  await expect(list.getByRole("heading", { name: /Đang chơi\s*1/ })).toBeVisible({ timeout: 15_000 });
+  await list.getByRole("button", { name: /Steve/ }).click();
+  await expect(page.getByRole("heading", { level: 2, name: "Steve" })).toBeVisible();
 
   // Thêm theo tên khi server đang chạy: gửi lệnh `whitelist add` cho Minecraft.
-  await page.getByRole("textbox", { name: "Tên người chơi" }).fill("Alex");
-  await page.getByRole("button", { name: "Thêm vào whitelist" }).click();
-  await expect(page.getByText(/Đã gửi lệnh thêm Alex vào whitelist/)).toBeVisible();
+  await list.getByRole("button", { name: "Thêm", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Thêm người chơi" });
+  await dialog.getByRole("textbox", { name: "Tên người chơi" }).fill("Alex");
+  await dialog.getByRole("button", { name: "Thêm vào whitelist" }).click();
+  await expect(dialog.getByText(/Đã gửi lệnh thêm Alex vào whitelist/)).toBeVisible();
 });
