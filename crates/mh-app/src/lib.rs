@@ -145,6 +145,7 @@ pub struct App {
     curseforge_catalog: Option<Arc<dyn ContentCatalog>>,
     content_scanner: Arc<ContentScanner>,
     content_locks: Mutex<HashMap<ServerId, Arc<tokio::sync::Mutex<()>>>>,
+    content_added: Mutex<content::AddedWhileRunning>,
     /// Kết quả "thiếu dependency" của lần `preflight` gần nhất, để `ServerView` không phải quét jar.
     preflight_missing: Mutex<HashMap<ServerId, bool>>,
     curseforge_builtin: Option<mh_core::CurseforgeKey>,
@@ -215,6 +216,7 @@ impl App {
             curseforge_catalog: None,
             content_scanner: Arc::new(ContentScanner::new()),
             content_locks: Mutex::new(HashMap::new()),
+            content_added: Mutex::new(HashMap::new()),
             preflight_missing: Mutex::new(HashMap::new()),
             curseforge_builtin: None,
             secrets_lock: Mutex::new(()),

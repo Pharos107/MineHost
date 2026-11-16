@@ -13,12 +13,12 @@ test("tạo, bật và tắt một server", async ({ page }) => {
 
   // Tạo xong thì tự chuyển sang trang server.
   await expect(page.getByRole("heading", { level: 1, name: "Server của tôi" })).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("button", { name: "Bật server" }).click();
+  await page.getByRole("main").getByRole("button", { name: "Bật server" }).click();
   await page.getByRole("button", { name: "Tôi đồng ý" }).click();
-  await expect(page.getByText("Đang chạy", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("main").getByText("Đang chạy", { exact: true })).toBeVisible({ timeout: 30_000 });
 
-  await page.getByRole("button", { name: "Tắt" }).click();
-  await expect(page.getByText("Đã tắt", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("main").getByRole("button", { name: "Tắt" }).click();
+  await expect(page.getByRole("main").getByText("Đã tắt", { exact: true })).toBeVisible({ timeout: 30_000 });
 
   await page.getByRole("link", { name: "Tất cả máy chủ" }).click();
   await page.getByRole("link", { name: "Tác vụ" }).click();
@@ -38,17 +38,17 @@ test("tạo, bật và tắt một server Fabric từ wizard", async ({ page }) 
   await page.getByRole("button", { name: "Tạo server" }).click();
 
   await expect(page.getByRole("heading", { level: 1, name: "Fabric E2E" })).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("button", { name: "Bật server" }).click();
+  await page.getByRole("main").getByRole("button", { name: "Bật server" }).click();
   await page.getByRole("button", { name: "Tôi đồng ý" }).click();
-  await expect(page.getByText("Đang chạy", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("main").getByText("Đang chạy", { exact: true })).toBeVisible({ timeout: 30_000 });
 
   await page.getByRole("link", { name: "Tất cả máy chủ" }).click();
   const card = page.getByRole("link", { name: "Fabric E2E" }).locator("xpath=ancestor::article");
   await expect(card.getByText(/Fabric 1\.21\.4/)).toBeVisible();
 
   await page.getByRole("link", { name: "Fabric E2E" }).click();
-  await page.getByRole("button", { name: "Tắt" }).click();
-  await expect(page.getByText("Đã tắt", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("main").getByRole("button", { name: "Tắt" }).click();
+  await expect(page.getByRole("main").getByText("Đã tắt", { exact: true })).toBeVisible({ timeout: 30_000 });
 
   await page.getByRole("link", { name: "Cài đặt server" }).click();
   await page.getByRole("button", { name: "Nâng cao" }).click();

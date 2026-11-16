@@ -30,7 +30,7 @@ test("kiểm tra rồi cập nhật một mod lên bản mới", async ({ page, 
   await waitJob(request, createJob);
   const install = await request.post(`/api/v1/servers/${id}/content`, {
     headers: HEADERS,
-    data: { source: "modrinth", project_id: "e2e-lithium", version_id: "e2e-lithium-0.14.0" },
+    data: { items: [{ source: "modrinth", project_id: "e2e-lithium", version_id: "e2e-lithium-0.14.0" }] },
   });
   expect(install.status()).toBe(202);
   await waitJob(request, ((await install.json()) as { job_id: number }).job_id);

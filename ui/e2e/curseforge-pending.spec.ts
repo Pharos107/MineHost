@@ -112,7 +112,7 @@ test("tải tay file CurseForge sai hash báo lỗi đúng tên, khớp SHA-1 ch
   await expect(link).toHaveAttribute("href", /curseforge\.com\/minecraft\/mc-mods\/restricted-mod\/download\/5800999/);
 
   // Bấm Bật server khi còn mục chờ -> bị chặn với thông báo lỗi.
-  await page.getByRole("button", { name: "Bật server" }).click();
+  await page.getByRole("main").getByRole("button", { name: "Bật server" }).click();
   await expect(page.getByText(/Còn file từ CurseForge cần tự tải/)).toBeVisible({ timeout: 10_000 });
 
   // Kéo thả file sai -> báo lỗi kèm tên file đúng đang chờ.
@@ -146,8 +146,8 @@ test("tải tay file CurseForge sai hash báo lỗi đúng tên, khớp SHA-1 ch
   await expect(page.getByText("Đã có", { exact: true })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("table", { name: "Danh sách mod" }).getByText("Restricted Mod")).toBeVisible();
 
-  await page.getByRole("button", { name: "Bật server" }).click();
-  await expect(page.getByText("Đang chạy", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("main").getByRole("button", { name: "Bật server" }).click();
+  await expect(page.getByRole("main").getByText("Đang chạy", { exact: true })).toBeVisible({ timeout: 30_000 });
 });
 
 test("Bật mà không có các mod này chạy được server khi vẫn còn mục chờ CurseForge", async ({ page, request }) => {
@@ -157,5 +157,5 @@ test("Bật mà không có các mod này chạy được server khi vẫn còn m
 
   await expect(page.getByText("Cần tải tay 1 file CurseForge")).toBeVisible({ timeout: 15_000 });
   await page.getByRole("button", { name: "Bật mà không có các mod này" }).click();
-  await expect(page.getByText("Đang chạy", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("main").getByText("Đang chạy", { exact: true })).toBeVisible({ timeout: 30_000 });
 });

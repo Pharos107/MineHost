@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
-use mh_app::content::{CatalogSource, ProjectType};
+use mh_app::content::{CatalogSource, ContentSearch, ProjectType};
 use mh_app::{App, JobState, ModpackRequest, ModpackSourceInput, ModpackSummary, e2e};
 use mh_core::instance::ModpackSource;
 use mh_core::{GamePort, ServerName};
@@ -38,9 +38,10 @@ async fn e2e_curseforge_modpacks_install_restricted_and_server_pack() {
         .search_content(
             CatalogSource::Curseforge,
             "cf-",
-            Some(ProjectType::Modpack),
-            None,
-            1,
+            &ContentSearch {
+                kind: Some(ProjectType::Modpack),
+                ..ContentSearch::default()
+            },
         )
         .await
         .unwrap();

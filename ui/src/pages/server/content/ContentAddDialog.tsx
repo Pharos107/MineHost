@@ -251,21 +251,17 @@ function PlanStep({ server, kind, project, onBack, onPendingChange, onStarted }:
   const plan = useQuery({
     queryKey: ["content-plan", server.id, project.source, project.project_id, activeVersionId],
     queryFn: () =>
-      contentApi.plan(server.id, {
-        source: project.source,
-        project_id: project.project_id,
-        version_id: activeVersionId,
-      }),
+      contentApi.plan(server.id, [
+        { source: project.source, project_id: project.project_id, version_id: activeVersionId },
+      ]),
     enabled: activeVersionId !== null,
   });
 
   const install = useMutation({
     mutationFn: () =>
-      contentApi.install(server.id, {
-        source: project.source,
-        project_id: project.project_id,
-        version_id: activeVersionId,
-      }),
+      contentApi.install(server.id, [
+        { source: project.source, project_id: project.project_id, version_id: activeVersionId },
+      ]),
     onMutate: () => onPendingChange(true),
     onError: () => onPendingChange(false),
     onSuccess: (res) => onStarted(res.job_id),
