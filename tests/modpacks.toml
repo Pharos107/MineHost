@@ -206,17 +206,17 @@ memory_mb = 6144
 done_timeout_s = 900
 
 [[pack]]
-id = "cf-monifactory"
-name = "Monifactory"
+id = "cf-craftoria"
+name = "Craftoria"
 source = "curseforge"
-project_id = "1004602"
-version_id = "9567883"
-loader = "forge"
-minecraft = "1.20.1"
+project_id = "1039252"
+version_id = "8874369"
+loader = "neoforge"
+minecraft = "1.21.1"
 memory_mb = 8192
 done_timeout_s = 1200
 manual_downloads = true
-note = "có 1 mod CurseForge cấm phân phối, test tải tay"
+note = "dựng từ manifest, nhiều mod CurseForge cấm phân phối (test tải tay), mod chỉ client tắt theo Modrinth"
 
 
 
