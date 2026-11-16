@@ -1,22 +1,46 @@
 import type { TFunction } from "i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowUpCircle, ExternalLink, Package, Plus, RotateCw, Trash2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 
-import { errorMessage } from "../../../api/client";
-import { contentApi, contentKey, type InstalledContent, type UpdateCandidate, type UpdateReport } from "../../../api/content";
+import { api, errorMessage } from "../../../api/client";
+import {
+  contentApi,
+  contentKey,
+  type ContentKind,
+  type InstalledContent,
+  type UpdateCandidate,
+  type UpdateReport,
+} from "../../../api/content";
 import { SERVERS_KEY } from "../../../api/live";
-import { Avatar, Badge, Button, ConfirmDialog, DataTable, EmptyState, Notice, Stack, Switch, type Column, type RowAction } from "../../../ui";
+import {
+  Avatar,
+  Badge,
+  Button,
+  ConfirmDialog,
+  DataTable,
+  EmptyState,
+  FileButton,
+  FileDrop,
+  Notice,
+  Stack,
+  Switch,
+  type Column,
+  type RowAction,
+} from "../../../ui";
 import { useServer } from "../ServerLayout";
-import { contentSourceKind, isContentLocked, modrinthProjectUrl, updateFor } from "./content";
+import { canAddContent, contentSourceKind, isContentLocked, modrinthProjectUrl, updateFor } from "./content";
 import { ContentAddDialog } from "./ContentAddDialog";
 import { ContentPendingBox } from "./ContentPendingBox";
-import { ContentUpdates } from "./ContentUpdates";
-import { ContentUpload } from "./ContentUpload";
+import { useContentUpdates } from "./ContentUpdates";
+import { useContentUpload } from "./ContentUpload";
 
-/** Trang Mod hoặc Plugin (spec P3, mục 6.3): liệt kê, lọc, thêm, tải lên, bật/tắt và gỡ vào thùng rác. */
+/**
+ * Trang Mod hoặc Plugin (spec trình duyệt mod, mục 1): thanh công cụ một hàng trên bảng, kéo thả
+ * `.jar` thẳng vào bảng. Thêm mod được cả khi server chạy; bật/tắt và gỡ thì phải tắt server.
+ */
 export function ContentPage() {
   const { t } = useTranslation();
   const server = useServer();
@@ -34,6 +58,10 @@ export function ContentPage() {
     void queryClient.invalidateQueries({ queryKey: [...SERVERS_KEY, server.id] });
     void queryClient.invalidateQueries({ queryKey: [...SERVERS_KEY, server.id, "preflight"] });
   }, [queryClient, server.id]);
+  // Process mới nạp hết mod: tải lại để nhãn "Chờ khởi động lại" mất ngay sau khi khởi động lại.
+  useEffect(() => {
+    void queryClient.invalidateQueries({ queryKey: contentKey(server.id) });
+  }, [queryClient, server.id, server.state]);
 
   const [removing, setRemoving] = useState<InstalledContent | null>(null);
   const [report, setReport] = useState<UpdateReport | null>(null);
@@ -49,13 +77,24 @@ export function ContentPage() {
       refresh();
     },
   });
+  const upload = useContentUpload(server.id, refresh);
+  const updates = useContentUpdates({
+    serverId: server.id,
+    kind: kind ?? "mods",
+    report,
+    onReport: setReport,
+    confirming,
+    onConfirming: setConfirming,
+    onUpdated: refresh,
+  });
 
   if (kind === null) {
     return <EmptyState icon={Package} title={t("content.unsupported")} />;
   }
 
   const locked = isContentLocked(server);
-  const addOpen = !locked && params.get("add") === "1";
+  const canAdd = canAddContent(server);
+  const addOpen = canAdd && params.get("add") === "1";
   const setAddOpen = (open: boolean) => {
     setParams(
       (prev) => {
@@ -67,16 +106,114 @@ export function ContentPage() {
       { replace: true },
     );
   };
+  const files = list.data?.files ?? [];
+  const waiting = files.filter((item) => item.needs_restart).length;
   const busyFile = toggle.isPending ? toggle.variables.file : null;
-  const columns = buildColumns(t, locked, busyFile, report, (item, enabled) => toggle.mutate({ file: item.file_name, enabled }));
-  const actions: RowAction<InstalledContent>[] = [
+  const lockHint = locked ? t(`content.${kind}.lockedHint`) : undefined;
+  const columns = buildColumns(t, lockHint, busyFile, report, (item, enabled) => toggle.mutate({ file: item.file_name, enabled }));
+  const actions = buildActions(t, kind, locked, report, setConfirming, setRemoving);
+  const toolbar = (
+    <>
+      <Button variant="primary" icon={Plus} disabled={!canAdd} onClick={() => setAddOpen(true)}>
+        {t(`content.${kind}.add`)}
+      </Button>
+      <FileButton label={t("content.upload")} accept=".jar" disabled={!canAdd} loading={upload.busy} onFiles={upload.start} />
+      {updates.button}
+    </>
+  );
+
+  return (
+    <Stack gap={3}>
+      <ContentPendingBox key={server.id} server={server} pending={list.data?.pending ?? []} locked={locked} onDone={refresh} />
+      {waiting > 0 && <RestartNotice serverId={server.id} kind={kind} count={waiting} />}
+      {upload.status}
+      {updates.panel}
+      {toggle.isError && <Notice tone="danger">{errorMessage(t, toggle.error)}</Notice>}
+      <FileDrop variant="overlay" label={t("content.upload")} hint={t("content.dropHint")} disabled={!canAdd} onFiles={upload.start}>
+        {list.isError ? (
+          <Notice
+            tone="danger"
+            action={
+              <Button size="sm" icon={RotateCw} onClick={() => void list.refetch()}>
+                {t("common.retry")}
+              </Button>
+            }
+          >
+            {errorMessage(t, list.error)}
+          </Notice>
+        ) : (
+          <DataTable
+            label={t(`content.${kind}.table`)}
+            columns={columns}
+            rows={files}
+            rowKey={(item) => item.file_name}
+            rowLabel={(item) => item.name}
+            searchText={(item) => `${item.name} ${item.file_name}`}
+            toolbar={toolbar}
+            actions={actions}
+            inlineActions={0}
+            loading={list.isPending}
+            empty={
+              <Stack gap={3}>
+                <Stack direction="row" gap={2} wrap>
+                  {toolbar}
+                </Stack>
+                <EmptyState icon={Package} title={t(`content.${kind}.empty`)} description={t(`content.${kind}.emptyHint`)} />
+              </Stack>
+            }
+          />
+        )}
+      </FileDrop>
+      <RemoveDialog
+        item={removing}
+        loading={remove.isPending}
+        error={remove.isError ? remove.error : null}
+        onCancel={() => {
+          setRemoving(null);
+          remove.reset();
+        }}
+        onConfirm={() => removing && remove.mutate(removing)}
+      />
+      <ContentAddDialog open={addOpen} server={server} kind={kind} onClose={() => setAddOpen(false)} onInstalled={refresh} />
+    </Stack>
+  );
+}
+
+/** Báo mod thêm lúc server đang chạy, kèm nút khởi động lại để nạp. */
+function RestartNotice({ serverId, kind, count }: { serverId: string; kind: ContentKind; count: number }) {
+  const { t } = useTranslation();
+  const restart = useMutation({ mutationFn: () => api.action(serverId, "restart") });
+  return (
+    <Notice
+      tone="info"
+      action={
+        <Button size="sm" icon={RotateCw} loading={restart.isPending} onClick={() => restart.mutate()}>
+          {t("server.restart")}
+        </Button>
+      }
+    >
+      {t(`content.${kind}.restartNotice`, { count })}
+      {restart.isError && <> {errorMessage(t, restart.error)}</>}
+    </Notice>
+  );
+}
+
+function buildActions(
+  t: TFunction,
+  kind: ContentKind,
+  locked: boolean,
+  report: UpdateReport | null,
+  onConfirm: (items: UpdateCandidate[]) => void,
+  onRemove: (item: InstalledContent) => void,
+): RowAction<InstalledContent>[] {
+  return [
     {
       label: t("content.updates.updateOne"),
       icon: ArrowUpCircle,
       hidden: (item) => updateFor(report, item) === undefined,
       onSelect: (item) => {
         const candidate = updateFor(report, item);
-        if (candidate) setConfirming([candidate]);
+        if (candidate) onConfirm([candidate]);
       },
     },
     {
@@ -93,85 +230,14 @@ export function ContentPage() {
       icon: Trash2,
       tone: "danger",
       disabled: () => locked,
-      onSelect: setRemoving,
+      onSelect: onRemove,
     },
   ];
-
-  return (
-    <Stack gap={4}>
-      {locked && <Notice tone="info">{t(`content.${kind}.runningHint`)}</Notice>}
-      <ContentPendingBox
-        key={server.id}
-        server={server}
-        pending={list.data?.pending ?? []}
-        locked={locked}
-        onDone={refresh}
-      />
-      <Stack direction="row" gap={2} wrap>
-        <Button variant="primary" icon={Plus} disabled={locked} onClick={() => setAddOpen(true)}>
-          {t("content.add")}
-        </Button>
-      </Stack>
-      <ContentUpload serverId={server.id} locked={locked} onDone={refresh} />
-      <ContentUpdates
-        serverId={server.id}
-        kind={kind}
-        report={report}
-        onReport={setReport}
-        confirming={confirming}
-        onConfirming={setConfirming}
-        onUpdated={refresh}
-      />
-      {toggle.isError && <Notice tone="danger">{errorMessage(t, toggle.error)}</Notice>}
-      {list.isError ? (
-        <Notice
-          tone="danger"
-          action={
-            <Button size="sm" icon={RotateCw} onClick={() => void list.refetch()}>
-              {t("common.retry")}
-            </Button>
-          }
-        >
-          {errorMessage(t, list.error)}
-        </Notice>
-      ) : (
-        <DataTable
-          label={t(`content.${kind}.table`)}
-          columns={columns}
-          rows={list.data?.files ?? []}
-          rowKey={(item) => item.file_name}
-          rowLabel={(item) => item.name}
-          searchText={(item) => `${item.name} ${item.file_name}`}
-          actions={actions}
-          inlineActions={0}
-          loading={list.isPending}
-          empty={<EmptyState icon={Package} title={t(`content.${kind}.empty`)} description={t(`content.${kind}.emptyHint`)} />}
-        />
-      )}
-      <RemoveDialog
-        item={removing}
-        loading={remove.isPending}
-        error={remove.isError ? remove.error : null}
-        onCancel={() => {
-          setRemoving(null);
-          remove.reset();
-        }}
-        onConfirm={() => removing && remove.mutate(removing)}
-      />
-      <ContentAddDialog
-        open={addOpen}
-        server={server}
-        kind={kind}
-        onClose={() => setAddOpen(false)}
-        onInstalled={refresh}
-      />
-    </Stack>
-  );
 }
 
 function buildColumns(
   t: TFunction,
-  locked: boolean,
+  lockHint: string | undefined,
   busyFile: string | null,
   report: UpdateReport | null,
   onToggle: (item: InstalledContent, enabled: boolean) => void,
@@ -185,6 +251,7 @@ function buildColumns(
           <Avatar name={item.name} imageUrl={item.icon_url} icon={Package} size="sm" />
           <span>{item.name}</span>
           {item.client_only && <Badge tone="warning">{t("content.clientOnly")}</Badge>}
+          {item.needs_restart && <Badge tone="info">{t("content.needsRestart")}</Badge>}
           {updateFor(report, item) && <Badge tone="info">{t("content.updates.badge")}</Badge>}
         </Stack>
       ),
@@ -212,7 +279,8 @@ function buildColumns(
           label={t("content.toggleLabel", { name: item.name })}
           hideLabel
           checked={item.enabled}
-          disabled={locked || busyFile === item.file_name}
+          disabled={lockHint !== undefined || busyFile === item.file_name}
+          title={lockHint}
           onChange={(enabled) => onToggle(item, enabled)}
         />
       ),

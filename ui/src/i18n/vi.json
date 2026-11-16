@@ -764,7 +764,6 @@
       "manual": "Thêm tay"
     },
     "upload": "Tải lên .jar",
-    "uploadHint": "hoặc kéo thả file .jar vào đây, tối đa 512 MiB. Chỉ tải file từ nguồn tin cậy vì mod/plugin chạy code tùy ý.",
     "uploading": "Đang tải lên {{names}}",
     "uploaded_one": "Đã tải lên {{count}} file.",
     "uploaded_other": "Đã tải lên {{count}} file.",
@@ -786,7 +785,6 @@
     "removeTitle": "Gỡ {{name}}?",
     "removeBody": "File {{file}} được chuyển vào thùng rác của MineHost, bạn có thể tự lấy lại sau.",
     "unsupported": "Loại server này không hỗ trợ cài mod hoặc plugin.",
-    "add": "Thêm",
     "addDialog": {
       "sourceLabel": "Nguồn tải",
       "sourceModrinth": "Modrinth",
@@ -808,7 +806,8 @@
       "back": "Quay lại",
       "install": "Cài",
       "failedTitle": "Không cài được",
-      "cancelledTitle": "Đã hủy cài đặt."
+      "cancelledTitle": "Đã hủy cài đặt.",
+      "replaceWhileRunning": "Tắt server để thay bản cũ của {{names}}. Mod đang được server dùng nên không thay được khi đang chạy."
     },
     "updates": {
       "check": "Kiểm tra cập nhật",
@@ -830,27 +829,35 @@
     "mods": {
       "upToDate": "Mọi mod đều là bản mới nhất. Có {{unknown}} file không nhận ra trên Modrinth, CurseForge.",
       "table": "Danh sách mod",
-      "runningHint": "Server đang chạy: tắt server trước khi bật, tắt, tải lên hoặc gỡ mod.",
       "empty": "Chưa có mod nào",
-      "emptyHint": "Tải file .jar lên ở trên hoặc chép vào thư mục mods/ của server.",
+      "emptyHint": "Bấm Thêm mod để tìm trên Modrinth, CurseForge, hoặc kéo thả file .jar vào đây.",
       "openPage": "Mở trang mod",
       "addTitle": "Thêm mod",
       "searchPlaceholder": "Tìm mod trên Modrinth…",
       "searchPlaceholderCurseforge": "Tìm mod trên CurseForge…",
-      "mainItem": "Mod sẽ cài"
+      "mainItem": "Mod sẽ cài",
+      "add": "Thêm mod",
+      "lockedHint": "Tắt server để bật, tắt hoặc gỡ mod",
+      "restartNotice_one": "{{count}} mod mới sẽ chạy sau khi khởi động lại server.",
+      "restartNotice_other": "{{count}} mod mới sẽ chạy sau khi khởi động lại server."
     },
     "plugins": {
       "upToDate": "Mọi plugin đều là bản mới nhất. Có {{unknown}} file không nhận ra trên Modrinth, CurseForge.",
       "table": "Danh sách plugin",
-      "runningHint": "Server đang chạy: tắt server trước khi bật, tắt, tải lên hoặc gỡ plugin.",
       "empty": "Chưa có plugin nào",
-      "emptyHint": "Tải file .jar lên ở trên hoặc chép vào thư mục plugins/ của server.",
+      "emptyHint": "Bấm Thêm plugin để tìm trên Modrinth, hoặc kéo thả file .jar vào đây.",
       "openPage": "Mở trang plugin",
       "addTitle": "Thêm plugin",
       "searchPlaceholder": "Tìm plugin trên Modrinth…",
       "searchPlaceholderCurseforge": "Tìm plugin trên CurseForge…",
-      "mainItem": "Plugin sẽ cài"
-    }
+      "mainItem": "Plugin sẽ cài",
+      "add": "Thêm plugin",
+      "lockedHint": "Tắt server để bật, tắt hoặc gỡ plugin",
+      "restartNotice_one": "{{count}} plugin mới sẽ chạy sau khi khởi động lại server.",
+      "restartNotice_other": "{{count}} plugin mới sẽ chạy sau khi khởi động lại server."
+    },
+    "needsRestart": "Chờ khởi động lại",
+    "dropHint": "Thả file .jar để thêm vào server. Chỉ dùng file từ nguồn tin cậy vì mod, plugin chạy code tùy ý."
   },
   "modpack": {
     "title": "Tạo server từ modpack",

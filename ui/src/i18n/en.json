@@ -764,7 +764,6 @@
       "manual": "Manual"
     },
     "upload": "Upload .jar",
-    "uploadHint": "or drop .jar files here, up to 512 MiB. Only upload files from trusted sources because mods and plugins run arbitrary code.",
     "uploading": "Uploading {{names}}",
     "uploaded_one": "Uploaded {{count}} file.",
     "uploaded_other": "Uploaded {{count}} files.",
@@ -786,7 +785,6 @@
     "removeTitle": "Remove {{name}}?",
     "removeBody": "The file {{file}} is moved to MineHost's trash, so you can get it back later.",
     "unsupported": "This server type does not support mods or plugins.",
-    "add": "Add",
     "addDialog": {
       "sourceLabel": "Source",
       "sourceModrinth": "Modrinth",
@@ -808,7 +806,8 @@
       "back": "Back",
       "install": "Install",
       "failedTitle": "Could not install",
-      "cancelledTitle": "Installation cancelled."
+      "cancelledTitle": "Installation cancelled.",
+      "replaceWhileRunning": "Stop the server to replace the old version of {{names}}. The server is using it, so it can't be replaced while running."
     },
     "updates": {
       "check": "Check for updates",
@@ -830,27 +829,35 @@
     "mods": {
       "upToDate": "All mods are up to date. {{unknown}} files were not found on Modrinth or CurseForge.",
       "table": "Installed mods",
-      "runningHint": "The server is running: stop it before enabling, disabling, uploading, or removing mods.",
       "empty": "No mods yet",
-      "emptyHint": "Upload a .jar file above or place one in the server's mods/ folder.",
+      "emptyHint": "Select Add mod to search Modrinth and CurseForge, or drop .jar files here.",
       "openPage": "Open mod page",
       "addTitle": "Add mod",
       "searchPlaceholder": "Search mods on Modrinth…",
       "searchPlaceholderCurseforge": "Search mods on CurseForge…",
-      "mainItem": "Selected mod"
+      "mainItem": "Selected mod",
+      "add": "Add mod",
+      "lockedHint": "Stop the server to enable, disable, or remove mods",
+      "restartNotice_one": "{{count}} new mod will load after the server restarts.",
+      "restartNotice_other": "{{count}} new mods will load after the server restarts."
     },
     "plugins": {
       "upToDate": "All plugins are up to date. {{unknown}} files were not found on Modrinth or CurseForge.",
       "table": "Installed plugins",
-      "runningHint": "The server is running: stop it before enabling, disabling, uploading, or removing plugins.",
       "empty": "No plugins yet",
-      "emptyHint": "Upload a .jar file above or place one in the server's plugins/ folder.",
+      "emptyHint": "Select Add plugin to search Modrinth, or drop .jar files here.",
       "openPage": "Open plugin page",
       "addTitle": "Add plugin",
       "searchPlaceholder": "Search plugins on Modrinth…",
       "searchPlaceholderCurseforge": "Search plugins on CurseForge…",
-      "mainItem": "Selected plugin"
-    }
+      "mainItem": "Selected plugin",
+      "add": "Add plugin",
+      "lockedHint": "Stop the server to enable, disable, or remove plugins",
+      "restartNotice_one": "{{count}} new plugin will load after the server restarts.",
+      "restartNotice_other": "{{count}} new plugins will load after the server restarts."
+    },
+    "needsRestart": "Restart to load",
+    "dropHint": "Drop .jar files to add them to the server. Only use files you trust: mods and plugins run arbitrary code."
   },
   "modpack": {
     "title": "Create server from modpack",

@@ -38,6 +38,19 @@ export function isContentLocked(server: Pick<Server, "state" | "restart_pending"
   return (server.state !== "stopped" && server.state !== "crashed") || server.restart_pending;
 }
 
+/**
+ * Thêm mod mới (cài, tải lên) được cả khi server đang chạy; chỉ khóa khi server đang cài hoặc hỏng
+ * (khớp `ensure_content_addable`). Mod thêm lúc chạy có hiệu lực sau khi khởi động lại.
+ */
+export function canAddContent(server: Pick<Server, "state">): boolean {
+  return server.state !== "installing" && server.state !== "broken";
+}
+
+/** Server có process: kế hoạch cài không được thay jar đang mở. */
+export function isServerRunning(server: Pick<Server, "state">): boolean {
+  return server.state === "starting" || server.state === "running" || server.state === "stopping";
+}
+
 export function isJarFile(file: Pick<File, "name">): boolean {
   return file.name.toLowerCase().endsWith(".jar");
 }

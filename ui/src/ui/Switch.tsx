@@ -10,13 +10,15 @@ interface SwitchProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
+  /** Gợi ý khi rê chuột, ví dụ lý do công tắc bị khóa. */
+  title?: string;
 }
 
 /** Công tắc bật/tắt một tùy chọn, nhãn nằm ngay bên cạnh nên không cần `Field`. */
-export function Switch({ label, description, hideLabel = false, checked, onChange, disabled }: SwitchProps) {
+export function Switch({ label, description, hideLabel = false, checked, onChange, disabled, title }: SwitchProps) {
   const descriptionId = useId();
   return (
-    <label className={styles.switch}>
+    <label className={styles.switch} title={title}>
       <input
         className={styles.input}
         type="checkbox"

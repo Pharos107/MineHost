@@ -117,7 +117,8 @@ Một khối dùng ở trang thêm mod của server, bước Mod khi tạo serve
 ## Component
 
 - `FileDrop` thêm `variant="overlay"`: bọc nội dung con, không có khung hay nút riêng, chỉ hiện lớp
-  phủ khi đang kéo file vào.
+  phủ khi đang kéo file vào. Thêm `FileButton` (nút mở hộp chọn file) để đặt nút tải lên vào thanh
+  công cụ. `Switch` thêm `title` cho gợi ý khi công tắc bị khóa.
 - Thêm `SplitView`: danh sách và chi tiết; hai cột từ 1024 px, cột phải dính khi cuộn; hẹp hơn thì
   một cột.
 - Thêm `RichText`: hiện HTML đã lọc theo kiểu chữ của bộ component (tiêu đề, danh sách, bảng, ảnh co
