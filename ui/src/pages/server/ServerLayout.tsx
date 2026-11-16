@@ -49,7 +49,7 @@ export function ServerLayout() {
 function ServerView({ server }: { server: Server }) {
   const { t } = useTranslation();
   const ready = server.state !== "installing" && server.state !== "broken";
-  const onContentPage = useMatch("/servers/:id/content") !== null;
+  const onContentPage = useMatch("/servers/:id/content/*") !== null;
 
   return (
     <Stack gap={5}>

@@ -29,13 +29,27 @@ export interface ModpackSummary {
   pending_curseforge: string[];
 }
 
-export interface SearchContentParams {
+/** Lọc catalog theo server có sẵn, hoặc theo loader + Minecraft khi server chưa tạo. */
+export interface CatalogScope {
+  serverId?: string;
+  loader?: string;
+  minecraft?: string;
+}
+
+export interface SearchContentParams extends CatalogScope {
   source?: string;
   kind?: "mod" | "plugin" | "modpack";
   q?: string;
-  serverId?: string;
   page?: number;
   sort?: SearchSort;
+}
+
+function scopeParams(params: URLSearchParams, scope: CatalogScope) {
+  if (scope.serverId) params.set("server_id", scope.serverId);
+  else if (scope.loader && scope.minecraft) {
+    params.set("loader", scope.loader);
+    params.set("minecraft", scope.minecraft);
+  }
 }
 
 export function contentKey(serverId: string) {
@@ -48,17 +62,19 @@ function filePath(serverId: string, fileName: string): string {
 
 /** Route tìm kiếm và quản lý mod/plugin của một server (spec P3, mục 5.8). */
 export const contentApi = {
-  search: ({ source = "modrinth", kind, q = "", serverId, page = 1, sort }: SearchContentParams) => {
+  search: ({ source = "modrinth", kind, q = "", page = 1, sort, ...scope }: SearchContentParams) => {
     const params = new URLSearchParams({ source, q, page: String(page) });
     if (sort) params.set("sort", sort);
     if (kind) params.set("kind", kind);
-    if (serverId) params.set("server_id", serverId);
+    scopeParams(params, scope);
     return request<SearchResult>("GET", `/content/search?${params.toString()}`);
   },
   project: (source: string, projectId: string) =>
     request<ContentProject>("GET", `/content/${encodeURIComponent(source)}/projects/${encodeURIComponent(projectId)}`),
-  versions: (source: string, projectId: string, serverId?: string) => {
-    const query = serverId ? `?server_id=${encodeURIComponent(serverId)}` : "";
+  versions: (source: string, projectId: string, scope: CatalogScope = {}) => {
+    const params = new URLSearchParams();
+    scopeParams(params, scope);
+    const query = params.size > 0 ? `?${params.toString()}` : "";
     return request<ContentVersion[]>(
       "GET",
       `/content/${encodeURIComponent(source)}/projects/${encodeURIComponent(projectId)}/versions${query}`,
