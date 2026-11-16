@@ -1,6 +1,6 @@
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: var(--mh-space-3);
 }
 
@@ -47,4 +47,24 @@
   font-size: var(--mh-text-sm);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Thanh mức dưới số (RAM đã dùng so với mức đặt). Gần đầy thì đổi màu cảnh báo. */
+.meter {
+  height: 6px;
+  margin: var(--mh-space-1) 0;
+  overflow: hidden;
+  background: var(--mh-surface-hover);
+  border-radius: var(--mh-radius-full);
+}
+
+.meterFill {
+  display: block;
+  height: 100%;
+  background: var(--mh-primary);
+  border-radius: inherit;
+}
+
+.meterHigh {
+  background: var(--mh-warning);
 }

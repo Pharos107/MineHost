@@ -450,7 +450,17 @@
     "diskPending": "Đang tính…",
     "cpuChart": "CPU trong 1 giờ qua",
     "memoryChart": "RAM trong 1 giờ qua",
-    "offline": "Server đang tắt. Bật server để xem CPU và RAM."
+    "offline": "Server đang tắt. Bật server để xem CPU và RAM.",
+    "players": "Người chơi",
+    "playersOnline": "đang chơi",
+    "chartLayout": "Cách xếp biểu đồ",
+    "layoutSide": "Cạnh nhau",
+    "layoutStacked": "Hai hàng",
+    "details": "Xem chi tiết",
+    "now": "Hiện tại",
+    "average": "Trung bình",
+    "peak": "Cao nhất",
+    "lowest": "Thấp nhất"
   },
   "duration": {
     "days_one": "{{count}} ngày",
