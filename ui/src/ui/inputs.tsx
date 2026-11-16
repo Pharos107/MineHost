@@ -1,17 +1,49 @@
-import { ChevronDown, Search } from "lucide-react";
-import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import { ChevronDown, Eye, EyeOff, Search } from "lucide-react";
+import { useState, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { useTranslation } from "react-i18next";
 
 import { cx } from "./cx";
 import { useFieldControl } from "./Field";
 import styles from "./Field.module.css";
 
-type TextInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className" | "style" | "type"> & {
+type TextInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className" | "style" | "type" | "size"> & {
   type?: "text" | "number" | "search" | "password" | "time";
+  size?: "md" | "lg";
 };
 
 /** Ô nhập chữ. Đặt trong `Field` để có nhãn; đứng một mình thì phải truyền `aria-label`. */
-export function TextInput({ type = "text", ...rest }: TextInputProps) {
+export function TextInput({ type = "text", size = "md", ...rest }: TextInputProps) {
   const field = useFieldControl();
+  const { t } = useTranslation();
+  const [shown, setShown] = useState(false);
+  const sizeClass = size === "lg" ? styles.lg : undefined;
+
+  if (type === "password") {
+    const label = t(shown ? "ui.hidePassword" : "ui.showPassword");
+    return (
+      <span className={styles.passwordWrap}>
+        <input
+          id={field?.id}
+          aria-describedby={field?.describedBy}
+          aria-invalid={field?.invalid || undefined}
+          {...rest}
+          type={shown ? "text" : "password"}
+          className={cx(styles.control, styles.password, sizeClass)}
+        />
+        <button
+          type="button"
+          className={styles.passwordToggle}
+          aria-label={label}
+          title={label}
+          disabled={rest.disabled}
+          onClick={() => setShown((current) => !current)}
+        >
+          {shown ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
+        </button>
+      </span>
+    );
+  }
+
   return (
     <input
       id={field?.id}
@@ -19,7 +51,7 @@ export function TextInput({ type = "text", ...rest }: TextInputProps) {
       aria-invalid={field?.invalid || undefined}
       {...rest}
       type={type}
-      className={styles.control}
+      className={cx(styles.control, sizeClass)}
     />
   );
 }

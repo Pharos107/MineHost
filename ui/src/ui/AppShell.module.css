@@ -46,6 +46,68 @@
   padding: var(--mh-space-6) var(--mh-space-4) var(--mh-space-8);
 }
 
+.centeredMain {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 456px;
+}
+
+/* Trang căn giữa (Đăng nhập) có tranh nền ngày và đêm chồng lên nhau. Đổi giao diện thì tranh đêm
+ * mờ dần lên thay vì đổi phắt, như trời chuyển từ ngày sang đêm. */
+.centeredShell {
+  position: relative;
+  isolation: isolate;
+  overflow-x: hidden;
+}
+
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+}
+
+.sceneDay,
+.sceneNight {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.sceneDay {
+  background-image: linear-gradient(180deg, rgb(28 32 25 / 0.04) 0%, rgb(28 32 25 / 0.22) 100%), url("./assets/login-day.webp");
+}
+
+.sceneNight {
+  background-image: linear-gradient(180deg, rgb(6 8 20 / 0.1) 0%, rgb(6 8 20 / 0.38) 100%), url("./assets/login-night.webp");
+  opacity: 0;
+  transition: opacity 1.6s ease-in-out;
+}
+
+:global(:root[data-theme="dark"]) .sceneNight {
+  opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .sceneNight {
+    opacity: 1;
+  }
+}
+
+.centeredShell .header {
+  background: color-mix(in srgb, var(--mh-surface) 84%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--mh-border) 55%, transparent);
+  backdrop-filter: blur(10px);
+  transition: background-color 0.9s ease;
+}
+
+.centeredShell .main {
+  padding-top: var(--mh-space-8);
+}
+
 /* Biến thể có thanh bên. Dưới 768px thanh bên thành ngăn kéo trượt từ trái. */
 .sidebarShell {
   display: flex;

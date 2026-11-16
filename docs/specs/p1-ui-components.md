@@ -29,16 +29,18 @@ khoảng cách; mọi giá trị đó là token trong `ui/src/ui/tokens.css`.
 
 | Nhóm | Component | Dùng ở |
 | --- | --- | --- |
-| Cơ bản (13a) | `Button` (primary, secondary, danger, ghost; cỡ sm, md; `loading`), `IconButton` (bắt buộc `label`) | mọi trang |
-| | `Card` (tiêu đề, mô tả, nút ở góc, thân) | chi tiết, cài đặt |
+| Cơ bản (13a) | `Button` (primary, secondary, danger, ghost; cỡ sm, md, lg; `loading`, `fullWidth`), `IconButton` (bắt buộc `label`) | mọi trang |
+| | `Card` (tiêu đề, `titleAs`, mô tả, `bannerSeed`, nút ở góc, thân) | chi tiết, cài đặt |
+| | `HangingSign` (bảng hiệu gỗ treo hai sợi xích có khuy sắt, khung gỗ pixel có ke sắt bốn góc: logo, tiêu đề, mô tả, thân, chân; gỗ sồi khi sáng, gỗ vân sam khi tối) | đăng nhập |
+| | `BlockWordmark` (logo chữ MineHost kiểu tiêu đề MINECRAFT: mặt đá texture pixel, gờ vát, vết nứt, mặt Creeper, khối 3D hội tụ về giữa và viền đen dày; SVG) | đăng nhập |
 | | `PageHeader` (tiêu đề, dòng phụ, vùng nút) | mọi trang |
 | | `Notice` (info, success, warning, danger; tiêu đề, nội dung, nút) | lỗi, cảnh báo RAM, "có hiệu lực sau khi khởi động lại" |
 | | `Badge`, `StatusBadge` (ánh xạ 7 trạng thái server ra màu và nhãn đã dịch) | danh sách, chi tiết |
 | | `Spinner`, `EmptyState` | tải dữ liệu, danh sách trống |
 | | `Stack` (xếp hàng/cột, khoảng cách theo token), `Facts` (danh sách nhãn: giá trị) | mọi trang, thông tin máy và server |
-| | `AppShell` (thanh trên: tên app, đổi ngôn ngữ, vùng nút; thân trang) | mọi trang |
+| | `AppShell` (`top`, `centered`, `sidebar`: thanh trên hoặc thanh bên; thân trang). `centered` có tranh nền ngày và đêm, đổi giao diện thì mờ dần sang nhau | mọi trang |
 | Form (13b) | `Field` (nhãn, gợi ý, lỗi; tự nối `id` và `aria-describedby`) | wizard, cài đặt |
-| | `TextInput`, `Select`, `Switch`, `Slider` (có vạch "đề xuất") | wizard, cài đặt |
+| | `TextInput` (cỡ md, lg; kèm nút hiện/ẩn khi `type="password"`), `Select`, `Switch`, `Slider` (có vạch "đề xuất") | wizard, cài đặt, đăng nhập |
 | | `Steps` (wizard 3 bước), `ProgressBar` (có số %, hoặc chạy vô định) | wizard, tiến độ Job |
 | | `ChoiceGroup` (chọn một trong vài thẻ lớn, radio bên dưới; thêm ở PR-13) | wizard: loại server |
 | Lớp phủ (13c) | `Dialog` (dựa trên `<dialog>`: khóa focus, Esc để đóng) | EULA |

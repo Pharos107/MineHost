@@ -347,7 +347,9 @@
     "openMenu": "Mở menu",
     "closeMenu": "Đóng menu",
     "morePlayers": "và {{count}} người nữa",
-    "downloads": "{{value}} lượt tải"
+    "downloads": "{{value}} lượt tải",
+    "showPassword": "Hiện mật khẩu",
+    "hidePassword": "Ẩn mật khẩu"
   },
   "serverState": {
     "installing": "Đang cài",
@@ -516,8 +518,11 @@
     "title": "Đăng nhập",
     "description": "MineHost trên máy này đã đặt mật khẩu admin.",
     "password": "Mật khẩu",
+    "passwordPlaceholder": "Nhập mật khẩu admin…",
+    "passwordRequired": "Hãy nhập mật khẩu.",
     "submit": "Đăng nhập",
     "locked": "Nhập sai quá nhiều lần. Thử lại sau {{seconds}} giây.",
+    "forgotToggle": "Quên mật khẩu?",
     "forgot": "Quên mật khẩu? Trên máy chạy MineHost, chạy lệnh minehost reset-password, hoặc chuột phải icon MineHost ở khay → Đặt lại mật khẩu (Windows).",
     "logout": "Đăng xuất"
   },

@@ -57,10 +57,11 @@ export function SidebarLayout() {
   );
 }
 
-/** Khung chỉ có thanh trên và nút đổi ngôn ngữ, cho trang Đăng nhập: chưa đăng nhập thì chưa thoát được. */
+/** Khung căn giữa chỉ có thanh trên và nút đổi ngôn ngữ, giao diện, cho trang Đăng nhập: chưa đăng nhập thì chưa thoát được. */
 export function BareLayout({ children }: { children: ReactNode }) {
   return (
     <AppShell
+      variant="centered"
       actions={
         <>
           <LanguageSwitch />

@@ -5,7 +5,8 @@ import { Navigate, useLocation } from "react-router";
 
 import { authApi, needsLogin, SESSION_KEY } from "../api/auth";
 import { onAuthRequired } from "../api/client";
-import { Spinner } from "../ui";
+import { Spinner, Stack } from "../ui";
+import { BareLayout } from "./AppLayout";
 
 /**
  * Đã đặt mật khẩu mà chưa đăng nhập thì chuyển về `/login`, kèm trang đang mở để quay lại
@@ -21,7 +22,15 @@ export function AuthGate({ children }: { children: ReactNode }) {
   // Phiên hết hạn hoặc mật khẩu vừa đổi ở tab khác: đọc lại phiên, gate sẽ chuyển trang.
   useEffect(() => onAuthRequired(() => void queryClient.invalidateQueries({ queryKey: SESSION_KEY })), [queryClient]);
 
-  if (session.isPending) return <Spinner label={t("auth.checking")} />;
+  if (session.isPending && location.pathname !== "/login") {
+    return (
+      <BareLayout>
+        <Stack align="center" justify="center">
+          <Spinner label={t("auth.checking")} />
+        </Stack>
+      </BareLayout>
+    );
+  }
   if (needsLogin(session.data) && location.pathname !== "/login") {
     const next = `${location.pathname}${location.search}`;
     return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />;

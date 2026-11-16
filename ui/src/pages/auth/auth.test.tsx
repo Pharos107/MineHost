@@ -103,6 +103,57 @@ describe("AuthGate và trang Đăng nhập", () => {
     expect(screen.queryByText(/Thử lại sau/)).toBeNull();
     expect(screen.getByRole("button", { name: "Đăng nhập" }).hasAttribute("disabled")).toBe(false);
   });
+
+  it("có tiêu đề h1 và nút Quên mật khẩu? thu gọn hướng dẫn đặt lại lúc mới mở", async () => {
+    stubFetch(() => Response.json({ password_set: true, logged_in: false }));
+    renderAt("/login");
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Đăng nhập" })).toBeTruthy();
+    expect(screen.queryByText(/minehost reset-password/)).toBeNull();
+
+    const toggle = screen.getByRole("button", { name: "Quên mật khẩu?" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(toggle);
+
+    expect(screen.getByText(/minehost reset-password/)).toBeTruthy();
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("đăng nhập sai mật khẩu thì báo lỗi và tự hiện hướng dẫn đặt lại mật khẩu", async () => {
+    stubFetch((url) =>
+      url === "/api/v1/auth/login"
+        ? Response.json({ code: "AUTH_INVALID", params: {} }, { status: 401 })
+        : Response.json({ password_set: true, logged_in: false }),
+    );
+    renderAt("/login");
+
+    fireEvent.change(await screen.findByLabelText("Mật khẩu"), { target: { value: "wrong-pass" } });
+    fireEvent.click(screen.getByRole("button", { name: "Đăng nhập" }));
+
+    expect(await screen.findByText("Mật khẩu không đúng.")).toBeTruthy();
+    expect(screen.getByText(/minehost reset-password/)).toBeTruthy();
+  });
+
+  it("mở thẳng /login vẫn hiện form ngay khi kiểm tra phiên đang chờ", () => {
+    stubFetch(() => new Promise<Response>(() => undefined));
+    renderAt("/login");
+
+    expect(screen.getByRole("heading", { level: 1, name: "Đăng nhập" })).toBeTruthy();
+    expect(screen.queryByText("Đang kiểm tra đăng nhập…")).toBeNull();
+  });
+
+  it("bỏ trống mật khẩu mà bấm đăng nhập thì báo lỗi tại ô nhập và không gọi API", async () => {
+    const fetchMock = stubFetch(() => Response.json({ password_set: true, logged_in: false }));
+    renderAt("/login");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Đăng nhập" }));
+    expect(screen.getByText("Hãy nhập mật khẩu.")).toBeTruthy();
+    expect(screen.getByLabelText("Mật khẩu").getAttribute("aria-invalid")).toBe("true");
+    expect(fetchMock.mock.calls.some(([url]) => url === "/api/v1/auth/login")).toBe(false);
+
+    fireEvent.change(screen.getByLabelText("Mật khẩu"), { target: { value: "a" } });
+    expect(screen.queryByText("Hãy nhập mật khẩu.")).toBeNull();
+  });
 });
 
 describe("request", () => {

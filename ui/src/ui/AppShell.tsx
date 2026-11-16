@@ -8,9 +8,9 @@ import { IconButton } from "./Button";
 import { cx } from "./cx";
 
 interface AppShellProps {
-  /** `top`: thanh trên (trang không có thanh bên, như wizard). `sidebar`: thanh bên trái. */
-  variant?: "top" | "sidebar";
-  /** `top`: nút ở bên phải thanh trên (đổi ngôn ngữ, Thoát). */
+  /** `top`: thanh trên (trang không có thanh bên, như wizard). `centered`: thanh trên và nội dung căn giữa (đăng nhập). `sidebar`: thanh bên trái. */
+  variant?: "top" | "sidebar" | "centered";
+  /** `top`/`centered`: nút ở bên phải thanh trên (đổi ngôn ngữ, Thoát). */
   actions?: ReactNode;
   /** `sidebar`: các `NavSection`/`NavItem`. */
   nav?: ReactNode;
@@ -31,14 +31,20 @@ export function AppShell({ variant = "top", actions, nav, navLabel, footer, chil
     );
   }
   return (
-    <div className={styles.shell}>
+    <div className={cx(styles.shell, variant === "centered" && styles.centeredShell)}>
+      {variant === "centered" && (
+        <div className={styles.scene} aria-hidden>
+          <div className={styles.sceneDay} />
+          <div className={styles.sceneNight} />
+        </div>
+      )}
       <header className={styles.header}>
         <div className={styles.bar}>
           <Brand />
           {actions && <div className={styles.actions}>{actions}</div>}
         </div>
       </header>
-      <main className={styles.main}>{children}</main>
+      <main className={cx(styles.main, variant === "centered" && styles.centeredMain)}>{children}</main>
     </div>
   );
 }

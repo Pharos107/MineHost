@@ -9,6 +9,20 @@
   border-radius: var(--mh-radius-lg);
 }
 
+.withBanner {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: var(--mh-shadow-md);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mh-space-4);
+  padding: var(--mh-space-5);
+}
+
 .header {
   display: flex;
   flex-wrap: wrap;
