@@ -1,14 +1,27 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, RotateCw } from "lucide-react";
+import { Blocks, ChevronDown, ChevronRight, FolderInput, Package, RotateCw, Server } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { api, errorMessage, type CatalogVersion, type Loader } from "../../api/client";
 import { formatBytes, formatMemoryMb } from "../../format";
 import { exceedsAvailable, MEMORY_STEP_MB, memoryRange } from "../../memory";
-import { Badge, Button, ChoiceGroup, Field, Notice, Select, Slider, Spinner, Stack, Switch, TextInput } from "../../ui";
-import { isModLoader, MOD_LOADERS, nameError, portError, STANDARD_LOADERS, type WizardForm } from "./form";
+import { Badge, Button, Card, ChoiceGroup, Columns, Facts, Field, Notice, Select, Slider, Spinner, Stack, Switch, TextInput, type Fact } from "../../ui";
+import {
+  DEFAULT_GAME_SETTINGS,
+  hasAdvancedChanges,
+  isModLoader,
+  maxPlayersError,
+  MOD_LOADERS,
+  nameError,
+  portError,
+  spawnProtectionError,
+  STANDARD_LOADERS,
+  viewDistanceError,
+  type GameSettingsValues,
+  type WizardForm,
+} from "./form";
 
 /** Số bản mới nhất hiện sẵn; các bản cũ hơn nằm sau công tắc "Hiện bản cũ hơn". */
 const RECENT_VERSIONS = 5;
@@ -59,13 +72,20 @@ export function LoaderStep({
           else if (next === "import") onChange("import");
         }}
         options={[
-          { value: "standard", label: t("wizard.kindStandard"), description: t("wizard.kindStandardDescription") },
-          { value: "modded", label: t("wizard.kindModded"), description: t("wizard.kindModdedDescription") },
-          { value: "modpack", label: t("wizard.kindModpack"), description: t("wizard.kindModpackDescription") },
-          { value: "import", label: t("wizard.importLabel"), description: t("wizard.importDescription") },
+          { value: "standard", label: t("wizard.kindStandard"), description: t("wizard.kindStandardDescription"), icon: Server },
+          { value: "modded", label: t("wizard.kindModded"), description: t("wizard.kindModdedDescription"), icon: Blocks },
+          { value: "modpack", label: t("wizard.kindModpack"), description: t("wizard.kindModpackDescription"), icon: Package },
+          { value: "import", label: t("wizard.importLabel"), description: t("wizard.importDescription"), icon: FolderInput },
         ]}
       />
-      {kind !== "import" && kind !== "modpack" && (
+      {kind === "modpack" || kind === "import" ? (
+        <Card variant="subtle">
+          <Stack direction="row" align="center" gap={2}>
+            {kind === "modpack" ? <Package size={18} aria-hidden /> : <FolderInput size={18} aria-hidden />}
+            <span>{t(kind === "modpack" ? "wizard.modpackStepHint" : "wizard.importStepHint")}</span>
+          </Stack>
+        </Card>
+      ) : (
         <ChoiceGroup
           label={t("wizard.loader")}
           value={value}
@@ -161,37 +181,188 @@ export function VersionStep({ versions, value, onChange, loader, loaderVersion, 
   );
 }
 
-export type ServerSettingsValues = Pick<WizardForm, "name" | "memoryMb" | "port">;
+export type ServerSettingsValues = Pick<WizardForm, "name" | "memoryMb" | "port" | "game">;
 
 interface SettingsStepProps {
   form: ServerSettingsValues;
   update: (patch: Partial<ServerSettingsValues>) => void;
   modpack?: boolean;
+  summary?: Fact[];
 }
 
-export function SettingsStep({ form, update, modpack = false }: SettingsStepProps) {
+export function SettingsStep({ form, update, modpack = false, summary }: SettingsStepProps) {
   const { t } = useTranslation();
-  const [advanced, setAdvanced] = useState(form.port !== "");
+  const game = form.game ?? DEFAULT_GAME_SETTINGS;
+  const [advanced, setAdvanced] = useState(() => hasAdvancedChanges(form.port, game));
   const nameKey = nameError(form.name);
   const portKey = portError(form.port);
+  const hasAdvError = Boolean(
+    portKey || viewDistanceError(game.viewDistance) || spawnProtectionError(game.spawnProtection),
+  );
+  const showAdvanced = advanced || hasAdvError;
+  const setGame = (patch: Partial<GameSettingsValues>) => update({ game: { ...game, ...patch } });
 
   return (
     <>
+      {summary && summary.length > 0 && (
+        <Card variant="subtle">
+          <Facts items={summary} />
+        </Card>
+      )}
       <Field label={t("wizard.name")} hint={t("wizard.nameHint")} error={nameKey && t(nameKey)}>
         <TextInput value={form.name} onChange={(e) => update({ name: e.target.value })} autoComplete="off" />
       </Field>
       <MemoryField value={form.memoryMb} onChange={(memoryMb) => update({ memoryMb })} modpack={modpack} />
+      <GameOptionsCard game={game} setGame={setGame} />
       <div>
-        <Button variant="ghost" size="sm" icon={advanced ? ChevronDown : ChevronRight} aria-expanded={advanced} onClick={() => setAdvanced(!advanced)}>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={showAdvanced ? ChevronDown : ChevronRight}
+          aria-expanded={showAdvanced}
+          onClick={() => setAdvanced(hasAdvError ? true : !advanced)}
+        >
           {t("wizard.advanced")}
         </Button>
       </div>
-      {advanced && (
-        <Field label={t("wizard.port")} hint={t("wizard.portHint")} error={portKey && t(portKey)}>
-          <TextInput type="number" inputMode="numeric" value={form.port} placeholder={t("wizard.portAuto")} onChange={(e) => update({ port: e.target.value })} />
-        </Field>
-      )}
+      {showAdvanced && <AdvancedPropertiesFields port={form.port} portKey={portKey} onPortChange={(port) => update({ port })} game={game} setGame={setGame} />}
     </>
+  );
+}
+
+const GAMEMODES = ["survival", "creative", "adventure", "spectator"] as const;
+const DIFFICULTIES = ["peaceful", "easy", "normal", "hard"] as const;
+
+function GameOptionsCard({ game, setGame }: { game: GameSettingsValues; setGame: (patch: Partial<GameSettingsValues>) => void }) {
+  const { t } = useTranslation();
+  const maxPlayersKey = maxPlayersError(game.maxPlayers);
+
+  return (
+    <Card variant="subtle" title={t("wizard.gameSettingsTitle")} description={t("wizard.gameSettingsDescription")}>
+      <Columns count={2}>
+        <Field label={t("game.fields.gamemode")}>
+          <Select value={game.gamemode} onChange={(e) => setGame({ gamemode: e.target.value })}>
+            {GAMEMODES.map((mode) => (
+              <option key={mode} value={mode}>
+                {t(`game.options.${mode}`)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t("game.fields.difficulty")}>
+          <Select value={game.difficulty} onChange={(e) => setGame({ difficulty: e.target.value })}>
+            {DIFFICULTIES.map((diff) => (
+              <option key={diff} value={diff}>
+                {t(`game.options.${diff}`)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </Columns>
+      <Columns count={2}>
+        <Field label={t("game.fields.max-players")} error={maxPlayersKey && t(maxPlayersKey)}>
+          <TextInput
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={100000}
+            value={game.maxPlayers}
+            onChange={(e) => setGame({ maxPlayers: e.target.value })}
+          />
+        </Field>
+        <Field label={t("game.fields.motd")} hint={t("game.hints.motd")}>
+          <TextInput
+            value={game.motd}
+            placeholder={t("wizard.motdPlaceholder")}
+            onChange={(e) => setGame({ motd: e.target.value })}
+            autoComplete="off"
+          />
+        </Field>
+      </Columns>
+      <Switch
+        label={t("game.fields.online-mode")}
+        description={t("game.hints.online-mode")}
+        checked={game.onlineMode}
+        onChange={(onlineMode) => setGame({ onlineMode })}
+      />
+      <Switch
+        label={t("game.fields.white-list")}
+        description={t("game.hints.white-list")}
+        checked={game.whiteList}
+        onChange={(whiteList) => setGame({ whiteList })}
+      />
+      <Switch label={t("game.fields.pvp")} checked={game.pvp} onChange={(pvp) => setGame({ pvp })} />
+    </Card>
+  );
+}
+
+function AdvancedPropertiesFields({
+  port,
+  portKey,
+  onPortChange,
+  game,
+  setGame,
+}: {
+  port: string;
+  portKey?: string;
+  onPortChange: (port: string) => void;
+  game: GameSettingsValues;
+  setGame: (patch: Partial<GameSettingsValues>) => void;
+}) {
+  const { t } = useTranslation();
+  const viewDistKey = viewDistanceError(game.viewDistance);
+  const spawnProtKey = spawnProtectionError(game.spawnProtection);
+
+  return (
+    <Stack gap={4}>
+      <Columns count={2}>
+        <Field label={t("wizard.port")} hint={t("wizard.portHint")} error={portKey && t(portKey)}>
+          <TextInput type="number" inputMode="numeric" value={port} placeholder={t("wizard.portAuto")} onChange={(e) => onPortChange(e.target.value)} />
+        </Field>
+        <Field label={t("wizard.viewDistance")} hint={t("wizard.viewDistanceHint")} error={viewDistKey && t(viewDistKey)}>
+          <TextInput
+            type="number"
+            inputMode="numeric"
+            min={2}
+            max={32}
+            value={game.viewDistance}
+            onChange={(e) => setGame({ viewDistance: e.target.value })}
+          />
+        </Field>
+      </Columns>
+      <Columns count={2}>
+        <Field label={t("wizard.spawnProtection")} hint={t("wizard.spawnProtectionHint")} error={spawnProtKey && t(spawnProtKey)}>
+          <TextInput
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={1000}
+            value={game.spawnProtection}
+            onChange={(e) => setGame({ spawnProtection: e.target.value })}
+          />
+        </Field>
+        <Field label={t("wizard.levelSeed")} hint={t("wizard.levelSeedHint")}>
+          <TextInput
+            value={game.levelSeed}
+            placeholder={t("wizard.seedPlaceholder")}
+            onChange={(e) => setGame({ levelSeed: e.target.value })}
+            autoComplete="off"
+          />
+        </Field>
+      </Columns>
+      <Switch
+        label={t("wizard.commandBlocks")}
+        description={t("wizard.commandBlocksHint")}
+        checked={game.enableCommandBlocks}
+        onChange={(enableCommandBlocks) => setGame({ enableCommandBlocks })}
+      />
+      <Switch
+        label={t("wizard.allowFlight")}
+        description={t("wizard.allowFlightHint")}
+        checked={game.allowFlight}
+        onChange={(allowFlight) => setGame({ allowFlight })}
+      />
+    </Stack>
   );
 }
 

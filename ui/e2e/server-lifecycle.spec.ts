@@ -11,6 +11,7 @@ test("tạo, bật và tắt một server", async ({ page }) => {
   await page.getByRole("button", { name: "Tiếp" }).click();
   await expect(page.getByRole("combobox", { name: "Phiên bản Minecraft" })).toHaveValue("1.21.4");
   await page.getByRole("button", { name: "Tiếp" }).click();
+  await page.getByRole("button", { name: "Bỏ qua" }).click();
   await page.getByRole("button", { name: "Tạo server" }).click();
 
   // Tạo xong thì tự chuyển sang trang server.

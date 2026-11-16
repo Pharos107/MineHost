@@ -994,6 +994,8 @@ export interface components {
             /** Format: int32 */
             port?: number | null;
             project_id: string;
+            /** @description Các khóa `server.properties` đặt ngay khi tạo. */
+            properties?: components["schemas"]["PropertyDto"][];
             /** @description `modrinth` hoặc `curseforge`. */
             source: string;
             version_id?: string | null;
@@ -1010,6 +1012,8 @@ export interface components {
             name: string;
             /** Format: int32 */
             port?: number | null;
+            /** @description Các khóa `server.properties` đặt ngay khi tạo (ví dụ `online-mode`, `white-list`, `difficulty`). */
+            properties?: components["schemas"]["PropertyDto"][];
         };
         CreatedDto: {
             /** Format: int64 */

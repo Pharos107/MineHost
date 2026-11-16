@@ -9,6 +9,21 @@
   border-radius: var(--mh-radius-lg);
 }
 
+.subtle {
+  gap: var(--mh-space-3);
+  padding: var(--mh-space-3) var(--mh-space-4);
+  background: var(--mh-bg);
+  border-radius: var(--mh-radius-md);
+}
+
+.dashed {
+  gap: var(--mh-space-3);
+  padding: var(--mh-space-3) var(--mh-space-4);
+  background: color-mix(in srgb, var(--mh-surface-raised) 50%, var(--mh-surface));
+  border-style: dashed;
+  border-color: var(--mh-border-strong);
+}
+
 .withBanner {
   gap: 0;
   padding: 0;

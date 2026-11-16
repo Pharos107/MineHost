@@ -17,6 +17,8 @@ interface CardProps {
   bannerSeed?: string;
   /** `split`: tiêu đề và mô tả bên trái, nội dung bên phải (màn hình rộng). Hợp với trang cài đặt. */
   layout?: "stack" | "split";
+  /** `subtle`: khung nền phụ cho tóm tắt / hành động lồng trong thẻ; `dashed`: vùng tải file gọn. */
+  variant?: "default" | "subtle" | "dashed";
   /** Nút ở góc phải tiêu đề. */
   actions?: ReactNode;
   children?: ReactNode;
@@ -43,7 +45,18 @@ function CardHeader({ title, titleAs: Heading = "h2", description, icon: Icon, a
   );
 }
 
-export function Card({ id, title, titleAs = "h2", description, icon, bannerSeed, layout = "stack", actions, children }: CardProps) {
+export function Card({
+  id,
+  title,
+  titleAs = "h2",
+  description,
+  icon,
+  bannerSeed,
+  layout = "stack",
+  variant = "default",
+  actions,
+  children,
+}: CardProps) {
   const hasHeader = title !== undefined || actions !== undefined;
   const body = (
     <>
@@ -53,7 +66,14 @@ export function Card({ id, title, titleAs = "h2", description, icon, bannerSeed,
   );
 
   return (
-    <section id={id} className={cx(styles.card, bannerSeed ? styles.withBanner : layout === "split" && styles.split)}>
+    <section
+      id={id}
+      className={cx(
+        styles.card,
+        variant !== "default" && styles[variant],
+        bannerSeed ? styles.withBanner : layout === "split" && styles.split,
+      )}
+    >
       {bannerSeed ? (
         <>
           <BlockBanner seed={bannerSeed} />
