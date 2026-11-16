@@ -142,4 +142,28 @@ describe("ConsoleTab", () => {
     expect((input as HTMLInputElement).value).toBe("gamemode ");
     expect(screen.queryByRole("listbox")).toBeNull();
   });
+
+  it("lấy lệnh của server rồi gợi ý cả lệnh của mod", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.endsWith("/commands")) return Response.json({ scanned_at: null, commands: [] });
+        if (url.endsWith("/commands/scan")) {
+          return Response.json({
+            scanned_at: "2026-11-16T05:34:47Z",
+            commands: [{ name: "ftbquests", usage: "ftbquests open_book [<target>]", description: null }],
+          });
+        }
+        return new Response(null, { status: 204 });
+      }),
+    );
+    renderConsole();
+    await userEvent.click(await screen.findByRole("button", { name: "Lấy lệnh của server" }));
+    expect(await screen.findByText(/1 lệnh của server, quét lúc/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Quét lại lệnh" })).toBeTruthy();
+    await userEvent.type(screen.getByRole("combobox", { name: "Lệnh" }), "ftb");
+    const option = screen.getByRole("option");
+    expect(option.textContent).toContain("ftbquests open_book [<target>]");
+    expect(option.textContent).toContain("Lệnh của server");
+  });
 });

@@ -1,17 +1,25 @@
 import { useMutation } from "@tanstack/react-query";
 import { SendHorizontal } from "lucide-react";
 import { useId, useState, type KeyboardEvent } from "react";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
 import { api, errorMessage, type Server } from "../../../api/client";
 import { Button, Notice, Stack, SuggestBox, TextInput } from "../../../ui";
 import { emptyHistory, historyDown, historyUp, pushCommand } from "../history";
-import { matchCommands } from "./commandHints";
+import { matchCommands, type MatchedCommand } from "./commandHints";
+import { useServerCommands } from "./ScanCommands";
 
 /**
  * Ô gửi lệnh: mũi tên lên / xuống gọi lại lệnh cũ; đang gõ tên lệnh thì có danh sách gợi ý, mũi tên
  * chọn gợi ý, Tab điền vào, Esc đóng. Enter luôn gửi đúng chữ đang có.
  */
+/** Lệnh có sẵn: cách gõ và mô tả đã dịch. Lệnh của server: cách gõ từ `help`, mô tả nếu có. */
+function suggestion(t: TFunction, c: MatchedCommand) {
+  if (c.key) return { value: c.name, label: t(`console.hints.${c.key}.usage`), detail: t(`console.hints.${c.key}.desc`) };
+  return { value: c.name, label: c.usage ?? c.name, detail: c.description ?? t("console.scan.fromServer") };
+}
+
 export function CommandInput({ server }: { server: Server }) {
   const { t } = useTranslation();
   const listId = useId();
@@ -22,8 +30,9 @@ export function CommandInput({ server }: { server: Server }) {
   const send = useMutation({ mutationFn: (command: string) => api.sendCommand(server.id, command) });
   // Backend chỉ nhận lệnh khi server có process; bấm Gửi lúc khác chỉ nhận lỗi SERVER_BUSY.
   const online = server.state === "running" || server.state === "starting";
-  const matches = dismissed ? [] : matchCommands(value);
-  const items = matches.map((c) => ({ value: c.name, label: t(`console.hints.${c.key}.usage`), detail: t(`console.hints.${c.key}.desc`) }));
+  const scanned = useServerCommands(server.id).data?.commands;
+  const matches = dismissed ? [] : matchCommands(value, scanned);
+  const items = matches.map((c) => suggestion(t, c));
   const current = Math.min(active, Math.max(items.length - 1, 0));
 
   function change(next: string) {

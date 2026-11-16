@@ -367,6 +367,13 @@
         "usage": "locate structure <structure>",
         "desc": "Find the nearest structure"
       }
+    },
+    "scan": {
+      "first": "Get server commands",
+      "again": "Rescan commands",
+      "summary_one": "{{count}} server command, scanned {{at}}",
+      "summary_other": "{{count}} server commands, scanned {{at}}",
+      "fromServer": "Server command"
     }
   },
   "game": {

@@ -367,6 +367,13 @@
         "usage": "locate structure <công trình>",
         "desc": "Tìm công trình gần nhất"
       }
+    },
+    "scan": {
+      "first": "Lấy lệnh của server",
+      "again": "Quét lại lệnh",
+      "summary_one": "{{count}} lệnh của server, quét lúc {{at}}",
+      "summary_other": "{{count}} lệnh của server, quét lúc {{at}}",
+      "fromServer": "Lệnh của server"
     }
   },
   "game": {
