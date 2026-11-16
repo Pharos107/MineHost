@@ -5,7 +5,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use mh_core::instance::{ContentId, ModpackSource};
-use mh_core::{CfManifest, CfRuntime, ErrorCode};
+use mh_core::{CfManifest, CfRuntime, ErrorCode, LoaderKind};
 use mh_platform::SafeRoot;
 use mh_providers::modpack::PackPlan;
 use mh_providers::{
@@ -238,6 +238,16 @@ impl App {
 
         let mut plan = empty_cf_plan(&spec.manifest, spec.runtime);
         plan.files = files;
+        let (blocked, unused): (Vec<_>, Vec<_>) = blocked
+            .into_iter()
+            .partition(|b| server_loads(&plan, &b.path));
+        if !unused.is_empty() {
+            tracing::info!(
+                count = unused.len(),
+                "bỏ qua file cấm phân phối mà server không nạp"
+            );
+        }
+        plan.skipped_client = unused.into_iter().map(|b| b.path).collect();
         plan.blocked = blocked;
         self.update_installing_runtime(target.id, &plan);
 
@@ -389,6 +399,43 @@ fn empty_cf_plan(manifest: &CfManifest, runtime: CfRuntime) -> PackPlan {
     }
 }
 
+/// Server có nạp file này không. Trong `mods/` loader chỉ đọc `.jar` (Forge 1.12 trở về trước đọc cả
+/// `.zip`); file khác ở đó thường là resource pack bị tác giả xếp nhầm mục mod trên CurseForge. File
+/// cấm phân phối mà server không nạp thì không bắt người dùng tải tay (spec P3, mục 3.6).
+fn server_loads(plan: &PackPlan, path: &str) -> bool {
+    let Some(name) = path.strip_prefix("mods/") else {
+        return true;
+    };
+    let ext = Path::new(name)
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(str::to_ascii_lowercase);
+    match ext.as_deref() {
+        Some("jar") => true,
+        Some("zip") => plan.loader == LoaderKind::Forge && is_before_1_13(plan.minecraft.as_str()),
+        _ => false,
+    }
+}
+
+fn is_before_1_13(mc: &str) -> bool {
+    let mut parts = mc.split('.').map(|p| p.parse::<u32>().unwrap_or(0));
+    matches!((parts.next(), parts.next()), (Some(1), Some(minor)) if minor < 13)
+}
+
 fn pack_too_big(reason: &str) -> AppError {
     AppError::new(ErrorCode::ModpackInvalid, reason.to_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_before_1_13;
+
+    #[test]
+    fn legacy_forge_versions_are_detected() {
+        assert!(is_before_1_13("1.12.2"));
+        assert!(is_before_1_13("1.7.10"));
+        assert!(!is_before_1_13("1.13"));
+        assert!(!is_before_1_13("1.20.1"));
+        assert!(!is_before_1_13("26.3"));
+    }
 }
