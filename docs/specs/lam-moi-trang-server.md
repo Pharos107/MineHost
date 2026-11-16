@@ -25,9 +25,17 @@ CPU / RAM, nút bật / tắt ở thanh bên.
   - **Thông tin server:** Java, RAM tối thiểu – tối đa, cổng, tự bật cùng MineHost, tự bật lại khi crash,
     giờ khởi động lại hằng ngày, lịch sao lưu tự động.
   - **Console gần đây:** khung log thấp chỉ đọc (giữ 200 dòng), nút "Mở console" sang trang Console.
+- **Trang Console:**
+  - Dòng có nhãn `WARN` ở đầu tô vàng, `ERROR`/`FATAL`/`SEVERE` tô đỏ (đọc được kiểu Paper, vanilla,
+    Fabric, Forge); chat có chữ "WARN]" không bị tô. stderr vẫn đỏ, lệnh người gõ màu nhấn.
+  - Khung log cao theo màn hình (ít nhất 320 px) để cả trang vừa một màn hình.
+  - Chấm trạng thái kết nối realtime: Đang kết nối, Đã kết nối, Mất kết nối và đang thử lại.
+  - Hàng nút lệnh nhanh trên ô lệnh: Ai đang chơi (`list`), Lưu thế giới (`save-all`), Chuyển ban
+    ngày (`time set day`), Tắt mưa (`weather clear`), Thông báo… (hộp nhập lời nhắn, gửi `say`).
+    Server tắt thì khóa.
 
 Component: `StatTile` thêm `meter`, `NavSection` thêm `actions` và `extra`, `PageHeader` thêm `eyebrow`,
-`AppShell` thêm `navEnd`, `Terminal` thêm `size="sm"`, thêm `Columns` (1, 2 hoặc 3 cột).
+`AppShell` thêm `navEnd`, `Terminal` thêm `size="sm"`, `size="fill"` và tông `warning`, thêm `Columns` (1, 2 hoặc 3 cột).
 
 ## Tiêu chí chấp nhận
 
@@ -36,6 +44,8 @@ Component: `StatTile` thêm `meter`, `NavSection` thêm `actions` và `extra`, `
 - Ô Người chơi chỉ hiện số; ô RAM có thanh mức đúng phần trăm (Vitest).
 - Thẻ Thông tin server hiện đúng từng cài đặt; lịch sao lưu đọc thành câu; dòng console mới hiện ở thẻ
   Console gần đây; có biểu đồ Người chơi (Vitest).
+- Nhận đúng mức WARN / ERROR theo từng kiểu log; nút lệnh nhanh và Thông báo gửi đúng lệnh; trạng thái
+  kết nối đổi theo socket (Vitest).
 - Đổi sang "Từng hàng" thì lần mở sau vẫn là từng hàng; hộp chi tiết có trung bình, cao nhất, thấp nhất (Vitest).
 - Xem tay ở chế độ sáng, tối và bề ngang 375 px: không cuộn ngang.
 

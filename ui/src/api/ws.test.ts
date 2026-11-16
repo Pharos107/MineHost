@@ -93,4 +93,18 @@ describe("LiveSocket", () => {
     vi.advanceTimersByTime(20_000);
     expect(sockets).toHaveLength(1);
   });
+
+  it("báo trạng thái: đang kết nối, đã mở, mất thì đang kết nối lại", () => {
+    vi.useFakeTimers();
+    const { live, last } = setup();
+    const seen: string[] = [];
+    live.onStatus(() => seen.push(live.getStatus()));
+    expect(live.getStatus()).toBe("connecting");
+    live.subscribe("servers", () => {});
+    last().onopen?.();
+    last().onclose?.();
+    vi.advanceTimersByTime(500);
+    last().onopen?.();
+    expect(seen).toEqual(["open", "reconnecting", "open"]);
+  });
 });

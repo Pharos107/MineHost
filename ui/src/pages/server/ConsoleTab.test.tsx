@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useImperativeHandle, useState, type Ref } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Server } from "../../api/client";
 import type { TerminalHandle } from "../../ui";
@@ -17,6 +17,8 @@ vi.mock("../../api/ws", () => ({
       handlers.push(handler);
       return () => {};
     },
+    getStatus: () => "open",
+    onStatus: () => () => {},
   },
 }));
 
@@ -59,6 +61,23 @@ function renderConsole() {
   emit("[INFO]: Alex joined the game");
 }
 
+/** Thay `fetch`, trả về danh sách lệnh đã gửi tới `/console`. */
+function mockCommands() {
+  const sent: string[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith("/console") && init?.body) sent.push((JSON.parse(String(init.body)) as { command: string }).command);
+      return new Response(null, { status: 204 });
+    }),
+  );
+  return sent;
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe("ConsoleTab", () => {
   it("lọc chỉ còn dòng khớp, xóa ô lọc thì hiện lại đủ", async () => {
     renderConsole();
@@ -89,5 +108,18 @@ describe("ConsoleTab", () => {
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
     emit("[INFO]: Steve left the game");
     expect(shownLines()).toEqual(["[INFO]: Steve left the game"]);
+  });
+
+  it("nút lệnh nhanh gửi lệnh, Thông báo gửi say kèm lời nhắn; có trạng thái kết nối", async () => {
+    const sent = mockCommands();
+    renderConsole();
+    expect(screen.getByRole("status").textContent).toBe("Đã kết nối");
+    await userEvent.click(screen.getByRole("button", { name: "Lưu thế giới" }));
+    await vi.waitFor(() => expect(sent).toEqual(["save-all"]));
+
+    await userEvent.click(screen.getByRole("button", { name: "Thông báo…" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Lời nhắn" }), "Bảo trì lúc 22h");
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Gửi" }));
+    await vi.waitFor(() => expect(sent).toEqual(["save-all", "say Bảo trì lúc 22h"]));
   });
 });

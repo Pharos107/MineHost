@@ -8,6 +8,9 @@ export interface LiveMessage {
 
 type Handler = (message: LiveMessage) => void;
 
+/** `connecting`: đang mở lần đầu. `open`: đang nhận tin. `reconnecting`: mất kết nối, đang thử lại. */
+export type LiveStatus = "connecting" | "open" | "reconnecting";
+
 /** Phần của `WebSocket` mà client cần, để test thay được bằng bản giả. */
 export interface SocketLike {
   onopen: (() => void) | null;
@@ -31,11 +34,30 @@ export class LiveSocket {
   private sent = new Set<string>();
   private isOpen = false;
   private retries = 0;
+  private status: LiveStatus = "connecting";
+  private readonly statusListeners = new Set<() => void>();
   private timer: ReturnType<typeof setTimeout> | undefined;
   private readonly open: () => SocketLike;
 
   constructor(open: () => SocketLike) {
     this.open = open;
+  }
+
+  /** Trạng thái kết nối hiện tại, cho chấm "Đã kết nối" ở trang Console. */
+  getStatus(): LiveStatus {
+    return this.status;
+  }
+
+  /** Gọi `listener` mỗi lần trạng thái đổi; trả về hàm hủy. Dùng được với `useSyncExternalStore`. */
+  onStatus(listener: () => void): () => void {
+    this.statusListeners.add(listener);
+    return () => this.statusListeners.delete(listener);
+  }
+
+  private setStatus(next: LiveStatus) {
+    if (this.status === next) return;
+    this.status = next;
+    this.statusListeners.forEach((listener) => listener());
   }
 
   subscribe(topic: string, handler: Handler): () => void {
@@ -73,6 +95,7 @@ export class LiveSocket {
     socket.onopen = () => {
       this.isOpen = true;
       this.retries = 0;
+      this.setStatus("open");
       this.sendSubscribe([...this.handlers.keys()]);
     };
     socket.onmessage = (event) => this.receive(event.data);
@@ -80,7 +103,9 @@ export class LiveSocket {
       if (this.socket !== socket) return;
       this.socket = null;
       this.isOpen = false;
-      if (this.handlers.size > 0) this.scheduleReconnect();
+      if (this.handlers.size === 0) return;
+      this.setStatus("reconnecting");
+      this.scheduleReconnect();
     };
   }
 

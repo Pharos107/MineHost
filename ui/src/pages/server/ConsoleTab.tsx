@@ -14,12 +14,12 @@ import {
   Terminal,
   TextInput,
   type TerminalHandle,
-  type TerminalTone,
 } from "../../ui";
-import { appendCapped, matchesFilter, type BufferedLine } from "./consoleBuffer";
+import { appendCapped, lineTone, matchesFilter, type BufferedLine } from "./consoleBuffer";
+import { ConnectionStatus } from "./console/ConnectionStatus";
+import { QuickCommands } from "./console/QuickCommands";
 import { emptyHistory, historyDown, historyUp, pushCommand } from "./history";
 
-const TONE: Record<ConsoleLine["stream"], TerminalTone> = { stdout: "normal", stderr: "danger", stdin: "primary" };
 
 /**
  * Log realtime và ô gửi lệnh. Mở trang là nhận lại cả bộ đệm 5.000 dòng rồi nhận tiếp dòng mới.
@@ -41,7 +41,7 @@ export function ConsoleTab({ server }: { server: Server }) {
     return live.subscribe(`server.${server.id}.console`, (message) => {
       if (message.error) return;
       const raw = message.data as ConsoleLine;
-      const line = { text: raw.stream === "stdin" ? `> ${raw.text}` : raw.text, tone: TONE[raw.stream] };
+      const line = { text: raw.stream === "stdin" ? `> ${raw.text}` : raw.text, tone: lineTone(raw.stream, raw.text) };
       appendCapped(lines.current, line);
       if (view.current.paused) setQueued((n) => n + 1);
       else if (matchesFilter(line.text, view.current.filter)) terminal.current?.write(line.text, line.tone);
@@ -77,17 +77,21 @@ export function ConsoleTab({ server }: { server: Server }) {
 
   return (
     <Stack gap={3}>
-      <Stack direction="row" gap={2} align="center" wrap>
-        <SearchInput value={filter} onChange={changeFilter} label={t("console.filter")} />
-        <Button variant="ghost" size="sm" icon={paused ? Play : Pause} aria-pressed={paused} onClick={togglePause}>
-          {paused ? t("console.resume") : t("console.pause")}
-        </Button>
-        <Button variant="ghost" size="sm" icon={Eraser} onClick={clearScreen}>
-          {t("console.clear")}
-        </Button>
-        {paused && queued > 0 && <Badge tone="info">{t("console.newLines", { count: queued })}</Badge>}
+      <Stack direction="row" gap={2} align="center" justify="between" wrap>
+        <Stack direction="row" gap={2} align="center" wrap>
+          <SearchInput value={filter} onChange={changeFilter} label={t("console.filter")} />
+          <Button variant="ghost" size="sm" icon={paused ? Play : Pause} aria-pressed={paused} onClick={togglePause}>
+            {paused ? t("console.resume") : t("console.pause")}
+          </Button>
+          <Button variant="ghost" size="sm" icon={Eraser} onClick={clearScreen}>
+            {t("console.clear")}
+          </Button>
+          {paused && queued > 0 && <Badge tone="info">{t("console.newLines", { count: queued })}</Badge>}
+        </Stack>
+        <ConnectionStatus />
       </Stack>
-      <Terminal ref={terminal} label={t("console.label")} />
+      <Terminal ref={terminal} label={t("console.label")} size="fill" />
+      <QuickCommands server={server} />
       <CommandInput server={server} />
     </Stack>
   );
