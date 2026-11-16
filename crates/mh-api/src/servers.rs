@@ -56,7 +56,12 @@ pub async fn create(
         memory_mb: body.memory_mb.map(memory).transpose()?,
         port: body.port.map(port).transpose()?,
     };
-    let created = app.create(req)?;
+    let content = body
+        .content
+        .iter()
+        .map(crate::content::validate_item)
+        .collect::<ApiResult<Vec<_>>>()?;
+    let created = app.create_with_content(req, content)?;
     let dto = CreatedDto {
         server_id: created.server_id.to_string(),
         job_id: created.job_id,

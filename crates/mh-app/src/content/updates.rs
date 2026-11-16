@@ -120,14 +120,12 @@ impl App {
             self.adopt_manual(id, items).await?;
             for item in items {
                 ctx.check_cancel()?;
-                self.install_now(
-                    ctx,
-                    id,
-                    item.source,
-                    &item.project_id,
-                    Some(&item.version_id),
-                )
-                .await?;
+                let request = super::ContentRequest {
+                    source: item.source,
+                    project_id: item.project_id.clone(),
+                    version_id: Some(item.version_id.clone()),
+                };
+                self.install_now(ctx, id, &[request]).await?;
             }
             Ok(())
         }

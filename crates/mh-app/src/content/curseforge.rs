@@ -106,6 +106,13 @@ impl ContentCatalog for CurseforgeCatalog {
         })
     }
 
+    fn project_body<'a>(&'a self, id: &'a str) -> BoxFut<'a, Result<Option<String>, AppError>> {
+        Box::pin(async move {
+            let id = parse_cf_id(id, "project_id")?;
+            Ok(Some(self.cf.mod_description(id).await?))
+        })
+    }
+
     fn versions<'a>(
         &'a self,
         project: &'a str,

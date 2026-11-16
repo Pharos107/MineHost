@@ -12,6 +12,7 @@ use mh_core::{
 use mh_store::ServerPaths;
 use time::OffsetDateTime;
 
+use crate::content::ContentRequest;
 use crate::jobs::{JobContext, JobKind, JobStep};
 use crate::launcher::{PROPERTIES_FILE, read_properties, write_properties};
 use crate::{App, AppError, Installing, JobId, lock};
@@ -41,6 +42,19 @@ pub struct Created {
 impl App {
     /// Bắt đầu Job cài server; trả ngay ID server và ID Job.
     pub fn create(self: &Arc<Self>, req: CreateRequest) -> Result<Created, AppError> {
+        self.create_with_content(req, Vec::new())
+    }
+
+    /// Như `create`, cài thêm mod/plugin đã chọn ở bước Mod khi server cài xong (spec trình
+    /// duyệt mod, mục 5). Mod lỗi không làm hỏng server: Job ghi chúng vào `content_failed`.
+    pub fn create_with_content(
+        self: &Arc<Self>,
+        req: CreateRequest,
+        content: Vec<ContentRequest>,
+    ) -> Result<Created, AppError> {
+        if !content.is_empty() {
+            self.check_initial_content(req.loader, &content)?;
+        }
         let port = self.resolve_new_port(req.port)?;
         let memory = req.memory_mb.unwrap_or_else(|| self.suggested_memory());
         let id = ServerId::generate();
@@ -60,7 +74,11 @@ impl App {
             .spawn(JobKind::CreateServer, Some(id), move |ctx| async move {
                 let result = app.install(&ctx, id, &req, memory, port).await;
                 app.finish_install(id, result.is_ok(), "đã tạo server");
-                result
+                result?;
+                if content.is_empty() {
+                    return Ok(());
+                }
+                app.install_initial_content(&ctx, id, &content).await
             });
         if let Some(entry) = lock(&self.installing).get_mut(&id) {
             entry.job_id = Some(job_id);

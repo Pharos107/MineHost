@@ -8,9 +8,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use content_support::{FakeJava, FakeServerCatalog, build_jar, finish_job, make_server};
-use mh_app::content::{CatalogSource, CurseForge, CurseforgeCatalog, ProjectType};
+use mh_app::content::{CatalogSource, ContentSearch, CurseForge, CurseforgeCatalog, ProjectType};
 use mh_app::{App, AppDeps, JobState, MetricsConfig};
-use mh_core::{CurseforgeKey, ErrorCode, LoaderKind};
+use mh_core::{CurseforgeKey, ErrorCode, LoaderKind, ServerId};
 use mh_net::{HostAllowlist, HttpClient, NetConfig};
 use mh_platform::DataDirs;
 use mh_store::{ContentManifest, ContentSource, ProjectId, ServerStore};
@@ -201,8 +201,21 @@ async fn installs_curseforge_required_dep_recursively_and_records_content_toml()
         .mount(&server)
         .await;
 
+    Mock::given(method("GET"))
+        .and(path("/mods/238222/description"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "<p>JEI</p>" })))
+        .mount(&server)
+        .await;
+
     let (_tmp, app) = cf_app(&server, true);
     let id = make_server(&app, LoaderKind::Fabric);
+
+    // Mô tả HTML lấy thêm từ `/description`; project không có mô tả thì vẫn trả phần còn lại.
+    let cf = CatalogSource::Curseforge;
+    let jei = app.content_project(cf, "238222").await.unwrap();
+    assert_eq!(jei.body.as_deref(), Some("<p>JEI</p>"));
+    let fapi = app.content_project(cf, "306612").await.unwrap();
+    assert_eq!((fapi.title.as_str(), fapi.body), ("Fabric API", None));
 
     let plan = app
         .plan_content_install(id, CatalogSource::Curseforge, "238222", None)
@@ -348,7 +361,7 @@ async fn curseforge_missing_or_rejected_key_returns_unavailable() {
     let id1 = make_server(&no_key_app, LoaderKind::Fabric);
     assert_eq!(
         no_key_app
-            .search_content(CatalogSource::Curseforge, "jei", None, Some(id1), 1)
+            .search_content(CatalogSource::Curseforge, "jei", &for_server(id1))
             .await
             .unwrap_err()
             .code,
@@ -366,7 +379,7 @@ async fn curseforge_missing_or_rejected_key_returns_unavailable() {
     let id2 = make_server(&bad_key_app, LoaderKind::Fabric);
     assert_eq!(
         bad_key_app
-            .search_content(CatalogSource::Curseforge, "jei", None, Some(id2), 1)
+            .search_content(CatalogSource::Curseforge, "jei", &for_server(id2))
             .await
             .unwrap_err()
             .code,
@@ -380,9 +393,10 @@ async fn curseforge_missing_or_rejected_key_returns_unavailable() {
             .search_content(
                 CatalogSource::Curseforge,
                 "",
-                Some(ProjectType::Plugin),
-                Some(paper),
-                1
+                &ContentSearch {
+                    kind: Some(ProjectType::Plugin),
+                    ..for_server(paper)
+                }
             )
             .await
             .unwrap()
@@ -405,4 +419,11 @@ async fn curseforge_missing_or_rejected_key_returns_unavailable() {
             .code,
         ErrorCode::ContentIncompatible
     );
+}
+
+fn for_server(id: ServerId) -> ContentSearch {
+    ContentSearch {
+        server_id: Some(id),
+        ..ContentSearch::default()
+    }
 }

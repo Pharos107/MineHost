@@ -6,6 +6,7 @@ use mh_app::content::{
     CatalogSource, ContentFile, ContentInstallPlan, ContentList, ContentProject, ContentSearchHit,
     ContentSource, ContentVersion, PendingContent, PlannedContent, SideSupport,
 };
+use mh_core::ContentKind;
 use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use utoipa::ToSchema;
@@ -31,11 +32,22 @@ pub struct SearchQuery {
     /// Trang (từ 1), mỗi trang 20 kết quả.
     #[serde(default)]
     pub page: Option<u32>,
+    /// `relevance` (mặc định), `downloads` hoặc `updated`.
+    #[serde(default)]
+    pub sort: Option<String>,
+    /// Lọc như `server_id` cho server chưa tạo; phải gửi cùng `minecraft`.
+    #[serde(default)]
+    pub loader: Option<String>,
+    #[serde(default)]
+    pub minecraft: Option<String>,
 }
 
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct VersionsQuery {
     pub server_id: Option<String>,
+    /// Lọc theo loader và Minecraft khi chưa có server; phải gửi cả hai.
+    pub loader: Option<String>,
+    pub minecraft: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, ToSchema)]
@@ -226,6 +238,8 @@ pub struct InstalledContentDto {
     pub version_id: Option<String>,
     pub from_modpack: bool,
     pub icon_url: Option<String>,
+    /// Thêm vào lúc server đang chạy: process hiện tại chưa nạp, cần khởi động lại.
+    pub needs_restart: bool,
 }
 
 impl From<ContentFile> for InstalledContentDto {
@@ -255,6 +269,7 @@ impl From<ContentFile> for InstalledContentDto {
             version_id: rec.as_ref().and_then(|r| r.version_id.clone()),
             from_modpack: rec.is_some_and(|r| r.from_modpack),
             icon_url: None,
+            needs_restart: false,
         }
     }
 }
@@ -304,21 +319,39 @@ impl From<ContentList> for ServerContentDto {
     fn from(list: ContentList) -> Self {
         Self {
             kind: list.kind.into(),
-            files: list.files.into_iter().map(Into::into).collect(),
+            files: list
+                .files
+                .into_iter()
+                .map(|file| {
+                    let pending_restart =
+                        file.enabled && list.needs_restart.contains(&file.file_name);
+                    let mut dto = InstalledContentDto::from(file);
+                    dto.needs_restart = pending_restart;
+                    dto
+                })
+                .collect(),
             pending: list.pending.into_iter().map(Into::into).collect(),
         }
     }
 }
 
+/// Một mục trong danh sách cài.
 #[derive(Debug, Deserialize, ToSchema)]
-pub struct ContentInstallBody {
+pub struct ContentItemBody {
     pub source: String,
     pub project_id: String,
     pub version_id: Option<String>,
 }
 
+/// Danh sách mod/plugin cần cài cùng lúc (1 đến 50 mục), dependency tự thêm.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ContentInstallBody {
+    pub items: Vec<ContentItemBody>,
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PlannedContentDto {
+    pub source: String,
     pub project_id: String,
     pub project_name: String,
     pub version_id: String,
@@ -332,9 +365,10 @@ pub struct PlannedContentDto {
     pub download_page_url: Option<String>,
 }
 
-impl From<PlannedContent> for PlannedContentDto {
-    fn from(p: PlannedContent) -> Self {
+impl PlannedContentDto {
+    fn new(source: CatalogSource, p: PlannedContent) -> Self {
         Self {
+            source: source.as_str().to_owned(),
             project_id: p.project_id,
             project_name: p.project_name,
             version_id: p.version_id,
@@ -356,11 +390,21 @@ pub struct ContentPlanDto {
     pub items: Vec<PlannedContentDto>,
 }
 
-impl From<ContentInstallPlan> for ContentPlanDto {
-    fn from(plan: ContentInstallPlan) -> Self {
+impl ContentPlanDto {
+    /// Gộp kế hoạch của từng nguồn thành một danh sách; mọi kế hoạch cùng `kind` của server.
+    pub fn merge(kind: ContentKind, plans: Vec<ContentInstallPlan>) -> Self {
+        let items = plans
+            .into_iter()
+            .flat_map(|plan| {
+                let source = plan.source;
+                plan.items
+                    .into_iter()
+                    .map(move |item| PlannedContentDto::new(source, item))
+            })
+            .collect();
         Self {
-            kind: plan.kind.into(),
-            items: plan.items.into_iter().map(Into::into).collect(),
+            kind: kind.into(),
+            items,
         }
     }
 }

@@ -35,6 +35,7 @@ const sampleFiles: InstalledContent[] = [
     version_id: "ver1",
     from_modpack: false,
     icon_url: null,
+    needs_restart: false,
   },
   {
     file_name: "iris-1.8.0.jar",
@@ -49,6 +50,7 @@ const sampleFiles: InstalledContent[] = [
     version_id: "ver2",
     from_modpack: true,
     icon_url: "https://cdn.modrinth.com/iris.png",
+    needs_restart: false,
   },
   {
     file_name: "custom-mod.jar",
@@ -63,6 +65,7 @@ const sampleFiles: InstalledContent[] = [
     version_id: null,
     from_modpack: false,
     icon_url: null,
+    needs_restart: false,
   },
 ];
 
@@ -273,6 +276,7 @@ describe("ContentPage", () => {
           version_id: "5800999",
           from_modpack: false,
           icon_url: null,
+          needs_restart: false,
         };
         pending = [];
         files = [installed];

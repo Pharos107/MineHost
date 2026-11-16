@@ -169,6 +169,18 @@ impl CurseForge {
         Ok(env.data)
     }
 
+    /// Mô tả đầy đủ của project dạng HTML (`GET /mods/{id}/description`). Giao diện tự lọc HTML.
+    pub async fn mod_description(&self, id: u64) -> Result<String, ProviderError> {
+        let key = self.require_key()?;
+        if id == 0 {
+            return Err(not_found("0"));
+        }
+        let id_str = id.to_string();
+        let url = crate::endpoint(SOURCE, &self.base_url, &["mods", &id_str, "description"])?;
+        let env: DataEnvelope<String> = self.get_json(url.as_str(), MOD_TTL, key, &id_str).await?;
+        Ok(env.data)
+    }
+
     /// Danh sách file hợp `loader` và `mc`, mới nhất trước.
     pub async fn files(
         &self,
