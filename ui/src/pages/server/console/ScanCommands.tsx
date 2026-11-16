@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ListRestart } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { api, errorMessage, type Server, type ServerCommands } from "../../../api/client";
-import { Badge, Button, Notice, Stack } from "../../../ui";
+import { api, type Server, type ServerCommands } from "../../../api/client";
+import { IconButton } from "../../../ui";
 
 export function commandsKey(id: string) {
   return ["server-commands", id] as const;
@@ -14,39 +14,35 @@ export function useServerCommands(id: string) {
   return useQuery({ queryKey: commandsKey(id), queryFn: () => api.serverCommands(id) });
 }
 
-/**
- * Nút lấy danh sách lệnh của server bằng `help` (spec lenh-cua-server.md). Không tự quét vì `help` in
- * hàng trăm dòng vào console; đã quét thì hiện số lệnh và giờ quét.
- */
-export function ScanCommands({ server }: { server: Server }) {
-  const { t, i18n } = useTranslation();
+/** Quét lệnh bằng `help`; hàng lệnh nhanh hiện lỗi chung với các nút khác. */
+export function useScanCommands(id: string) {
   const queryClient = useQueryClient();
-  const commands = useServerCommands(server.id);
-  const scan = useMutation({
-    mutationFn: () => api.scanCommands(server.id),
-    onSuccess: (data) => queryClient.setQueryData<ServerCommands>(commandsKey(server.id), data),
+  return useMutation({
+    mutationFn: () => api.scanCommands(id),
+    onSuccess: (data) => queryClient.setQueryData<ServerCommands>(commandsKey(id), data),
   });
-  const scannedAt = commands.data?.scanned_at;
+}
+
+/**
+ * Nút icon cuối hàng lệnh nhanh (spec lenh-cua-server.md): số lệnh và giờ quét nằm trong chú thích để
+ * hàng gọn một dòng. Không tự quét vì `help` in hàng trăm dòng vào console.
+ */
+export function ScanButton({ server, scan }: { server: Server; scan: ReturnType<typeof useScanCommands> }) {
+  const { t, i18n } = useTranslation();
+  const commands = useServerCommands(server.id).data;
   const time = new Intl.DateTimeFormat(i18n.language, { dateStyle: "short", timeStyle: "short" });
+  const label = commands?.scanned_at
+    ? t("console.scan.again", { count: commands.commands.length, at: time.format(Date.parse(commands.scanned_at)) })
+    : t("console.scan.first");
 
   return (
-    <Stack gap={2} align="end">
-      <Stack direction="row" gap={2} align="center" wrap>
-        {scannedAt && (
-          <Badge>{t("console.scan.summary", { count: commands.data?.commands.length ?? 0, at: time.format(Date.parse(scannedAt)) })}</Badge>
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={ListRestart}
-          disabled={server.state !== "running"}
-          loading={scan.isPending}
-          onClick={() => scan.mutate()}
-        >
-          {scannedAt ? t("console.scan.again") : t("console.scan.first")}
-        </Button>
-      </Stack>
-      {scan.isError && <Notice tone="danger">{errorMessage(t, scan.error)}</Notice>}
-    </Stack>
+    <IconButton
+      icon={ListRestart}
+      size="sm"
+      label={label}
+      disabled={server.state !== "running" || scan.isPending}
+      aria-busy={scan.isPending || undefined}
+      onClick={() => scan.mutate()}
+    />
   );
 }

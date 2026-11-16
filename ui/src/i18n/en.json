@@ -369,10 +369,9 @@
       }
     },
     "scan": {
-      "first": "Get server commands",
-      "again": "Rescan commands",
-      "summary_one": "{{count}} server command, scanned {{at}}",
-      "summary_other": "{{count}} server commands, scanned {{at}}",
+      "first": "Get the server's commands (mods, plugins) for suggestions",
+      "again_one": "Rescan server commands ({{count}} command, scanned {{at}})",
+      "again_other": "Rescan server commands ({{count}} commands, scanned {{at}})",
       "fromServer": "Server command"
     }
   },

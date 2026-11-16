@@ -369,10 +369,9 @@
       }
     },
     "scan": {
-      "first": "Lấy lệnh của server",
-      "again": "Quét lại lệnh",
-      "summary_one": "{{count}} lệnh của server, quét lúc {{at}}",
-      "summary_other": "{{count}} lệnh của server, quét lúc {{at}}",
+      "first": "Lấy lệnh của server (mod, plugin) để gợi ý khi gõ",
+      "again_one": "Quét lại lệnh của server ({{count}} lệnh, quét lúc {{at}})",
+      "again_other": "Quét lại lệnh của server ({{count}} lệnh, quét lúc {{at}})",
       "fromServer": "Lệnh của server"
     }
   },

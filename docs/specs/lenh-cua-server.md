@@ -26,8 +26,8 @@ Minecraft in danh sách lệnh ra console khi gõ `help`. Đã thử trên serve
 - Mỗi lệnh có `name`, `usage` (cắt còn 300 ký tự) và `description` (chỉ có ở Paper, Purpur). Tối đa
   2.000 lệnh. Tên chỉ gồm chữ, số và `_ . : -`; dòng như `[STDOUT]: /home/...` không bị nhận nhầm.
 - **Trang Console:** gợi ý gồm 25 lệnh có mô tả tiếng Việt cộng các lệnh đã quét (có nhãn "server").
-  Nút "Lấy lệnh của server" trong ô gợi ý; đã quét thì ghi thời điểm và cho quét lại. Không tự quét,
-  vì `help` in hàng trăm dòng vào console.
+  Nút icon ở cuối hàng lệnh nhanh (cùng một dòng); chú thích của nút ghi số lệnh và giờ quét lần trước.
+  Không tự quét, vì `help` in hàng trăm dòng vào console.
 
 ## Tiêu chí chấp nhận
 

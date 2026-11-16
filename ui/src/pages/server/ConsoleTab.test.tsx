@@ -158,9 +158,8 @@ describe("ConsoleTab", () => {
       }),
     );
     renderConsole();
-    await userEvent.click(await screen.findByRole("button", { name: "Lấy lệnh của server" }));
-    expect(await screen.findByText(/1 lệnh của server, quét lúc/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Quét lại lệnh" })).toBeTruthy();
+    await userEvent.click(await screen.findByRole("button", { name: /^Lấy lệnh của server/ }));
+    expect(await screen.findByRole("button", { name: /^Quét lại lệnh của server \(1 lệnh, quét lúc/ })).toBeTruthy();
     await userEvent.type(screen.getByRole("combobox", { name: "Lệnh" }), "ftb");
     const option = screen.getByRole("option");
     expect(option.textContent).toContain("ftbquests open_book [<target>]");

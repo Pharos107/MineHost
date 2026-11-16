@@ -11,7 +11,6 @@ import { CommandInput } from "./console/CommandInput";
 import { ConnectionStatus } from "./console/ConnectionStatus";
 import { downloadLog } from "./console/downloadLog";
 import { QuickCommands } from "./console/QuickCommands";
-import { ScanCommands } from "./console/ScanCommands";
 
 interface View {
   filter: string;
@@ -88,10 +87,7 @@ export function ConsoleTab({ server }: { server: Server }) {
         <ConnectionStatus />
       </Stack>
       <Terminal ref={terminal} label={t("console.label")} size="fill" />
-      <Stack direction="row" gap={2} align="start" justify="between" wrap>
-        <QuickCommands server={server} />
-        <ScanCommands server={server} />
-      </Stack>
+      <QuickCommands server={server} />
       <CommandInput server={server} />
     </Stack>
   );
