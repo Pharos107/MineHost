@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { Outlet, useMatch, useNavigate, useOutletContext, useParams } from "react-router";
 
@@ -46,6 +47,7 @@ export function ServerLayout() {
 }
 
 function ServerView({ server }: { server: Server }) {
+  const { t } = useTranslation();
   const ready = server.state !== "installing" && server.state !== "broken";
   const onContentPage = useMatch("/servers/:id/content") !== null;
 
@@ -53,6 +55,7 @@ function ServerView({ server }: { server: Server }) {
     <Stack gap={5}>
       <PageHeader
         title={serverName(server)}
+        eyebrow={serverSummary(t, server)}
         description={
           <Stack direction="row" gap={3} align="center" wrap>
             <StatusBadge state={server.state} />
@@ -67,6 +70,15 @@ function ServerView({ server }: { server: Server }) {
       {server.state === "broken" && <DeleteServer server={server} />}
     </Stack>
   );
+}
+
+/** Loader, phiên bản và modpack trên một dòng, ví dụ "Fabric 0.16.14 · Minecraft 1.20.1 · Prominence II v4.1.8". */
+export function serverSummary(t: TFunction, server: Server): string | undefined {
+  const loader = server.loader ? [t(`loaders.${server.loader}`), server.loader_version].filter(Boolean).join(" ") : null;
+  const minecraft = server.minecraft ? t("server.minecraftVersion", { version: server.minecraft }) : null;
+  const pack = server.modpack ? [server.modpack.name, server.modpack.version_name].filter(Boolean).join(" ") : null;
+  const parts = [loader, minecraft, pack].filter((part): part is string => !!part);
+  return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 
 /** Server đang mở, cho các trang con nằm trong `ServerLayout`. */

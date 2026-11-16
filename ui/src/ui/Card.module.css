@@ -69,6 +69,13 @@
   min-width: 0;
 }
 
+.eyebrow {
+  margin: 0 0 var(--mh-space-1);
+  color: var(--mh-text-muted);
+  font-size: var(--mh-text-sm);
+  font-weight: 500;
+}
+
 .description {
   margin: var(--mh-space-1) 0 0;
   color: var(--mh-text-muted);

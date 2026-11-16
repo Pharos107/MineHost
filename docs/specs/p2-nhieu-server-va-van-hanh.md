@@ -346,6 +346,8 @@ Lọc theo server. Cập nhật realtime qua WebSocket.
 - Thẻ số: CPU, RAM (so với `max` đã đặt), người chơi online / tối đa, thời gian chạy, dung lượng thư mục.
 - Biểu đồ đường 1 giờ gần nhất cho CPU, RAM và người chơi. Server tắt thì ghi "Server đang tắt", không vẽ.
 - Job gần nhất của server và thông báo crash (giữ từ P1).
+- Bố cục hiện tại (ô Người chơi, nút bật / tắt ở thanh bên, cách xếp biểu đồ): xem
+  [lam-moi-trang-server.md](lam-moi-trang-server.md).
 
 ### 6.5 Console `/servers/:id/console`
 
@@ -425,8 +427,8 @@ trong MineHost dù thư mục đã có `eula=true`.
 
 | Component | Dùng ở |
 | --- | --- |
-| `AppShell` thêm `variant="sidebar"`, `NavItem`, `NavSection` | mọi trang |
-| `StatTile` (nhãn, số, đơn vị, dòng phụ) | Trang chủ, Tổng quan |
+| `AppShell` thêm `variant="sidebar"`, `NavItem`, `NavSection` (có `actions` cạnh tiêu đề, `extra` dưới tiêu đề) | mọi trang |
+| `StatTile` (nhãn, số, đơn vị, dòng phụ, thanh mức `meter`) | Trang chủ, Tổng quan |
 | `LineChart` (SVG tự vẽ, một hoặc nhiều đường, trục thời gian, tooltip) | Tổng quan |
 | `Breadcrumb` | Tệp |
 | `FileDrop` (kéo thả, nút chọn file, danh sách tiến độ) | Tệp |

@@ -18,10 +18,11 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useMatch } from "react-router";
 
-import { api } from "../api/client";
+import { api, type Server } from "../api/client";
 import { serverName } from "../pages/ServerListPage";
 import { serverKey } from "../pages/server/ServerLayout";
-import { AppShell, NavItem, NavSection } from "../ui";
+import { ServerActions } from "../pages/server/ServerActions";
+import { AppShell, NavItem, NavSection, StatusBadge } from "../ui";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { LogoutButton } from "./LogoutButton";
 import { QuitButton } from "./QuitButton";
@@ -100,10 +101,11 @@ function ServerNav({ id }: { id: string }) {
 
   return (
     <>
-      <NavSection>
-        <NavItem to="/servers" end icon={ArrowLeft} label={t("nav.allServers")} />
-      </NavSection>
-      <NavSection title={server.data ? serverName(server.data) : undefined}>
+      <NavSection
+        title={server.data ? serverName(server.data) : undefined}
+        actions={server.data && <ServerQuickActions server={server.data} />}
+        extra={server.data && <StatusBadge state={server.data.state} />}
+      >
         <NavItem to={base} end icon={LayoutDashboard} label={t("nav.overview")} />
         <NavItem to={`${base}/console`} icon={Terminal} label={t("nav.console")} />
         {server.data?.content_kind && (
@@ -115,6 +117,16 @@ function ServerNav({ id }: { id: string }) {
         <NavItem to={`${base}/game`} icon={SlidersHorizontal} label={t("nav.game")} />
         <NavItem to={`${base}/settings`} icon={Wrench} label={t("nav.serverSettings")} />
       </NavSection>
+      {/* Mục của server lên đầu để thao tác nhanh; lối quay về danh sách nằm dưới. */}
+      <NavSection>
+        <NavItem to="/servers" end icon={ArrowLeft} label={t("nav.allServers")} />
+      </NavSection>
     </>
   );
+}
+
+/** Nút bật / tắt cạnh tên server, để thao tác được từ mọi tab của server. Đang cài hoặc hỏng thì không có. */
+function ServerQuickActions({ server }: { server: Server }) {
+  const ready = server.state !== "installing" && server.state !== "broken";
+  return ready ? <ServerActions server={server} compact /> : null;
 }

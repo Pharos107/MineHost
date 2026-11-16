@@ -1,10 +1,10 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 import { Play, RotateCw, Skull, Square } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { api, ApiError, errorMessage, type Server, type ServerAction } from "../../api/client";
-import { Button, ConfirmDialog, Dialog, DialogBody, DialogFooter, Menu, Notice, Stack } from "../../ui";
+import { Button, ConfirmDialog, Dialog, DialogBody, DialogFooter, IconButton, Menu, Notice, Stack } from "../../ui";
 
 const EULA_URL = "https://aka.ms/MinecraftEULA";
 const WITH_PROCESS: Server["state"][] = ["starting", "running", "stopping"];
@@ -13,8 +13,14 @@ function isEulaError(error: unknown): boolean {
   return error instanceof ApiError && error.code === "EULA_NOT_ACCEPTED";
 }
 
+interface ServerActionsProps {
+  server: Server;
+  /** Chỉ icon, không có menu "…": cho thanh bên, để bật / tắt được khi đang ở tab khác. */
+  compact?: boolean;
+}
+
 /** Nút Bật / Tắt / Khởi động lại theo trạng thái; "Buộc dừng" nằm trong menu "…" và phải xác nhận. */
-export function ServerActions({ server }: { server: Server }) {
+export function ServerActions({ server, compact = false }: ServerActionsProps) {
   const { t } = useTranslation();
   const [eulaOpen, setEulaOpen] = useState(false);
   const [killOpen, setKillOpen] = useState(false);
@@ -24,45 +30,14 @@ export function ServerActions({ server }: { server: Server }) {
     onError: (error) => isEulaError(error) && setEulaOpen(true),
     onSettled: () => setKillOpen(false),
   });
-  const accept = useMutation({
-    mutationFn: () => api.acceptEula(server.id),
-    onSuccess: () => {
-      setEulaOpen(false);
-      run.mutate("start");
-    },
-  });
 
-  const { state } = server;
-  const pending = (action: ServerAction) => run.isPending && run.variables === action;
-  const busy = run.isPending || state === "stopping";
   const start = () => (server.eula_accepted ? run.mutate("start") : setEulaOpen(true));
-  const hideStaleStartError = run.variables === "start" && WITH_PROCESS.includes(state);
+  const hideStaleStartError = run.variables === "start" && WITH_PROCESS.includes(server.state);
+  const buttons = { state: server.state, run, start, onKill: () => setKillOpen(true) };
 
   return (
-    <Stack gap={2} align="end">
-      <Stack direction="row" gap={2} wrap>
-        {(state === "stopped" || state === "crashed") && (
-          <Button variant="primary" icon={Play} loading={pending("start")} onClick={start}>
-            {t("server.start")}
-          </Button>
-        )}
-        {state === "running" && (
-          <Button icon={RotateCw} disabled={busy} loading={pending("restart")} onClick={() => run.mutate("restart")}>
-            {t("server.restart")}
-          </Button>
-        )}
-        {WITH_PROCESS.includes(state) && (
-          <Button icon={Square} disabled={busy} loading={state === "stopping" || pending("stop")} onClick={() => run.mutate("stop")}>
-            {t("server.stop")}
-          </Button>
-        )}
-        <Menu
-          label={t("server.more")}
-          items={[
-            { label: t("server.kill"), icon: Skull, tone: "danger", disabled: !WITH_PROCESS.includes(state), onSelect: () => setKillOpen(true) },
-          ]}
-        />
-      </Stack>
+    <Stack gap={2} align={compact ? "start" : "end"}>
+      {compact ? <IconButtons {...buttons} /> : <FullButtons {...buttons} />}
       {run.isError && !isEulaError(run.error) && !hideStaleStartError && (
         <Notice tone="danger">{errorMessage(t, run.error)}</Notice>
       )}
@@ -70,31 +45,110 @@ export function ServerActions({ server }: { server: Server }) {
         open={killOpen}
         title={t("server.killTitle")}
         confirmLabel={t("server.kill")}
-        loading={pending("kill")}
+        loading={run.isPending && run.variables === "kill"}
         onCancel={() => setKillOpen(false)}
         onConfirm={() => run.mutate("kill")}
       >
         <p>{t("server.killBody")}</p>
       </ConfirmDialog>
-      <Dialog open={eulaOpen} onClose={() => setEulaOpen(false)} title={t("eula.title")} dismissible={!accept.isPending}>
-        <DialogBody>
-          <p>{t("eula.body")}</p>
-          <p>
-            <a href={EULA_URL} target="_blank" rel="noreferrer">
-              {t("eula.link")}
-            </a>
-          </p>
-          {accept.isError && <Notice tone="danger">{errorMessage(t, accept.error)}</Notice>}
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" disabled={accept.isPending} onClick={() => setEulaOpen(false)}>
-            {t("ui.cancel")}
-          </Button>
-          <Button variant="primary" loading={accept.isPending} onClick={() => accept.mutate()}>
-            {t("eula.accept")}
-          </Button>
-        </DialogFooter>
-      </Dialog>
+      <EulaDialog server={server} open={eulaOpen} onClose={() => setEulaOpen(false)} onAccepted={() => run.mutate("start")} />
     </Stack>
+  );
+}
+
+interface ButtonsProps {
+  state: Server["state"];
+  run: UseMutationResult<unknown, Error, ServerAction>;
+  start: () => void;
+  onKill: () => void;
+}
+
+function FullButtons({ state, run, start, onKill }: ButtonsProps) {
+  const { t } = useTranslation();
+  const pending = (action: ServerAction) => run.isPending && run.variables === action;
+  const busy = run.isPending || state === "stopping";
+
+  return (
+    <Stack direction="row" gap={2} wrap>
+      {(state === "stopped" || state === "crashed") && (
+        <Button variant="primary" icon={Play} loading={pending("start")} onClick={start}>
+          {t("server.start")}
+        </Button>
+      )}
+      {state === "running" && (
+        <Button icon={RotateCw} disabled={busy} loading={pending("restart")} onClick={() => run.mutate("restart")}>
+          {t("server.restart")}
+        </Button>
+      )}
+      {WITH_PROCESS.includes(state) && (
+        <Button icon={Square} disabled={busy} loading={state === "stopping" || pending("stop")} onClick={() => run.mutate("stop")}>
+          {t("server.stop")}
+        </Button>
+      )}
+      <Menu
+        label={t("server.more")}
+        items={[{ label: t("server.kill"), icon: Skull, tone: "danger", disabled: !WITH_PROCESS.includes(state), onSelect: onKill }]}
+      />
+    </Stack>
+  );
+}
+
+/** Bản gọn ở thanh bên: chỉ icon, "Buộc dừng" vẫn chỉ có ở đầu trang. */
+function IconButtons({ state, run, start }: ButtonsProps) {
+  const { t } = useTranslation();
+  const busy = run.isPending || state === "stopping";
+
+  return (
+    <Stack direction="row" gap={1}>
+      {(state === "stopped" || state === "crashed") && (
+        <IconButton icon={Play} size="sm" variant="primary" label={t("server.start")} disabled={run.isPending} onClick={start} />
+      )}
+      {state === "running" && (
+        <IconButton icon={RotateCw} size="sm" label={t("server.restart")} disabled={busy} onClick={() => run.mutate("restart")} />
+      )}
+      {WITH_PROCESS.includes(state) && (
+        <IconButton icon={Square} size="sm" label={t("server.stop")} disabled={busy} onClick={() => run.mutate("stop")} />
+      )}
+    </Stack>
+  );
+}
+
+interface EulaDialogProps {
+  server: Server;
+  open: boolean;
+  onClose: () => void;
+  onAccepted: () => void;
+}
+
+function EulaDialog({ server, open, onClose, onAccepted }: EulaDialogProps) {
+  const { t } = useTranslation();
+  const accept = useMutation({
+    mutationFn: () => api.acceptEula(server.id),
+    onSuccess: () => {
+      onClose();
+      onAccepted();
+    },
+  });
+
+  return (
+    <Dialog open={open} onClose={onClose} title={t("eula.title")} dismissible={!accept.isPending}>
+      <DialogBody>
+        <p>{t("eula.body")}</p>
+        <p>
+          <a href={EULA_URL} target="_blank" rel="noreferrer">
+            {t("eula.link")}
+          </a>
+        </p>
+        {accept.isError && <Notice tone="danger">{errorMessage(t, accept.error)}</Notice>}
+      </DialogBody>
+      <DialogFooter>
+        <Button variant="ghost" disabled={accept.isPending} onClick={onClose}>
+          {t("ui.cancel")}
+        </Button>
+        <Button variant="primary" loading={accept.isPending} onClick={() => accept.mutate()}>
+          {t("eula.accept")}
+        </Button>
+      </DialogFooter>
+    </Dialog>
   );
 }
