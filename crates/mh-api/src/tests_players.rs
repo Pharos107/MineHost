@@ -126,3 +126,19 @@ async fn skin_without_source_is_bad_gateway() {
         (StatusCode::BAD_GATEWAY, Some("NETWORK_UNAVAILABLE"))
     );
 }
+
+/// Lệnh của server (spec `lenh-cua-server.md`): chưa quét thì rỗng, server tắt thì không quét được.
+#[tokio::test]
+async fn commands_empty_until_scanned_and_scan_needs_running_server() {
+    let api = super::test_api();
+    let id = api.create_server("A").await;
+    let (status, body) = api.get(&format!("/api/v1/servers/{id}/commands")).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body, json!({ "scanned_at": null, "commands": [] }));
+
+    let (status, body) = api
+        .post(&format!("/api/v1/servers/{id}/commands/scan"), None)
+        .await;
+    assert_eq!(status, StatusCode::CONFLICT, "{body}");
+    assert_eq!(body["code"], "SERVER_NOT_RUNNING");
+}

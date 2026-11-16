@@ -1,6 +1,8 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { installQueued, queueMod } from "./helpers";
 
+import { serverButton } from "./helpers";
+
 function crc32(bytes: Uint8Array): number {
   let crc = 0xffffffff;
   for (const byte of bytes) {
@@ -107,8 +109,9 @@ test("tải tay file CurseForge sai hash báo lỗi đúng tên, khớp SHA-1 ch
   await expect(link).toHaveAttribute("href", /curseforge\.com\/minecraft\/mc-mods\/restricted-mod\/download\/5800999/);
 
   // Bấm Bật server khi còn mục chờ -> bị chặn với thông báo lỗi.
-  await page.getByRole("main").getByRole("button", { name: "Bật server" }).click();
+  await serverButton(page, "Bật server").click();
   await expect(page.getByText(/Còn file từ CurseForge cần tự tải/)).toBeVisible({ timeout: 10_000 });
+  await page.keyboard.press("Escape");
 
   // Kéo thả file sai -> báo lỗi kèm tên file đúng đang chờ.
   const input = page.getByLabel("Chọn file CurseForge");
@@ -141,7 +144,7 @@ test("tải tay file CurseForge sai hash báo lỗi đúng tên, khớp SHA-1 ch
   await expect(page.getByText("Đã có", { exact: true })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("table", { name: "Danh sách mod" }).getByText("Restricted Mod")).toBeVisible();
 
-  await page.getByRole("main").getByRole("button", { name: "Bật server" }).click();
+  await serverButton(page, "Bật server").click();
   await expect(page.getByRole("main").getByText("Đang chạy", { exact: true })).toBeVisible({ timeout: 30_000 });
 });
 

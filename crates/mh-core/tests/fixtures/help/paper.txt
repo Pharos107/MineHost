@@ -1,0 +1,13 @@
+[05:37:34 INFO]: /advancement (grant|revoke)
+[05:37:34 INFO]: /attribute <target> <attribute> (get|base|modifier)
+[05:37:34 INFO]: /execute (run|if|unless|as|at|store|positioned|rotated|facing|align|anchored|in|summon|on)
+[05:37:34 INFO]: /bossbar (add|remove|list|set|get)
+[05:37:34 INFO]: /clear [<targets>]
+[05:37:34 INFO]: /clone (<begin>|from)
+[05:37:39 INFO]: --------- Help: Index ---------------------------
+[05:37:39 INFO]: Use /help [n] to get page n of help.
+[05:37:39 INFO]: Aliases: Lists command aliases
+[05:37:39 INFO]: /minecraft:help: A Mojang provided command.
+[05:37:39 INFO]: /mspt: View server tick times
+[05:37:39 INFO]: /paper: Paper related commands
+[05:37:39 INFO]: /say: A Mojang provided command.

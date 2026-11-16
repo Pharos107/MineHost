@@ -348,3 +348,29 @@ async fn running_server_tracks_online_players_and_freezes() {
     })
     .await;
 }
+
+/// Quét lệnh bằng `help` (spec `lenh-cua-server.md`): cần server chạy, lưu lại để đọc sau.
+#[tokio::test]
+async fn scan_commands_reads_help_and_saves() {
+    let (_tmp, app) = test_app();
+    let id = create(&app).await;
+    assert!(app.server_commands(id).unwrap().commands.is_empty());
+    let error = app.scan_commands(id).await.unwrap_err();
+    assert_eq!(error.code, ErrorCode::ServerNotRunning);
+
+    app.start(id).await.unwrap();
+    eventually("server chạy", || {
+        app.get(id).unwrap().state == ServerState::Running
+    })
+    .await;
+    let list = app.scan_commands(id).await.unwrap();
+    let names: Vec<&str> = list.commands.iter().map(|c| c.name.as_str()).collect();
+    assert_eq!(names, ["fakemod", "list", "say", "tp"]);
+    assert_eq!(
+        list.commands[3].usage.as_deref(),
+        Some("tp <targets> <location>")
+    );
+    assert!(list.scanned_at.is_some());
+    assert_eq!(app.server_commands(id).unwrap(), list);
+    app.kill(id).await.unwrap();
+}

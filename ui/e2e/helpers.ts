@@ -4,6 +4,11 @@ import { expect, type APIRequestContext, type Locator, type Page } from "@playwr
 
 export const HEADERS = { "X-MineHost": "1" };
 
+/** Nút Bật / Khởi động lại / Tắt nằm ở thanh bên, cạnh tên server (màn hình rộng). */
+export function serverButton(page: Page, name: string): Locator {
+  return page.getByRole("navigation", { name: "Điều hướng chính" }).getByRole("button", { name });
+}
+
 interface ServerDto {
   id: string;
   name: string | null;

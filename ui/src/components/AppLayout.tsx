@@ -123,7 +123,7 @@ function ServerNav({ id }: { id: string }) {
 /** Nút bật / tắt cạnh tên server, để thao tác được từ mọi tab của server. Đang cài hoặc hỏng thì không có. */
 function ServerQuickActions({ server }: { server: Server }) {
   const ready = server.state !== "installing" && server.state !== "broken";
-  return ready ? <ServerActions server={server} compact /> : null;
+  return ready ? <ServerActions server={server} variant="compact" /> : null;
 }
 
 /** Lối quay về danh sách, ghim ở đáy thanh bên để các mục của server nằm trên cùng. */

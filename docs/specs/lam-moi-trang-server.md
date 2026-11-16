@@ -12,6 +12,8 @@ CPU / RAM, nút bật / tắt ở thanh bên.
 
 - **Đầu trang** (mọi tab của server): dòng nhỏ phía trên tên, ví dụ
   "Fabric 0.16.14 · Minecraft 1.20.1 · Prominence II v4.1.8". Thiếu phần nào thì bỏ phần đó.
+- **Nút ở đầu trang:** màn hình rộng chỉ còn menu "…" (Buộc dừng) vì thanh bên đã có nút bật / tắt;
+  điện thoại (thanh bên là ngăn kéo) vẫn giữ đủ nút Bật / Khởi động lại / Tắt ở đầu trang.
 - **Thanh bên:** cạnh tên server có nút icon Bật, Khởi động lại, Tắt theo trạng thái, dưới tên là trạng thái;
   dùng chung logic với nút ở đầu trang (hỏi EULA trước khi bật lần đầu). "Buộc dừng" chỉ ở menu "…"
   đầu trang. Server đang cài hoặc hỏng thì chỉ có trạng thái. Mục "Tất cả máy chủ"
@@ -38,6 +40,8 @@ CPU / RAM, nút bật / tắt ở thanh bên.
     bỏ mã màu. Không hỏi server.
   - Gợi ý lệnh khi gõ tên lệnh: 25 lệnh vanilla hay dùng kèm cách gõ và mô tả. Mũi tên chọn, Tab điền,
     Esc đóng; Enter luôn gửi đúng chữ đang có; ô trống thì mũi tên vẫn là lịch sử lệnh.
+  - Gõ đối số (sau dấu cách) thì gợi ý tên người chơi khớp chữ đang gõ (người online trước, rồi người đã
+    từng vào) và bộ chọn `@a @p @r @s @e`; Tab điền thay đối số cuối. Chưa gõ chữ nào thì không gợi ý.
 
 Component: `StatTile` thêm `meter`, `NavSection` thêm `actions` và `extra`, `PageHeader` thêm `eyebrow`,
 `AppShell` thêm `navEnd`, `Terminal` thêm `size="sm"`, `size="fill"` và tông `warning`, thêm `SuggestBox`, thêm `Columns` (1, 2 hoặc 3 cột).

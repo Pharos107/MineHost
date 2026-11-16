@@ -10,6 +10,7 @@ mod name;
 
 pub use command::{PlayerAction, PlayerCommandError, command};
 pub use freeze::{FreezeAttribute, UnsupportedVersion, freeze_attributes};
+pub(crate) use log::log_message;
 pub use log::{PlayerLogEvent, parse_log_line};
 pub use name::{PlayerName, offline_uuid};
 

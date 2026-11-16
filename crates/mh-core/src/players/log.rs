@@ -24,7 +24,8 @@ pub fn parse_log_line(line: &str) -> Option<PlayerLogEvent> {
     parse_message(log_message(line))
 }
 
-fn log_message(line: &str) -> &str {
+/// Phần nội dung sau tiền tố giờ và luồng của log; không nhận ra tiền tố thì trả lại cả dòng.
+pub(crate) fn log_message(line: &str) -> &str {
     let Some(rest) = line.strip_prefix('[') else {
         return line;
     };

@@ -222,7 +222,8 @@
       "id_mismatch": "ID trong instance.toml ({{found}}) khác tên thư mục. Có thể thư mục đã bị chép tay.",
       "unknown": "Thư mục server bị hỏng."
     },
-    "minecraftVersion": "Minecraft {{version}}"
+    "minecraftVersion": "Minecraft {{version}}",
+    "actionFailed": "Không làm được"
   },
   "crashHints": {
     "NOT_ENOUGH_MEMORY": "Server hết RAM. Hãy tăng RAM trong mục Cài đặt server.",
@@ -379,6 +380,23 @@
         "usage": "locate structure <công trình>",
         "desc": "Tìm công trình gần nhất"
       }
+    },
+    "scan": {
+      "first": "Lấy lệnh của server (mod, plugin) để gợi ý khi gõ",
+      "again_one": "Quét lại lệnh của server ({{count}} lệnh, quét lúc {{at}})",
+      "again_other": "Quét lại lệnh của server ({{count}} lệnh, quét lúc {{at}})",
+      "fromServer": "Lệnh của server"
+    },
+    "player": {
+      "online": "Đang chơi",
+      "offline": "Đã từng vào"
+    },
+    "selector": {
+      "a": "Mọi người chơi",
+      "p": "Người chơi gần nhất",
+      "r": "Một người chơi ngẫu nhiên",
+      "s": "Người gõ lệnh (console không dùng được)",
+      "e": "Mọi thực thể"
     }
   },
   "game": {

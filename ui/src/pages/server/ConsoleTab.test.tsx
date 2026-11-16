@@ -142,4 +142,46 @@ describe("ConsoleTab", () => {
     expect((input as HTMLInputElement).value).toBe("gamemode ");
     expect(screen.queryByRole("listbox")).toBeNull();
   });
+
+  it("lấy lệnh của server rồi gợi ý cả lệnh của mod", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.endsWith("/commands")) return Response.json({ scanned_at: null, commands: [] });
+        if (url.endsWith("/commands/scan")) {
+          return Response.json({
+            scanned_at: "2026-11-16T05:34:47Z",
+            commands: [{ name: "ftbquests", usage: "ftbquests open_book [<target>]", description: null }],
+          });
+        }
+        return new Response(null, { status: 204 });
+      }),
+    );
+    renderConsole();
+    await userEvent.click(await screen.findByRole("button", { name: /^Lấy lệnh của server/ }));
+    expect(await screen.findByRole("button", { name: /^Quét lại lệnh của server \(1 lệnh, quét lúc/ })).toBeTruthy();
+    await userEvent.type(screen.getByRole("combobox", { name: "Lệnh" }), "ftb");
+    const option = screen.getByRole("option");
+    expect(option.textContent).toContain("ftbquests open_book [<target>]");
+    expect(option.textContent).toContain("Lệnh của server");
+  });
+
+  it("gõ đối số thì gợi ý tên người chơi, Tab điền tên", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.endsWith("/players")) {
+          const player = { name: "Pharos_107", online: true, op: true, banned: false, frozen: false, whitelisted: true };
+          return Response.json({ max_players: 20, online_mode: false, running: true, whitelist_enabled: true, players: [player] });
+        }
+        return new Response(null, { status: 204 });
+      }),
+    );
+    renderConsole();
+    const input = screen.getByRole("combobox", { name: "Lệnh" });
+    await userEvent.type(input, "tp pha");
+    expect((await screen.findByRole("option")).textContent).toContain("Đang chơi");
+    await userEvent.keyboard("{Tab}");
+    expect((input as HTMLInputElement).value).toBe("tp Pharos_107 ");
+  });
 });

@@ -15,6 +15,7 @@ export type LoaderVersion = components["schemas"]["LoaderVersionDto"];
 export type CreateServer = components["schemas"]["CreateServerBody"];
 export type Created = components["schemas"]["CreatedDto"];
 export type ConsoleLine = components["schemas"]["ConsoleLineDto"];
+export type ServerCommands = components["schemas"]["ServerCommandsDto"];
 export type ServerAction = "start" | "stop" | "restart" | "kill";
 /** Loại server tạo được (spec P2 mục 5.4, spec P3 mục 3.1). */
 export type Loader = "paper" | "vanilla" | "purpur" | "fabric" | "quilt" | "forge" | "neoforge";
@@ -118,6 +119,9 @@ export const api = {
     request<void>("POST", `${serverPath(id)}/actions/${action}`, body),
   acceptEula: (id: string) => request<Server>("POST", `${serverPath(id)}/eula`, { accept: true }),
   sendCommand: (id: string, command: string) => request<void>("POST", `${serverPath(id)}/console`, { command }),
+  /** Lệnh đã quét bằng `help` (spec lenh-cua-server.md). */
+  serverCommands: (id: string) => request<ServerCommands>("GET", `${serverPath(id)}/commands`),
+  scanCommands: (id: string) => request<ServerCommands>("POST", `${serverPath(id)}/commands/scan`),
   updateServer: (id: string, patch: ServerPatch) => request<Server>("PATCH", serverPath(id), patch),
   trashServer: (id: string, confirmName: string) =>
     request<Trashed>("DELETE", `${serverPath(id)}?confirm_name=${encodeURIComponent(confirmName)}`),

@@ -15,12 +15,15 @@ function isEulaError(error: unknown): boolean {
 
 interface ServerActionsProps {
   server: Server;
-  /** Chỉ icon, không có menu "…": cho thanh bên, để bật / tắt được khi đang ở tab khác. */
-  compact?: boolean;
+  /**
+   * `full`: nút có chữ và menu "…" (thẻ server, đầu trang trên điện thoại). `compact`: chỉ icon, không
+   * menu (thanh bên). `menu`: chỉ menu "…" với Buộc dừng (đầu trang khi thanh bên đã có nút bật / tắt).
+   */
+  variant?: "full" | "compact" | "menu";
 }
 
 /** Nút Bật / Tắt / Khởi động lại theo trạng thái; "Buộc dừng" nằm trong menu "…" và phải xác nhận. */
-export function ServerActions({ server, compact = false }: ServerActionsProps) {
+export function ServerActions({ server, variant = "full" }: ServerActionsProps) {
   const { t } = useTranslation();
   const [eulaOpen, setEulaOpen] = useState(false);
   const [killOpen, setKillOpen] = useState(false);
@@ -34,11 +37,20 @@ export function ServerActions({ server, compact = false }: ServerActionsProps) {
   const start = () => (server.eula_accepted ? run.mutate("start") : setEulaOpen(true));
   const hideStaleStartError = run.variables === "start" && WITH_PROCESS.includes(server.state);
   const buttons = { state: server.state, run, start, onKill: () => setKillOpen(true) };
+  const failed = run.isError && !isEulaError(run.error) && !hideStaleStartError;
 
   return (
-    <Stack gap={2} align={compact ? "start" : "end"}>
-      {compact ? <IconButtons {...buttons} /> : <FullButtons {...buttons} />}
-      {run.isError && !isEulaError(run.error) && !hideStaleStartError && (
+    <Stack gap={2} align={variant === "compact" ? "start" : "end"}>
+      {variant === "compact" ? <IconButtons {...buttons} /> : variant === "menu" ? <MoreMenu {...buttons} /> : <FullButtons {...buttons} />}
+      {/* Thanh bên quá hẹp cho thông báo dài (ví dụ danh sách mod thiếu): hiện trong hộp thoại. */}
+      {failed && variant === "compact" && (
+        <Dialog open onClose={() => run.reset()} title={t("server.actionFailed")}>
+          <DialogBody>
+            <Notice tone="danger">{errorMessage(t, run.error)}</Notice>
+          </DialogBody>
+        </Dialog>
+      )}
+      {failed && variant !== "compact" && (
         <Notice tone="danger">{errorMessage(t, run.error)}</Notice>
       )}
       <ConfirmDialog
@@ -85,11 +97,18 @@ function FullButtons({ state, run, start, onKill }: ButtonsProps) {
           {t("server.stop")}
         </Button>
       )}
-      <Menu
-        label={t("server.more")}
-        items={[{ label: t("server.kill"), icon: Skull, tone: "danger", disabled: !WITH_PROCESS.includes(state), onSelect: onKill }]}
-      />
+      <MoreMenu state={state} run={run} start={start} onKill={onKill} />
     </Stack>
+  );
+}
+
+function MoreMenu({ state, onKill }: ButtonsProps) {
+  const { t } = useTranslation();
+  return (
+    <Menu
+      label={t("server.more")}
+      items={[{ label: t("server.kill"), icon: Skull, tone: "danger", disabled: !WITH_PROCESS.includes(state), onSelect: onKill }]}
+    />
   );
 }
 

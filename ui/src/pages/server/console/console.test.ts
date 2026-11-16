@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { matchCommands } from "./commandHints";
+import { matchArgument, matchCommands } from "./commandHints";
 import { logFileName, logText } from "./downloadLog";
 
 describe("gợi ý lệnh", () => {
@@ -10,6 +10,46 @@ describe("gợi ý lệnh", () => {
     expect(matchCommands("")).toEqual([]);
     expect(matchCommands("gamemode creative")).toEqual([]);
     expect(matchCommands("s").length).toBeLessThanOrEqual(6);
+  });
+});
+
+describe("gộp lệnh quét từ server", () => {
+  const scanned = [
+    { name: "ftbquests", usage: "ftbquests open_book [<target>]", description: null },
+    { name: "prominent:hourglass", usage: "prominent:hourglass (level|boss)", description: null },
+    { name: "tp", usage: "tp -> teleport", description: null },
+  ];
+
+  it("thêm lệnh của mod, khớp cả phần sau dấu :, không lặp lệnh có sẵn", () => {
+    expect(matchCommands("ftb", scanned).map((c) => c.name)).toEqual(["ftbquests"]);
+    expect(matchCommands("hour", scanned).map((c) => c.name)).toEqual(["prominent:hourglass"]);
+    const tp = matchCommands("tp", scanned);
+    expect(tp.map((c) => c.name)).toEqual(["tp"]);
+    expect(tp[0]?.key).toBe("tp");
+  });
+});
+
+describe("gợi ý đối số", () => {
+  const players = [
+    { name: "Steve", online: false },
+    { name: "Stella", online: true },
+    { name: "Alex", online: true },
+  ];
+
+  it("tên người chơi khớp chữ đang gõ, người online trước; thay đúng đối số cuối", () => {
+    const match = matchArgument("tp Alex st", players);
+    expect(match.start).toBe(8);
+    expect(match.hints).toEqual([
+      { value: "Stella", kind: "online" },
+      { value: "Steve", kind: "offline" },
+    ]);
+  });
+
+  it("bộ chọn @ và không gợi ý khi chưa gõ chữ nào hoặc đang gõ tên lệnh", () => {
+    expect(matchArgument("kill @", players).hints.map((h) => h.value)).toEqual(["@a", "@p", "@r", "@s", "@e"]);
+    expect(matchArgument("give @p", players).hints).toEqual([{ value: "@p", kind: "selector" }]);
+    expect(matchArgument("say ", players).hints).toEqual([]);
+    expect(matchArgument("tp", players)).toEqual({ start: 0, hints: [] });
   });
 });
 

@@ -222,7 +222,8 @@
       "id_mismatch": "The ID in instance.toml ({{found}}) does not match the folder name. The folder may have been copied by hand.",
       "unknown": "The server folder is damaged."
     },
-    "minecraftVersion": "Minecraft {{version}}"
+    "minecraftVersion": "Minecraft {{version}}",
+    "actionFailed": "Couldn't do that"
   },
   "crashHints": {
     "NOT_ENOUGH_MEMORY": "The server ran out of RAM. Give it more RAM on the Server settings page.",
@@ -379,6 +380,23 @@
         "usage": "locate structure <structure>",
         "desc": "Find the nearest structure"
       }
+    },
+    "scan": {
+      "first": "Get the server's commands (mods, plugins) for suggestions",
+      "again_one": "Rescan server commands ({{count}} command, scanned {{at}})",
+      "again_other": "Rescan server commands ({{count}} commands, scanned {{at}})",
+      "fromServer": "Server command"
+    },
+    "player": {
+      "online": "Online",
+      "offline": "Has joined before"
+    },
+    "selector": {
+      "a": "All players",
+      "p": "Nearest player",
+      "r": "A random player",
+      "s": "Whoever runs the command (not the console)",
+      "e": "All entities"
     }
   },
   "game": {

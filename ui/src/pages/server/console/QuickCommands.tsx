@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { api, errorMessage, type Server } from "../../../api/client";
 import { Button, Dialog, DialogBody, DialogFooter, Field, Notice, Stack, TextInput } from "../../../ui";
+import { ScanButton, useScanCommands } from "./ScanCommands";
 
 interface Quick {
   key: string;
@@ -25,6 +26,8 @@ export function QuickCommands({ server }: { server: Server }) {
   const { t } = useTranslation();
   const [sayOpen, setSayOpen] = useState(false);
   const send = useMutation({ mutationFn: (command: string) => api.sendCommand(server.id, command) });
+  const scan = useScanCommands(server.id);
+  const error = send.error ?? scan.error;
   // Backend chỉ nhận lệnh khi server có process, giống ô lệnh.
   const online = server.state === "running" || server.state === "starting";
 
@@ -46,8 +49,9 @@ export function QuickCommands({ server }: { server: Server }) {
         <Button size="sm" icon={Megaphone} disabled={!online} onClick={() => setSayOpen(true)}>
           {t("console.quick.say")}
         </Button>
+        <ScanButton server={server} scan={scan} />
       </Stack>
-      {send.isError && <Notice tone="danger">{errorMessage(t, send.error)}</Notice>}
+      {error && <Notice tone="danger">{errorMessage(t, error)}</Notice>}
       <SayDialog server={server} open={sayOpen} onClose={() => setSayOpen(false)} />
     </Stack>
   );

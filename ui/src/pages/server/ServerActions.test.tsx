@@ -20,11 +20,11 @@ function mockApi() {
   return () => fetchMock.mock.calls.filter(([, init]) => init?.method === "POST").map(([url]) => url.replace("/api/v1/servers/01JB", ""));
 }
 
-function renderActions(s: Server, compact = false) {
+function renderActions(s: Server, variant: "full" | "compact" | "menu" = "full") {
   const client = new QueryClient();
   render(
     <QueryClientProvider client={client}>
-      <ServerActions server={s} compact={compact} />
+      <ServerActions server={s} variant={variant} />
     </QueryClientProvider>,
   );
 }
@@ -68,7 +68,7 @@ describe("ServerActions", () => {
 
   it("bản gọn ở thanh bên: chỉ nút icon, không có menu Buộc dừng, vẫn gửi được lệnh", async () => {
     const posts = mockApi();
-    renderActions(server({ state: "running", eula_accepted: true }), true);
+    renderActions(server({ state: "running", eula_accepted: true }), "compact");
     expect(screen.queryByRole("button", { name: "Thao tác khác" })).toBeNull();
     expect(screen.getByRole("button", { name: "Khởi động lại" }).textContent).toBe("");
     await userEvent.click(screen.getByRole("button", { name: "Tắt" }));
@@ -77,10 +77,21 @@ describe("ServerActions", () => {
 
   it("bản gọn khi server tắt: bấm Bật vẫn hỏi EULA trước", async () => {
     const posts = mockApi();
-    renderActions(server({}), true);
+    renderActions(server({}), "compact");
     await userEvent.click(screen.getByRole("button", { name: "Bật server" }));
     expect(screen.getByRole("button", { name: "Tôi đồng ý" })).toBeTruthy();
     expect(posts()).toEqual([]);
+  });
+
+  it("kiểu menu ở đầu trang: không có nút bật / tắt, vẫn Buộc dừng được", async () => {
+    const posts = mockApi();
+    renderActions(server({ state: "running", eula_accepted: true }), "menu");
+    expect(screen.queryByRole("button", { name: "Tắt" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Khởi động lại" })).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Thao tác khác" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Buộc dừng" }));
+    await userEvent.click(screen.getByRole("button", { name: "Buộc dừng" }));
+    await vi.waitFor(() => expect(posts()).toEqual(["/actions/kill"]));
   });
 
   it("gặp DEPENDENCY_MISSING khi bấm Bật thì hiện lỗi kèm danh sách mod thiếu", async () => {
