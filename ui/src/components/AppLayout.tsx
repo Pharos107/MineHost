@@ -101,9 +101,6 @@ function ServerNav({ id }: { id: string }) {
 
   return (
     <>
-      <NavSection>
-        <NavItem to="/servers" end icon={ArrowLeft} label={t("nav.allServers")} />
-      </NavSection>
       <NavSection
         title={server.data ? serverName(server.data) : undefined}
         actions={server.data && <ServerQuickActions server={server.data} />}
@@ -119,6 +116,10 @@ function ServerNav({ id }: { id: string }) {
         <NavItem to={`${base}/backups`} icon={Archive} label={t("nav.backups")} />
         <NavItem to={`${base}/game`} icon={SlidersHorizontal} label={t("nav.game")} />
         <NavItem to={`${base}/settings`} icon={Wrench} label={t("nav.serverSettings")} />
+      </NavSection>
+      {/* Mục của server lên đầu để thao tác nhanh; lối quay về danh sách nằm dưới. */}
+      <NavSection>
+        <NavItem to="/servers" end icon={ArrowLeft} label={t("nav.allServers")} />
       </NavSection>
     </>
   );
