@@ -8,6 +8,7 @@
 //! - `--hang-on-stop`: bỏ qua lệnh `stop`, giống server bị treo khi lưu world.
 //! - `--crash-after-ms <n>`: in lỗi hết RAM rồi thoát mã 1 sau `n` mili giây.
 //! - `--slow-start-ms <n>`: chờ `n` mili giây trước khi in dòng `Done`.
+//! - `--fail-start-hang`: in dòng bật hỏng như Forge rồi treo, không đọc stdin, không thoát.
 //! - `--alloc-mb <n>`: giữ `n` MB đã ghi dữ liệu trước khi in `Done`, để test giới hạn RAM.
 //! - `--hang-on-save-all` (hoặc `MINEHOST_FAKE_SAVE_ALL_HANG=1`): `save-all flush` không in
 //!   dòng `Saved the game`, để test thời hạn chờ khi sao lưu.
@@ -36,6 +37,14 @@ fn main() {
     let _held = flag_number(&args, "--alloc-mb").map(alloc_mb);
     if let Some(ms) = flag_number(&args, "--slow-start-ms") {
         std::thread::sleep(Duration::from_millis(ms));
+    }
+    if has_flag(&args, "--fail-start-hang") {
+        println!(
+            "[10:00:01] [main/ERROR] [net.minecraft.server.Main/FATAL]: Failed to start the minecraft server"
+        );
+        loop {
+            std::thread::sleep(Duration::from_secs(60));
+        }
     }
     if !has_flag(&args, "--no-done") {
         println!("[10:00:01 INFO]: Done (0.100s)! For help, type \"help\"");

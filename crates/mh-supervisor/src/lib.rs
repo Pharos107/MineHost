@@ -89,6 +89,9 @@ impl SupervisorError {
 pub struct SupervisorConfig {
     /// Chưa thấy dòng `Done` sau chừng này thì cảnh báo (không kill).
     pub slow_start_after: Duration,
+    /// Thấy dòng bật hỏng (`Failed to start the minecraft server`) mà process chưa thoát sau chừng
+    /// này thì kill, để server sang `Crashed` thay vì treo ở `Starting`.
+    pub failed_start_grace: Duration,
     /// Gửi `stop` rồi chờ chừng này, quá hạn thì kill.
     pub stop_timeout: Duration,
     /// Thời gian chờ trước lần tự khởi động lại thứ 1, 2, 3…; hết danh sách thì dừng ở `Crashed`.
@@ -105,6 +108,7 @@ impl Default for SupervisorConfig {
     fn default() -> Self {
         Self {
             slow_start_after: Duration::from_secs(5 * 60),
+            failed_start_grace: Duration::from_secs(20),
             stop_timeout: Duration::from_secs(60),
             restart_delays: [5, 15, 30].map(Duration::from_secs).to_vec(),
             restart_window: Duration::from_secs(10 * 60),

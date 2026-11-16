@@ -281,6 +281,10 @@ Lệnh chạy:
   đã có (thiếu thì chạy `ensure`).
 - **Sẵn sàng:** dòng khớp regex `\]: Done \(` thì chuyển sang `Running`. Sau 5 phút chưa thấy thì vẫn
   giữ `Starting` nhưng phát cảnh báo; không tự kill.
+- **Bật hỏng mà process không thoát** (thêm ngày 2026-11-16, P3): Forge 1.20.1 in
+  `Failed to start the minecraft server` rồi treo vì còn luồng chưa dừng. Đang `Starting` mà thấy dòng
+  đó thì chờ 20 giây cho process tự thoát, quá hạn thì kill. Server sang `Crashed` như mọi lần crash
+  khác (giữ log cuối, áp luật tự bật lại bên dưới).
 - **Dừng an toàn:** gửi `stop`, chờ tối đa 60 giây, quá hạn thì kill.
 - **Crash:** process thoát mà không do người dùng yêu cầu. Nếu `restart_on_crash` thì tự bật lại
   sau 5 s, 15 s, 30 s; quá 3 lần trong 10 phút thì dừng ở `Crashed`.

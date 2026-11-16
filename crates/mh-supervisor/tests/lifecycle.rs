@@ -281,6 +281,33 @@ async fn slow_start_warns_but_keeps_starting() {
 }
 
 #[tokio::test]
+async fn failed_start_that_hangs_is_killed_and_crashes() {
+    // Forge in dòng bật hỏng rồi treo: không được kẹt ở `Starting` tới khi người dùng tự tắt.
+    let (sup, probe) = supervisor(Setup {
+        args: &["--fail-start-hang"],
+        restart_on_crash: false,
+        config: SupervisorConfig {
+            failed_start_grace: Duration::from_millis(100),
+            slow_start_after: Duration::from_secs(60),
+            ..config()
+        },
+        ..Setup::default()
+    });
+    sup.start().await.unwrap();
+    let crashed = wait_state(&sup, ServerState::Crashed).await;
+    let crash = crashed.crash.unwrap();
+    assert!(
+        crash
+            .last_lines
+            .iter()
+            .any(|l| l.contains("Failed to start the minecraft server")),
+        "{crash:?}"
+    );
+    assert!(!crashed.slow_start);
+    assert!(!probe.marker.load(Ordering::SeqCst));
+}
+
+#[tokio::test]
 async fn running_sends_list_and_join_is_a_player_event() {
     let (sup, _) = supervisor(Setup::default());
     let mut events = sup.subscribe();
