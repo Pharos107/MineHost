@@ -127,7 +127,7 @@ async fn compress_then_extract_as_jobs() {
         )
         .await;
     assert_eq!(status, StatusCode::CONFLICT, "{err}");
-    assert_eq!(err["params"]["path"], "plugins/Essentials.jar");
+    assert_eq!(err["params"]["path"], "plugins/Essentials/config.yml");
 
     let (status, job) = api
         .post(
