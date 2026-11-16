@@ -87,7 +87,7 @@ impl App {
         let uploaded = {
             let mutex = self.content_lock(id);
             let _guard = mutex.lock().await;
-            let (_, kind) = self.ensure_content_idle(id)?;
+            let (_, kind) = self.ensure_content_addable(id)?;
             let (store, name, src) = (
                 self.store.clone(),
                 file_name.to_owned(),
@@ -95,6 +95,7 @@ impl App {
             );
             blocking(move || upload_sync(&store, id, kind, &name, &src)).await?
         };
+        self.mark_added_while_running(id, [uploaded.file_name.clone()]);
         self.refresh_preflight(id).await;
         self.notify_changed(id);
         Ok(uploaded)
@@ -111,11 +112,12 @@ impl App {
         let uploaded = {
             let mutex = self.content_lock(id);
             let _guard = mutex.lock().await;
-            let (_, kind) = self.ensure_content_idle(id)?;
+            let (_, kind) = self.ensure_content_addable(id)?;
             let (store, src) = (self.store.clone(), source_path.to_path_buf());
             let name = file_name.to_owned();
             blocking(move || upload_pending_sync(&store, id, kind, &name, &src)).await?
         };
+        self.mark_added_while_running(id, [uploaded.file_name.clone()]);
         self.refresh_preflight(id).await;
         self.notify_changed(id);
         Ok(uploaded)
@@ -130,10 +132,14 @@ impl App {
         let results = {
             let mutex = self.content_lock(id);
             let _guard = mutex.lock().await;
-            let (_, kind) = self.ensure_content_idle(id)?;
+            let (_, kind) = self.ensure_content_addable(id)?;
             let store = self.store.clone();
             blocking(move || Ok(upload_pending_batch_sync(&store, id, kind, items))).await?
         };
+        let added = results
+            .iter()
+            .filter_map(|r| r.outcome.as_ref().ok().map(|f| f.file_name.clone()));
+        self.mark_added_while_running(id, added);
         if results.iter().any(|r| r.outcome.is_ok()) {
             self.refresh_preflight(id).await;
             self.notify_changed(id);

@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use content_support::{
-    FakeJava, FakeModCatalog, FakeServerCatalog, WAIT, build_jar, dep, finish_job, make_server,
+    FakeJava, FakeModCatalog, FakeServerCatalog, build_jar, dep, finish_job, make_server,
     sha512_hex, test_app,
 };
 use mh_app::content::{
@@ -17,8 +17,8 @@ use mh_app::content::{
     SideSupport,
 };
 use mh_app::jobs::JobKind;
-use mh_app::{App, AppDeps, CreateRequest, JobState, MetricsConfig};
-use mh_core::{ContentKind, ErrorCode, LoaderKind, McVersion, ServerName, ServerState};
+use mh_app::{App, AppDeps, JobState, MetricsConfig};
+use mh_core::{ContentKind, ErrorCode, LoaderKind};
 use mh_net::{CancellationToken, HostAllowlist, HttpClient, NetConfig};
 use mh_platform::DataDirs;
 use mh_store::{ContentManifest, ContentSource, PendingContent, ServerStore};
@@ -371,54 +371,6 @@ async fn replace_client_only_and_midway_failure_behavior() {
     assert!(list.files.iter().any(|f| f.file_name == "jar.jar"
         && !f.enabled
         && f.record.as_ref().is_some_and(|r| r.client_only)));
-}
-
-#[tokio::test]
-async fn running_server_blocks_install_with_server_busy() {
-    let mut cat = FakeModCatalog::default();
-    cat.add_project("P", "plug", "Plug", SideSupport::Required);
-    cat.add_version(
-        "vP",
-        "P",
-        "plug.jar",
-        &["paper"],
-        vec![],
-        build_jar(None, "P"),
-    );
-    let (_tmp, app) = test_app(Arc::new(cat));
-    let created = app
-        .create(CreateRequest {
-            name: ServerName::parse("Busy").unwrap(),
-            loader: LoaderKind::Paper,
-            minecraft: McVersion::parse("1.21.4").unwrap(),
-            loader_version: None,
-            memory_mb: None,
-            port: None,
-        })
-        .unwrap();
-    assert_eq!(
-        finish_job(&app, created.job_id).await.state,
-        JobState::Succeeded
-    );
-    app.accept_eula(created.server_id).unwrap();
-    app.start(created.server_id).await.unwrap();
-    let deadline = tokio::time::Instant::now() + WAIT;
-    while app.get(created.server_id).unwrap().state != ServerState::Running {
-        assert!(tokio::time::Instant::now() < deadline);
-        tokio::time::sleep(Duration::from_millis(20)).await;
-    }
-
-    let err = app
-        .install_content(created.server_id, CatalogSource::Modrinth, "P", None)
-        .unwrap_err();
-    assert_eq!(err.code, ErrorCode::ServerBusy);
-
-    app.stop(created.server_id).await.unwrap();
-    let deadline = tokio::time::Instant::now() + WAIT;
-    while app.get(created.server_id).unwrap().state.has_process() {
-        assert!(tokio::time::Instant::now() < deadline);
-        tokio::time::sleep(Duration::from_millis(20)).await;
-    }
 }
 
 #[tokio::test]

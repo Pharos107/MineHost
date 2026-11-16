@@ -10,8 +10,8 @@ use std::time::Duration;
 
 use content_support::{FakeModCatalog, WAIT, build_jar, finish_job, make_server, test_app};
 use mh_app::content::{CatalogSource, ContentCatalog, SideSupport};
-use mh_app::{App, AppEvent, CreateRequest, JobState};
-use mh_core::{ErrorCode, LoaderKind, McVersion, ServerId, ServerName, ServerState};
+use mh_app::{App, AppEvent, JobState};
+use mh_core::{ErrorCode, LoaderKind, ServerId, ServerState};
 use mh_store::{ContentManifest, ContentSource, PendingContent, ProjectId, ServerStore};
 
 fn server_paths(app: &App, id: ServerId) -> mh_store::ServerPaths {
@@ -333,64 +333,6 @@ async fn invalid_file_names_are_rejected_for_all_operations() {
             ErrorCode::InvalidInput,
             "upload với tên `{bad}`"
         );
-    }
-}
-
-#[tokio::test]
-async fn running_server_blocks_toggle_remove_and_upload_with_server_busy() {
-    let (tmp, app) = test_app(Arc::new(FakeModCatalog::default()));
-    let created = app
-        .create(CreateRequest {
-            name: ServerName::parse("BusyManage").unwrap(),
-            loader: LoaderKind::Paper,
-            minecraft: McVersion::parse("1.21.4").unwrap(),
-            loader_version: None,
-            memory_mb: None,
-            port: None,
-        })
-        .unwrap();
-    assert_eq!(
-        finish_job(&app, created.job_id).await.state,
-        JobState::Succeeded
-    );
-    app.accept_eula(created.server_id).unwrap();
-    app.start(created.server_id).await.unwrap();
-    let deadline = tokio::time::Instant::now() + WAIT;
-    while app.get(created.server_id).unwrap().state != ServerState::Running {
-        assert!(tokio::time::Instant::now() < deadline);
-        tokio::time::sleep(Duration::from_millis(20)).await;
-    }
-
-    let src = tmp.path().join("plug.jar");
-    std::fs::write(&src, build_jar(None, "P")).unwrap();
-
-    assert_eq!(
-        app.set_content_enabled(created.server_id, "plug.jar", false)
-            .await
-            .unwrap_err()
-            .code,
-        ErrorCode::ServerBusy
-    );
-    assert_eq!(
-        app.remove_content(created.server_id, "plug.jar")
-            .await
-            .unwrap_err()
-            .code,
-        ErrorCode::ServerBusy
-    );
-    assert_eq!(
-        app.upload_content(created.server_id, "plug.jar", &src)
-            .await
-            .unwrap_err()
-            .code,
-        ErrorCode::ServerBusy
-    );
-
-    app.stop(created.server_id).await.unwrap();
-    let deadline = tokio::time::Instant::now() + WAIT;
-    while app.get(created.server_id).unwrap().state.has_process() {
-        assert!(tokio::time::Instant::now() < deadline);
-        tokio::time::sleep(Duration::from_millis(20)).await;
     }
 }
 

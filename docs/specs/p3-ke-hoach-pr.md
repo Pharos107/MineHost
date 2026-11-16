@@ -53,8 +53,8 @@ chính PR ấy.
 | 35 | Bộ nhớ đệm tải về, trạng thái giới hạn tài nguyên | Đã merge | [#107](https://github.com/Pharos107/MineHost/pull/107) |
 | 36 | Runner tự host cho modpack | Đã merge | [#112](https://github.com/Pharos107/MineHost/pull/112) |
 | 37 | Workflow 20 modpack | Đang làm: đủ 20 pack (37a, 37b), chờ hai đêm liền xanh | [#113](https://github.com/Pharos107/MineHost/pull/113), [#126](https://github.com/Pharos107/MineHost/pull/126) |
-| 39 | Spec trình duyệt mod, làm gọn trang Mod ([spec](p3-trinh-duyet-mod.md)) | Đang làm | |
-| 40 | Thêm mod khi server đang chạy | Chưa bắt đầu | |
+| 39 | Spec trình duyệt mod, làm gọn trang Mod ([spec](p3-trinh-duyet-mod.md)) | Đã merge | [#134](https://github.com/Pharos107/MineHost/pull/134) |
+| 40 | Thêm mod khi server đang chạy | Đã merge | [#136](https://github.com/Pharos107/MineHost/pull/136) |
 | 41 | Cài nhiều mục trong một Job, sắp xếp khi tìm | Chưa bắt đầu | |
 | 42 | Mô tả CurseForge, tìm theo loader + Minecraft, tạo server kèm mod | Chưa bắt đầu | |
 | 43 | Trang Mod gọn, kéo thả vào bảng | Chưa bắt đầu | |

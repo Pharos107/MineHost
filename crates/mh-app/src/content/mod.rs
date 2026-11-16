@@ -8,8 +8,10 @@ mod modrinth;
 mod pending_upload;
 mod plan;
 mod preflight;
+mod running;
 mod updates;
 
+use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use mh_core::{ContentKind, ErrorCode, InstanceSpec, ServerId};
@@ -31,6 +33,7 @@ pub use preflight::{
     ClientOnlyMod, MissingDependency, PreflightReport, VersionMismatch, WrongLoaderMod,
 };
 pub(crate) use preflight::{missing_server_deps, preflight_block_error, reads_mods_toml_deps};
+pub(crate) use running::AddedWhileRunning;
 pub use updates::{MAX_UPDATE_ITEMS, UpdateCandidate, UpdateItem, UpdateReport};
 
 use crate::files::blocking;
@@ -44,6 +47,8 @@ pub struct ContentList {
     pub kind: ContentKind,
     pub files: Vec<ContentFile>,
     pub pending: Vec<PendingContent>,
+    /// File thêm vào lúc process hiện tại đang chạy: có hiệu lực sau khi khởi động lại.
+    pub needs_restart: BTreeSet<String>,
 }
 
 impl App {
@@ -153,11 +158,6 @@ impl App {
         self.catalog_for(source)?.project_versions(project_id).await
     }
 
-    /// Kiểm tra nhanh server có tồn tại, hỗ trợ mod/plugin và đang rảnh trước khi nhận upload.
-    pub fn check_content_idle(&self, id: ServerId) -> Result<(), AppError> {
-        self.ensure_content_idle(id).map(|_| ())
-    }
-
     /// Danh sách mod/plugin hiện trên đĩa cùng các mục `pending`. Vanilla trả `CONTENT_INCOMPATIBLE`.
     pub async fn content(&self, id: ServerId) -> Result<ContentList, AppError> {
         let spec = self.store.load(id)?;
@@ -165,6 +165,7 @@ impl App {
         let mutex = self.content_lock(id);
         let _guard = mutex.lock().await;
         let (store, scanner) = (self.store.clone(), Arc::clone(&self.content_scanner));
+        let needs_restart = self.content_needs_restart(id);
         blocking(move || {
             let paths = store.paths(id);
             let files = scanner.scan_dirs(&paths.server_dir, &paths.content_file, kind)?;
@@ -173,6 +174,7 @@ impl App {
                 kind,
                 files,
                 pending: manifest.pending,
+                needs_restart,
             })
         })
         .await
@@ -244,7 +246,7 @@ impl App {
     }
 }
 
-fn content_kind_for(spec: &InstanceSpec) -> Result<ContentKind, AppError> {
+pub(super) fn content_kind_for(spec: &InstanceSpec) -> Result<ContentKind, AppError> {
     spec.game
         .loader
         .content_kind()

@@ -4098,7 +4098,8 @@
           "size",
           "manual",
           "client_only",
-          "from_modpack"
+          "from_modpack",
+          "needs_restart"
         ],
         "properties": {
           "client_only": {
@@ -4125,6 +4126,10 @@
           },
           "name": {
             "type": "string"
+          },
+          "needs_restart": {
+            "type": "boolean",
+            "description": "Thêm vào lúc server đang chạy: process hiện tại chưa nạp, cần khởi động lại."
           },
           "project_id": {
             "type": [

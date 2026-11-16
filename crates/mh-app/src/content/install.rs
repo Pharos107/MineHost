@@ -16,6 +16,7 @@ use ulid::Ulid;
 use super::catalog::{CatalogSource, ContentCatalog};
 use super::curseforge::parse_cf_id;
 use super::plan::PlannedContent;
+use super::running::replace_while_running;
 use crate::files::{blocking, delete_sync, exists};
 use crate::jobs::{JobContext, JobKind, JobStep};
 use crate::{App, AppError, JobId};
@@ -38,7 +39,8 @@ struct StagedFile {
 }
 
 impl App {
-    /// Tạo Job cài mod/plugin (cùng dependency) cho server đang tắt.
+    /// Tạo Job cài mod/plugin (cùng dependency). Server đang chạy vẫn cài được mod mới; mod chỉ
+    /// có hiệu lực ở lần khởi động sau.
     pub fn install_content(
         self: &Arc<Self>,
         id: ServerId,
@@ -46,7 +48,7 @@ impl App {
         project_id: impl Into<String>,
         version_id: Option<String>,
     ) -> Result<JobId, AppError> {
-        let _ = self.ensure_content_idle(id)?;
+        let _ = self.ensure_content_addable(id)?;
         let _ = self.catalog_for(source)?;
         let project_id = project_id.into();
         let app = Arc::clone(self);
@@ -179,14 +181,28 @@ impl App {
     ) -> Result<(), AppError> {
         let mutex = self.content_lock(id);
         let _lock = mutex.lock().await;
-        self.ensure_content_idle(id)?;
+        self.ensure_content_addable(id)?;
+        let running = self.running_pid(id).is_some();
         let (store, trash, scanner) = (
             self.store.clone(),
             self.dirs.trash(),
             Arc::clone(&self.content_scanner),
         );
-        blocking(move || apply_staged(&store, &trash, &scanner, id, kind, source, staged, pending))
-            .await
+        let added = blocking(move || {
+            let ctx = ApplyCtx {
+                store: &store,
+                trash: &trash,
+                scanner: &scanner,
+                id,
+                kind,
+                source,
+                running,
+            };
+            apply_staged(&ctx, staged, pending)
+        })
+        .await?;
+        self.mark_added_while_running(id, added);
+        Ok(())
     }
 }
 
@@ -204,17 +220,33 @@ fn build_pending(kind: ContentKind, item: &PlannedContent) -> Result<PendingCont
     })
 }
 
-#[allow(clippy::too_many_arguments)]
-fn apply_staged(
-    store: &ServerStore,
-    trash: &Path,
-    scanner: &ContentScanner,
+#[derive(Clone, Copy)]
+struct ApplyCtx<'a> {
+    store: &'a ServerStore,
+    trash: &'a Path,
+    scanner: &'a ContentScanner,
     id: ServerId,
     kind: ContentKind,
     source: CatalogSource,
+    /// Server đang có process: được thêm file mới, không được thay file cũ.
+    running: bool,
+}
+
+/// Chép file đã tải vào chỗ, trả tên các file vừa thêm.
+fn apply_staged(
+    ctx: &ApplyCtx<'_>,
     staged: Vec<StagedFile>,
     pending: Vec<PendingContent>,
-) -> Result<(), AppError> {
+) -> Result<Vec<String>, AppError> {
+    let ApplyCtx {
+        store,
+        trash,
+        scanner,
+        id,
+        kind,
+        source,
+        running,
+    } = *ctx;
     let paths = store.paths(id);
     fs::create_dir_all(&paths.server_dir)
         .map_err(|e| AppError::new(ErrorCode::Internal, e.to_string()))?;
@@ -226,6 +258,9 @@ fn apply_staged(
     let replaced_pids: HashSet<&str> = staged.iter().map(|s| s.project_id.as_str()).collect();
     let (to_trash, was_enabled) =
         collect_replaced(&scanned, &safe_root, kind, source, &replaced_pids)?;
+    if running && !to_trash.is_empty() {
+        return Err(replace_while_running());
+    }
     let trash_set: HashSet<&Path> = to_trash.iter().map(|(_, p)| p.as_path()).collect();
     let dests = prepare_dests(&safe_root, kind, &staged, &trash_set, &was_enabled)?;
 
@@ -242,6 +277,7 @@ fn apply_staged(
     }
 
     let now = OffsetDateTime::now_utc();
+    let mut added = Vec::with_capacity(staged.len());
     for (s, dest) in staged.into_iter().zip(dests) {
         if let Some(parent) = dest.as_path().parent() {
             fs::create_dir_all(parent)
@@ -260,6 +296,7 @@ fn apply_staged(
             installed_at: now,
             extra: Default::default(),
         });
+        added.push(s.file_name);
     }
     if !pending.is_empty() {
         manifest.pending.retain(|old| {
@@ -270,7 +307,7 @@ fn apply_staged(
         manifest.pending.extend(pending);
     }
     manifest.save(&paths.content_file)?;
-    Ok(())
+    Ok(added)
 }
 
 fn matches_replaced(
