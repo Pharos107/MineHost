@@ -1,8 +1,9 @@
 import { render, screen } from "@testing-library/react";
-import { House, Server, Terminal } from "lucide-react";
+import { ArrowLeft, House, Server, Terminal } from "lucide-react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 
+import { AppShell } from "./AppShell";
 import { NavItem, NavSection } from "./Nav";
 
 function renderAt(path: string) {
@@ -34,5 +35,32 @@ describe("NavItem", () => {
   it("NavSection hiện tiêu đề nhóm", () => {
     renderAt("/");
     expect(screen.getByText("Survival")).toBeTruthy();
+  });
+});
+
+describe("AppShell navEnd", () => {
+  it("mục ghim ở đáy nằm trong vùng điều hướng, sau các mục khác", () => {
+    render(
+      <MemoryRouter initialEntries={["/servers/1"]}>
+        <AppShell
+          variant="sidebar"
+          navLabel="Điều hướng"
+          nav={
+            <NavSection title="Survival">
+              <NavItem to="/servers/1" end icon={Server} label="Tổng quan" />
+            </NavSection>
+          }
+          navEnd={
+            <NavSection>
+              <NavItem to="/servers" end icon={ArrowLeft} label="Tất cả máy chủ" />
+            </NavSection>
+          }
+        >
+          <p>Nội dung</p>
+        </AppShell>
+      </MemoryRouter>,
+    );
+    const links = screen.getByRole("navigation", { name: "Điều hướng" }).querySelectorAll("a");
+    expect([...links].map((a) => a.textContent)).toEqual(["Tổng quan", "Tất cả máy chủ"]);
   });
 });

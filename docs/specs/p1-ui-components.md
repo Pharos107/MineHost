@@ -39,7 +39,7 @@ khoảng cách; mọi giá trị đó là token trong `ui/src/ui/tokens.css`.
 | | `Badge`, `StatusBadge` (ánh xạ 7 trạng thái server ra màu và nhãn đã dịch) | danh sách, chi tiết |
 | | `Spinner`, `EmptyState` | tải dữ liệu, danh sách trống |
 | | `Stack` (xếp hàng/cột, khoảng cách theo token), `Facts` (danh sách nhãn: giá trị) | mọi trang, thông tin máy và server |
-| | `AppShell` (`top`, `centered`, `sidebar`: thanh trên hoặc thanh bên; thân trang). `centered` có tranh nền ngày và đêm, đổi giao diện thì mờ dần sang nhau | mọi trang |
+| | `AppShell` (`top`, `centered`, `sidebar`: thanh trên hoặc thanh bên; thân trang; `navEnd` ghim mục ở đáy thanh bên). `centered` có tranh nền ngày và đêm, đổi giao diện thì mờ dần sang nhau | mọi trang |
 | Form (13b) | `Field` (nhãn, gợi ý, lỗi; tự nối `id` và `aria-describedby`) | wizard, cài đặt |
 | | `TextInput` (cỡ md, lg; kèm nút hiện/ẩn khi `type="password"`), `Select`, `Switch`, `Slider` (có vạch "đề xuất") | wizard, cài đặt, đăng nhập |
 | | `Steps` (wizard 3 bước), `ProgressBar` (có số %, hoặc chạy vô định) | wizard, tiến độ Job |

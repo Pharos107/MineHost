@@ -51,6 +51,7 @@ export function SidebarLayout() {
       variant="sidebar"
       navLabel={t("nav.label")}
       nav={id ? <ServerNav id={id} /> : <MainNav />}
+      navEnd={id && <BackToServers />}
       footer={<ShellControls />}
     >
       <Outlet />
@@ -100,28 +101,22 @@ function ServerNav({ id }: { id: string }) {
   const base = `/servers/${id}`;
 
   return (
-    <>
-      <NavSection
-        title={server.data ? serverName(server.data) : undefined}
-        actions={server.data && <ServerQuickActions server={server.data} />}
-        extra={server.data && <StatusBadge state={server.data.state} />}
-      >
-        <NavItem to={base} end icon={LayoutDashboard} label={t("nav.overview")} />
-        <NavItem to={`${base}/console`} icon={Terminal} label={t("nav.console")} />
-        {server.data?.content_kind && (
-          <NavItem to={`${base}/content`} icon={Package} label={t(`nav.content.${server.data.content_kind}`)} />
-        )}
-        <NavItem to={`${base}/files`} icon={FolderOpen} label={t("nav.files")} />
-        <NavItem to={`${base}/players`} icon={Users} label={t("nav.players")} />
-        <NavItem to={`${base}/backups`} icon={Archive} label={t("nav.backups")} />
-        <NavItem to={`${base}/game`} icon={SlidersHorizontal} label={t("nav.game")} />
-        <NavItem to={`${base}/settings`} icon={Wrench} label={t("nav.serverSettings")} />
-      </NavSection>
-      {/* Mục của server lên đầu để thao tác nhanh; lối quay về danh sách nằm dưới. */}
-      <NavSection>
-        <NavItem to="/servers" end icon={ArrowLeft} label={t("nav.allServers")} />
-      </NavSection>
-    </>
+    <NavSection
+      title={server.data ? serverName(server.data) : undefined}
+      actions={server.data && <ServerQuickActions server={server.data} />}
+      extra={server.data && <StatusBadge state={server.data.state} />}
+    >
+      <NavItem to={base} end icon={LayoutDashboard} label={t("nav.overview")} />
+      <NavItem to={`${base}/console`} icon={Terminal} label={t("nav.console")} />
+      {server.data?.content_kind && (
+        <NavItem to={`${base}/content`} icon={Package} label={t(`nav.content.${server.data.content_kind}`)} />
+      )}
+      <NavItem to={`${base}/files`} icon={FolderOpen} label={t("nav.files")} />
+      <NavItem to={`${base}/players`} icon={Users} label={t("nav.players")} />
+      <NavItem to={`${base}/backups`} icon={Archive} label={t("nav.backups")} />
+      <NavItem to={`${base}/game`} icon={SlidersHorizontal} label={t("nav.game")} />
+      <NavItem to={`${base}/settings`} icon={Wrench} label={t("nav.serverSettings")} />
+    </NavSection>
   );
 }
 
@@ -129,4 +124,14 @@ function ServerNav({ id }: { id: string }) {
 function ServerQuickActions({ server }: { server: Server }) {
   const ready = server.state !== "installing" && server.state !== "broken";
   return ready ? <ServerActions server={server} compact /> : null;
+}
+
+/** Lối quay về danh sách, ghim ở đáy thanh bên để các mục của server nằm trên cùng. */
+function BackToServers() {
+  const { t } = useTranslation();
+  return (
+    <NavSection>
+      <NavItem to="/servers" end icon={ArrowLeft} label={t("nav.allServers")} />
+    </NavSection>
+  );
 }
