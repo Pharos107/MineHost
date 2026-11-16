@@ -509,7 +509,26 @@
     "morePlayers": "and {{count}} more",
     "downloads": "{{value}} downloads",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "codeEditor": {
+      "find": "Find",
+      "replace": "Replace",
+      "next": "Next",
+      "previous": "Previous",
+      "all": "All",
+      "matchCase": "Match case",
+      "regexp": "Regex",
+      "byWord": "Whole word",
+      "replaceOne": "Replace",
+      "replaceAll": "Replace all",
+      "close": "Close",
+      "goToLine": "Go to line",
+      "go": "Go",
+      "foldLine": "Fold block",
+      "unfoldLine": "Unfold block",
+      "foldedCode": "folded code",
+      "unfold": "unfold"
+    }
   },
   "serverState": {
     "installing": "Installing",
@@ -693,12 +712,23 @@
     "back": "Back to folder",
     "editorLabel": "Contents of {{path}}",
     "save": "Save",
-    "saved": "Saved.",
-    "unsaved": "You have unsaved changes.",
     "changedTitle": "The file changed somewhere else",
     "changedBody": "Someone (or the server) edited this file after you opened it. Reloading discards your changes; copy them first if you need them.",
     "reloadLatest": "Reload latest",
-    "copyMine": "Copy my changes"
+    "copyMine": "Copy my changes",
+    "wrap": "Wrap lines",
+    "cursor": "Ln {{line}}, Col {{column}}",
+    "stateSaved": "Saved",
+    "stateUnsaved": "Unsaved",
+    "encoding": "UTF-8",
+    "language": {
+      "json": "JSON",
+      "yaml": "YAML",
+      "toml": "TOML",
+      "properties": "Properties",
+      "shell": "Shell",
+      "text": "Plain text"
+    }
   },
   "auth": {
     "checking": "Checking sign-in…",

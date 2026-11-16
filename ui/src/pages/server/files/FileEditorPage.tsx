@@ -1,20 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Copy, Download, RotateCw, Save } from "lucide-react";
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router";
 
 import { ApiError, errorMessage } from "../../../api/client";
 import { filesApi, pathSteps } from "../../../api/files";
-import { Breadcrumb, Button, Notice, Spinner, Stack, TextArea } from "../../../ui";
+import { formatBytes } from "../../../format";
+import { Breadcrumb, Button, CodeEditor, languageFor, Notice, Spinner, Stack, Switch } from "../../../ui";
 import { useServer } from "../ServerLayout";
+
+const WRAP_KEY = "minehost.editor.wrap";
 
 function parentOf(path: string): string {
   const cut = path.lastIndexOf("/");
   return cut === -1 ? "" : path.slice(0, cut);
 }
 
-/** Trình sửa file văn bản ≤ 1 MiB (spec P2, mục 6.6). Lưu bằng nút hoặc Ctrl+S. */
+/** Trình sửa code cho file văn bản ≤ 1 MiB (spec trang Tệp, mục 1). Lưu bằng nút hoặc Ctrl+S. */
 export function FileEditorPage() {
   const { t } = useTranslation();
   const server = useServer();
@@ -23,6 +26,7 @@ export function FileEditorPage() {
   const queryClient = useQueryClient();
   const file = useQuery({ queryKey: key, queryFn: () => filesApi.read(server.id, path), staleTime: Infinity });
   const [draft, setDraft] = useState<string | null>(null);
+  const [wrap, setWrap] = useWrapSetting();
   const text = draft ?? file.data?.text ?? "";
   const dirty = draft !== null && draft !== file.data?.text;
 
@@ -34,14 +38,10 @@ export function FileEditorPage() {
     },
   });
   const changedOnDisk = save.error instanceof ApiError && save.error.code === "FILE_CHANGED";
+  const trySave = () => {
+    if (dirty && !save.isPending) save.mutate();
+  };
   useLeaveWarning(dirty);
-
-  function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
-      e.preventDefault();
-      if (dirty && !save.isPending) save.mutate();
-    }
-  }
 
   async function reload() {
     setDraft(null);
@@ -51,7 +51,20 @@ export function FileEditorPage() {
 
   return (
     <Stack gap={4}>
-      <Header serverId={server.id} path={path} />
+      <Stack direction="row" gap={3} align="center" justify="between" wrap>
+        <Header serverId={server.id} path={path} />
+        {file.isSuccess && (
+          <Stack direction="row" gap={3} align="center" wrap>
+            <Switch label={t("files.wrap")} checked={wrap} onChange={setWrap} />
+            <Button size="sm" icon={Download} onClick={() => window.location.assign(filesApi.downloadUrl(server.id, path))}>
+              {t("files.download")}
+            </Button>
+            <Button size="sm" variant="primary" icon={Save} disabled={!dirty} loading={save.isPending} onClick={trySave}>
+              {t("files.save")}
+            </Button>
+          </Stack>
+        )}
+      </Stack>
       {file.isPending && <Spinner label={t("ui.loading")} />}
       {file.isError && <ReadError serverId={server.id} path={path} error={file.error} />}
       {file.isSuccess && (
@@ -76,16 +89,47 @@ export function FileEditorPage() {
           ) : (
             save.isError && <Notice tone="danger">{errorMessage(t, save.error)}</Notice>
           )}
-          <TextArea variant="code" aria-label={t("files.editorLabel", { path })} value={text} onChange={(e) => setDraft(e.target.value)} onKeyDown={onKeyDown} />
-          <Stack direction="row" gap={2} align="center" wrap>
-            <Button variant="primary" icon={Save} disabled={!dirty} loading={save.isPending} onClick={() => save.mutate()}>
-              {t("files.save")}
-            </Button>
-            <span>{dirty ? t("files.unsaved") : save.isSuccess ? t("files.saved") : null}</span>
-          </Stack>
+          <Editor path={path} text={text} dirty={dirty} wrap={wrap} onChange={setDraft} onSave={trySave} />
         </>
       )}
     </Stack>
+  );
+}
+
+interface EditorProps {
+  path: string;
+  text: string;
+  dirty: boolean;
+  wrap: boolean;
+  onChange: (text: string) => void;
+  onSave: () => void;
+}
+
+/** Trình sửa kèm thanh trạng thái: lưu chưa, vị trí con trỏ, ngôn ngữ, kích thước. */
+function Editor({ path, text, dirty, wrap, onChange, onSave }: EditorProps) {
+  const { t, i18n } = useTranslation();
+  const [cursor, setCursor] = useState({ line: 1, column: 1 });
+  const language = languageFor(path);
+  const size = new TextEncoder().encode(text).length;
+  return (
+    <CodeEditor
+      label={t("files.editorLabel", { path })}
+      value={text}
+      onChange={onChange}
+      language={language}
+      wrap={wrap}
+      onSave={onSave}
+      onCursor={(line, column) => setCursor({ line, column })}
+      status={
+        <>
+          <span role="status">{dirty ? t("files.stateUnsaved") : t("files.stateSaved")}</span>
+          <span>{t("files.cursor", cursor)}</span>
+          <span>{t(`files.language.${language}`)}</span>
+          <span>{formatBytes(size, i18n.language)}</span>
+          <span>{t("files.encoding")}</span>
+        </>
+      }
+    />
   );
 }
 
@@ -128,6 +172,26 @@ function ReadError({ serverId, path, error }: { serverId: string; path: string; 
       {errorMessage(t, error)}
     </Notice>
   );
+}
+
+/** Tùy chọn xuống dòng nhớ theo trình duyệt; bộ nhớ trình duyệt bị chặn thì chỉ giữ trong phiên. */
+function useWrapSetting(): [boolean, (wrap: boolean) => void] {
+  const [wrap, setWrap] = useState(() => {
+    try {
+      return localStorage.getItem(WRAP_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const update = (next: boolean) => {
+    setWrap(next);
+    try {
+      localStorage.setItem(WRAP_KEY, next ? "1" : "0");
+    } catch {
+      // Không lưu được thì thôi, công tắc vẫn chạy trong phiên này.
+    }
+  };
+  return [wrap, update];
 }
 
 /** Hỏi lại khi đóng tab hoặc tải lại trang mà còn thay đổi chưa lưu. */
