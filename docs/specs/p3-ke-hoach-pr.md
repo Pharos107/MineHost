@@ -54,7 +54,7 @@ chính PR ấy.
 | 37 | Workflow 20 modpack | Đang làm: 37a (test, workflow, 11 pack Modrinth) | [#113](https://github.com/Pharos107/MineHost/pull/113) |
 | 38 | Phát hành `v0.5.0` | Chưa bắt đầu | |
 
-Ngoài kế hoạch, sửa lỗi tìm ra khi chạy thử modpack thật cho PR-37: [#108](https://github.com/Pharos107/MineHost/pull/108), [#109](https://github.com/Pharos107/MineHost/pull/109), [#110](https://github.com/Pharos107/MineHost/pull/110), [#111](https://github.com/Pharos107/MineHost/pull/111).
+Ngoài kế hoạch, sửa lỗi tìm ra khi chạy thử modpack thật cho PR-37: [#108](https://github.com/Pharos107/MineHost/pull/108), [#109](https://github.com/Pharos107/MineHost/pull/109), [#110](https://github.com/Pharos107/MineHost/pull/110), [#111](https://github.com/Pharos107/MineHost/pull/111), [#114](https://github.com/Pharos107/MineHost/pull/114), [#115](https://github.com/Pharos107/MineHost/pull/115), [#117](https://github.com/Pharos107/MineHost/pull/117), [#123](https://github.com/Pharos107/MineHost/pull/123), [#124](https://github.com/Pharos107/MineHost/pull/124). Theo yêu cầu của chủ dự án: mở giao diện qua Tailscale khi bật LAN [#116](https://github.com/Pharos107/MineHost/pull/116).
 
 Khi bắt đầu một nhóm thì tách dòng của nhóm thành từng PR.
 
