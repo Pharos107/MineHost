@@ -878,15 +878,11 @@
   "modpack": {
     "title": "Create server from modpack",
     "description": "Search modpacks on Modrinth or upload an existing .mrpack file.",
-    "dropTitle": "Upload modpack file",
     "dropLabel": "Choose modpack file",
-    "dropHint": "or drop a .mrpack or .zip file here, up to 512 MiB.",
-    "searchTitle": "Search modpacks",
+    "dropHint": "or drop a .mrpack or .zip file anywhere on this page, up to 512 MiB.",
     "searchPlaceholder": "Search modpacks on Modrinth…",
     "searchPlaceholderCurseforge": "Search modpacks on CurseForge…",
     "curseforgeNoKey": "CurseForge is unavailable because no API key is configured in Settings.",
-    "noResults": "No modpacks found",
-    "noResultsHint": "Try a different keyword or upload a .mrpack file above.",
     "version": "Modpack version",
     "fileLabel": "Modpack file",
     "fileSize": "File size",
@@ -898,7 +894,9 @@
     "summarySkippedClient": "Skipped (client-only)",
     "summaryPendingCf": "Pending CurseForge files",
     "pendingCfHint": "Some CurseForge files must be downloaded manually on the Mods page before starting the server.",
-    "openServer": "Open server"
+    "openServer": "Open server",
+    "dropOverlay": "Drop a .mrpack or .zip file to create a server from it",
+    "usePack": "Use this pack"
   },
   "catalog": {
     "pickHint": "Select a result to see its details",

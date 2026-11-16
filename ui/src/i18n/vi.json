@@ -878,15 +878,11 @@
   "modpack": {
     "title": "Tạo server từ modpack",
     "description": "Tìm modpack trên Modrinth hoặc tải lên file .mrpack có sẵn.",
-    "dropTitle": "Tải lên file modpack",
     "dropLabel": "Chọn file modpack",
-    "dropHint": "hoặc kéo thả file .mrpack hoặc .zip vào đây, tối đa 512 MiB.",
-    "searchTitle": "Tìm modpack",
+    "dropHint": "hoặc kéo thả file .mrpack, .zip vào bất kỳ chỗ nào trên trang, tối đa 512 MiB.",
     "searchPlaceholder": "Tìm modpack trên Modrinth…",
     "searchPlaceholderCurseforge": "Tìm modpack trên CurseForge…",
     "curseforgeNoKey": "CurseForge chưa sẵn sàng vì chưa cấu hình API key trong Cài đặt.",
-    "noResults": "Không tìm thấy modpack nào",
-    "noResultsHint": "Thử từ khóa khác hoặc tải lên file .mrpack có sẵn ở trên.",
     "version": "Phiên bản modpack",
     "fileLabel": "File modpack",
     "fileSize": "Dung lượng",
@@ -898,7 +894,9 @@
     "summarySkippedClient": "Bỏ qua (chỉ chạy ở client)",
     "summaryPendingCf": "File CurseForge còn chờ",
     "pendingCfHint": "Một số file CurseForge cần tự tải trên trang Mod trước khi bật server.",
-    "openServer": "Mở trang server"
+    "openServer": "Mở trang server",
+    "dropOverlay": "Thả file .mrpack hoặc .zip để tạo server từ modpack này",
+    "usePack": "Dùng pack này"
   },
   "catalog": {
     "pickHint": "Chọn một mục bên trái để xem chi tiết",
