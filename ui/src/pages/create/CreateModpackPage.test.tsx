@@ -158,6 +158,10 @@ describe("CreateModpackPage", () => {
         return Response.json({ hits: [packOne], page: 1, page_size: 1, total: 2 });
       }
       if (url === "/api/v1/content/modrinth/projects/fab-opt/versions") return Response.json(packVersions);
+      if (url === "/api/v1/content/modrinth/projects/fab-opt") {
+        const body = ["## Có gì", "", "Sodium, Lithium."].join("\n");
+        return Response.json({ ...packOne, body, loaders: ["fabric"], links: { page: "https://modrinth.com/modpack/fo" } });
+      }
       if (url === "/api/v1/system") return Response.json(system);
       if (url === "/api/v1/servers/modpack" && init?.method === "POST") {
         return Response.json({ server_id: "01PACK", job_id: 21 }, { status: 202 });
@@ -174,7 +178,12 @@ describe("CreateModpackPage", () => {
     await user.click(screen.getByRole("button", { name: "Xem thêm" }));
     await screen.findByRole("button", { name: /All The Mods/ });
 
+    // Chọn pack: khung chi tiết hiện mô tả, bản kèm Minecraft và loader, nút "Dùng pack này".
     await user.click(screen.getByRole("button", { name: /Fabulously Optimized/ }));
+    expect(await screen.findByRole("heading", { name: "Có gì" })).toBeTruthy();
+    const detailVersion = screen.getByRole("combobox", { name: "Phiên bản" });
+    expect(detailVersion.textContent).toContain("1.21.4 Fabric");
+    await user.click(screen.getByRole("button", { name: "Dùng pack này" }));
     const versionSelect = await screen.findByRole("combobox", { name: "Phiên bản modpack" });
     expect(versionSelect).toHaveProperty("value", "v-new");
     await user.selectOptions(versionSelect, "v-old");

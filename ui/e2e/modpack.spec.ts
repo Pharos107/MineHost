@@ -88,6 +88,7 @@ test("cài modpack từ nguồn giả tới trang server và thấy tóm tắt",
 
   await page.getByRole("searchbox", { name: "Tìm modpack trên Modrinth…" }).fill("E2E");
   await page.getByRole("button", { name: /E2E Fabric Pack/ }).click();
+  await page.getByRole("button", { name: "Dùng pack này" }).click();
 
   await expect(page.getByRole("combobox", { name: "Phiên bản modpack" })).toHaveValue("e2e-fabric-pack-1.0.0");
   await page.getByRole("textbox", { name: "Tên server" }).fill("Modpack E2E");

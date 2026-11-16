@@ -1,6 +1,6 @@
 # Spec — Trình duyệt mod và làm gọn trang Mod
 
-Trạng thái: nháp 2026-11-16, chờ chủ dự án duyệt. File này bổ sung [spec P3](p3-mod-va-modpack.md)
+Trạng thái: đã duyệt 2026-11-16 (chủ dự án bảo làm luôn PR-40 đến PR-46); đã làm xong. File này bổ sung [spec P3](p3-mod-va-modpack.md)
 mục 2, 6.1–6.4. Chỗ nào hai bên khác nhau thì file này đúng. Làm xong trước PR-38 (`v0.5.0`).
 
 ## Vấn đề
