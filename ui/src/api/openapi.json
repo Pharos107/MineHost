@@ -392,6 +392,41 @@
               "format": "int32",
               "minimum": 0
             }
+          },
+          {
+            "name": "sort",
+            "in": "path",
+            "description": "`relevance` (mặc định), `downloads` hoặc `updated`.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "loader",
+            "in": "path",
+            "description": "Lọc như `server_id` cho server chưa tạo; phải gửi cùng `minecraft`.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "minecraft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
           }
         ],
         "responses": {
@@ -550,6 +585,29 @@
           },
           {
             "name": "server_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "loader",
+            "in": "path",
+            "description": "Lọc theo loader và Minecraft khi chưa có server; phải gửi cả hai.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "minecraft",
             "in": "path",
             "required": true,
             "schema": {
@@ -3631,6 +3689,22 @@
       },
       "ContentInstallBody": {
         "type": "object",
+        "description": "Danh sách mod/plugin cần cài cùng lúc (1 đến 50 mục), dependency tự thêm.",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentItemBody"
+            }
+          }
+        }
+      },
+      "ContentItemBody": {
+        "type": "object",
+        "description": "Một mục trong danh sách cài.",
         "required": [
           "source",
           "project_id"
@@ -3854,6 +3928,13 @@
           "minecraft"
         ],
         "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentItemBody"
+            },
+            "description": "Mod/plugin cài ngay sau khi tạo (tối đa 50); mục lỗi nằm trong `result.content_failed` của Job."
+          },
           "loader": {
             "type": "string",
             "description": "`paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`."
@@ -4175,7 +4256,8 @@
           "size",
           "manual",
           "client_only",
-          "from_modpack"
+          "from_modpack",
+          "needs_restart"
         ],
         "properties": {
           "client_only": {
@@ -4202,6 +4284,10 @@
           },
           "name": {
             "type": "string"
+          },
+          "needs_restart": {
+            "type": "boolean",
+            "description": "Thêm vào lúc server đang chạy: process hiện tại chưa nạp, cần khởi động lại."
           },
           "project_id": {
             "type": [
@@ -4635,6 +4721,7 @@
       "PlannedContentDto": {
         "type": "object",
         "required": [
+          "source",
           "project_id",
           "project_name",
           "version_id",
@@ -4678,6 +4765,9 @@
           },
           "replaces_existing": {
             "type": "boolean"
+          },
+          "source": {
+            "type": "string"
           },
           "version_id": {
             "type": "string"

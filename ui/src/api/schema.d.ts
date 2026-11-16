@@ -942,7 +942,12 @@ export interface components {
             stream: components["schemas"]["StreamDto"];
             text: string;
         };
+        /** @description Danh sách mod/plugin cần cài cùng lúc (1 đến 50 mục), dependency tự thêm. */
         ContentInstallBody: {
+            items: components["schemas"]["ContentItemBody"][];
+        };
+        /** @description Một mục trong danh sách cài. */
+        ContentItemBody: {
             project_id: string;
             source: string;
             version_id?: string | null;
@@ -994,6 +999,8 @@ export interface components {
             version_id?: string | null;
         };
         CreateServerBody: {
+            /** @description Mod/plugin cài ngay sau khi tạo (tối đa 50); mục lỗi nằm trong `result.content_failed` của Job. */
+            content?: components["schemas"]["ContentItemBody"][];
             /** @description `paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`. */
             loader: string;
             /** @description Chỉ với mod loader; không gửi thì dùng bản đề xuất. */
@@ -1095,6 +1102,8 @@ export interface components {
             /** @description `true` khi người dùng chép trực tiếp vào thư mục mà chưa có bản ghi nguồn. */
             manual: boolean;
             name: string;
+            /** @description Thêm vào lúc server đang chạy: process hiện tại chưa nạp, cần khởi động lại. */
+            needs_restart: boolean;
             project_id?: string | null;
             /** Format: int64 */
             size: number;
@@ -1217,6 +1226,7 @@ export interface components {
             project_id: string;
             project_name: string;
             replaces_existing: boolean;
+            source: string;
             version_id: string;
             version_number: string;
         };
@@ -1864,6 +1874,11 @@ export interface operations {
                 server_id: string | null;
                 /** @description Trang (từ 1), mỗi trang 20 kết quả. */
                 page: number | null;
+                /** @description `relevance` (mặc định), `downloads` hoặc `updated`. */
+                sort: string | null;
+                /** @description Lọc như `server_id` cho server chưa tạo; phải gửi cùng `minecraft`. */
+                loader: string | null;
+                minecraft: string | null;
             };
             cookie?: never;
         };
@@ -1981,6 +1996,9 @@ export interface operations {
                 source: string;
                 pid: string;
                 server_id: string | null;
+                /** @description Lọc theo loader và Minecraft khi chưa có server; phải gửi cả hai. */
+                loader: string | null;
+                minecraft: string | null;
             };
             cookie?: never;
         };

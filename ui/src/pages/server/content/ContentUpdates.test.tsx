@@ -39,6 +39,7 @@ const content: ServerContent = {
       version_id: "v1",
       from_modpack: false,
       icon_url: null,
+      needs_restart: false,
     },
   ],
 };

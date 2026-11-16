@@ -385,12 +385,12 @@ Không đổi. Phần dò cgroup v2 nằm ở `mh-runtime/src/os/cgroup.rs`, c�
 | --- | --- | --- |
 | GET | `/catalog/{loader}/versions` | Thêm bốn loader mới |
 | GET | `/catalog/{loader}/{minecraft}/loader-versions` | Bản loader, bản đề xuất đứng đầu |
-| GET | `/content/search?source=&kind=&q=&server_id=&page=` | `kind` là `mod`, `plugin`, `modpack`; có `server_id` thì lọc theo loader và phiên bản |
+| GET | `/content/search?source=&kind=&q=&server_id=&page=&sort=&loader=&minecraft=` | `kind` là `mod`, `plugin`, `modpack`; có `server_id` (hoặc cặp `loader` + `minecraft`) thì lọc theo loader và phiên bản; `sort` xem [spec trình duyệt mod](p3-trinh-duyet-mod.md) |
 | GET | `/content/{source}/projects/{pid}` | Mô tả, ảnh, link, `server_side` |
-| GET | `/content/{source}/projects/{pid}/versions?server_id=` | Bản hợp với server, mới nhất trước |
+| GET | `/content/{source}/projects/{pid}/versions?server_id=` | Bản hợp với server (hoặc cặp `loader` + `minecraft`), mới nhất trước |
 | GET | `/servers/{id}/content` | Danh sách mod hoặc plugin (mục 3.3), kèm `pending` |
-| POST | `/servers/{id}/content/plan` | `{ source, project_id, version_id? }` → danh sách sẽ cài (mod chính + dependency) |
-| POST | `/servers/{id}/content` | `{ source, project_id, version_id? }` → Job |
+| POST | `/servers/{id}/content/plan` | `{ items: [{ source, project_id, version_id? }] }` (1–50) → danh sách sẽ cài (mod chính + dependency), mỗi dòng kèm `source` |
+| POST | `/servers/{id}/content` | `{ items: [...] }` như trên → một Job |
 | POST | `/servers/{id}/content/upload` | `multipart`, jar ≤ 512 MiB; khớp hash với `pending` thì xóa dòng chờ |
 | PATCH | `/servers/{id}/content/{file}` | `{ enabled }` |
 | DELETE | `/servers/{id}/content/{file}` | Chuyển vào thùng rác |

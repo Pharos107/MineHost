@@ -184,6 +184,7 @@ pub use lan::{LanState, lan_listener};
         content::PendingContentDto,
         content::ServerContentDto,
         content::ContentInstallBody,
+        content::ContentItemBody,
         content::PlannedContentDto,
         content::ContentPlanDto,
         content::ToggleContentBody,

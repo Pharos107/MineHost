@@ -15,6 +15,8 @@ export type PendingContent = components["schemas"]["PendingContentDto"];
 export type PendingUploadItem = components["schemas"]["PendingUploadItemDto"];
 export type PendingUploadResult = components["schemas"]["PendingUploadResultDto"];
 export type ContentInstallBody = components["schemas"]["ContentInstallBody"];
+export type ContentItem = components["schemas"]["ContentItemBody"];
+export type SearchSort = "relevance" | "downloads" | "updated";
 export type CreateModpackBody = components["schemas"]["CreateModpackBody"];
 export type JobStarted = components["schemas"]["JobStartedDto"];
 export type UpdateReport = components["schemas"]["UpdateReportDto"];
@@ -33,6 +35,7 @@ export interface SearchContentParams {
   q?: string;
   serverId?: string;
   page?: number;
+  sort?: SearchSort;
 }
 
 export function contentKey(serverId: string) {
@@ -45,8 +48,9 @@ function filePath(serverId: string, fileName: string): string {
 
 /** Route tìm kiếm và quản lý mod/plugin của một server (spec P3, mục 5.8). */
 export const contentApi = {
-  search: ({ source = "modrinth", kind, q = "", serverId, page = 1 }: SearchContentParams) => {
+  search: ({ source = "modrinth", kind, q = "", serverId, page = 1, sort }: SearchContentParams) => {
     const params = new URLSearchParams({ source, q, page: String(page) });
+    if (sort) params.set("sort", sort);
     if (kind) params.set("kind", kind);
     if (serverId) params.set("server_id", serverId);
     return request<SearchResult>("GET", `/content/search?${params.toString()}`);
@@ -60,10 +64,12 @@ export const contentApi = {
       `/content/${encodeURIComponent(source)}/projects/${encodeURIComponent(projectId)}/versions${query}`,
     );
   },
-  plan: (serverId: string, body: ContentInstallBody) =>
-    request<ContentPlan>("POST", `${serverPath(serverId)}/content/plan`, body),
-  install: (serverId: string, body: ContentInstallBody) =>
-    request<JobStarted>("POST", `${serverPath(serverId)}/content`, body),
+  /** Kế hoạch cài gộp cho nhiều mục (1–50), dependency dùng chung chỉ một dòng. */
+  plan: (serverId: string, items: ContentItem[]) =>
+    request<ContentPlan>("POST", `${serverPath(serverId)}/content/plan`, { items } satisfies ContentInstallBody),
+  /** Một Job cài mọi mục cùng dependency. */
+  install: (serverId: string, items: ContentItem[]) =>
+    request<JobStarted>("POST", `${serverPath(serverId)}/content`, { items } satisfies ContentInstallBody),
   list: (serverId: string) => request<ServerContent>("GET", `${serverPath(serverId)}/content`),
   /** Job hỏi nguồn mod xem có bản mới; kết quả (`UpdateReport`) nằm trong `result` của Job. */
   checkUpdates: (serverId: string) => request<JobStarted>("POST", `${serverPath(serverId)}/updates/check`),

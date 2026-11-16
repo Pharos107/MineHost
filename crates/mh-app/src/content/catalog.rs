@@ -225,6 +225,12 @@ pub trait ContentCatalog: Send + Sync + 'static {
         hosts::MODRINTH
     }
 
+    /// Mô tả đầy đủ khi `project` không kèm sẵn (CurseForge trả riêng, dạng HTML).
+    fn project_body<'a>(&'a self, id: &'a str) -> BoxFut<'a, Result<Option<String>, AppError>> {
+        let _ = id;
+        Box::pin(async { Ok(None) })
+    }
+
     /// Tra phiên bản theo SHA-1 của file (Modrinth `version_files`), để nhận ra mod "Thêm tay" và
     /// kiểm tra cập nhật (spec P3, mục 5.7). Hash không có trên nguồn thì vắng mặt trong map. Nguồn
     /// không hỗ trợ (CurseForge dùng fingerprint riêng) trả map rỗng.
