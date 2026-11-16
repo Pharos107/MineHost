@@ -14,14 +14,16 @@ CPU / RAM, nút bật / tắt ở thanh bên.
   "Fabric 0.16.14 · Minecraft 1.20.1 · Prominence II v4.1.8". Thiếu phần nào thì bỏ phần đó.
 - **Thanh bên:** cạnh tên server có nút icon Bật, Khởi động lại, Tắt theo trạng thái, dưới tên là trạng thái;
   dùng chung logic với nút ở đầu trang (hỏi EULA trước khi bật lần đầu). "Buộc dừng" chỉ ở menu "…"
-  đầu trang. Server đang cài hoặc hỏng thì chỉ có trạng thái. Mục "Tất cả máy chủ" nằm dưới các mục của server.
+  đầu trang. Server đang cài hoặc hỏng thì chỉ có trạng thái. Mục "Tất cả máy chủ"
+  ghim ở đáy thanh bên, ngay trên phần đổi ngôn ngữ và Thoát.
 - **Ô số:** CPU, RAM (kèm thanh mức so với RAM tối đa, từ 90 % thì đổi màu cảnh báo), Người chơi
   (chỉ số đang chơi / tối đa, không liệt kê tên), Thời gian chạy, Dung lượng. Lưới giãn hết chiều ngang.
 - **Biểu đồ:** vẫn hai biểu đồ CPU và RAM 1 giờ qua. Nút "Cạnh nhau" / "Hai hàng" đổi cách xếp, nhớ trên
   trình duyệt đó; màn hình hẹp luôn một cột. Nút "Xem chi tiết" trên mỗi biểu đồ mở hộp thoại có biểu
   đồ lớn hơn và bốn số của cả giờ: hiện tại, trung bình, cao nhất, thấp nhất.
 
-Component: `StatTile` thêm `meter`, `NavSection` thêm `actions` và `extra`, `PageHeader` thêm `eyebrow`, thêm `Columns`.
+Component: `StatTile` thêm `meter`, `NavSection` thêm `actions` và `extra`, `PageHeader` thêm `eyebrow`,
+`AppShell` thêm `navEnd`, thêm `Columns`.
 
 ## Tiêu chí chấp nhận
 

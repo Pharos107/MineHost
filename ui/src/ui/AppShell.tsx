@@ -14,6 +14,8 @@ interface AppShellProps {
   actions?: ReactNode;
   /** `sidebar`: các `NavSection`/`NavItem`. */
   nav?: ReactNode;
+  /** `sidebar`: mục ghim ở đáy vùng điều hướng, ngay trên chân thanh bên (ví dụ "Tất cả máy chủ"). */
+  navEnd?: ReactNode;
   /** `sidebar`: nhãn cho trình đọc màn hình của vùng điều hướng. */
   navLabel?: string;
   /** `sidebar`: chân thanh bên (đổi ngôn ngữ, Thoát). */
@@ -22,10 +24,10 @@ interface AppShellProps {
 }
 
 /** Khung chung của mọi trang: thanh trên hoặc thanh bên, và vùng nội dung có độ rộng tối đa. */
-export function AppShell({ variant = "top", actions, nav, navLabel, footer, children }: AppShellProps) {
+export function AppShell({ variant = "top", actions, nav, navEnd, navLabel, footer, children }: AppShellProps) {
   if (variant === "sidebar") {
     return (
-      <SidebarShell nav={nav} navLabel={navLabel} footer={footer}>
+      <SidebarShell nav={nav} navEnd={navEnd} navLabel={navLabel} footer={footer}>
         {children}
       </SidebarShell>
     );
@@ -58,13 +60,13 @@ function Brand() {
   );
 }
 
-type SidebarShellProps = Pick<AppShellProps, "nav" | "navLabel" | "footer" | "children">;
+type SidebarShellProps = Pick<AppShellProps, "nav" | "navEnd" | "navLabel" | "footer" | "children">;
 
 /**
  * Màn hình rộng: thanh bên luôn hiện. Màn hình hẹp: thanh bên ẩn thành ngăn kéo, mở bằng nút menu,
  * đóng khi chọn một mục, bấm ra ngoài hoặc Esc.
  */
-function SidebarShell({ nav, navLabel, footer, children }: SidebarShellProps) {
+function SidebarShell({ nav, navEnd, navLabel, footer, children }: SidebarShellProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const drawerId = useId();
@@ -105,6 +107,7 @@ function SidebarShell({ nav, navLabel, footer, children }: SidebarShellProps) {
         </div>
         <nav className={styles.nav} aria-label={navLabel} onClick={closeOnLink}>
           {nav}
+          {navEnd && <div className={styles.navEnd}>{navEnd}</div>}
         </nav>
         {footer && <div className={styles.footer}>{footer}</div>}
       </aside>
