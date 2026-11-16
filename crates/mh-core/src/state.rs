@@ -94,9 +94,28 @@ pub fn is_done_line(line: &str) -> bool {
     line.contains("]: Done (")
 }
 
+/// Dòng `net.minecraft.server.Main` in khi bật hỏng (vanilla, Paper, Forge, NeoForge). Sau dòng này
+/// server không bao giờ sẵn sàng, dù process có thể chưa thoát.
+pub fn is_startup_failed_line(line: &str) -> bool {
+    line.contains("Failed to start the minecraft server")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn startup_failed_line_matches_forge_and_vanilla() {
+        assert!(is_startup_failed_line(
+            "[main/ERROR] [net.minecraft.server.Main/FATAL]: Failed to start the minecraft server"
+        ));
+        assert!(is_startup_failed_line(
+            "[10:00:01] [Server thread/ERROR]: Failed to start the minecraft server"
+        ));
+        assert!(!is_startup_failed_line(
+            "[10:00:01 INFO]: Done (3.2s)! For help, type \"help\""
+        ));
+    }
     use ServerEvent as E;
     use ServerState as S;
 

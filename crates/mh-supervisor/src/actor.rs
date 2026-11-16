@@ -3,7 +3,7 @@
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-use mh_core::state::is_done_line;
+use mh_core::state::{is_done_line, is_startup_failed_line};
 use mh_core::{
     ConsoleStream, CrashHint, ServerEvent, ServerState, diagnose, parse_log_line, transition,
 };
@@ -36,6 +36,7 @@ enum Wake {
     StopTimeout,
     RestartDue,
     SlowStart,
+    FailedStart,
 }
 
 pub(crate) struct Actor<L> {
@@ -52,6 +53,8 @@ pub(crate) struct Actor<L> {
     stop_deadline: Option<Instant>,
     restart_at: Option<Instant>,
     slow_start_at: Option<Instant>,
+    /// Hạn chót cho process tự thoát sau dòng bật hỏng.
+    failed_start_at: Option<Instant>,
     crashes: VecDeque<Instant>,
 }
 
@@ -78,6 +81,7 @@ impl<L: Launcher> Actor<L> {
             stop_deadline: None,
             restart_at: None,
             slow_start_at: None,
+            failed_start_at: None,
             crashes: VecDeque::new(),
         }
     }
@@ -97,6 +101,7 @@ impl<L: Launcher> Actor<L> {
                 Wake::StopTimeout => self.on_stop_timeout(),
                 Wake::RestartDue => self.on_restart_due().await,
                 Wake::SlowStart => self.on_slow_start(),
+                Wake::FailedStart => self.on_failed_start(),
             }
         }
         // Mọi handle đã bị drop: controller đang tắt. Không để process sống tiếp không ai quản.
@@ -107,6 +112,7 @@ impl<L: Launcher> Actor<L> {
 
     async fn next(&mut self, rx: &mut mpsc::Receiver<Command>) -> Wake {
         let (stop, restart, slow) = (self.stop_deadline, self.restart_at, self.slow_start_at);
+        let failed = self.failed_start_at;
         let live = self.live.as_mut();
         let (output, exit) = match live {
             Some(Live { output, exit, .. }) => (output.as_mut(), Some(exit)),
@@ -120,6 +126,7 @@ impl<L: Launcher> Actor<L> {
             () = sleep_until(stop) => Wake::StopTimeout,
             () = sleep_until(restart) => Wake::RestartDue,
             () = sleep_until(slow) => Wake::SlowStart,
+            () = sleep_until(failed) => Wake::FailedStart,
         }
     }
 
@@ -161,6 +168,7 @@ impl<L: Launcher> Actor<L> {
             exit,
         });
         self.slow_start_at = Some(Instant::now() + self.config.slow_start_after);
+        self.failed_start_at = None;
         self.status.pid = pid;
         self.status.crash = None;
         self.status.slow_start = false;
@@ -231,7 +239,11 @@ impl<L: Launcher> Actor<L> {
     }
 
     async fn on_line(&mut self, line: OutputLine) {
-        let ready = self.status.state == ServerState::Starting && is_done_line(&line.text);
+        let starting = self.status.state == ServerState::Starting;
+        let ready = starting && is_done_line(&line.text);
+        if starting && self.failed_start_at.is_none() && is_startup_failed_line(&line.text) {
+            self.failed_start_at = Some(Instant::now() + self.config.failed_start_grace);
+        }
         // Ghi console trước khi phát sự kiện, để người nghe đọc bộ đệm là đã có dòng đó.
         let stream = line.stream;
         let pushed = self.console.push(stream, line.text);
@@ -280,6 +292,7 @@ impl<L: Launcher> Actor<L> {
         self.console.close_log();
         self.stop_deadline = None;
         self.slow_start_at = None;
+        self.failed_start_at = None;
         self.status.pid = None;
         self.status.running_since = None;
         self.status.slow_start = false;
@@ -353,6 +366,19 @@ impl<L: Launcher> Actor<L> {
         tracing::warn!("server bật quá lâu mà chưa sẵn sàng");
         self.status.slow_start = true;
         self.publish();
+    }
+
+    /// Bật hỏng mà process vẫn treo (Forge còn luồng chưa dừng). Kill thẳng, không qua `Stopping`,
+    /// để lần thoát được tính là crash (spec P1, mục 5.6).
+    fn on_failed_start(&mut self) {
+        self.failed_start_at = None;
+        if self.status.state != ServerState::Starting {
+            return;
+        }
+        if let Some(live) = &self.live {
+            tracing::warn!("server báo bật hỏng nhưng process chưa thoát, buộc dừng");
+            live.control.kill();
+        }
     }
 
     fn check(&self, event: ServerEvent) -> Result<ServerState, SupervisorError> {
