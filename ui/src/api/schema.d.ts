@@ -909,7 +909,12 @@ export interface components {
             stream: components["schemas"]["StreamDto"];
             text: string;
         };
+        /** @description Danh sách mod/plugin cần cài cùng lúc (1 đến 50 mục), dependency tự thêm. */
         ContentInstallBody: {
+            items: components["schemas"]["ContentItemBody"][];
+        };
+        /** @description Một mục trong danh sách cài. */
+        ContentItemBody: {
             project_id: string;
             source: string;
             version_id?: string | null;
@@ -1186,6 +1191,7 @@ export interface components {
             project_id: string;
             project_name: string;
             replaces_existing: boolean;
+            source: string;
             version_id: string;
             version_number: string;
         };
@@ -1819,6 +1825,8 @@ export interface operations {
                 server_id: string | null;
                 /** @description Trang (từ 1), mỗi trang 20 kết quả. */
                 page: number | null;
+                /** @description `relevance` (mặc định), `downloads` hoặc `updated`. */
+                sort: string | null;
             };
             cookie?: never;
         };

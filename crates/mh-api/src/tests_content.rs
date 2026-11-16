@@ -4,6 +4,8 @@
 mod cache;
 #[path = "tests_content_catalog.rs"]
 mod catalog;
+#[path = "tests_content_many.rs"]
+mod many;
 #[path = "tests_content_pending.rs"]
 mod pending;
 #[path = "tests_preflight.rs"]
@@ -172,7 +174,7 @@ async fn plan_install_list_toggle_and_remove_routes() {
     let (status, err) = api
         .post(
             &format!("/api/v1/servers/{vanilla}/content/plan"),
-            Some(json!({ "source": "modrinth", "project_id": "sodium" })),
+            Some(json!({ "items": [{ "source": "modrinth", "project_id": "sodium" }] })),
         )
         .await;
     assert_eq!(
@@ -183,7 +185,7 @@ async fn plan_install_list_toggle_and_remove_routes() {
     let (status, plan) = api
         .post(
             &format!("/api/v1/servers/{fabric}/content/plan"),
-            Some(json!({ "source": "modrinth", "project_id": "sodium" })),
+            Some(json!({ "items": [{ "source": "modrinth", "project_id": "sodium" }] })),
         )
         .await;
     assert_eq!(status, StatusCode::OK, "{plan}");
@@ -198,7 +200,7 @@ async fn plan_install_list_toggle_and_remove_routes() {
     let (status, err) = api
         .post(
             &format!("/api/v1/servers/{fabric}/content"),
-            Some(json!({ "source": "curseforge", "project_id": "sodium" })),
+            Some(json!({ "items": [{ "source": "curseforge", "project_id": "sodium" }] })),
         )
         .await;
     assert_eq!(
@@ -212,7 +214,7 @@ async fn plan_install_list_toggle_and_remove_routes() {
     let (status, job) = api
         .post(
             &format!("/api/v1/servers/{fabric}/content"),
-            Some(json!({ "source": "modrinth", "project_id": "sodium" })),
+            Some(json!({ "items": [{ "source": "modrinth", "project_id": "sodium" }] })),
         )
         .await;
     assert_eq!(status, StatusCode::ACCEPTED, "{job}");
@@ -325,7 +327,7 @@ async fn upload_and_busy_server_errors() {
         (
             Method::POST,
             "",
-            Some(json!({ "source": "modrinth", "project_id": "sodium" })),
+            Some(json!({ "items": [{ "source": "modrinth", "project_id": "sodium" }] })),
         ),
         (Method::PATCH, "/a.jar", Some(json!({ "enabled": false }))),
         (Method::DELETE, "/a.jar", None),
@@ -400,7 +402,7 @@ async fn curseforge_routes_cover_search_project_versions_plan_and_pending() {
     let (status, plan) = api
         .post(
             &format!("/api/v1/servers/{fabric}/content/plan"),
-            Some(json!({ "source": "curseforge", "project_id": "238222" })),
+            Some(json!({ "items": [{ "source": "curseforge", "project_id": "238222" }] })),
         )
         .await;
     assert_eq!(status, StatusCode::OK, "{plan}");
@@ -410,7 +412,7 @@ async fn curseforge_routes_cover_search_project_versions_plan_and_pending() {
     let (status, job) = api
         .post(
             &format!("/api/v1/servers/{fabric}/content"),
-            Some(json!({ "source": "curseforge", "project_id": "238222" })),
+            Some(json!({ "items": [{ "source": "curseforge", "project_id": "238222" }] })),
         )
         .await;
     assert_eq!(status, StatusCode::ACCEPTED, "{job}");
@@ -419,7 +421,7 @@ async fn curseforge_routes_cover_search_project_versions_plan_and_pending() {
     let (status, rplan) = api
         .post(
             &format!("/api/v1/servers/{fabric}/content/plan"),
-            Some(json!({ "source": "curseforge", "project_id": "777001" })),
+            Some(json!({ "items": [{ "source": "curseforge", "project_id": "777001" }] })),
         )
         .await;
     assert_eq!(status, StatusCode::OK, "{rplan}");
@@ -434,7 +436,7 @@ async fn curseforge_routes_cover_search_project_versions_plan_and_pending() {
     let (status, rjob) = api
         .post(
             &format!("/api/v1/servers/{fabric}/content"),
-            Some(json!({ "source": "curseforge", "project_id": "777001" })),
+            Some(json!({ "items": [{ "source": "curseforge", "project_id": "777001" }] })),
         )
         .await;
     assert_eq!(status, StatusCode::ACCEPTED, "{rjob}");

@@ -55,7 +55,7 @@ chính PR ấy.
 | 37 | Workflow 20 modpack | Đang làm: đủ 20 pack (37a, 37b), chờ hai đêm liền xanh | [#113](https://github.com/Pharos107/MineHost/pull/113), [#126](https://github.com/Pharos107/MineHost/pull/126) |
 | 39 | Spec trình duyệt mod, làm gọn trang Mod ([spec](p3-trinh-duyet-mod.md)) | Đã merge | [#134](https://github.com/Pharos107/MineHost/pull/134) |
 | 40 | Thêm mod khi server đang chạy | Đã merge | [#136](https://github.com/Pharos107/MineHost/pull/136) |
-| 41 | Cài nhiều mục trong một Job, sắp xếp khi tìm | Chưa bắt đầu | |
+| 41 | Cài nhiều mục trong một Job, sắp xếp khi tìm | Đã merge | [#137](https://github.com/Pharos107/MineHost/pull/137) |
 | 42 | Mô tả CurseForge, tìm theo loader + Minecraft, tạo server kèm mod | Chưa bắt đầu | |
 | 43 | Trang Mod gọn, kéo thả vào bảng | Chưa bắt đầu | |
 | 44 | Trình duyệt mod có khung chi tiết, danh sách chờ | Chưa bắt đầu | |

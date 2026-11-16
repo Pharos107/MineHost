@@ -65,14 +65,18 @@ pub(crate) async fn build_plan(
     loader: LoaderKind,
     mc: &McVersion,
     installed: &InstalledMap,
-    root_project: &str,
-    root_version: Option<&str>,
+    roots: &[(String, Option<String>)],
 ) -> Result<ContentInstallPlan, AppError> {
-    let mut queue = VecDeque::from([QueueItem {
-        project_id: Some(root_project.to_owned()),
-        version_id: root_version.map(str::to_owned),
-        is_root: true,
-    }]);
+    // Mọi mục người dùng chọn đứng trước dependency trong hàng đợi, nên bản họ chọn thắng bản mà
+    // dependency của mod khác ghim.
+    let mut queue: VecDeque<QueueItem> = roots
+        .iter()
+        .map(|(pid, vid)| QueueItem {
+            project_id: Some(pid.clone()),
+            version_id: vid.clone(),
+            is_root: true,
+        })
+        .collect();
     let mut visited = HashSet::new();
     let mut items = Vec::new();
     let mut incompatibles: Vec<(String, ContentDependency)> = Vec::new();

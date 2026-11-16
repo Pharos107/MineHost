@@ -57,7 +57,7 @@ async fn upload_pending_route_rejects_mismatch_batches_and_clears_preflight() {
     let (status, job) = api
         .post(
             &format!("/api/v1/servers/{fabric}/content"),
-            Some(json!({ "source": "curseforge", "project_id": "777001" })),
+            Some(json!({ "items": [{ "source": "curseforge", "project_id": "777001" }] })),
         )
         .await;
     assert_eq!(status, StatusCode::ACCEPTED, "{job}");

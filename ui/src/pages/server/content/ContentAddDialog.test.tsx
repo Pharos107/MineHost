@@ -100,6 +100,7 @@ const samplePlan: ContentPlan = {
   kind: "mods",
   items: [
     {
+      source: "modrinth",
       project_id: "lithium",
       project_name: "Lithium",
       version_id: "lithium-0.14.2",
@@ -113,6 +114,7 @@ const samplePlan: ContentPlan = {
       download_page_url: null,
     },
     {
+      source: "modrinth",
       project_id: "fabric-api",
       project_name: "Fabric API",
       version_id: "fabric-api-0.110.0",
@@ -197,11 +199,11 @@ describe("ContentAddDialog", () => {
         return Response.json(lithiumVersions);
       }
       if (url === "/api/v1/servers/A/content/plan" && init?.method === "POST") {
-        const body = JSON.parse(String(init.body)) as { version_id?: string };
+        const body = JSON.parse(String(init.body)) as { items: { version_id?: string }[] };
         return Response.json({
           ...samplePlan,
           items: samplePlan.items.map((item, i) =>
-            i === 0 && body.version_id === "lithium-0.14.0" ? { ...item, version_id: "lithium-0.14.0", version_number: "0.14.0" } : item,
+            i === 0 && body.items[0]?.version_id === "lithium-0.14.0" ? { ...item, version_id: "lithium-0.14.0", version_number: "0.14.0" } : item,
           ),
         });
       }
@@ -249,9 +251,7 @@ describe("ContentAddDialog", () => {
     await waitFor(() => {
       const post = fetchMock.mock.calls.find(([u, i]) => u === "/api/v1/servers/A/content" && i?.method === "POST");
       expect(JSON.parse(String(post?.[1]?.body))).toEqual({
-        source: "modrinth",
-        project_id: "lithium",
-        version_id: "lithium-0.14.0",
+        items: [{ source: "modrinth", project_id: "lithium", version_id: "lithium-0.14.0" }],
       });
     });
 
@@ -409,6 +409,7 @@ describe("ContentAddDialog", () => {
           kind: "mods",
           items: [
             {
+              source: "curseforge",
               project_id: "999001",
               project_name: "Restricted Mod",
               version_id: "5800999",
@@ -449,9 +450,7 @@ describe("ContentAddDialog", () => {
     await waitFor(() => {
       const post = fetchMock.mock.calls.find(([u, i]) => u === "/api/v1/servers/A/content" && i?.method === "POST");
       expect(JSON.parse(String(post?.[1]?.body))).toEqual({
-        source: "curseforge",
-        project_id: "999001",
-        version_id: "5800999",
+        items: [{ source: "curseforge", project_id: "999001", version_id: "5800999" }],
       });
     });
   });
