@@ -34,7 +34,7 @@ import {
   Spinner,
   Stack,
 } from "../../../ui";
-import { hitLoaders, hitVersion, searchKindFor, versionOptionLabel } from "./content";
+import { hitLoaders, hitVersion, isServerRunning, searchKindFor, versionOptionLabel } from "./content";
 
 type CatalogSource = "modrinth" | "curseforge";
 
@@ -268,6 +268,9 @@ function PlanStep({ server, kind, project, onBack, onPendingChange, onStarted }:
   });
 
   const noVersions = versions.data !== undefined && versions.data.length === 0;
+  // Server đang chạy thì không thay được jar đang mở; backend cũng trả SERVER_BUSY.
+  const blockedReplace =
+    isServerRunning(server) && plan.data ? plan.data.items.filter((item) => item.replaces_existing) : [];
 
   return (
     <>
@@ -300,6 +303,11 @@ function PlanStep({ server, kind, project, onBack, onPendingChange, onStarted }:
         {activeVersionId !== null && plan.isPending && <Spinner label={t("content.addDialog.planning")} />}
         {plan.isError && <Notice tone="danger">{errorMessage(t, plan.error)}</Notice>}
         {plan.data && <PlanDetails plan={plan.data} kind={kind} />}
+        {blockedReplace.length > 0 && (
+          <Notice tone="warning">
+            {t("content.addDialog.replaceWhileRunning", { names: blockedReplace.map((item) => item.project_name).join(", ") })}
+          </Notice>
+        )}
         {install.isError && <Notice tone="danger">{errorMessage(t, install.error)}</Notice>}
       </DialogBody>
       <DialogFooter>
@@ -308,7 +316,7 @@ function PlanStep({ server, kind, project, onBack, onPendingChange, onStarted }:
         </Button>
         <Button
           variant="primary"
-          disabled={!plan.data || plan.isError || install.isPending}
+          disabled={!plan.data || plan.isError || install.isPending || blockedReplace.length > 0}
           loading={install.isPending}
           onClick={() => install.mutate()}
         >

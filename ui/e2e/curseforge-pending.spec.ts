@@ -66,7 +66,7 @@ async function createFabricServer(request: APIRequestContext, name: string, port
 
 async function installRestrictedMod(page: Page, serverId: string) {
   await page.goto(`/servers/${serverId}/content`);
-  await page.getByRole("button", { name: "Thêm" }).click();
+  await page.getByRole("button", { name: "Thêm mod" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("radio", { name: "CurseForge" }).click();
   await dialog.getByRole("searchbox", { name: "Tìm mod trên CurseForge…" }).fill("Restricted");

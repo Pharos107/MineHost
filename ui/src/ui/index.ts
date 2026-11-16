@@ -17,6 +17,7 @@ export { EmptyState } from "./EmptyState";
 export { type ChartPoint } from "./chart-utils";
 export { Facts, type Fact } from "./Facts";
 export { Field } from "./Field";
+export { FileButton } from "./FileButton";
 export { FileDrop } from "./FileDrop";
 export { HangingSign } from "./HangingSign";
 export { SearchInput, Select, TextArea, TextInput } from "./inputs";

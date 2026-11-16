@@ -27,3 +27,25 @@
   color: var(--mh-text-muted);
   font-size: var(--mh-text-sm);
 }
+
+.overlayZone {
+  position: relative;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mh-space-2);
+  padding: var(--mh-space-4);
+  border: 2px dashed var(--mh-primary);
+  border-radius: var(--mh-radius-lg);
+  background: color-mix(in srgb, var(--mh-primary-soft) 92%, transparent);
+  color: var(--mh-primary);
+  font-weight: 600;
+  text-align: center;
+  pointer-events: none;
+}

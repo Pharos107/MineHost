@@ -33,7 +33,7 @@ test("tìm và cài mod có dependency từ nguồn giả", async ({ page, reque
   await page.goto(`/servers/${id}/content`);
   await expect(page.getByText("Chưa có mod nào")).toBeVisible();
 
-  await page.getByRole("button", { name: "Thêm" }).click();
+  await page.getByRole("button", { name: "Thêm mod" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("heading", { name: "Thêm mod" })).toBeVisible();
 
@@ -58,7 +58,7 @@ test("tìm và cài mod có dependency từ nguồn CurseForge giả", async ({ 
   serverId = id;
 
   await page.goto(`/servers/${id}/content`);
-  await page.getByRole("button", { name: "Thêm" }).click();
+  await page.getByRole("button", { name: "Thêm mod" }).click();
   const dialog = page.getByRole("dialog");
 
   const cfRadio = dialog.getByRole("radio", { name: "CurseForge" });
@@ -80,7 +80,7 @@ test("tìm và cài mod có dependency từ nguồn CurseForge giả", async ({ 
   await expect(table.getByText("Fabric API (CF)", { exact: true })).toBeVisible();
 
   // Kiểm tra màn xác nhận hiển thị nhãn + link tải tay cho mod cấm phân phối.
-  await page.getByRole("button", { name: "Thêm" }).click();
+  await page.getByRole("button", { name: "Thêm mod" }).click();
   await dialog.getByRole("radio", { name: "CurseForge" }).click();
   await dialog.getByRole("searchbox", { name: "Tìm mod trên CurseForge…" }).fill("Restricted");
   await dialog.getByRole("button", { name: /Restricted Mod/ }).click();

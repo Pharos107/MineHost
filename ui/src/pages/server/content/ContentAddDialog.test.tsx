@@ -219,7 +219,8 @@ describe("ContentAddDialog", () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(await screen.findByRole("button", { name: "Thêm" }));
+    await screen.findByText("Chưa có mod nào");
+    await user.click(screen.getByRole("button", { name: "Thêm mod" }));
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByRole("heading", { name: "Thêm mod" })).toBeTruthy();
 
