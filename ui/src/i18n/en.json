@@ -347,7 +347,9 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "morePlayers": "and {{count}} more",
-    "downloads": "{{value}} downloads"
+    "downloads": "{{value}} downloads",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "serverState": {
     "installing": "Installing",
@@ -516,8 +518,11 @@
     "title": "Sign in",
     "description": "An admin password is set for MineHost on this computer.",
     "password": "Password",
+    "passwordPlaceholder": "Enter admin password…",
+    "passwordRequired": "Enter the password.",
     "submit": "Sign in",
     "locked": "Too many wrong attempts. Try again in {{seconds}} seconds.",
+    "forgotToggle": "Forgot password?",
     "forgot": "Forgot the password? On the computer running MineHost, run minehost reset-password, or right-click the MineHost tray icon → Reset password (Windows).",
     "logout": "Sign out"
   },

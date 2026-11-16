@@ -1,0 +1,215 @@
+/* Màu gỗ, xích là hình minh họa (theo texture Minecraft), không phải màu giao diện. Bên trong bảng
+ * đặt lại vài token chữ và ô nhập để đọc rõ trên nền gỗ; component con vẫn chỉ dùng token. */
+.sign {
+  position: relative;
+  transform-origin: 50% -40vh;
+  animation: settle 2.6s cubic-bezier(0.3, 0.7, 0.4, 1) both;
+}
+
+@keyframes settle {
+  0% {
+    transform: rotate(1.4deg);
+  }
+  30% {
+    transform: rotate(-0.9deg);
+  }
+  55% {
+    transform: rotate(0.45deg);
+  }
+  78% {
+    transform: rotate(-0.15deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* Xích kéo dài lên tận thanh trên cùng; thanh trên (sticky, nằm trên) che đầu xích như chỗ móc.
+ * Pixel art vẽ ở đúng 2× để điểm ảnh đều nhau. */
+.chainLeft,
+.chainRight {
+  position: absolute;
+  bottom: calc(100% + 2px);
+  z-index: 2;
+  width: 16px;
+  height: 100vh;
+  margin-left: -8px;
+  background: url("./assets/chain.svg") center bottom / 16px 26px repeat-y;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* Khuy sắt: vòng móc xích bắt vào tấm sắt có đinh tán ghim trên mép khung gỗ. */
+.chainLeft::after,
+.chainRight::after {
+  content: "";
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 50%;
+  width: 24px;
+  height: 20px;
+  transform: translateX(-50%);
+  background: url("./assets/chain-hook.svg") center / 24px 20px no-repeat;
+  filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.4));
+}
+
+.chainLeft {
+  left: 16%;
+}
+
+.chainRight {
+  left: 84%;
+}
+
+.board {
+  --sign-text-shadow: 0 1px 0 rgb(255 245 224 / 0.55);
+  --mh-text: #221508;
+  --mh-text-muted: #3f2811;
+  --mh-input-bg: #fcf7eb;
+  --mh-border: #7a572e;
+  --mh-border-strong: #5c3f1e;
+  --mh-surface-hover: rgb(60 35 10 / 0.12);
+
+  position: relative;
+  overflow: hidden;
+  /* Khung gỗ khúc có ke sắt bốn góc, cắt 9 mảnh từ pixel art 24×24 và vẽ ở 3×. */
+  border: 24px solid transparent;
+  border-image: url("./assets/sign-frame-oak.svg") 8 / 24px repeat;
+  box-shadow:
+    inset 0 3px 0 rgb(255 245 220 / 0.22),
+    inset 0 -4px 0 rgb(0 0 0 / 0.22),
+    inset 0 0 18px rgb(38 24 10 / 0.35),
+    0 26px 48px -10px rgb(0 0 0 / 0.6);
+  color: var(--mh-text);
+  text-shadow: var(--sign-text-shadow);
+  transition: color 0.9s ease;
+}
+
+/* Hai lớp ván gỗ chồng nhau: đổi giao diện thì lớp vân sam mờ dần lên thay vì đổi phắt. */
+.board::before,
+.board::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-size: 256px 128px;
+  image-rendering: pixelated;
+  transition: opacity 0.9s ease;
+}
+
+.board::before {
+  background-image:
+    radial-gradient(ellipse at 50% 42%, rgb(255 248 232 / 0.26) 0%, rgb(40 24 8 / 0.08) 100%),
+    url("./assets/oak-planks.svg");
+}
+
+.board::after {
+  background-image:
+    radial-gradient(ellipse at 50% 42%, rgb(255 220 170 / 0.06) 0%, rgb(12 7 2 / 0.28) 100%),
+    url("./assets/spruce-planks.svg");
+  opacity: 0;
+}
+
+:global(:root[data-theme="dark"]) .board {
+  --sign-text-shadow: 0 1px 2px rgb(0 0 0 / 0.75);
+  --mh-text: #faf0dc;
+  --mh-text-muted: #e5d4b3;
+  --mh-input-bg: #261b10;
+  --mh-border: #8a6a42;
+  --mh-border-strong: #b08a58;
+  --mh-surface-hover: rgb(255 240 210 / 0.12);
+}
+
+:global(:root[data-theme="dark"]) .board {
+  border-image-source: url("./assets/sign-frame-spruce.svg");
+}
+
+:global(:root[data-theme="dark"]) .board::after {
+  opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .board {
+    --sign-text-shadow: 0 1px 2px rgb(0 0 0 / 0.75);
+    --mh-text: #faf0dc;
+    --mh-text-muted: #e5d4b3;
+    --mh-input-bg: #261b10;
+    --mh-border: #8a6a42;
+    --mh-border-strong: #b08a58;
+    --mh-surface-hover: rgb(255 240 210 / 0.12);
+  }
+
+  :global(:root:not([data-theme="light"])) .board {
+    border-image-source: url("./assets/sign-frame-spruce.svg");
+  }
+
+  :global(:root:not([data-theme="light"])) .board::after {
+    opacity: 1;
+  }
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mh-space-5);
+  padding: var(--mh-space-6) var(--mh-space-8) var(--mh-space-5);
+}
+
+/* Chữ trong ô nhập và nút chính không kế thừa bóng chữ khắc gỗ của bảng. */
+.content input,
+.content button {
+  text-shadow: none;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--mh-space-2);
+  text-align: center;
+}
+
+.title {
+  margin: var(--mh-space-2) 0 0;
+  font-size: var(--mh-text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.description {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--mh-text-muted);
+  font-size: var(--mh-text-sm);
+  font-weight: 500;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mh-space-3);
+  padding-top: var(--mh-space-3);
+  border-top: 2px solid color-mix(in srgb, var(--mh-text) 20%, transparent);
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: var(--mh-space-5) var(--mh-space-5) var(--mh-space-4);
+  }
+
+  .chainLeft {
+    left: 12%;
+  }
+
+  .chainRight {
+    left: 88%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sign {
+    animation: none;
+  }
+}

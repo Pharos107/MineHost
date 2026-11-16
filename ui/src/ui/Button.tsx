@@ -6,13 +6,15 @@ import { cx } from "./cx";
 import { Spinner } from "./Spinner";
 
 export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
-export type ButtonSize = "sm" | "md";
+export type ButtonSize = "sm" | "md" | "lg";
 
 type NativeProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className" | "style" | "children">;
 
 interface ButtonProps extends NativeProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** Trải nút hết chiều ngang khung chứa. */
+  fullWidth?: boolean;
   /** Đang chờ kết quả: hiện vòng quay và không cho bấm lại. */
   loading?: boolean;
   icon?: LucideIcon;
@@ -22,6 +24,7 @@ interface ButtonProps extends NativeProps {
 export function Button({
   variant = "secondary",
   size = "md",
+  fullWidth = false,
   loading = false,
   icon: Icon,
   disabled,
@@ -33,11 +36,11 @@ export function Button({
     <button
       {...rest}
       type={type}
-      className={cx(styles.button, styles[variant], styles[size])}
+      className={cx(styles.button, styles[variant], styles[size], fullWidth && styles.fullWidth)}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
     >
-      {loading ? <Spinner /> : Icon && <Icon size={16} aria-hidden />}
+      {loading ? <Spinner /> : Icon && <Icon size={size === "lg" ? 18 : 16} aria-hidden />}
       {children}
     </button>
   );
@@ -54,6 +57,7 @@ interface IconButtonProps extends NativeProps {
 }
 
 export function IconButton({ icon: Icon, label, variant = "ghost", size = "md", tone, type = "button", ...rest }: IconButtonProps) {
+  const iconSize = size === "sm" ? 14 : size === "lg" ? 20 : 18;
   return (
     <button
       {...rest}
@@ -62,7 +66,7 @@ export function IconButton({ icon: Icon, label, variant = "ghost", size = "md", 
       aria-label={label}
       title={label}
     >
-      <Icon size={size === "sm" ? 14 : 18} aria-hidden />
+      <Icon size={iconSize} aria-hidden />
     </button>
   );
 }

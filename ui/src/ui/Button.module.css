@@ -12,7 +12,13 @@
   transition:
     background-color 120ms ease,
     border-color 120ms ease,
-    color 120ms ease;
+    box-shadow 120ms ease,
+    color 120ms ease,
+    transform 80ms ease;
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0.5px);
 }
 
 .button:disabled {
@@ -26,14 +32,30 @@
   font-size: var(--mh-text-md);
 }
 
+.lg {
+  min-height: 44px;
+  padding: 0 var(--mh-space-5);
+  border-radius: 10px;
+  font-size: var(--mh-text-md);
+}
+
 .sm {
   min-height: var(--mh-control-height-sm);
   padding: 0 var(--mh-space-3);
   font-size: var(--mh-text-sm);
 }
 
+.fullWidth {
+  width: 100%;
+}
+
 .iconOnly.md {
   width: var(--mh-control-height);
+  padding: 0;
+}
+
+.iconOnly.lg {
+  width: 44px;
   padding: 0;
 }
 
@@ -45,6 +67,9 @@
 .primary {
   background: var(--mh-primary);
   color: var(--mh-on-primary);
+  box-shadow:
+    0 2px 6px color-mix(in srgb, var(--mh-primary) 26%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.16);
 }
 
 .primary:hover:not(:disabled) {

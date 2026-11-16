@@ -31,6 +31,24 @@ describe("Field", () => {
   });
 });
 
+describe("TextInput", () => {
+  it("ô mật khẩu có nút hiện/ẩn chuyển qua lại giữa password và text", async () => {
+    render(
+      <Field label="Mật khẩu">
+        <TextInput type="password" defaultValue="secret" />
+      </Field>,
+    );
+    const input = screen.getByLabelText("Mật khẩu") as HTMLInputElement;
+    expect(input.type).toBe("password");
+
+    await userEvent.click(screen.getByRole("button", { name: "Hiện mật khẩu" }));
+    expect(input.type).toBe("text");
+
+    await userEvent.click(screen.getByRole("button", { name: "Ẩn mật khẩu" }));
+    expect(input.type).toBe("password");
+  });
+});
+
 describe("Switch", () => {
   it("báo giá trị mới khi bấm", async () => {
     const onChange = vi.fn();

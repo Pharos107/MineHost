@@ -1,6 +1,6 @@
 // Trang `#/ui` chỉ dùng khi phát triển, không có trong bản build. Chuỗi mẫu ghi thẳng ở đây vì
 // người dùng không bao giờ thấy trang này; chuỗi của chính component vẫn đi qua i18n.
-import { Play, Plus, Power, RotateCw, Server, Square, Trash2 } from "lucide-react";
+import { LockKeyhole, Play, Plus, Power, RotateCw, Server, Square, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import type { ServerState } from "../api/client";
@@ -11,10 +11,12 @@ import {
   AvatarStack,
   Badge,
   BlockBanner,
+  BlockWordmark,
   Button,
   Card,
   EmptyState,
   Facts,
+  HangingSign,
   IconButton,
   Notice,
   PageHeader,
@@ -92,6 +94,7 @@ function ButtonSection() {
         <IconButton icon={Trash2} label="Xóa" variant="danger" size="sm" />
         <Spinner label="Đang tải…" />
       </Stack>
+      <Button variant="primary" fullWidth>Rộng hết khung (fullWidth)</Button>
     </Card>
   );
 }
@@ -136,21 +139,43 @@ function NoticeSection() {
 
 function CardSection() {
   return (
-    <Card title="Card / Facts / EmptyState" description="Card có tiêu đề, mô tả và nút ở góc." actions={<Button size="sm">Sửa</Button>}>
-      <Facts
-        items={[
-          { label: "Phiên bản", value: "Paper 1.21.4" },
-          { label: "RAM", value: "4 GB" },
-          { label: "Thư mục", value: <code>C:\Users\an\MineHost\servers\01J9Z</code> },
-        ]}
-      />
-      <EmptyState
-        icon={Server}
-        title="Chưa có server nào"
-        description="Tạo server đầu tiên, MineHost sẽ tự tải Java và Paper cho bạn."
-        action={<Button variant="primary" icon={Plus}>Tạo server đầu tiên</Button>}
-      />
-    </Card>
+    <Stack gap={4}>
+      <Card title="Card / Facts / EmptyState" description="Card có tiêu đề, mô tả và nút ở góc." actions={<Button size="sm">Sửa</Button>}>
+        <Facts
+          items={[
+            { label: "Phiên bản", value: "Paper 1.21.4" },
+            { label: "RAM", value: "4 GB" },
+            { label: "Thư mục", value: <code>C:\Users\an\MineHost\servers\01J9Z</code> },
+          ]}
+        />
+        <EmptyState
+          icon={Server}
+          title="Chưa có server nào"
+          description="Tạo server đầu tiên, MineHost sẽ tự tải Java và Paper cho bạn."
+          action={<Button variant="primary" icon={Plus}>Tạo server đầu tiên</Button>}
+        />
+      </Card>
+      <Card
+        bannerSeed="MineHost"
+        icon={LockKeyhole}
+        title="Card có banner và biểu tượng"
+        description="Dải hoa văn khối trên đầu thẻ."
+      >
+        <Button variant="primary" fullWidth>Thao tác chính</Button>
+      </Card>
+      <HangingSign
+        logo={<BlockWordmark label="MineHost" />}
+        title="HangingSign + BlockWordmark"
+        description="Bảng hiệu gỗ treo hai sợi xích, dùng cho trang Đăng nhập. Đổi giao diện để xem gỗ đổi màu."
+        footer={
+          <Stack direction="row" justify="center">
+            <Button variant="ghost" size="sm">Hành động phụ ở chân bảng</Button>
+          </Stack>
+        }
+      >
+        <Button variant="primary" size="lg" fullWidth>Thao tác chính cỡ lớn</Button>
+      </HangingSign>
+    </Stack>
   );
 }
 
