@@ -206,7 +206,7 @@ pub async fn upload(
     IdPath(id): IdPath,
     mut multipart: Multipart,
 ) -> ApiResult<Json<InstalledContentDto>> {
-    app.check_content_idle(id)?;
+    app.check_content_addable(id)?;
     let mut found: Option<(String, TempUploadGuard)> = None;
     while let Some(field) = multipart
         .next_field()
@@ -250,7 +250,7 @@ pub async fn upload_pending(
     IdPath(id): IdPath,
     mut multipart: Multipart,
 ) -> ApiResult<Json<PendingUploadResultDto>> {
-    app.check_content_idle(id)?;
+    app.check_content_addable(id)?;
     let mut guards: Vec<(String, TempUploadGuard)> = Vec::new();
     while let Some(field) = multipart
         .next_field()

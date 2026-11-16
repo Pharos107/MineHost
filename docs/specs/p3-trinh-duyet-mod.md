@@ -40,14 +40,15 @@ Chạy thử trên server Prominence II thật thì thấy:
   CurseForge chờ tay. File mới vào `mods/` (hoặc `plugins/`). Server đang chạy không nạp file đó; lần
   khởi động sau mới nạp.
 - **Vẫn khóa khi server đang chạy:** bật/tắt, gỡ, cập nhật, và mọi thao tác **thay** một jar đã có:
-  dependency cần bản mới hơn (`replaces_existing` trong kế hoạch cài), tải lên file trùng tên. Lý do:
+  dependency cần bản mới hơn (`replaces_existing` trong kế hoạch cài). Tải lên file trùng tên vẫn báo
+  `FILE_EXISTS` như cũ, không ghi đè. Lý do:
   JVM đang mở các jar này. Trên Windows không đổi tên hay xóa được file đang mở; trên Linux server có
   thể đọc lẫn bản cũ với bản mới khi nạp class muộn. Kế hoạch cài có mục phải thay thì hiện cảnh báo
   "Tắt server để thay bản cũ của X" và nút Cài bị khóa; gọi API thì trả `SERVER_BUSY`.
 - Server đang cài (Job tạo server, đổi phiên bản, cập nhật modpack) vẫn khóa mọi thứ như hiện nay.
 - Backend: tách `ensure_content_idle` thành hai. `ensure_content_addable` chỉ chặn khi server đang cài;
   `ensure_content_idle` giữ nguyên cho các việc còn lại. `mh-app` giữ trong bộ nhớ danh sách file thêm vào
-  lúc server có process, và xóa danh sách đó khi process mới khởi động. `InstalledContentDto` thêm
+  lúc server có process, kèm `pid` của process đó; process mới có `pid` khác nên danh sách tự hết hạn. `InstalledContentDto` thêm
   `needs_restart: bool`. Không cần lưu xuống đĩa vì controller tắt thì server cũng tắt theo.
 - Kiểm tra trước khi bật (spec P3 mục 5.7) vẫn chạy lại sau mỗi lần thêm. Băng cảnh báo ở đầu trang chỉ
   chặn lần bật sau, không đụng tới server đang chạy.
@@ -132,8 +133,8 @@ UI thêm `marked` và `dompurify`. Không thêm crate nào.
 
 - Khi server đang chạy, cài một mod mới từ Modrinth thành công, file vào `mods/`, hàng có nhãn "Chờ
   khởi động lại". Khởi động lại thì nhãn mất (test `mh-app`, Vitest).
-- Khi server đang chạy, bật/tắt, gỡ, cập nhật, kế hoạch có `replaces_existing` và tải lên file trùng
-  tên đều trả `SERVER_BUSY` (test `mh-app`).
+- Khi server đang chạy, bật/tắt, gỡ, cập nhật và kế hoạch có `replaces_existing` đều trả `SERVER_BUSY`;
+  tải lên file trùng tên trả `FILE_EXISTS` (test `mh-app`).
 - Kéo hai file `.jar` thả vào bảng thì cả hai được tải lên; file không phải jar thì báo lỗi riêng
   (Vitest).
 - Trang Mod không còn ô kéo thả riêng; thanh công cụ nằm trên một hàng khi màn hình ≥ 768 px (xem tay).

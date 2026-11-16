@@ -226,6 +226,8 @@ pub struct InstalledContentDto {
     pub version_id: Option<String>,
     pub from_modpack: bool,
     pub icon_url: Option<String>,
+    /// Thêm vào lúc server đang chạy: process hiện tại chưa nạp, cần khởi động lại.
+    pub needs_restart: bool,
 }
 
 impl From<ContentFile> for InstalledContentDto {
@@ -255,6 +257,7 @@ impl From<ContentFile> for InstalledContentDto {
             version_id: rec.as_ref().and_then(|r| r.version_id.clone()),
             from_modpack: rec.is_some_and(|r| r.from_modpack),
             icon_url: None,
+            needs_restart: false,
         }
     }
 }
@@ -304,7 +307,17 @@ impl From<ContentList> for ServerContentDto {
     fn from(list: ContentList) -> Self {
         Self {
             kind: list.kind.into(),
-            files: list.files.into_iter().map(Into::into).collect(),
+            files: list
+                .files
+                .into_iter()
+                .map(|file| {
+                    let pending_restart =
+                        file.enabled && list.needs_restart.contains(&file.file_name);
+                    let mut dto = InstalledContentDto::from(file);
+                    dto.needs_restart = pending_restart;
+                    dto
+                })
+                .collect(),
             pending: list.pending.into_iter().map(Into::into).collect(),
         }
     }
