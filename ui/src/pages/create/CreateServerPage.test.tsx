@@ -27,6 +27,30 @@ const system = {
   suggested_memory_mb: { min: 1024, max: 4096 },
   suggested_modpack_memory_mb: { min: 1024, max: 8192 },
 };
+const lithiumHit = {
+  source: "modrinth",
+  project_id: "lithium",
+  slug: "lithium",
+  kind: "mod",
+  title: "Lithium",
+  description: "Tối ưu server.",
+  icon_url: null,
+  downloads: 10,
+  categories: ["fabric"],
+  game_versions: ["1.21.4"],
+  server_side: "optional",
+};
+const lithiumVersion = {
+  id: "lithium-1",
+  project_id: "lithium",
+  name: "0.14.2",
+  version_number: "0.14.2",
+  version_type: "release",
+  game_versions: ["1.21.4"],
+  loaders: ["fabric"],
+  date_published: "2026-11-01T00:00:00Z",
+  manual_download: false,
+};
 const versions = ["1.21.4", "1.21.3", "1.21.1", "1.20.6", "1.20.4", "1.19.4"].map((id) => ({ id, release_time: "" }));
 
 function mockApi() {
@@ -42,6 +66,10 @@ function mockApi() {
       ]);
     }
     if (url === "/api/v1/system") return Response.json(system);
+    if (url === "/api/v1/settings/curseforge") return Response.json({ available: false, source: "none" });
+    if (url.startsWith("/api/v1/content/search")) return Response.json({ hits: [lithiumHit], page: 1, page_size: 20, total: 1 });
+    if (url === "/api/v1/content/modrinth/projects/lithium") return Response.json({ ...lithiumHit, body: "Nhanh", loaders: ["fabric"], links: { page: "https://modrinth.com/mod/lithium" } });
+    if (url === "/api/v1/content/modrinth/projects/lithium/versions?loader=fabric&minecraft=1.21.4") return Response.json([lithiumVersion]);
     if (url === "/api/v1/servers" && init?.method === "POST") return Response.json({ server_id: "01JB", job_id: 7 }, { status: 202 });
     if (url === "/api/v1/jobs/7") return Response.json(runningJob);
     return Response.json({ code: "NOT_FOUND", params: {} }, { status: 404 });
@@ -144,14 +172,62 @@ describe("CreateServerPage", () => {
     expect(loaderSelect).toHaveProperty("value", "0.16.9");
     await user.selectOptions(loaderSelect, "0.17.0-beta.1");
     await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    // Bước Mod không bắt buộc: chưa chọn gì thì nút là "Bỏ qua".
+    await user.click(await screen.findByRole("button", { name: "Bỏ qua" }));
+    await user.click(screen.getByRole("button", { name: "Tạo server" }));
+
+    const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
+    const body = JSON.parse(String(post?.[1]?.body)) as Record<string, unknown>;
+    expect(body).toMatchObject({ loader: "fabric", minecraft: "1.21.4", loader_version: "0.17.0-beta.1" });
+    expect(body.content).toBeUndefined();
+  });
+
+  it("chọn mod ở bước Mod thì gửi kèm khi tạo; mod không cài được thì báo trước khi mở server", async () => {
+    const fetchMock = mockApi();
+    const user = userEvent.setup();
+    renderWizard();
+
+    await user.click(screen.getByRole("radio", { name: /^Server có mod/ }));
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await screen.findByRole("combobox", { name: "Phiên bản Minecraft" });
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await user.click(await screen.findByRole("button", { name: /^Lithium/ }));
+    await user.click(await screen.findByRole("button", { name: "Thêm vào danh sách" }));
+    expect(screen.getByText("Mod đã chọn (1)")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
     await user.click(screen.getByRole("button", { name: "Tạo server" }));
 
     const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
     expect(JSON.parse(String(post?.[1]?.body))).toMatchObject({
-      loader: "fabric",
-      minecraft: "1.21.4",
-      loader_version: "0.17.0-beta.1",
+      content: [{ source: "modrinth", project_id: "lithium", version_id: "lithium-1" }],
     });
+    await screen.findByText("Đang tạo server");
+    pushJob({
+      state: "succeeded",
+      result: { content_failed: [{ source: "modrinth", project_id: "lithium", code: "CONTENT_INCOMPATIBLE" }] } as unknown as Job["result"],
+    });
+    expect(await screen.findByText("Server đã tạo, nhưng 1 mod không cài được")).toBeTruthy();
+    expect(screen.getByText(/^Lithium:/)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Mở server" }));
+    expect(await screen.findByText("trang chi tiết")).toBeTruthy();
+  });
+
+  it("quay lại đổi phiên bản Minecraft thì bỏ danh sách mod đã chọn", async () => {
+    mockApi();
+    const user = userEvent.setup();
+    renderWizard();
+
+    await user.click(screen.getByRole("radio", { name: /^Server có mod/ }));
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await screen.findByRole("combobox", { name: "Phiên bản Minecraft" });
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await user.click(await screen.findByRole("button", { name: /^Lithium/ }));
+    await user.click(await screen.findByRole("button", { name: "Thêm vào danh sách" }));
+    await user.click(screen.getByRole("button", { name: "Quay lại" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Phiên bản Minecraft" }), "1.21.3");
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    expect(await screen.findByText("Đã bỏ danh sách mod vì bạn đổi loại server hoặc phiên bản Minecraft.")).toBeTruthy();
+    expect(screen.getByText("Mod đã chọn (0)")).toBeTruthy();
   });
 
   it("Job lỗi thì báo lỗi đã dịch và quay lại được bước cuối", async () => {

@@ -50,7 +50,7 @@ export function ServerLayout() {
 function ServerView({ server }: { server: Server }) {
   const { t } = useTranslation();
   const ready = server.state !== "installing" && server.state !== "broken";
-  const onContentPage = useMatch("/servers/:id/content") !== null;
+  const onContentPage = useMatch("/servers/:id/content/*") !== null;
   // Màn hình rộng đã có nút bật / tắt ở thanh bên; điện thoại thì thanh bên là ngăn kéo nên giữ nút ở đây.
   const drawer = useMediaQuery("(max-width: 767px)", false);
 

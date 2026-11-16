@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { installQueued, queueMod } from "./helpers";
 
 import { serverButton } from "./helpers";
 
@@ -67,15 +68,9 @@ async function createFabricServer(request: APIRequestContext, name: string, port
 }
 
 async function installRestrictedMod(page: Page, serverId: string) {
-  await page.goto(`/servers/${serverId}/content`);
-  await page.getByRole("button", { name: "Thêm" }).click();
-  const dialog = page.getByRole("dialog");
-  await dialog.getByRole("radio", { name: "CurseForge" }).click();
-  await dialog.getByRole("searchbox", { name: "Tìm mod trên CurseForge…" }).fill("Restricted");
-  await dialog.getByRole("button", { name: /Restricted Mod/ }).click();
+  const dialog = await queueMod(page, serverId, { curseforge: true, search: "Restricted", result: /^Restricted Mod/ });
   await expect(dialog.getByText("Cần tải tay")).toBeVisible();
-  await dialog.getByRole("button", { name: "Cài" }).click();
-  await expect(dialog).toBeHidden({ timeout: 30_000 });
+  await installQueued(page, serverId, dialog);
 }
 
 let serverId: string | null = null;

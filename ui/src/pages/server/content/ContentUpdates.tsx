@@ -1,11 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorMessage, type Job } from "../../../api/client";
 import { contentApi, type ContentKind, type UpdateCandidate, type UpdateReport } from "../../../api/content";
-import { Button, ConfirmDialog, Notice, Stack } from "../../../ui";
+import { Button, ConfirmDialog, Notice } from "../../../ui";
 import { JobProgress, jobError } from "../JobProgress";
 import { fileNameOf, updateItems } from "./content";
 
@@ -20,11 +20,26 @@ interface ContentUpdatesProps {
   onUpdated: () => void;
 }
 
+interface ContentUpdates {
+  /** Nút "Kiểm tra cập nhật", đặt trong thanh công cụ của bảng. */
+  button: ReactNode;
+  /** Tiến độ, kết quả và hộp thoại cập nhật, đặt dưới thanh công cụ. */
+  panel: ReactNode;
+}
+
 /**
- * Nút "Kiểm tra cập nhật" và hộp thoại cập nhật (spec P3, mục 3.9, 6.3). Cập nhật tắt server nếu
- * đang chạy và luôn sao lưu trước; lỗi giữa chừng chỉ người dùng tới bản sao lưu đó.
+ * Kiểm tra và cập nhật mod (spec P3, mục 3.9, 6.3). Cập nhật tắt server nếu đang chạy và luôn
+ * sao lưu trước; lỗi giữa chừng chỉ người dùng tới bản sao lưu đó.
  */
-export function ContentUpdates({ serverId, kind, report, onReport, confirming, onConfirming, onUpdated }: ContentUpdatesProps) {
+export function useContentUpdates({
+  serverId,
+  kind,
+  report,
+  onReport,
+  confirming,
+  onConfirming,
+  onUpdated,
+}: ContentUpdatesProps): ContentUpdates {
   const { t } = useTranslation();
   const [checkJob, setCheckJob] = useState<number | null>(null);
   const [updateJob, setUpdateJob] = useState<number | null>(null);
@@ -72,13 +87,13 @@ export function ContentUpdates({ serverId, kind, report, onReport, confirming, o
 
   const updates = report?.updates ?? [];
   const running = updateJob !== null || apply.isPending;
-  return (
-    <Stack gap={3}>
-      <Stack direction="row" gap={2} wrap>
-        <Button icon={RefreshCw} loading={checkJob !== null || check.isPending} onClick={() => check.mutate()}>
-          {t("content.updates.check")}
-        </Button>
-      </Stack>
+  const button = (
+    <Button icon={RefreshCw} loading={checkJob !== null || check.isPending} onClick={() => check.mutate()}>
+      {t("content.updates.check")}
+    </Button>
+  );
+  const panel = (
+    <>
       {checkJob !== null && <JobProgress jobId={checkJob} onFinish={onChecked} />}
       {check.isError && <Notice tone="danger">{errorMessage(t, check.error)}</Notice>}
       {report && updates.length === 0 && (
@@ -124,6 +139,7 @@ export function ContentUpdates({ serverId, kind, report, onReport, confirming, o
         {updateJob !== null && <JobProgress jobId={updateJob} onFinish={onApplied} />}
         {apply.isError && <Notice tone="danger">{errorMessage(t, apply.error)}</Notice>}
       </ConfirmDialog>
-    </Stack>
+    </>
   );
+  return { button, panel };
 }

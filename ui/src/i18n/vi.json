@@ -100,6 +100,7 @@
     "steps": {
       "loader": "Loại server",
       "version": "Phiên bản",
+      "mods": "Mod",
       "settings": "Tên và RAM",
       "folder": "Thư mục",
       "importName": "Tên"
@@ -162,7 +163,18 @@
     "importPickVersion": "Phiên bản Minecraft",
     "importPickVersionHint": "Ví dụ 1.21.4.",
     "importNote": "MineHost chép thư mục vào kho dữ liệu của nó, bản gốc giữ nguyên. Trước lần bật đầu tiên, bạn sẽ được hỏi đồng ý EULA.",
-    "importSubmit": "Nhập server"
+    "importSubmit": "Nhập server",
+    "mods": {
+      "hint": "Chọn mod muốn có sẵn khi tạo server. MineHost cài chúng cùng dependency ngay sau khi cài xong loader. Bỏ qua được, thêm mod sau ở trang Mod.",
+      "cleared": "Đã bỏ danh sách mod vì bạn đổi loại server hoặc phiên bản Minecraft.",
+      "chosen_one": "Mod đã chọn ({{count}})",
+      "chosen_other": "Mod đã chọn ({{count}})",
+      "none": "Chưa chọn mod nào.",
+      "skip": "Bỏ qua",
+      "failedTitle_one": "Server đã tạo, nhưng {{count}} mod không cài được",
+      "failedTitle_other": "Server đã tạo, nhưng {{count}} mod không cài được",
+      "openServer": "Mở server"
+    }
   },
   "jobs": {
     "starting": "Đang bắt đầu…",
@@ -911,7 +923,6 @@
       "manual": "Thêm tay"
     },
     "upload": "Tải lên .jar",
-    "uploadHint": "hoặc kéo thả file .jar vào đây, tối đa 512 MiB. Chỉ tải file từ nguồn tin cậy vì mod/plugin chạy code tùy ý.",
     "uploading": "Đang tải lên {{names}}",
     "uploaded_one": "Đã tải lên {{count}} file.",
     "uploaded_other": "Đã tải lên {{count}} file.",
@@ -933,7 +944,6 @@
     "removeTitle": "Gỡ {{name}}?",
     "removeBody": "File {{file}} được chuyển vào thùng rác của MineHost, bạn có thể tự lấy lại sau.",
     "unsupported": "Loại server này không hỗ trợ cài mod hoặc plugin.",
-    "add": "Thêm",
     "addDialog": {
       "sourceLabel": "Nguồn tải",
       "sourceModrinth": "Modrinth",
@@ -955,7 +965,8 @@
       "back": "Quay lại",
       "install": "Cài",
       "failedTitle": "Không cài được",
-      "cancelledTitle": "Đã hủy cài đặt."
+      "cancelledTitle": "Đã hủy cài đặt.",
+      "replaceWhileRunning": "Tắt server để thay bản cũ của {{names}}. Mod đang được server dùng nên không thay được khi đang chạy."
     },
     "updates": {
       "check": "Kiểm tra cập nhật",
@@ -977,40 +988,48 @@
     "mods": {
       "upToDate": "Mọi mod đều là bản mới nhất. Có {{unknown}} file không nhận ra trên Modrinth, CurseForge.",
       "table": "Danh sách mod",
-      "runningHint": "Server đang chạy: tắt server trước khi bật, tắt, tải lên hoặc gỡ mod.",
       "empty": "Chưa có mod nào",
-      "emptyHint": "Tải file .jar lên ở trên hoặc chép vào thư mục mods/ của server.",
+      "emptyHint": "Bấm Thêm mod để tìm trên Modrinth, CurseForge, hoặc kéo thả file .jar vào đây.",
       "openPage": "Mở trang mod",
       "addTitle": "Thêm mod",
       "searchPlaceholder": "Tìm mod trên Modrinth…",
       "searchPlaceholderCurseforge": "Tìm mod trên CurseForge…",
-      "mainItem": "Mod sẽ cài"
+      "mainItem": "Mod sẽ cài",
+      "add": "Thêm mod",
+      "lockedHint": "Tắt server để bật, tắt hoặc gỡ mod",
+      "restartNotice_one": "{{count}} mod mới sẽ chạy sau khi khởi động lại server.",
+      "restartNotice_other": "{{count}} mod mới sẽ chạy sau khi khởi động lại server.",
+      "backToList": "Danh sách mod",
+      "addWhileRunning": "Server đang chạy: mod mới sẽ chạy sau khi khởi động lại."
     },
     "plugins": {
       "upToDate": "Mọi plugin đều là bản mới nhất. Có {{unknown}} file không nhận ra trên Modrinth, CurseForge.",
       "table": "Danh sách plugin",
-      "runningHint": "Server đang chạy: tắt server trước khi bật, tắt, tải lên hoặc gỡ plugin.",
       "empty": "Chưa có plugin nào",
-      "emptyHint": "Tải file .jar lên ở trên hoặc chép vào thư mục plugins/ của server.",
+      "emptyHint": "Bấm Thêm plugin để tìm trên Modrinth, hoặc kéo thả file .jar vào đây.",
       "openPage": "Mở trang plugin",
       "addTitle": "Thêm plugin",
       "searchPlaceholder": "Tìm plugin trên Modrinth…",
       "searchPlaceholderCurseforge": "Tìm plugin trên CurseForge…",
-      "mainItem": "Plugin sẽ cài"
-    }
+      "mainItem": "Plugin sẽ cài",
+      "add": "Thêm plugin",
+      "lockedHint": "Tắt server để bật, tắt hoặc gỡ plugin",
+      "restartNotice_one": "{{count}} plugin mới sẽ chạy sau khi khởi động lại server.",
+      "restartNotice_other": "{{count}} plugin mới sẽ chạy sau khi khởi động lại server.",
+      "backToList": "Danh sách plugin",
+      "addWhileRunning": "Server đang chạy: plugin mới sẽ chạy sau khi khởi động lại."
+    },
+    "needsRestart": "Chờ khởi động lại",
+    "dropHint": "Thả file .jar để thêm vào server. Chỉ dùng file từ nguồn tin cậy vì mod, plugin chạy code tùy ý."
   },
   "modpack": {
     "title": "Tạo server từ modpack",
     "description": "Tìm modpack trên Modrinth hoặc tải lên file .mrpack có sẵn.",
-    "dropTitle": "Tải lên file modpack",
     "dropLabel": "Chọn file modpack",
-    "dropHint": "hoặc kéo thả file .mrpack hoặc .zip vào đây, tối đa 512 MiB.",
-    "searchTitle": "Tìm modpack",
+    "dropHint": "hoặc kéo thả file .mrpack, .zip vào bất kỳ chỗ nào trên trang, tối đa 512 MiB.",
     "searchPlaceholder": "Tìm modpack trên Modrinth…",
     "searchPlaceholderCurseforge": "Tìm modpack trên CurseForge…",
     "curseforgeNoKey": "CurseForge chưa sẵn sàng vì chưa cấu hình API key trong Cài đặt.",
-    "noResults": "Không tìm thấy modpack nào",
-    "noResultsHint": "Thử từ khóa khác hoặc tải lên file .mrpack có sẵn ở trên.",
     "version": "Phiên bản modpack",
     "fileLabel": "File modpack",
     "fileSize": "Dung lượng",
@@ -1022,6 +1041,43 @@
     "summarySkippedClient": "Bỏ qua (chỉ chạy ở client)",
     "summaryPendingCf": "File CurseForge còn chờ",
     "pendingCfHint": "Một số file CurseForge cần tự tải trên trang Mod trước khi bật server.",
-    "openServer": "Mở trang server"
+    "openServer": "Mở trang server",
+    "dropOverlay": "Thả file .mrpack hoặc .zip để tạo server từ modpack này",
+    "usePack": "Dùng pack này"
+  },
+  "catalog": {
+    "pickHint": "Chọn một mục bên trái để xem chi tiết",
+    "backToResults": "Kết quả tìm kiếm",
+    "sort": "Sắp xếp",
+    "sorts": {
+      "relevance": "Liên quan",
+      "downloads": "Lượt tải",
+      "updated": "Mới cập nhật"
+    },
+    "noResults": "Không tìm thấy kết quả",
+    "noResultsHint": "Thử từ khóa khác hoặc đổi nguồn.",
+    "version": "Phiên bản",
+    "latest": "{{version}} (mới nhất)",
+    "noVersions": "Không có bản nào hợp với loader và phiên bản Minecraft này.",
+    "description": "Mô tả",
+    "links": {
+      "source": "Mã nguồn",
+      "wiki": "Wiki",
+      "issues": "Báo lỗi",
+      "discord": "Discord"
+    },
+    "queue": {
+      "add": "Thêm vào danh sách",
+      "added": "Đã có trong danh sách",
+      "undo": "Bỏ khỏi danh sách",
+      "remove": "Bỏ {{name}}",
+      "summary_one": "{{count}} mục chờ cài: {{names}}",
+      "summary_other": "{{count}} mục chờ cài: {{names}}",
+      "review": "Xem và cài",
+      "title": "Danh sách chờ cài",
+      "empty": "Danh sách chờ đang trống.",
+      "install_one": "Cài {{count}} mục",
+      "install_other": "Cài {{count}} mục"
+    }
   }
 }

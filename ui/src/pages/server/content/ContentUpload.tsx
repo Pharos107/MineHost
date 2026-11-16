@@ -1,25 +1,27 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ApiError } from "../../../api/client";
 import { contentApi } from "../../../api/content";
-import { FileDrop, Notice, ProgressBar } from "../../../ui";
+import { Notice, ProgressBar } from "../../../ui";
 import { contentUploadError, isJarFile } from "./content";
 
-interface ContentUploadProps {
-  serverId: string;
-  locked: boolean;
-  onDone: () => void;
+interface ContentUpload {
+  /** Tải lần lượt từng file; dừng ở file lỗi đầu tiên. */
+  start: (files: File[]) => void;
+  busy: boolean;
+  /** Tiến độ và kết quả, đặt dưới thanh công cụ. `null` khi không có gì để báo. */
+  status: ReactNode;
 }
 
-/** Vùng kéo thả / chọn file `.jar` để tải lên thư mục mod hoặc plugin (spec P3, mục 6.3 và 8). */
-export function ContentUpload({ serverId, locked, onDone }: ContentUploadProps) {
+/** Tải file `.jar` lên thư mục mod hoặc plugin (spec trình duyệt mod, mục 1). */
+export function useContentUpload(serverId: string, onDone: () => void): ContentUpload {
   const { t } = useTranslation();
   const [uploading, setUploading] = useState<string[] | null>(null);
   const [uploadedCount, setUploadedCount] = useState(0);
   const [error, setError] = useState<unknown>(null);
 
-  async function start(files: File[]) {
+  async function run(files: File[]) {
     setError(null);
     setUploadedCount(0);
     setUploading(files.map((file) => file.name));
@@ -40,17 +42,20 @@ export function ContentUpload({ serverId, locked, onDone }: ContentUploadProps) 
     }
   }
 
-  return (
-    <FileDrop
-      label={t("content.upload")}
-      hint={t("content.uploadHint")}
-      accept=".jar"
-      disabled={locked || uploading !== null}
-      onFiles={(files) => void start(files)}
-    >
-      {uploading && <ProgressBar label={t("content.uploading", { names: uploading.join(", ") })} />}
-      {uploadedCount > 0 && <Notice tone="success">{t("content.uploaded", { count: uploadedCount })}</Notice>}
-      {error !== null && <Notice tone="danger">{contentUploadError(t, error)}</Notice>}
-    </FileDrop>
-  );
+  const status =
+    uploading || uploadedCount > 0 || error !== null ? (
+      <>
+        {uploading && <ProgressBar label={t("content.uploading", { names: uploading.join(", ") })} />}
+        {uploadedCount > 0 && <Notice tone="success">{t("content.uploaded", { count: uploadedCount })}</Notice>}
+        {error !== null && <Notice tone="danger">{contentUploadError(t, error)}</Notice>}
+      </>
+    ) : null;
+
+  return {
+    start: (files) => {
+      if (uploading === null) void run(files);
+    },
+    busy: uploading !== null,
+    status,
+  };
 }

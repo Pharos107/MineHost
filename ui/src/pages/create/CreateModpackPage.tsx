@@ -1,31 +1,15 @@
-import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Package, Plus, RotateCw, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
 import { errorMessage, type Created } from "../../api/client";
 import { contentApi, modpackApi, type CreateModpackBody, type SearchHit } from "../../api/content";
-import { CURSEFORGE_KEY, settingsApi } from "../../api/settings";
 import { formatBytes } from "../../format";
 import { memoryFor } from "../../memory";
-import {
-  Button,
-  Card,
-  EmptyState,
-  Facts,
-  Field,
-  FileDrop,
-  Notice,
-  PageHeader,
-  ProjectCard,
-  ProjectCardGrid,
-  SearchInput,
-  SegmentedControl,
-  Select,
-  Spinner,
-  Stack,
-} from "../../ui";
+import { Button, Card, Facts, Field, FileButton, FileDrop, Notice, PageHeader, ProjectCard, Select, Spinner, Stack } from "../../ui";
+import { CatalogBrowser } from "../catalog/CatalogBrowser";
 import { hitLoaders, hitVersion, versionOptionLabel } from "../server/content/content";
 import { nameError, portError } from "./form";
 import { ModpackJobView } from "./ModpackJobView";
@@ -51,7 +35,10 @@ function buildUploadForm(file: File, form: ServerSettingsValues): FormData {
   return body;
 }
 
-/** Trang tìm, tải lên file `.mrpack` và tạo server từ modpack (`/new/modpack`, spec P3, mục 6.2). */
+/**
+ * Trang tạo server từ modpack (`/new/modpack`, spec P3 mục 6.2; spec trình duyệt mod mục 6): duyệt
+ * pack có khung chi tiết và chọn bản, hoặc tải lên / kéo thả file `.mrpack`, `.zip` vào trang.
+ */
 export function CreateModpackPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -73,11 +60,11 @@ export function CreateModpackPage() {
   const activeMutation = target?.kind === "file" ? uploadPack : createPack;
   const created: Created | undefined = activeMutation.data;
 
-  function chooseHit(hit: SearchHit) {
+  function chooseHit(hit: SearchHit, chosenVersionId: string) {
     createPack.reset();
     uploadPack.reset();
     setTarget({ kind: "catalog", hit });
-    setVersionId("");
+    setVersionId(chosenVersionId);
     setForm({ name: hit.title.trim().slice(0, 64) || t("wizard.defaultName"), memoryMb: null, port: "" });
   }
 
@@ -142,124 +129,45 @@ export function CreateModpackPage() {
           onSubmit={submit}
         />
       ) : (
-        <Stack gap={5}>
-          <Card title={t("modpack.dropTitle")}>
-            <FileDrop
-              label={t("modpack.dropLabel")}
-              hint={t("modpack.dropHint")}
-              accept=".mrpack,.zip"
-              onFiles={(files) => {
-                const file = files[0];
-                if (file) chooseFile(file);
-              }}
-            />
-          </Card>
-          <ModpackSearchCard onSelect={chooseHit} />
-        </Stack>
-      )}
-    </>
-  );
-}
-
-function ModpackSearchCard({ onSelect }: { onSelect: (hit: SearchHit) => void }) {
-  const { t } = useTranslation();
-  const [query, setQuery] = useState("");
-  const [submitted, setSubmitted] = useState("");
-
-  useEffect(() => {
-    const trimmed = query.trim();
-    const timer = window.setTimeout(() => setSubmitted(trimmed), trimmed === "" ? 0 : 300);
-    return () => window.clearTimeout(timer);
-  }, [query]);
-
-  const cfSettings = useQuery({
-    queryKey: CURSEFORGE_KEY,
-    queryFn: settingsApi.curseforge,
-  });
-  const cfAvailable = cfSettings.data?.available === true;
-  const [source, setSource] = useState<"modrinth" | "curseforge">("modrinth");
-  const activeSource = cfAvailable ? source : "modrinth";
-
-  const search = useInfiniteQuery({
-    queryKey: ["modpack-search", activeSource, submitted],
-    queryFn: ({ pageParam }) => contentApi.search({ source: activeSource, kind: "modpack", q: submitted, page: pageParam }),
-    initialPageParam: 1,
-    getNextPageParam: (last) => (last.page * last.page_size < last.total ? last.page + 1 : undefined),
-  });
-  const hits = search.data?.pages.flatMap((page) => page.hits) ?? [];
-
-  return (
-    <Card title={t("modpack.searchTitle")}>
-      <Stack gap={4}>
-        <SegmentedControl
-          label={t("content.addDialog.sourceLabel")}
-          value={activeSource}
-          onChange={(next) => setSource(next === "curseforge" ? "curseforge" : "modrinth")}
-          options={[
-            { value: "modrinth", label: t("content.addDialog.sourceModrinth") },
-            {
-              value: "curseforge",
-              label: t("content.addDialog.sourceCurseforge"),
-              disabled: !cfAvailable,
-              title: cfAvailable ? undefined : t("modpack.curseforgeNoKey"),
-            },
-          ]}
-        />
-        {cfSettings.isSuccess && !cfAvailable && <Notice tone="info">{t("modpack.curseforgeNoKey")}</Notice>}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setSubmitted(query.trim());
+        <FileDrop
+          variant="overlay"
+          label={t("modpack.dropLabel")}
+          hint={t("modpack.dropOverlay")}
+          onFiles={(files) => {
+            const file = files[0];
+            if (file) chooseFile(file);
           }}
         >
-          <SearchInput
-            value={query}
-            onChange={setQuery}
-            label={t(activeSource === "curseforge" ? "modpack.searchPlaceholderCurseforge" : "modpack.searchPlaceholder")}
-          />
-        </form>
-        {search.isPending ? (
-          <Spinner label={t("ui.loading")} />
-        ) : search.isError ? (
-          <Notice
-            tone="danger"
-            action={
-              <Button size="sm" icon={RotateCw} onClick={() => void search.refetch()}>
-                {t("common.retry")}
-              </Button>
-            }
-          >
-            {errorMessage(t, search.error)}
-          </Notice>
-        ) : hits.length === 0 ? (
-          <EmptyState icon={Package} title={t("modpack.noResults")} description={t("modpack.noResultsHint")} />
-        ) : (
-          <Stack gap={3}>
-            <ProjectCardGrid>
-              {hits.map((hit) => (
-                <ProjectCard
-                  key={`${hit.source}:${hit.project_id}`}
-                  title={hit.title}
-                  description={hit.description}
-                  iconUrl={hit.icon_url}
-                  downloads={hit.downloads}
-                  loaders={hitLoaders(hit.categories)}
-                  version={hitVersion(hit.game_versions)}
-                  onSelect={() => onSelect(hit)}
-                />
-              ))}
-            </ProjectCardGrid>
-            {search.hasNextPage && (
-              <div>
-                <Button variant="secondary" loading={search.isFetchingNextPage} onClick={() => void search.fetchNextPage()}>
-                  {t("content.addDialog.loadMore")}
-                </Button>
-              </div>
-            )}
+          <Stack gap={4}>
+            <Stack direction="row" gap={3} align="center" wrap>
+              <FileButton
+                label={t("modpack.dropLabel")}
+                accept=".mrpack,.zip"
+                multiple={false}
+                onFiles={(files) => {
+                  const file = files[0];
+                  if (file) chooseFile(file);
+                }}
+              />
+              <span>{t("modpack.dropHint")}</span>
+            </Stack>
+            <CatalogBrowser
+              kind="modpack"
+              scope={{}}
+              renderAction={({ hit, version }) =>
+                version && (
+                  <div>
+                    <Button variant="primary" icon={ArrowRight} onClick={() => chooseHit(hit, version.id)}>
+                      {t("modpack.usePack")}
+                    </Button>
+                  </div>
+                )
+              }
+            />
           </Stack>
-        )}
-      </Stack>
-    </Card>
+        </FileDrop>
+      )}
+    </>
   );
 }
 
