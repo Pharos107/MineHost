@@ -210,7 +210,8 @@
       "id_mismatch": "ID trong instance.toml ({{found}}) khác tên thư mục. Có thể thư mục đã bị chép tay.",
       "unknown": "Thư mục server bị hỏng."
     },
-    "minecraftVersion": "Minecraft {{version}}"
+    "minecraftVersion": "Minecraft {{version}}",
+    "actionFailed": "Không làm được"
   },
   "crashHints": {
     "NOT_ENOUGH_MEMORY": "Server hết RAM. Hãy tăng RAM trong mục Cài đặt server.",

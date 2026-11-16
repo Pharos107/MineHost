@@ -1,8 +1,13 @@
 // Hàm dùng chung cho các spec e2e: tạo, bật và dọn server qua API để mỗi test chỉ đi qua giao diện
 // ở phần nó cần kiểm tra. Không phải file test (Playwright chỉ chạy `*.spec.ts`).
-import { expect, type APIRequestContext } from "@playwright/test";
+import { expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 
 export const HEADERS = { "X-MineHost": "1" };
+
+/** Nút Bật / Khởi động lại / Tắt nằm ở thanh bên, cạnh tên server (màn hình rộng). */
+export function serverButton(page: Page, name: string): Locator {
+  return page.getByRole("navigation", { name: "Điều hướng chính" }).getByRole("button", { name });
+}
 
 interface ServerDto {
   id: string;

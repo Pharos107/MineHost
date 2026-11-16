@@ -210,7 +210,8 @@
       "id_mismatch": "The ID in instance.toml ({{found}}) does not match the folder name. The folder may have been copied by hand.",
       "unknown": "The server folder is damaged."
     },
-    "minecraftVersion": "Minecraft {{version}}"
+    "minecraftVersion": "Minecraft {{version}}",
+    "actionFailed": "Couldn't do that"
   },
   "crashHints": {
     "NOT_ENOUGH_MEMORY": "The server ran out of RAM. Give it more RAM on the Server settings page.",

@@ -37,11 +37,20 @@ export function ServerActions({ server, variant = "full" }: ServerActionsProps) 
   const start = () => (server.eula_accepted ? run.mutate("start") : setEulaOpen(true));
   const hideStaleStartError = run.variables === "start" && WITH_PROCESS.includes(server.state);
   const buttons = { state: server.state, run, start, onKill: () => setKillOpen(true) };
+  const failed = run.isError && !isEulaError(run.error) && !hideStaleStartError;
 
   return (
     <Stack gap={2} align={variant === "compact" ? "start" : "end"}>
       {variant === "compact" ? <IconButtons {...buttons} /> : variant === "menu" ? <MoreMenu {...buttons} /> : <FullButtons {...buttons} />}
-      {run.isError && !isEulaError(run.error) && !hideStaleStartError && (
+      {/* Thanh bên quá hẹp cho thông báo dài (ví dụ danh sách mod thiếu): hiện trong hộp thoại. */}
+      {failed && variant === "compact" && (
+        <Dialog open onClose={() => run.reset()} title={t("server.actionFailed")}>
+          <DialogBody>
+            <Notice tone="danger">{errorMessage(t, run.error)}</Notice>
+          </DialogBody>
+        </Dialog>
+      )}
+      {failed && variant !== "compact" && (
         <Notice tone="danger">{errorMessage(t, run.error)}</Notice>
       )}
       <ConfirmDialog

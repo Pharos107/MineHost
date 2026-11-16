@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { serverButton } from "./helpers";
+
 // Luồng chính của P1 qua giao diện thật: tạo server Paper (catalog giả), đồng ý EULA, bật, tắt.
 test("tạo, bật và tắt một server", async ({ page }) => {
   await page.goto("/");
@@ -13,11 +15,11 @@ test("tạo, bật và tắt một server", async ({ page }) => {
 
   // Tạo xong thì tự chuyển sang trang server.
   await expect(page.getByRole("heading", { level: 1, name: "Server của tôi" })).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("main").getByRole("button", { name: "Bật server" }).click();
+  await serverButton(page, "Bật server").click();
   await page.getByRole("button", { name: "Tôi đồng ý" }).click();
   await expect(page.getByRole("main").getByText("Đang chạy", { exact: true })).toBeVisible({ timeout: 30_000 });
 
-  await page.getByRole("main").getByRole("button", { name: "Tắt" }).click();
+  await serverButton(page, "Tắt").click();
   await expect(page.getByRole("main").getByText("Đã tắt", { exact: true })).toBeVisible({ timeout: 30_000 });
 
   await page.getByRole("link", { name: "Tất cả máy chủ" }).click();
@@ -38,7 +40,7 @@ test("tạo, bật và tắt một server Fabric từ wizard", async ({ page }) 
   await page.getByRole("button", { name: "Tạo server" }).click();
 
   await expect(page.getByRole("heading", { level: 1, name: "Fabric E2E" })).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("main").getByRole("button", { name: "Bật server" }).click();
+  await serverButton(page, "Bật server").click();
   await page.getByRole("button", { name: "Tôi đồng ý" }).click();
   await expect(page.getByRole("main").getByText("Đang chạy", { exact: true })).toBeVisible({ timeout: 30_000 });
 
@@ -47,7 +49,7 @@ test("tạo, bật và tắt một server Fabric từ wizard", async ({ page }) 
   await expect(card.getByText(/Fabric 1\.21\.4/)).toBeVisible();
 
   await page.getByRole("link", { name: "Fabric E2E" }).click();
-  await page.getByRole("main").getByRole("button", { name: "Tắt" }).click();
+  await serverButton(page, "Tắt").click();
   await expect(page.getByRole("main").getByText("Đã tắt", { exact: true })).toBeVisible({ timeout: 30_000 });
 
   await page.getByRole("link", { name: "Cài đặt server" }).click();
