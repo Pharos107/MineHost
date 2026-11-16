@@ -1062,6 +1062,8 @@ export interface components {
             /** @description `true` khi người dùng chép trực tiếp vào thư mục mà chưa có bản ghi nguồn. */
             manual: boolean;
             name: string;
+            /** @description Thêm vào lúc server đang chạy: process hiện tại chưa nạp, cần khởi động lại. */
+            needs_restart: boolean;
             project_id?: string | null;
             /** Format: int64 */
             size: number;

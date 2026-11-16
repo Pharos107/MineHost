@@ -273,6 +273,7 @@ describe("ContentAddDialog", () => {
         version_id: "lithium-0.14.0",
         from_modpack: false,
         icon_url: null,
+        needs_restart: false,
       },
     ];
     pushJob({ state: "succeeded" });
