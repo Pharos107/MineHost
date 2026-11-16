@@ -1,11 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, Package } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorMessage } from "../../api/client";
 import { contentApi, type CatalogScope, type ContentVersion, type SearchHit } from "../../api/content";
-import { Avatar, Badge, Field, Notice, RichText, Select, Spinner, Stack } from "../../ui";
+import { Badge, Card, Field, Notice, ProjectDetailHeader, RichText, Select, Spinner, Stack } from "../../ui";
 import { hitLoaders, versionOptionLabel } from "../server/content/content";
 
 export interface CatalogActionContext {
@@ -17,13 +16,14 @@ export interface CatalogActionContext {
 interface CatalogDetailProps {
   hit: SearchHit;
   scope: CatalogScope;
+  loader?: string | null;
   /** Modpack: ghi kèm Minecraft và loader của từng bản. */
   showTarget: boolean;
   renderAction: (ctx: CatalogActionContext) => ReactNode;
 }
 
 /** Khung chi tiết: thông tin, chọn bản, nút hành động, link và mô tả đầy đủ (spec trình duyệt mod, mục 3). */
-export function CatalogDetail({ hit, scope, showTarget, renderAction }: CatalogDetailProps) {
+export function CatalogDetail({ hit, scope, loader, showTarget, renderAction }: CatalogDetailProps) {
   const { t, i18n } = useTranslation();
   const [versionId, setVersionId] = useState<string | null>(null);
   const project = useQuery({
@@ -56,55 +56,46 @@ export function CatalogDetail({ hit, scope, showTarget, renderAction }: CatalogD
 
   return (
     <Stack gap={4}>
-      <Stack direction="row" gap={3} align="center">
-        <Avatar name={hit.title} imageUrl={hit.icon_url} icon={Package} size="lg" />
-        <Stack gap={1}>
-          <strong>
-            {details?.links.page ? (
-              <a href={details.links.page} target="_blank" rel="noopener noreferrer">
-                {hit.title} <ExternalLink size={14} aria-hidden />
-              </a>
-            ) : (
-              hit.title
-            )}
-          </strong>
-          <span>{hit.description}</span>
-          <Stack direction="row" gap={2} wrap align="center">
+      <ProjectDetailHeader
+        title={hit.title}
+        description={hit.description}
+        iconUrl={hit.icon_url}
+        pageUrl={details?.links.page}
+        badges={
+          <>
             <Badge>{t("ui.downloads", { value: downloads })}</Badge>
-            {hitLoaders(hit.categories).map((loader) => (
-              <Badge key={loader}>{loader}</Badge>
+            {hitLoaders(details?.loaders.length ? details.loaders : hit.categories, loader ?? scope.loader).map((item) => (
+              <Badge key={item}>{item}</Badge>
             ))}
             {hit.server_side === "unsupported" && <Badge tone="warning">{t("content.clientOnly")}</Badge>}
-          </Stack>
-        </Stack>
-      </Stack>
-      {versions.isPending ? (
-        <Spinner label={t("ui.loading")} />
-      ) : versions.isError ? (
-        <Notice tone="danger">{errorMessage(t, versions.error)}</Notice>
-      ) : list.length === 0 ? (
-        <Notice tone="warning">{t("catalog.noVersions")}</Notice>
-      ) : (
-        <Field label={t("catalog.version")}>
-          <Select value={version?.id ?? ""} onChange={(e) => setVersionId(e.target.value)}>
-            {list.map((v, index) => (
-              <option key={v.id} value={v.id}>
-                {label(v, index)}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      )}
-      {renderAction({ hit, version })}
-      {links.length > 0 && (
-        <Stack direction="row" gap={3} wrap>
-          {links.map((link) => (
-            <a key={link.key} href={link.url} target="_blank" rel="noopener noreferrer">
-              {t(`catalog.links.${link.key}`)}
-            </a>
-          ))}
-        </Stack>
-      )}
+          </>
+        }
+        links={links.map((link) => ({
+          key: link.key,
+          label: t(`catalog.links.${link.key}`),
+          url: link.url,
+        }))}
+      />
+      <Card>
+        {versions.isPending ? (
+          <Spinner label={t("ui.loading")} />
+        ) : versions.isError ? (
+          <Notice tone="danger">{errorMessage(t, versions.error)}</Notice>
+        ) : list.length === 0 ? (
+          <Notice tone="warning">{t("catalog.noVersions")}</Notice>
+        ) : (
+          <Field label={t("catalog.version")}>
+            <Select value={version?.id ?? ""} onChange={(e) => setVersionId(e.target.value)}>
+              {list.map((v, index) => (
+                <option key={v.id} value={v.id}>
+                  {label(v, index)}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
+        {renderAction({ hit, version })}
+      </Card>
       {project.isPending ? (
         <Spinner label={t("ui.loading")} />
       ) : project.isError ? (

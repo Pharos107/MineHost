@@ -3,7 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import i18n from "../i18n";
-import { ProjectCard } from "./ProjectCard";
+import { Badge } from "./Badge";
+import { ProjectCard, ProjectChip, ProjectDetailHeader } from "./ProjectCard";
 
 describe("ProjectCard", () => {
   it("hiện tên, mô tả, lượt tải theo ngôn ngữ, nhãn loader và phiên bản", async () => {
@@ -59,5 +60,46 @@ describe("ProjectCard", () => {
     expect(button.getAttribute("aria-pressed")).toBe("true");
     await userEvent.click(button);
     expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it("hiện nhãn trạng thái bổ sung (badge) trên thẻ", () => {
+    render(
+      <ProjectCard
+        title="Sodium"
+        description="Tối ưu render."
+        downloads={1000}
+        badge={<Badge tone="success">Đã chọn</Badge>}
+      />,
+    );
+    expect(screen.getByText("Đã chọn")).toBeTruthy();
+  });
+});
+
+describe("ProjectChip", () => {
+  it("hiện tên, phiên bản và gọi onRemove khi bấm nút xóa", async () => {
+    const onRemove = vi.fn();
+    render(<ProjectChip title="Sodium" version="0.6.0" removeLabel="Bỏ Sodium" onRemove={onRemove} />);
+    expect(screen.getByText("Sodium")).toBeTruthy();
+    expect(screen.getByText("0.6.0")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Bỏ Sodium" }));
+    expect(onRemove).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ProjectDetailHeader", () => {
+  it("hiện tiêu đề có link, mô tả, badges và danh sách link ngoài", () => {
+    render(
+      <ProjectDetailHeader
+        title="Lithium"
+        description="Tối ưu server."
+        pageUrl="https://modrinth.com/mod/lithium"
+        badges={<Badge>Fabric</Badge>}
+        links={[{ key: "source", label: "Mã nguồn", url: "https://github.com/CaffeineMC/lithium" }]}
+      />,
+    );
+    expect(screen.getByRole("link", { name: "Lithium" }).getAttribute("href")).toBe("https://modrinth.com/mod/lithium");
+    expect(screen.getByText("Tối ưu server.")).toBeTruthy();
+    expect(screen.getByText("Fabric")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Mã nguồn" }).getAttribute("href")).toBe("https://github.com/CaffeineMC/lithium");
   });
 });

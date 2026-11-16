@@ -16,7 +16,8 @@ use mh_store::{
 use time::OffsetDateTime;
 use tokio::task::JoinSet;
 
-use super::{ModpackMeta, ModpackSummary, PackTarget};
+use super::{ModpackMeta, ModpackRequest, ModpackSourceInput, ModpackSummary, PackTarget, has_ext};
+use crate::content::{CatalogSource, parse_cf_id};
 use crate::jobs::{JobContext, JobStep};
 use crate::sources::CancellationToken;
 use crate::{App, AppError};
@@ -377,4 +378,50 @@ pub(super) fn sanitize_upstream(raw: &str) -> Option<UpstreamText> {
         .take(200)
         .collect();
     UpstreamText::parse(&cleaned).ok()
+}
+
+impl App {
+    pub(super) fn validate_pack_request(&self, req: &ModpackRequest) -> Result<(), AppError> {
+        match &req.source {
+            ModpackSourceInput::Modrinth {
+                project_id,
+                version_id,
+            } => {
+                if project_id.trim().is_empty()
+                    || version_id.as_ref().is_some_and(|v| v.trim().is_empty())
+                {
+                    return Err(AppError::new(
+                        ErrorCode::InvalidInput,
+                        "project_id hoặc version_id Modrinth không được rỗng",
+                    ));
+                }
+                Ok(())
+            }
+            ModpackSourceInput::Curseforge {
+                project_id,
+                version_id,
+            } => {
+                // Kiểm tra key trước để thiếu key luôn trả `CURSEFORGE_UNAVAILABLE`.
+                let _ = self.catalog_for(CatalogSource::Curseforge)?;
+                parse_cf_id(project_id.trim(), "project_id")?;
+                if let Some(v) = version_id {
+                    parse_cf_id(v.trim(), "version_id")?;
+                }
+                Ok(())
+            }
+            ModpackSourceInput::UploadedFile {
+                path,
+                original_name,
+            } => {
+                if has_ext(original_name, "mrpack") || has_ext(original_name, "zip") {
+                    return Ok(());
+                }
+                let _ = fs::remove_file(path);
+                Err(AppError::new(
+                    ErrorCode::ModpackInvalid,
+                    "chỉ hỗ trợ file modpack .mrpack hoặc .zip",
+                ))
+            }
+        }
+    }
 }

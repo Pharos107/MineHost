@@ -61,6 +61,39 @@
   cursor: not-allowed;
 }
 
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mh-space-3);
+  min-width: 0;
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--mh-surface-raised);
+  border-radius: var(--mh-radius-md);
+  color: var(--mh-text-muted);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.input:checked + .card .icon {
+  background: var(--mh-primary);
+  color: var(--mh-on-primary);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--mh-space-1);
+  min-width: 0;
+}
+
 .title {
   display: flex;
   flex-wrap: wrap;

@@ -7,9 +7,9 @@ import { errorMessage } from "../../api/client";
 import { contentApi, type CatalogScope, type SearchHit, type SearchSort } from "../../api/content";
 import { CURSEFORGE_KEY, settingsApi } from "../../api/settings";
 import {
+  Badge,
   Button,
   EmptyState,
-  Field,
   Notice,
   ProjectCard,
   SearchInput,
@@ -31,6 +31,8 @@ interface CatalogBrowserProps {
   /** Loader và Minecraft ưu tiên hiện trên thẻ kết quả. */
   loader?: string | null;
   minecraft?: string | null;
+  /** Trả về `true` nếu mục đã có trong danh sách chờ để hiện nhãn trên thẻ kết quả. */
+  isQueued?: (hit: SearchHit) => boolean;
   renderAction: (ctx: CatalogActionContext) => ReactNode;
 }
 
@@ -45,7 +47,7 @@ function searchLabelKey(kind: CatalogKind, source: Source): string {
  * Trình duyệt catalog dùng chung (spec trình duyệt mod, mục 3): danh sách kết quả bên trái, chi tiết
  * bên phải. Nơi dùng quyết định nút hành động trong khung chi tiết.
  */
-export function CatalogBrowser({ kind, scope, loader, minecraft, renderAction }: CatalogBrowserProps) {
+export function CatalogBrowser({ kind, scope, loader, minecraft, isQueued, renderAction }: CatalogBrowserProps) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<SearchHit | null>(null);
 
@@ -60,6 +62,7 @@ export function CatalogBrowser({ kind, scope, loader, minecraft, renderAction }:
           scope={scope}
           loader={loader}
           minecraft={minecraft}
+          isQueued={isQueued}
           selected={selected}
           onSelect={setSelected}
         />
@@ -70,6 +73,7 @@ export function CatalogBrowser({ kind, scope, loader, minecraft, renderAction }:
             key={`${selected.source}:${selected.project_id}`}
             hit={selected}
             scope={scope}
+            loader={loader ?? scope.loader}
             showTarget={kind === "modpack"}
             renderAction={renderAction}
           />
@@ -86,11 +90,12 @@ interface SearchPaneProps {
   scope: CatalogScope;
   loader?: string | null;
   minecraft?: string | null;
+  isQueued?: (hit: SearchHit) => boolean;
   selected: SearchHit | null;
-  onSelect: (hit: SearchHit) => void;
+  onSelect: (hit: SearchHit | null) => void;
 }
 
-function SearchPane({ kind, scope, loader, minecraft, selected, onSelect }: SearchPaneProps) {
+function SearchPane({ kind, scope, loader, minecraft, isQueued, selected, onSelect }: SearchPaneProps) {
   const { t } = useTranslation();
   const [source, setSource] = useState<Source>("modrinth");
   const [query, setQuery] = useState("");
@@ -119,40 +124,46 @@ function SearchPane({ kind, scope, loader, minecraft, selected, onSelect }: Sear
 
   return (
     <Stack gap={3}>
-      {allowCurseforge && (
-        <SegmentedControl
-          label={t("content.addDialog.sourceLabel")}
-          value={active}
-          onChange={(next) => setSource(next === "curseforge" ? "curseforge" : "modrinth")}
-          options={[
-            { value: "modrinth", label: t("content.addDialog.sourceModrinth") },
-            {
-              value: "curseforge",
-              label: t("content.addDialog.sourceCurseforge"),
-              disabled: !cfAvailable,
-              title: cfAvailable ? undefined : t("content.addDialog.curseforgeUnavailableHint"),
-            },
-          ]}
-        />
-      )}
-      {allowCurseforge && cf.isSuccess && !cfAvailable && <Notice tone="info">{t("content.addDialog.curseforgeUnavailableHint")}</Notice>}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          setSubmitted(query.trim());
-        }}
-      >
-        <SearchInput value={query} onChange={setQuery} label={t(searchLabelKey(kind, active))} autoFocus />
-      </form>
-      <Field label={t("catalog.sort")}>
-        <Select value={sort} onChange={(e) => setSort(e.target.value as SearchSort)}>
+      <Stack direction="row" justify="between" align="center" gap={2} wrap>
+        {allowCurseforge && (
+          <SegmentedControl
+            label={t("content.addDialog.sourceLabel")}
+            value={active}
+            onChange={(next) => {
+              const nextSource: Source = next === "curseforge" ? "curseforge" : "modrinth";
+              if (nextSource !== source) onSelect(null);
+              setSource(nextSource);
+            }}
+            options={[
+              { value: "modrinth", label: t("content.addDialog.sourceModrinth") },
+              {
+                value: "curseforge",
+                label: t("content.addDialog.sourceCurseforge"),
+                disabled: !cfAvailable,
+                title: cfAvailable ? undefined : t("content.addDialog.curseforgeUnavailableHint"),
+              },
+            ]}
+          />
+        )}
+        <Select aria-label={t("catalog.sort")} value={sort} onChange={(e) => setSort(e.target.value as SearchSort)}>
           {SORTS.map((value) => (
             <option key={value} value={value}>
               {t(`catalog.sorts.${value}`)}
             </option>
           ))}
         </Select>
-      </Field>
+      </Stack>
+      {allowCurseforge && cf.isSuccess && !cfAvailable && <Notice tone="info">{t("content.addDialog.curseforgeUnavailableHint")}</Notice>}
+      <div
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            setSubmitted(query.trim());
+          }
+        }}
+      >
+        <SearchInput value={query} onChange={setQuery} label={t(searchLabelKey(kind, active))} autoFocus />
+      </div>
       {search.isPending ? (
         <Spinner label={t("ui.loading")} />
       ) : search.isError ? (
@@ -179,6 +190,7 @@ function SearchPane({ kind, scope, loader, minecraft, selected, onSelect }: Sear
               downloads={hit.downloads}
               loaders={hitLoaders(hit.categories, loader)}
               version={hitVersion(hit.game_versions, minecraft)}
+              badge={isQueued?.(hit) ? <Badge tone="success">{t("catalog.queue.selected")}</Badge> : undefined}
               selected={selected?.source === hit.source && selected.project_id === hit.project_id}
               onSelect={() => onSelect(hit)}
             />

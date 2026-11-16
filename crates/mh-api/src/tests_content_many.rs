@@ -143,3 +143,51 @@ async fn browse_by_loader_and_create_server_with_content() {
         StatusCode::BAD_REQUEST
     );
 }
+
+#[tokio::test]
+async fn create_server_applies_initial_properties_and_validates_keys() {
+    let api = content_api(None);
+    let body = json!({
+        "name": "Tùy chỉnh",
+        "loader": "fabric",
+        "minecraft": "1.21.4",
+        "port": 25571,
+        "properties": [
+            { "key": "online-mode", "value": "false" },
+            { "key": "white-list", "value": "true" },
+            { "key": "difficulty", "value": "hard" },
+            { "key": "server-port", "value": "11111" },
+        ],
+    });
+    let (status, created) = api.post("/api/v1/servers", Some(body)).await;
+    assert_eq!(status, StatusCode::ACCEPTED, "{created}");
+    wait_job(&api, created["job_id"].as_u64().unwrap()).await;
+    let id = created["server_id"].as_str().unwrap();
+
+    let (status, props) = api.get(&format!("/api/v1/servers/{id}/properties")).await;
+    assert_eq!(status, StatusCode::OK, "{props}");
+    let entries = props["properties"].as_array().unwrap();
+    assert!(entries.contains(&json!({ "key": "online-mode", "value": "false" })));
+    assert!(entries.contains(&json!({ "key": "white-list", "value": "true" })));
+    assert!(entries.contains(&json!({ "key": "difficulty", "value": "hard" })));
+    // server-port luôn do MineHost giữ theo cổng đã chọn, không bị ghi đè.
+    assert!(entries.contains(&json!({ "key": "server-port", "value": "25571" })));
+
+    for bad in [
+        json!({ "key": "bad=key", "value": "1" }),
+        json!({ "key": "bad key", "value": "1" }),
+        json!({ "key": "bad#key", "value": "1" }),
+        json!({ "key": "ok", "value": "line1\nline2" }),
+    ] {
+        let invalid = json!({
+            "name": "Lỗi",
+            "loader": "fabric",
+            "minecraft": "1.21.4",
+            "properties": [bad],
+        });
+        assert_eq!(
+            api.post("/api/v1/servers", Some(invalid)).await.0,
+            StatusCode::BAD_REQUEST
+        );
+    }
+}

@@ -22,7 +22,7 @@ mod update;
 
 pub use update::ModpackUpdateResult;
 
-use crate::content::{CatalogSource, ContentCatalog, ContentFileInfo, ContentVersion, parse_cf_id};
+use crate::content::{CatalogSource, ContentCatalog, ContentFileInfo, ContentVersion};
 use crate::jobs::{JobContext, JobKind, JobStep};
 use crate::{App, AppError, Created, Installing, lock};
 use finish::{drain_downloads, file_label, sanitize_upstream};
@@ -89,7 +89,22 @@ impl Drop for TempFileCleanup {
 impl App {
     /// Tạo server từ modpack Modrinth, CurseForge hoặc file `.mrpack`/`.zip` tải lên.
     pub fn create_from_modpack(self: &Arc<Self>, req: ModpackRequest) -> Result<Created, AppError> {
+        self.create_from_modpack_with_properties(req, Vec::new())
+    }
+
+    /// Như `create_from_modpack`, ghi thêm các khóa `server.properties` ngay khi cài xong.
+    pub fn create_from_modpack_with_properties(
+        self: &Arc<Self>,
+        req: ModpackRequest,
+        properties: Vec<(String, String)>,
+    ) -> Result<Created, AppError> {
         self.validate_pack_request(&req)?;
+        if let Err(err) = crate::create::validate_initial_properties(&properties) {
+            if let ModpackSourceInput::UploadedFile { path, .. } = &req.source {
+                let _ = fs::remove_file(path);
+            }
+            return Err(err);
+        }
         let port = self.resolve_new_port(req.port)?;
         let memory = req
             .memory_mb
@@ -115,7 +130,10 @@ impl App {
         let job_id = self
             .jobs
             .spawn(JobKind::CreateModpack, Some(id), move |ctx| async move {
-                let result = app.install_modpack(&ctx, target, &req).await;
+                let mut result = app.install_modpack(&ctx, target, &req).await;
+                if result.is_ok() && !properties.is_empty() {
+                    result = app.apply_initial_properties(id, port, &properties);
+                }
                 app.finish_install(id, result.is_ok(), "đã cài server từ modpack");
                 result
             });
@@ -436,53 +454,9 @@ impl App {
         )
         .await
     }
-
-    fn validate_pack_request(&self, req: &ModpackRequest) -> Result<(), AppError> {
-        match &req.source {
-            ModpackSourceInput::Modrinth {
-                project_id,
-                version_id,
-            } => {
-                if project_id.trim().is_empty()
-                    || version_id.as_ref().is_some_and(|v| v.trim().is_empty())
-                {
-                    return Err(AppError::new(
-                        ErrorCode::InvalidInput,
-                        "project_id hoặc version_id Modrinth không được rỗng",
-                    ));
-                }
-                Ok(())
-            }
-            ModpackSourceInput::Curseforge {
-                project_id,
-                version_id,
-            } => {
-                // Kiểm tra key trước để thiếu key luôn trả `CURSEFORGE_UNAVAILABLE`.
-                let _ = self.catalog_for(CatalogSource::Curseforge)?;
-                parse_cf_id(project_id.trim(), "project_id")?;
-                if let Some(v) = version_id {
-                    parse_cf_id(v.trim(), "version_id")?;
-                }
-                Ok(())
-            }
-            ModpackSourceInput::UploadedFile {
-                path,
-                original_name,
-            } => {
-                if has_ext(original_name, "mrpack") || has_ext(original_name, "zip") {
-                    return Ok(());
-                }
-                let _ = fs::remove_file(path);
-                Err(AppError::new(
-                    ErrorCode::ModpackInvalid,
-                    "chỉ hỗ trợ file modpack .mrpack hoặc .zip",
-                ))
-            }
-        }
-    }
 }
 
-fn has_ext(name: &str, ext: &str) -> bool {
+pub(super) fn has_ext(name: &str, ext: &str) -> bool {
     Path::new(name)
         .extension()
         .is_some_and(|e| e.eq_ignore_ascii_case(ext))
