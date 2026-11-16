@@ -7,6 +7,7 @@ import { Outlet, useMatch, useNavigate, useOutletContext, useParams } from "reac
 import { api, errorMessage, type Server } from "../../api/client";
 import { SERVERS_KEY } from "../../api/live";
 import { Button, CopyField, Notice, PageHeader, Spinner, Stack, StatusBadge } from "../../ui";
+import { useMediaQuery } from "../../useMediaQuery";
 import { serverName } from "../ServerListPage";
 import { DeleteServer } from "./DeleteServer";
 import { PreflightBanner } from "./PreflightBanner";
@@ -50,6 +51,8 @@ function ServerView({ server }: { server: Server }) {
   const { t } = useTranslation();
   const ready = server.state !== "installing" && server.state !== "broken";
   const onContentPage = useMatch("/servers/:id/content") !== null;
+  // Màn hình rộng đã có nút bật / tắt ở thanh bên; điện thoại thì thanh bên là ngăn kéo nên giữ nút ở đây.
+  const drawer = useMediaQuery("(max-width: 767px)", false);
 
   return (
     <Stack gap={5}>
@@ -62,7 +65,7 @@ function ServerView({ server }: { server: Server }) {
             <LanAddresses port={server.port} />
           </Stack>
         }
-        actions={ready && <ServerActions server={server} />}
+        actions={ready && <ServerActions server={server} variant={drawer ? "full" : "menu"} />}
       />
       <ServerNotices server={server} />
       <PreflightBanner server={server} onContentPage={onContentPage} />

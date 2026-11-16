@@ -12,6 +12,8 @@ CPU / RAM, nút bật / tắt ở thanh bên.
 
 - **Đầu trang** (mọi tab của server): dòng nhỏ phía trên tên, ví dụ
   "Fabric 0.16.14 · Minecraft 1.20.1 · Prominence II v4.1.8". Thiếu phần nào thì bỏ phần đó.
+- **Nút ở đầu trang:** màn hình rộng chỉ còn menu "…" (Buộc dừng) vì thanh bên đã có nút bật / tắt;
+  điện thoại (thanh bên là ngăn kéo) vẫn giữ đủ nút Bật / Khởi động lại / Tắt ở đầu trang.
 - **Thanh bên:** cạnh tên server có nút icon Bật, Khởi động lại, Tắt theo trạng thái, dưới tên là trạng thái;
   dùng chung logic với nút ở đầu trang (hỏi EULA trước khi bật lần đầu). "Buộc dừng" chỉ ở menu "…"
   đầu trang. Server đang cài hoặc hỏng thì chỉ có trạng thái. Mục "Tất cả máy chủ"
