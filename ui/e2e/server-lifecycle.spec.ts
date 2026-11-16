@@ -26,18 +26,27 @@ test("tạo, bật và tắt một server", async ({ page }) => {
   await expect(page.getByRole("row", { name: /Tạo server/ }).getByText("Xong", { exact: true }).first()).toBeVisible();
 });
 
-test("tạo, bật và tắt một server Fabric từ wizard", async ({ page }) => {
+test("tạo, bật và tắt một server Fabric từ wizard", async ({ page, request }) => {
   await page.goto("/new");
   await expect(page.getByRole("heading", { level: 1, name: "Tạo server" })).toBeVisible();
   await page.getByRole("radio", { name: /^Server có mod/ }).click();
   await page.getByRole("button", { name: "Tiếp" }).click();
   await expect(page.getByRole("combobox", { name: "Phiên bản Minecraft" })).toHaveValue("1.21.4");
   await page.getByRole("button", { name: "Tiếp" }).click();
+  // Bước Mod: chọn Lithium từ catalog giả, MineHost cài cùng dependency ngay sau khi tạo server.
+  await page.getByRole("searchbox", { name: "Tìm mod trên Modrinth…" }).fill("Lithium");
+  await page.getByRole("button", { name: /^Lithium/ }).click();
+  await page.getByRole("button", { name: "Thêm vào danh sách" }).click();
+  await expect(page.getByText("Mod đã chọn (1)")).toBeVisible();
+  await page.getByRole("button", { name: "Tiếp" }).click();
   const name = page.getByRole("textbox", { name: "Tên server" });
   await name.fill("Fabric E2E");
   await page.getByRole("button", { name: "Tạo server" }).click();
 
   await expect(page.getByRole("heading", { level: 1, name: "Fabric E2E" })).toBeVisible({ timeout: 30_000 });
+  const id = new URL(page.url()).pathname.split("/")[2];
+  const content = (await (await request.get(`/api/v1/servers/${id}/content`)).json()) as { files: { file_name: string }[] };
+  expect(content.files.map((f) => f.file_name).sort()).toEqual(["fabric-api-0.110.0.jar", "lithium-0.14.2.jar"]);
   await page.getByRole("main").getByRole("button", { name: "Bật server" }).click();
   await page.getByRole("button", { name: "Tôi đồng ý" }).click();
   await expect(page.getByRole("main").getByText("Đang chạy", { exact: true })).toBeVisible({ timeout: 30_000 });
