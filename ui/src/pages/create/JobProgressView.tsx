@@ -15,19 +15,35 @@ interface JobProgressViewProps {
   onRetry: () => void;
   /** Về bước cuối của wizard, giữ nguyên những gì đã nhập. */
   onBack: () => void;
+  /** Tên mod chọn ở bước Mod theo `source:project_id`, để báo mod nào không cài được. */
+  contentNames?: Record<string, string>;
+}
+
+interface ContentFailure {
+  source: string;
+  project_id: string;
+  code: string;
+}
+
+function contentFailures(result: unknown): ContentFailure[] {
+  const list = (result as { content_failed?: unknown } | null | undefined)?.content_failed;
+  return Array.isArray(list) ? (list as ContentFailure[]) : [];
 }
 
 /** Tiến độ Job tạo server; xong thì chuyển sang trang chi tiết, nơi có nút "Bật server". */
-export function JobProgressView({ created, onRetry, onBack }: JobProgressViewProps) {
+export function JobProgressView({ created, onRetry, onBack, contentNames = {} }: JobProgressViewProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const job = useJob(created.job_id);
   const cancel = useMutation({ mutationFn: () => api.cancelJob(created.job_id) });
   const state = job.data?.state;
+  const failed = contentFailures(job.data?.result);
+  const open = () => void navigate(`/servers/${created.server_id}`, { replace: true });
 
+  // Có mod không cài được thì dừng lại báo cho người dùng thay vì chuyển trang ngay.
   useEffect(() => {
-    if (state === "succeeded") void navigate(`/servers/${created.server_id}`, { replace: true });
-  }, [state, navigate, created.server_id]);
+    if (state === "succeeded" && failed.length === 0) void navigate(`/servers/${created.server_id}`, { replace: true });
+  }, [state, failed.length, navigate, created.server_id]);
 
   const back = (
     <Button variant="ghost" icon={ArrowLeft} onClick={onBack}>
@@ -35,7 +51,27 @@ export function JobProgressView({ created, onRetry, onBack }: JobProgressViewPro
     </Button>
   );
   let body;
-  if (state === "failed") {
+  if (state === "succeeded" && failed.length > 0) {
+    body = (
+      <Notice
+        tone="warning"
+        title={t("wizard.mods.failedTitle", { count: failed.length })}
+        action={
+          <Button variant="primary" onClick={open}>
+            {t("wizard.mods.openServer")}
+          </Button>
+        }
+      >
+        <ul>
+          {failed.map((item) => (
+            <li key={`${item.source}:${item.project_id}`}>
+              {contentNames[`${item.source}:${item.project_id}`] ?? item.project_id}: {errorMessage(t, new ApiError(item.code, {}, 0))}
+            </li>
+          ))}
+        </ul>
+      </Notice>
+    );
+  } else if (state === "failed") {
     const error = job.data?.error;
     body = (
       <Notice

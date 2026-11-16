@@ -100,6 +100,7 @@
     "steps": {
       "loader": "Loại server",
       "version": "Phiên bản",
+      "mods": "Mod",
       "settings": "Tên và RAM",
       "folder": "Thư mục",
       "importName": "Tên"
@@ -162,7 +163,18 @@
     "importPickVersion": "Phiên bản Minecraft",
     "importPickVersionHint": "Ví dụ 1.21.4.",
     "importNote": "MineHost chép thư mục vào kho dữ liệu của nó, bản gốc giữ nguyên. Trước lần bật đầu tiên, bạn sẽ được hỏi đồng ý EULA.",
-    "importSubmit": "Nhập server"
+    "importSubmit": "Nhập server",
+    "mods": {
+      "hint": "Chọn mod muốn có sẵn khi tạo server. MineHost cài chúng cùng dependency ngay sau khi cài xong loader. Bỏ qua được, thêm mod sau ở trang Mod.",
+      "cleared": "Đã bỏ danh sách mod vì bạn đổi loại server hoặc phiên bản Minecraft.",
+      "chosen_one": "Mod đã chọn ({{count}})",
+      "chosen_other": "Mod đã chọn ({{count}})",
+      "none": "Chưa chọn mod nào.",
+      "skip": "Bỏ qua",
+      "failedTitle_one": "Server đã tạo, nhưng {{count}} mod không cài được",
+      "failedTitle_other": "Server đã tạo, nhưng {{count}} mod không cài được",
+      "openServer": "Mở server"
+    }
   },
   "jobs": {
     "starting": "Đang bắt đầu…",

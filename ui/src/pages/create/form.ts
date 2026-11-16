@@ -1,4 +1,5 @@
 import type { CreateServer, Loader } from "../../api/client";
+import type { ContentItem } from "../../api/content";
 import { memoryFor } from "../../memory";
 
 export const STANDARD_LOADERS: readonly Loader[] = ["paper", "purpur", "vanilla"];
@@ -38,7 +39,8 @@ export function portError(port: string): string | undefined {
   return Number.isInteger(value) && value >= PORT_MIN && value <= PORT_MAX ? undefined : "wizard.portInvalid";
 }
 
-export function toRequest(form: WizardForm, version: string): CreateServer {
+/** `content`: mod chọn ở bước Mod, cài ngay sau khi tạo server. */
+export function toRequest(form: WizardForm, version: string, content: ContentItem[] = []): CreateServer {
   const req: CreateServer = {
     name: form.name.trim(),
     loader: form.loader,
@@ -49,5 +51,6 @@ export function toRequest(form: WizardForm, version: string): CreateServer {
   if (isModLoader(form.loader) && form.loaderVersion) {
     req.loader_version = form.loaderVersion;
   }
+  if (content.length > 0) req.content = content;
   return req;
 }

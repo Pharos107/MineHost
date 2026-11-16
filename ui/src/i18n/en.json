@@ -100,6 +100,7 @@
     "steps": {
       "loader": "Server type",
       "version": "Version",
+      "mods": "Mods",
       "settings": "Name and RAM",
       "folder": "Folder",
       "importName": "Name"
@@ -162,7 +163,18 @@
     "importPickVersion": "Minecraft version",
     "importPickVersionHint": "For example 1.21.4.",
     "importNote": "MineHost copies the folder into its own data folder; the original stays as is. You will be asked to accept the EULA before the first start.",
-    "importSubmit": "Import server"
+    "importSubmit": "Import server",
+    "mods": {
+      "hint": "Pick the mods the server should start with. MineHost installs them with their dependencies right after the loader. You can skip this and add mods later on the Mods page.",
+      "cleared": "The mod list was cleared because you changed the server type or Minecraft version.",
+      "chosen_one": "Selected mods ({{count}})",
+      "chosen_other": "Selected mods ({{count}})",
+      "none": "No mods selected.",
+      "skip": "Skip",
+      "failedTitle_one": "The server was created, but {{count}} mod couldn't be installed",
+      "failedTitle_other": "The server was created, but {{count}} mods couldn't be installed",
+      "openServer": "Open server"
+    }
   },
   "jobs": {
     "starting": "Starting…",
