@@ -1,12 +1,29 @@
 .one,
-.two {
+.two,
+.three {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--mh-space-4);
 }
 
 @media (min-width: 900px) {
-  .two {
+  .two,
+  .three {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Ba thẻ trên hai cột: thẻ cuối lẻ thì giãn hết hàng thay vì để trống nửa bên phải. */
+  .three > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1280px) {
+  .three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .three > :last-child:nth-child(odd) {
+    grid-column: auto;
   }
 }

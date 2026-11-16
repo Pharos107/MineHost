@@ -1,10 +1,12 @@
 import { Columns2, Maximize2, Rows2 } from "lucide-react";
+import type { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { MetricSample, Server } from "../../../api/client";
 import { formatBytes } from "../../../format";
 import { Card, Columns, Dialog, DialogBody, IconButton, LineChart, SegmentedControl, Stack, StatGrid, StatTile, type ChartPoint } from "../../../ui";
+import { usePlayers } from "../players/usePlayers";
 import { loadChartLayout, saveChartLayout, summarize, useWideScreen, type ChartLayout } from "./chartLayout";
 
 const HOUR_MS = 3_600_000;
@@ -22,22 +24,30 @@ interface OverviewChartsProps {
   now: number;
 }
 
-/** Biểu đồ CPU và RAM 1 giờ qua: xếp cạnh nhau hoặc hai hàng (nhớ theo trình duyệt), mỗi biểu đồ mở to được. */
+/** CPU, RAM và số người chơi trong 1 giờ. Mẫu chưa có số người chơi (`null`) thì bỏ qua điểm đó. */
+function chartSpecs(t: TFunction, locale: string, server: Server, samples: MetricSample[], maxPlayers: number | undefined): ChartSpec[] {
+  const at = (s: MetricSample) => Date.parse(s.at);
+  const players = samples.flatMap((s) => (s.players == null ? [] : [{ t: at(s), v: s.players }]));
+  return [
+    { title: t("overview.cpuChart"), points: samples.map((s) => ({ t: at(s), v: s.cpu_percent })), yMax: 100, formatValue: (v) => `${Math.round(v)} %` },
+    {
+      title: t("overview.memoryChart"),
+      points: samples.map((s) => ({ t: at(s), v: s.memory_bytes })),
+      yMax: server.memory_mb ? server.memory_mb.max * 1024 * 1024 : undefined,
+      formatValue: (v) => formatBytes(v, locale),
+    },
+    { title: t("overview.playersChart"), points: players, yMax: maxPlayers, formatValue: (v) => String(Math.round(v)) },
+  ];
+}
+
+/** Biểu đồ CPU, RAM, người chơi 1 giờ qua: xếp cạnh nhau hoặc từng hàng (nhớ theo trình duyệt), mỗi biểu đồ mở to được. */
 export function OverviewCharts({ server, samples, now }: OverviewChartsProps) {
   const { t, i18n } = useTranslation();
   const [layout, setLayout] = useState<ChartLayout>(loadChartLayout);
   const wide = useWideScreen();
+  const players = usePlayers(server.id, server.state);
   const time = new Intl.DateTimeFormat(i18n.language, { hour: "2-digit", minute: "2-digit" });
-  const points = (pick: (s: MetricSample) => number): ChartPoint[] => samples.map((s) => ({ t: Date.parse(s.at), v: pick(s) }));
-  const charts: ChartSpec[] = [
-    { title: t("overview.cpuChart"), points: points((s) => s.cpu_percent), yMax: 100, formatValue: (v) => `${Math.round(v)} %` },
-    {
-      title: t("overview.memoryChart"),
-      points: points((s) => s.memory_bytes),
-      yMax: server.memory_mb ? server.memory_mb.max * 1024 * 1024 : undefined,
-      formatValue: (v) => formatBytes(v, i18n.language),
-    },
-  ];
+  const charts = chartSpecs(t, i18n.language, server, samples, players.data?.max_players);
   const span = { start: now - HOUR_MS, end: now, formatTime: (ms: number) => time.format(ms) };
 
   function changeLayout(next: ChartLayout) {
@@ -60,7 +70,7 @@ export function OverviewCharts({ server, samples, now }: OverviewChartsProps) {
           />
         </Stack>
       )}
-      <Columns count={layout === "side" ? 2 : 1}>
+      <Columns count={layout === "side" ? 3 : 1}>
         {charts.map((chart) => (
           <ChartCard key={chart.title} chart={chart} {...span} />
         ))}
