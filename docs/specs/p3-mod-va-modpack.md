@@ -152,6 +152,9 @@ dựa vào nguồn 3.
   MineHost không tìm cách vượt qua: cài phần còn lại, liệt kê các file này kèm link tới trang tải trên
   CurseForge, rồi nhận file người dùng kéo vào nếu SHA-1 khớp hash mà API trả. Trong lúc còn thiếu
   file, server không bật được trừ khi người dùng chọn "Bật mà không có các mod này".
+- File cấm phân phối trong `mods/` mà server không nạp (không phải `.jar`; Forge 1.12 trở về trước
+  nạp cả `.zip`) không vào danh sách tải tay mà vào danh sách "bỏ qua" của Job: thường là resource
+  pack bị tác giả xếp vào mục mod trên CurseForge (Craftoria có hai file như vậy).
 - Pack có server pack chính thức (`serverPackFileId`) thì dùng server pack; không có thì dựng từ
   `manifest.json`.
 
