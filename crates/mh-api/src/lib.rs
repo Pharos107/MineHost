@@ -4,6 +4,7 @@ mod access;
 mod auth;
 mod backups;
 mod cache;
+mod commands;
 mod content;
 mod content_dto;
 mod curseforge;
@@ -54,6 +55,8 @@ pub use lan::{LanState, lan_listener};
         servers::action,
         servers::send_command,
         servers::console,
+        commands::list,
+        commands::scan,
         servers::metrics,
         backups::list,
         backups::create,
@@ -109,6 +112,8 @@ pub use lan::{LanState, lan_listener};
     ),
     components(schemas(
         error::ErrorBody,
+        commands::ServerCommandDto,
+        commands::ServerCommandsDto,
         auth::SessionDto,
         auth::CsrfDto,
         auth::LoginBody,
@@ -268,6 +273,8 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
             "/servers/{id}/console",
             get(servers::console).post(servers::send_command),
         )
+        .route("/servers/{id}/commands", get(commands::list))
+        .route("/servers/{id}/commands/scan", post(commands::scan))
         .route("/servers/{id}/metrics", get(servers::metrics))
         .route(
             "/servers/{id}/backups",
