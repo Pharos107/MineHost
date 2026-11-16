@@ -59,6 +59,6 @@ test("nhập thư mục server có sẵn", async ({ page, request }) => {
   expect(existsSync(join(dir, "paper-1.21.4-232.jar"))).toBe(true);
 
   // `eula=true` trong thư mục cũ không được tính: vẫn phải bấm đồng ý trong MineHost.
-  await page.getByRole("button", { name: "Bật server" }).click();
+  await page.getByRole("main").getByRole("button", { name: "Bật server" }).click();
   await expect(page.getByRole("button", { name: "Tôi đồng ý" })).toBeVisible();
 });
