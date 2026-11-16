@@ -59,7 +59,7 @@ chính PR ấy.
 | 42 | Mô tả CurseForge, tìm theo loader + Minecraft, tạo server kèm mod | Đã merge | [#141](https://github.com/Pharos107/MineHost/pull/141) |
 | 43 | Trang Mod gọn, kéo thả vào bảng | Đã merge | [#143](https://github.com/Pharos107/MineHost/pull/143) |
 | 44 | Trình duyệt mod có khung chi tiết, danh sách chờ | Đã merge | [#144](https://github.com/Pharos107/MineHost/pull/144) |
-| 45 | Bước Mod khi tạo server | Chưa bắt đầu | |
+| 45 | Bước Mod khi tạo server | Đã merge | [#145](https://github.com/Pharos107/MineHost/pull/145) |
 | 46 | Trang Từ modpack dùng trình duyệt | Chưa bắt đầu | |
 | 38 | Phát hành `v0.5.0` | Chưa bắt đầu | |
 
