@@ -966,6 +966,8 @@ export interface components {
             version_id?: string | null;
         };
         CreateServerBody: {
+            /** @description Mod/plugin cài ngay sau khi tạo (tối đa 50); mục lỗi nằm trong `result.content_failed` của Job. */
+            content?: components["schemas"]["ContentItemBody"][];
             /** @description `paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`. */
             loader: string;
             /** @description Chỉ với mod loader; không gửi thì dùng bản đề xuất. */
@@ -1827,6 +1829,9 @@ export interface operations {
                 page: number | null;
                 /** @description `relevance` (mặc định), `downloads` hoặc `updated`. */
                 sort: string | null;
+                /** @description Lọc như `server_id` cho server chưa tạo; phải gửi cùng `minecraft`. */
+                loader: string | null;
+                minecraft: string | null;
             };
             cookie?: never;
         };
@@ -1944,6 +1949,9 @@ export interface operations {
                 source: string;
                 pid: string;
                 server_id: string | null;
+                /** @description Lọc theo loader và Minecraft khi chưa có server; phải gửi cả hai. */
+                loader: string | null;
+                minecraft: string | null;
             };
             cookie?: never;
         };

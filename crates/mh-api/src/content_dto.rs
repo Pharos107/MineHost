@@ -35,11 +35,19 @@ pub struct SearchQuery {
     /// `relevance` (mặc định), `downloads` hoặc `updated`.
     #[serde(default)]
     pub sort: Option<String>,
+    /// Lọc như `server_id` cho server chưa tạo; phải gửi cùng `minecraft`.
+    #[serde(default)]
+    pub loader: Option<String>,
+    #[serde(default)]
+    pub minecraft: Option<String>,
 }
 
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct VersionsQuery {
     pub server_id: Option<String>,
+    /// Lọc theo loader và Minecraft khi chưa có server; phải gửi cả hai.
+    pub loader: Option<String>,
+    pub minecraft: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, ToSchema)]

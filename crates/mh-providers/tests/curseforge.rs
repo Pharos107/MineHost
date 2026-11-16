@@ -377,3 +377,26 @@ async fn maps_missing_key_401_403_404_429_bad_json_and_hides_key() {
     assert_eq!(err_json.code(), ErrorCode::NetworkUnavailable);
     assert!(!err_json.to_string().contains(TEST_KEY));
 }
+
+#[tokio::test]
+async fn mod_description_returns_html_and_caches() {
+    let (s, _t, cf) = setup().await;
+    Mock::given(method("GET"))
+        .and(path("/v1/mods/238222/description"))
+        .and(header("x-api-key", TEST_KEY))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_string(r#"{"data":"<p>JEI <b>xem</b> công thức</p>"}"#),
+        )
+        .expect(1)
+        .mount(&s)
+        .await;
+
+    let html = cf.mod_description(238222).await.unwrap();
+    assert_eq!(html, "<p>JEI <b>xem</b> công thức</p>");
+    assert_eq!(cf.mod_description(238222).await.unwrap(), html);
+    assert_eq!(
+        cf.mod_description(0).await.unwrap_err().code(),
+        ErrorCode::ContentNotFound
+    );
+}
