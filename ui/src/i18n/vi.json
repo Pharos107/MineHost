@@ -373,6 +373,17 @@
       "again_one": "Quét lại lệnh của server ({{count}} lệnh, quét lúc {{at}})",
       "again_other": "Quét lại lệnh của server ({{count}} lệnh, quét lúc {{at}})",
       "fromServer": "Lệnh của server"
+    },
+    "player": {
+      "online": "Đang chơi",
+      "offline": "Đã từng vào"
+    },
+    "selector": {
+      "a": "Mọi người chơi",
+      "p": "Người chơi gần nhất",
+      "r": "Một người chơi ngẫu nhiên",
+      "s": "Người gõ lệnh (console không dùng được)",
+      "e": "Mọi thực thể"
     }
   },
   "game": {

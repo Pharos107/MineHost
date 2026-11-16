@@ -165,4 +165,23 @@ describe("ConsoleTab", () => {
     expect(option.textContent).toContain("ftbquests open_book [<target>]");
     expect(option.textContent).toContain("Lệnh của server");
   });
+
+  it("gõ đối số thì gợi ý tên người chơi, Tab điền tên", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.endsWith("/players")) {
+          const player = { name: "Pharos_107", online: true, op: true, banned: false, frozen: false, whitelisted: true };
+          return Response.json({ max_players: 20, online_mode: false, running: true, whitelist_enabled: true, players: [player] });
+        }
+        return new Response(null, { status: 204 });
+      }),
+    );
+    renderConsole();
+    const input = screen.getByRole("combobox", { name: "Lệnh" });
+    await userEvent.type(input, "tp pha");
+    expect((await screen.findByRole("option")).textContent).toContain("Đang chơi");
+    await userEvent.keyboard("{Tab}");
+    expect((input as HTMLInputElement).value).toBe("tp Pharos_107 ");
+  });
 });

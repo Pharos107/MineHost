@@ -64,3 +64,35 @@ export function matchCommands(input: string, scanned: ScannedCommand[] = []): Ma
   const extra = scanned.filter((c) => !BUILT_IN.has(c.name) && startsWith(c.name, typed));
   return [...own, ...extra].slice(0, LIMIT);
 }
+
+/** Gợi ý cho đối số đang gõ: tên người chơi hoặc bộ chọn `@a`, `@p`… */
+export interface ArgumentHint {
+  value: string;
+  kind: "online" | "offline" | "selector";
+}
+
+/** Bộ chọn của Minecraft; mô tả ở `console.selector.<chữ>` trong i18n. */
+export const SELECTORS = ["@a", "@p", "@r", "@s", "@e"];
+
+/**
+ * Đối số cuối đang gõ (sau dấu cách cuối): `start` là chỗ bắt đầu để thay khi chọn. Chưa gõ chữ nào
+ * thì không gợi ý, kẻo lệnh như `say ` cũng bật danh sách người chơi.
+ */
+export function matchArgument(input: string, players: { name: string; online: boolean }[]): { start: number; hints: ArgumentHint[] } {
+  const start = Math.max(input.lastIndexOf(" "), input.lastIndexOf("\t")) + 1;
+  const token = input.slice(start).toLowerCase();
+  if (start === 0 || token === "") return { start, hints: [] };
+  if (token.startsWith("@")) {
+    return { start, hints: SELECTORS.filter((s) => s.startsWith(token)).map((value) => ({ value, kind: "selector" })) };
+  }
+  const seen = new Set<string>();
+  const hints: ArgumentHint[] = [];
+  // Người đang online lên trước.
+  for (const player of [...players].sort((a, b) => Number(b.online) - Number(a.online))) {
+    const key = player.name.toLowerCase();
+    if (seen.has(key) || !key.startsWith(token)) continue;
+    seen.add(key);
+    hints.push({ value: player.name, kind: player.online ? "online" : "offline" });
+  }
+  return { start, hints: hints.slice(0, LIMIT) };
+}

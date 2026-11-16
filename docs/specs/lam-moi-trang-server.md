@@ -40,6 +40,8 @@ CPU / RAM, nút bật / tắt ở thanh bên.
     bỏ mã màu. Không hỏi server.
   - Gợi ý lệnh khi gõ tên lệnh: 25 lệnh vanilla hay dùng kèm cách gõ và mô tả. Mũi tên chọn, Tab điền,
     Esc đóng; Enter luôn gửi đúng chữ đang có; ô trống thì mũi tên vẫn là lịch sử lệnh.
+  - Gõ đối số (sau dấu cách) thì gợi ý tên người chơi khớp chữ đang gõ (người online trước, rồi người đã
+    từng vào) và bộ chọn `@a @p @r @s @e`; Tab điền thay đối số cuối. Chưa gõ chữ nào thì không gợi ý.
 
 Component: `StatTile` thêm `meter`, `NavSection` thêm `actions` và `extra`, `PageHeader` thêm `eyebrow`,
 `AppShell` thêm `navEnd`, `Terminal` thêm `size="sm"`, `size="fill"` và tông `warning`, thêm `SuggestBox`, thêm `Columns` (1, 2 hoặc 3 cột).

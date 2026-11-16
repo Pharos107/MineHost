@@ -373,6 +373,17 @@
       "again_one": "Rescan server commands ({{count}} command, scanned {{at}})",
       "again_other": "Rescan server commands ({{count}} commands, scanned {{at}})",
       "fromServer": "Server command"
+    },
+    "player": {
+      "online": "Online",
+      "offline": "Has joined before"
+    },
+    "selector": {
+      "a": "All players",
+      "p": "Nearest player",
+      "r": "A random player",
+      "s": "Whoever runs the command (not the console)",
+      "e": "All entities"
     }
   },
   "game": {

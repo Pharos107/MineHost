@@ -5,21 +5,37 @@ import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
 import { api, errorMessage, type Server } from "../../../api/client";
-import { Button, Notice, Stack, SuggestBox, TextInput } from "../../../ui";
+import type { Player } from "../../../api/players";
+import { Button, Notice, Stack, SuggestBox, TextInput, type Suggestion } from "../../../ui";
 import { emptyHistory, historyDown, historyUp, pushCommand } from "../history";
-import { matchCommands, type MatchedCommand } from "./commandHints";
+import { usePlayers } from "../players/usePlayers";
+import { matchArgument, matchCommands, type ArgumentHint, type MatchedCommand } from "./commandHints";
 import { useServerCommands } from "./ScanCommands";
 
-/**
- * Ô gửi lệnh: mũi tên lên / xuống gọi lại lệnh cũ; đang gõ tên lệnh thì có danh sách gợi ý, mũi tên
- * chọn gợi ý, Tab điền vào, Esc đóng. Enter luôn gửi đúng chữ đang có.
- */
 /** Lệnh có sẵn: cách gõ và mô tả đã dịch. Lệnh của server: cách gõ từ `help`, mô tả nếu có. */
-function suggestion(t: TFunction, c: MatchedCommand) {
+function commandItem(t: TFunction, c: MatchedCommand): Suggestion {
   if (c.key) return { value: c.name, label: t(`console.hints.${c.key}.usage`), detail: t(`console.hints.${c.key}.desc`) };
   return { value: c.name, label: c.usage ?? c.name, detail: c.description ?? t("console.scan.fromServer") };
 }
 
+function argumentItem(t: TFunction, hint: ArgumentHint): Suggestion {
+  const detail = hint.kind === "selector" ? t(`console.selector.${hint.value.slice(1)}`) : t(`console.player.${hint.kind}`);
+  return { value: hint.value, label: hint.value, detail };
+}
+
+/** Gợi ý cho chữ đang gõ và cách điền khi chọn: tên lệnh khi chưa có dấu cách, sau đó là đối số cuối. */
+function suggest(t: TFunction, value: string, scanned: Parameters<typeof matchCommands>[1], players: Player[]) {
+  const argument = matchArgument(value, players);
+  if (argument.start === 0) {
+    return { items: matchCommands(value, scanned).map((c) => commandItem(t, c)), fill: (name: string) => `${name} ` };
+  }
+  return { items: argument.hints.map((h) => argumentItem(t, h)), fill: (name: string) => `${value.slice(0, argument.start)}${name} ` };
+}
+
+/**
+ * Ô gửi lệnh: mũi tên lên / xuống gọi lại lệnh cũ; đang gõ tên lệnh hoặc tên người chơi thì có danh
+ * sách gợi ý, mũi tên chọn gợi ý, Tab điền vào, Esc đóng. Enter luôn gửi đúng chữ đang có.
+ */
 export function CommandInput({ server }: { server: Server }) {
   const { t } = useTranslation();
   const listId = useId();
@@ -31,8 +47,9 @@ export function CommandInput({ server }: { server: Server }) {
   // Backend chỉ nhận lệnh khi server có process; bấm Gửi lúc khác chỉ nhận lỗi SERVER_BUSY.
   const online = server.state === "running" || server.state === "starting";
   const scanned = useServerCommands(server.id).data?.commands;
-  const matches = dismissed ? [] : matchCommands(value, scanned);
-  const items = matches.map((c) => suggestion(t, c));
+  const players = usePlayers(server.id, server.state).data?.players ?? [];
+  const suggestion = suggest(t, value, scanned, players);
+  const items = dismissed ? [] : suggestion.items;
   const current = Math.min(active, Math.max(items.length - 1, 0));
 
   function change(next: string) {
@@ -42,7 +59,7 @@ export function CommandInput({ server }: { server: Server }) {
   }
 
   function pick(name: string) {
-    change(`${name} `);
+    change(suggestion.fill(name));
   }
 
   function submit() {

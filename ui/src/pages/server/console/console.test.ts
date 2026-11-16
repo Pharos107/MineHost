@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { matchCommands } from "./commandHints";
+import { matchArgument, matchCommands } from "./commandHints";
 import { logFileName, logText } from "./downloadLog";
 
 describe("gợi ý lệnh", () => {
@@ -26,6 +26,30 @@ describe("gộp lệnh quét từ server", () => {
     const tp = matchCommands("tp", scanned);
     expect(tp.map((c) => c.name)).toEqual(["tp"]);
     expect(tp[0]?.key).toBe("tp");
+  });
+});
+
+describe("gợi ý đối số", () => {
+  const players = [
+    { name: "Steve", online: false },
+    { name: "Stella", online: true },
+    { name: "Alex", online: true },
+  ];
+
+  it("tên người chơi khớp chữ đang gõ, người online trước; thay đúng đối số cuối", () => {
+    const match = matchArgument("tp Alex st", players);
+    expect(match.start).toBe(8);
+    expect(match.hints).toEqual([
+      { value: "Stella", kind: "online" },
+      { value: "Steve", kind: "offline" },
+    ]);
+  });
+
+  it("bộ chọn @ và không gợi ý khi chưa gõ chữ nào hoặc đang gõ tên lệnh", () => {
+    expect(matchArgument("kill @", players).hints.map((h) => h.value)).toEqual(["@a", "@p", "@r", "@s", "@e"]);
+    expect(matchArgument("give @p", players).hints).toEqual([{ value: "@p", kind: "selector" }]);
+    expect(matchArgument("say ", players).hints).toEqual([]);
+    expect(matchArgument("tp", players)).toEqual({ start: 0, hints: [] });
   });
 });
 
