@@ -60,7 +60,7 @@ chính PR ấy.
 | 43 | Trang Mod gọn, kéo thả vào bảng | Đã merge | [#143](https://github.com/Pharos107/MineHost/pull/143) |
 | 44 | Trình duyệt mod có khung chi tiết, danh sách chờ | Đã merge | [#144](https://github.com/Pharos107/MineHost/pull/144) |
 | 45 | Bước Mod khi tạo server | Đã merge | [#145](https://github.com/Pharos107/MineHost/pull/145) |
-| 46 | Trang Từ modpack dùng trình duyệt | Chưa bắt đầu | |
+| 46 | Trang Từ modpack dùng trình duyệt | Đã merge | [#146](https://github.com/Pharos107/MineHost/pull/146) |
 | 38 | Phát hành `v0.5.0` | Chưa bắt đầu | |
 
 Ngoài kế hoạch, sửa lỗi tìm ra khi chạy thử modpack thật cho PR-37: [#108](https://github.com/Pharos107/MineHost/pull/108), [#109](https://github.com/Pharos107/MineHost/pull/109), [#110](https://github.com/Pharos107/MineHost/pull/110), [#111](https://github.com/Pharos107/MineHost/pull/111), [#114](https://github.com/Pharos107/MineHost/pull/114), [#115](https://github.com/Pharos107/MineHost/pull/115), [#117](https://github.com/Pharos107/MineHost/pull/117), [#123](https://github.com/Pharos107/MineHost/pull/123), [#124](https://github.com/Pharos107/MineHost/pull/124). Theo yêu cầu của chủ dự án: mở giao diện qua Tailscale khi bật LAN [#116](https://github.com/Pharos107/MineHost/pull/116).
