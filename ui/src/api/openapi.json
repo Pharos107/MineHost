@@ -404,6 +404,29 @@
                 "null"
               ]
             }
+          },
+          {
+            "name": "loader",
+            "in": "path",
+            "description": "Lọc như `server_id` cho server chưa tạo; phải gửi cùng `minecraft`.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "minecraft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
           }
         ],
         "responses": {
@@ -562,6 +585,29 @@
           },
           {
             "name": "server_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "loader",
+            "in": "path",
+            "description": "Lọc theo loader và Minecraft khi chưa có server; phải gửi cả hai.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "minecraft",
             "in": "path",
             "required": true,
             "schema": {
@@ -3805,6 +3851,13 @@
           "minecraft"
         ],
         "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentItemBody"
+            },
+            "description": "Mod/plugin cài ngay sau khi tạo (tối đa 50); mục lỗi nằm trong `result.content_failed` của Job."
+          },
           "loader": {
             "type": "string",
             "description": "`paper`, `purpur`, `vanilla`, `fabric`, `quilt`, `forge` hoặc `neoforge`."
