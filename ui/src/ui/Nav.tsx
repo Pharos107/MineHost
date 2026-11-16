@@ -29,14 +29,24 @@ export function NavItem({ to, icon: Icon, label, end = false }: NavItemProps) {
 interface NavSectionProps {
   /** Tiêu đề nhóm, ví dụ tên server đang mở. */
   title?: string;
+  /** Nút nhỏ bên phải tiêu đề, ví dụ bật / tắt server đang mở. */
+  actions?: ReactNode;
+  /** Nằm ngay dưới tiêu đề, ví dụ trạng thái server đang mở. */
+  extra?: ReactNode;
   children: ReactNode;
 }
 
 /** Nhóm các `NavItem`, có tiêu đề tùy chọn. */
-export function NavSection({ title, children }: NavSectionProps) {
+export function NavSection({ title, actions, extra, children }: NavSectionProps) {
   return (
     <div className={styles.section}>
-      {title && <p className={styles.title}>{title}</p>}
+      {title && (
+        <div className={styles.heading}>
+          <p className={styles.title}>{title}</p>
+          {actions}
+        </div>
+      )}
+      {extra && <div className={styles.extra}>{extra}</div>}
       <div className={styles.items}>{children}</div>
     </div>
   );

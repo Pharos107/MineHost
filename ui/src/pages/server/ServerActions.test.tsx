@@ -20,11 +20,11 @@ function mockApi() {
   return () => fetchMock.mock.calls.filter(([, init]) => init?.method === "POST").map(([url]) => url.replace("/api/v1/servers/01JB", ""));
 }
 
-function renderActions(s: Server) {
+function renderActions(s: Server, compact = false) {
   const client = new QueryClient();
   render(
     <QueryClientProvider client={client}>
-      <ServerActions server={s} />
+      <ServerActions server={s} compact={compact} />
     </QueryClientProvider>,
   );
 }
@@ -64,6 +64,23 @@ describe("ServerActions", () => {
     expect(posts()).toEqual([]);
     await userEvent.click(screen.getByRole("button", { name: "Buộc dừng" }));
     await vi.waitFor(() => expect(posts()).toEqual(["/actions/kill"]));
+  });
+
+  it("bản gọn ở thanh bên: chỉ nút icon, không có menu Buộc dừng, vẫn gửi được lệnh", async () => {
+    const posts = mockApi();
+    renderActions(server({ state: "running", eula_accepted: true }), true);
+    expect(screen.queryByRole("button", { name: "Thao tác khác" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Khởi động lại" }).textContent).toBe("");
+    await userEvent.click(screen.getByRole("button", { name: "Tắt" }));
+    await vi.waitFor(() => expect(posts()).toEqual(["/actions/stop"]));
+  });
+
+  it("bản gọn khi server tắt: bấm Bật vẫn hỏi EULA trước", async () => {
+    const posts = mockApi();
+    renderActions(server({}), true);
+    await userEvent.click(screen.getByRole("button", { name: "Bật server" }));
+    expect(screen.getByRole("button", { name: "Tôi đồng ý" })).toBeTruthy();
+    expect(posts()).toEqual([]);
   });
 
   it("gặp DEPENDENCY_MISSING khi bấm Bật thì hiện lỗi kèm danh sách mod thiếu", async () => {

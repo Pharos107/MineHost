@@ -209,7 +209,8 @@
       "newer_schema": "This server was created by a newer MineHost. Please update MineHost.",
       "id_mismatch": "The ID in instance.toml ({{found}}) does not match the folder name. The folder may have been copied by hand.",
       "unknown": "The server folder is damaged."
-    }
+    },
+    "minecraftVersion": "Minecraft {{version}}"
   },
   "crashHints": {
     "NOT_ENOUGH_MEMORY": "The server ran out of RAM. Give it more RAM on the Server settings page.",

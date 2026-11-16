@@ -68,15 +68,18 @@ export function Card({ id, title, titleAs = "h2", description, icon, bannerSeed,
 
 interface PageHeaderProps {
   title: string;
+  /** Dòng nhỏ phía trên tiêu đề, ví dụ loader và phiên bản của server. */
+  eyebrow?: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
 }
 
 /** Đầu trang dùng chung: mọi trang có đúng một `h1` ở đây. */
-export function PageHeader({ title, description, actions }: PageHeaderProps) {
+export function PageHeader({ title, eyebrow, description, actions }: PageHeaderProps) {
   return (
     <header className={styles.page}>
       <div className={styles.pageText}>
+        {eyebrow && <p className={styles.eyebrow}>{eyebrow}</p>}
         <h1 className={styles.pageTitle}>{title}</h1>
         {description && <div className={styles.description}>{description}</div>}
       </div>
