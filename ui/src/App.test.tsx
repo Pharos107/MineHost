@@ -10,6 +10,8 @@ import { AppRoutes } from "./App";
 vi.mock("./pages/server/ConsoleTab", () => ({
   ConsoleTab: ({ server }: { server: Server }) => <p>console của {server.name}</p>,
 }));
+// Thẻ "Console gần đây" ở Tổng quan cũng dùng xterm.
+vi.mock("./pages/server/overview/ConsoleTail", () => ({ ConsoleTail: () => null }));
 
 const server: Server = {
   id: "01JB",
