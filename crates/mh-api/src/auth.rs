@@ -2,7 +2,7 @@
 //!
 //! Phiên chỉ nằm trong RAM: tắt MineHost là mất. Cookie không đặt `Secure` vì giao diện đi qua HTTP.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, SystemTime};
@@ -65,15 +65,17 @@ impl FromRef<ApiState> for Arc<LanState> {
     }
 }
 
-/// Số lần băm mật khẩu cùng lúc. Argon2 mặc định tốn khoảng 19 MiB RAM mỗi lần; không giới hạn thì
-/// vài trăm request đăng nhập song song từ LAN chiếm hàng GB RAM và hết CPU. Cũng là để lần sai thứ 5
-/// kịp được ghi trước khi các lần thử khác được băm, nên không vượt khóa bằng cách gửi song song.
-const MAX_VERIFYING: usize = 2;
+/// Số lần băm mật khẩu cùng lúc của cả controller. Argon2 mặc định tốn khoảng 19 MiB RAM mỗi lần;
+/// không giới hạn thì vài trăm request đăng nhập song song từ LAN chiếm hàng GB RAM và hết CPU.
+const MAX_VERIFYING: usize = 4;
 
 struct AuthGate {
     sessions: Mutex<HashMap<String, Session>>,
     logins: Mutex<HashMap<IpAddr, Attempt>>,
-    verifying: tokio::sync::Semaphore,
+    verifying: Arc<tokio::sync::Semaphore>,
+    /// IP đang được băm mật khẩu. Mỗi IP một lần tại một lúc: một máy không chiếm hết chỗ của người
+    /// khác, và lần sai thứ 5 luôn được ghi trước lần thử kế tiếp của cùng IP.
+    in_flight: Mutex<HashSet<IpAddr>>,
 }
 
 impl Default for AuthGate {
@@ -81,8 +83,39 @@ impl Default for AuthGate {
         Self {
             sessions: Mutex::default(),
             logins: Mutex::default(),
-            verifying: tokio::sync::Semaphore::new(MAX_VERIFYING),
+            verifying: Arc::new(tokio::sync::Semaphore::new(MAX_VERIFYING)),
+            in_flight: Mutex::default(),
         }
+    }
+}
+
+/// Chỗ băm mật khẩu của một IP. Đi vào luồng blocking cùng việc băm, nên client ngắt kết nối giữa
+/// chừng không nhả chỗ trong khi Argon2 vẫn chạy.
+struct VerifySlot {
+    gate: Arc<AuthGate>,
+    ip: IpAddr,
+    _permit: tokio::sync::OwnedSemaphorePermit,
+}
+
+impl Drop for VerifySlot {
+    fn drop(&mut self) {
+        lock(&self.gate.in_flight).remove(&self.ip);
+    }
+}
+
+impl AuthGate {
+    fn claim(gate: &Arc<Self>, ip: IpAddr) -> Option<VerifySlot> {
+        let mut in_flight = lock(&gate.in_flight);
+        if in_flight.contains(&ip) {
+            return None;
+        }
+        let permit = Arc::clone(&gate.verifying).try_acquire_owned().ok()?;
+        in_flight.insert(ip);
+        Some(VerifySlot {
+            gate: Arc::clone(gate),
+            ip,
+            _permit: permit,
+        })
     }
 }
 
@@ -280,26 +313,37 @@ pub async fn login(
     ApiJson(body): ApiJson<LoginBody>,
 ) -> Response {
     let ip = peer.ip();
-    // Đang băm đủ số lần cho phép: bảo thử lại sau, không xếp hàng (hàng chờ cũng tốn RAM).
-    let Ok(_verifying) = state.auth.verifying.try_acquire() else {
+    if let Some(wait) = state.auth.retry_after_secs(ip) {
+        return rate_limited(wait);
+    }
+    // IP này đang được băm, hoặc hết chỗ: bảo thử lại sau, không xếp hàng (hàng chờ cũng tốn RAM).
+    let Some(slot) = AuthGate::claim(&state.auth, ip) else {
         return rate_limited(1);
     };
-    // Kiểm tra khóa sau khi giữ chỗ: lần sai vừa ghi bởi request khác đã có hiệu lực.
+    // Lần thử trước của IP này có thể vừa ghi lần sai thứ 5 ngay trước khi nhả chỗ.
     if let Some(wait) = state.auth.retry_after_secs(ip) {
         return rate_limited(wait);
     }
     let password = body.password;
-    let app = Arc::clone(&state.app);
-    // Argon2 tốn vài chục mili giây; không giữ mutex của phiên trong lúc băm.
-    let ok = match blocking(move || app.auth().verify(&password)).await {
-        Ok(ok) => ok,
+    let (app, gate) = (Arc::clone(&state.app), Arc::clone(&state.auth));
+    // Argon2 tốn vài chục mili giây; không giữ mutex của phiên trong lúc băm. Ghi kết quả rồi mới nhả
+    // chỗ, ngay trong luồng blocking, để request bị hủy giữa chừng vẫn được tính.
+    let checked = blocking(move || {
+        let _slot = slot;
+        let ok = app.auth().verify(&password)?;
+        if ok {
+            gate.clear_failures(ip);
+        } else {
+            gate.record_failure(ip);
+        }
+        Ok(ok)
+    })
+    .await;
+    match checked {
+        Ok(true) => {}
+        Ok(false) => return invalid_password(),
         Err(err) => return err.into_response(),
-    };
-    if !ok {
-        state.auth.record_failure(ip);
-        return invalid_password();
     }
-    state.auth.clear_failures(ip);
     match state.auth.open_session() {
         Ok((token, csrf_token)) => (
             jar.add(session_cookie(&token)),

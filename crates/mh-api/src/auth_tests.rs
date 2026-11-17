@@ -190,8 +190,8 @@ async fn parallel_wrong_logins_cannot_skip_the_lock() {
             other => panic!("{other}"),
         }
     }
-    // 5 lần sai mới khóa; lần thứ 6 có thể đang băm cùng lúc với lần thứ 5.
-    assert!((1..=6).contains(&checked), "{checked}");
+    // Mỗi IP chỉ băm một lần tại một lúc và lần sai được ghi trước khi nhả chỗ: không quá 5 lần.
+    assert!((1..=5).contains(&checked), "{checked}");
 }
 
 #[tokio::test]
