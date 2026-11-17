@@ -242,10 +242,13 @@ async fn watch(
         status = child.wait() => status,
         Some(()) = kill_rx.recv() => {
             tracing::warn!(pid = child.id(), "kill process server");
+            guard.kill_tree();
             let _ = child.start_kill();
             child.wait().await
         }
     };
+    // Process cháu còn sống sau Java vẫn giữ cổng, file trong world và pipe log: dọn luôn.
+    guard.kill_tree();
     let _ = tokio::time::timeout(DRAIN_TIMEOUT, async {
         for reader in readers {
             let _ = reader.await;

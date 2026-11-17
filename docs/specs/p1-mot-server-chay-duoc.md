@@ -273,6 +273,11 @@ Lệnh chạy:
   đã fork chứ không phải process. Vì vậy mọi lần spawn phải đi qua một luồng `std::thread` riêng, sống
   suốt vòng đời controller ("spawner thread"). Không được spawn từ `spawn_blocking`: luồng đó tự thoát
   sau 10 giây rảnh, kéo theo server bị kill.
+- **Linux, process cháu (sửa 2026-11-17):** Java chạy trong nhóm process riêng (`process_group(0)`).
+  Buộc dừng thì `killpg(SIGKILL)` cả nhóm, và sau khi Java thoát vì bất cứ lý do gì thì kill nốt những
+  gì còn trong nhóm, để chương trình do plugin chạy không giữ cổng hay file của world. Nhóm riêng cũng
+  nghĩa là Ctrl+C ở terminal chỉ tới controller, và controller dừng server bằng `stop`. Controller bị
+  kill đột ngột thì `PDEATHSIG` chỉ tới Java; process cháu khi đó vẫn có thể sống sót.
 - Phần `unsafe` (Job Object, `prctl`) nằm trong `crates/mh-runtime/src/os/{windows,linux}.rs`, mỗi
   khối có comment `// SAFETY:`. Ngoài ra chỉ có `minehost/src/win32.rs` mở `unsafe_code` (ADR 0002).
 - Test: dùng binary giả `fake-mc` (một `[[bin]]` chỉ có trong test) in ra `Done (0.1s)!`, đọc stdin,

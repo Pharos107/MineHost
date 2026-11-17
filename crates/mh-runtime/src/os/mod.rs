@@ -39,6 +39,9 @@ pub(crate) struct ProcessGuard {
     job: windows::Job,
     #[cfg(target_os = "linux")]
     cgroup: Option<cgroup::ServerCgroup>,
+    /// Java là trưởng nhóm process của chính nó; id nhóm bằng pid của Java.
+    #[cfg(target_os = "linux")]
+    pgid: Option<u32>,
 }
 
 impl Guard {
@@ -73,6 +76,9 @@ impl Guard {
         #[cfg(target_os = "linux")]
         let cgroup = {
             linux::kill_with_parent(cmd);
+            // Nhóm riêng: kill cả process cháu (plugin chạy chương trình ngoài) được bằng một lệnh, và
+            // Ctrl+C ở terminal chỉ tới controller, controller tự gửi `stop`.
+            cmd.process_group(0);
             let cgroup = self.linux_cgroup(limits);
             if let Some(fd) = cgroup.as_ref().and_then(cgroup::ServerCgroup::procs_fd) {
                 linux::join_cgroup(cmd, fd);
@@ -116,12 +122,15 @@ impl Guard {
         }
         #[cfg(target_os = "linux")]
         {
-            let _ = (child, pending.limits);
+            let _ = pending.limits;
             let mut cgroup = pending.cgroup;
             if let Some(cgroup) = cgroup.as_mut() {
                 cgroup.spawned();
             }
-            Ok(ProcessGuard { cgroup })
+            Ok(ProcessGuard {
+                cgroup,
+                pgid: child.id(),
+            })
         }
         #[cfg(not(any(windows, target_os = "linux")))]
         {
@@ -132,6 +141,18 @@ impl Guard {
 }
 
 impl ProcessGuard {
+    /// Kill mọi process còn trong nhóm của server: gọi khi buộc dừng và sau khi Java đã thoát, để
+    /// process cháu không giữ cổng hay file của world. Windows: Job Object riêng làm việc này khi đóng.
+    #[cfg(target_os = "linux")]
+    pub(crate) fn kill_tree(&self) {
+        if let Some(pgid) = self.pgid {
+            linux::kill_group(pgid);
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub(crate) fn kill_tree(&self) {}
+
     /// Gọi sau khi process đã thoát.
     #[cfg(windows)]
     pub(crate) fn memory_limit_hit(&self) -> bool {
