@@ -59,6 +59,7 @@ pub use lan::{LanState, lan_listener};
         servers::console,
         commands::list,
         commands::scan,
+        commands::registry,
         servers::metrics,
         backups::list,
         backups::create,
@@ -120,6 +121,8 @@ pub use lan::{LanState, lan_listener};
         error::ErrorBody,
         commands::ServerCommandDto,
         commands::ServerCommandsDto,
+        commands::RegistryEntryDto,
+        commands::ServerRegistryDto,
         auth::SessionDto,
         auth::CsrfDto,
         auth::LoginBody,
@@ -286,6 +289,7 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         )
         .route("/servers/{id}/commands", get(commands::list))
         .route("/servers/{id}/commands/scan", post(commands::scan))
+        .route("/servers/{id}/commands/registry", get(commands::registry))
         .route("/servers/{id}/metrics", get(servers::metrics))
         .route(
             "/servers/{id}/backups",

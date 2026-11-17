@@ -16,6 +16,7 @@ export type CreateServer = components["schemas"]["CreateServerBody"];
 export type Created = components["schemas"]["CreatedDto"];
 export type ConsoleLine = components["schemas"]["ConsoleLineDto"];
 export type ServerCommands = components["schemas"]["ServerCommandsDto"];
+export type ServerRegistry = components["schemas"]["ServerRegistryDto"];
 export type ServerAction = "start" | "stop" | "restart" | "kill";
 /** Loại server tạo được (spec P2 mục 5.4, spec P3 mục 3.1). */
 export type Loader = "paper" | "vanilla" | "purpur" | "fabric" | "quilt" | "forge" | "neoforge";
@@ -122,6 +123,8 @@ export const api = {
   /** Lệnh đã quét bằng `help` (spec lenh-cua-server.md). */
   serverCommands: (id: string) => request<ServerCommands>("GET", `${serverPath(id)}/commands`),
   scanCommands: (id: string) => request<ServerCommands>("POST", `${serverPath(id)}/commands/scan`),
+  /** Tên vật phẩm, hiệu ứng, sinh vật, phù phép trích từ `mods/*.jar` của server. */
+  serverRegistry: (id: string) => request<ServerRegistry>("GET", `${serverPath(id)}/commands/registry`),
   updateServer: (id: string, patch: ServerPatch) => request<Server>("PATCH", serverPath(id), patch),
   trashServer: (id: string, confirmName: string) =>
     request<Trashed>("DELETE", `${serverPath(id)}?confirm_name=${encodeURIComponent(confirmName)}`),

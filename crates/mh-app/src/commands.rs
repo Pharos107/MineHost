@@ -65,6 +65,10 @@ impl App {
         let bytes = serde_json::to_vec_pretty(&list)
             .map_err(|error| AppError::new(ErrorCode::Internal, error.to_string()))?;
         mh_platform::fs::write_atomic(&self.store.paths(id).root.join(FILE), &bytes)?;
+        // Quét luôn registry của mods/*.jar để gợi ý đồ/hiệu ứng mới nếu vừa thêm mod.
+        if let Err(error) = self.scan_registry(id).await {
+            tracing::warn!(server = %id, %error, "không quét được registry từ mods/");
+        }
         tracing::info!(server = %id, count = list.commands.len(), "đã quét lệnh của server");
         Ok(list)
     }

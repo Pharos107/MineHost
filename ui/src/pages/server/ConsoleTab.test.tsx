@@ -132,15 +132,39 @@ describe("ConsoleTab", () => {
     expect(shownLines()).toHaveLength(4);
   });
 
-  it("gõ tên lệnh thì có gợi ý, Tab điền tên lệnh", async () => {
+  it("gõ / giữ nguyên dấu /, bấm Tab điền liên hoàn và hiện thanh cú pháp", async () => {
     mockCommands();
     renderConsole();
     const input = screen.getByRole("combobox", { name: "Lệnh" });
-    await userEvent.type(input, "gamem");
+    await userEvent.type(input, "/gamem");
     expect(screen.getByRole("option").textContent).toContain("Đổi chế độ chơi");
     await userEvent.keyboard("{Tab}");
-    expect((input as HTMLInputElement).value).toBe("gamemode ");
+    expect((input as HTMLInputElement).value).toBe("/gamemode ");
+    // Sau khi chọn lệnh vẫn mở tiếp gợi ý cho tham số chế độ chơi và hiện thanh cú pháp.
+    const options = screen.getAllByRole("option").map((o) => o.textContent ?? "");
+    expect(options.some((t) => t.includes("survival"))).toBe(true);
+    expect(options.some((t) => t.includes("creative"))).toBe(true);
+    expect(screen.getByText("/gamemode")).toBeTruthy();
+
+    await userEvent.type(input, "c");
+    await userEvent.keyboard("{Tab}");
+    expect((input as HTMLInputElement).value).toBe("/gamemode creative ");
+    expect(screen.getAllByRole("option").some((o) => (o.textContent ?? "").includes("@a"))).toBe(true);
+
+    await userEvent.keyboard("{Escape}");
     expect(screen.queryByRole("listbox")).toBeNull();
+  });
+
+  it("gõ /eff bấm Tab ra /effect và mở gợi ý give / clear", async () => {
+    mockCommands();
+    renderConsole();
+    const input = screen.getByRole("combobox", { name: "Lệnh" });
+    await userEvent.type(input, "/eff");
+    await userEvent.keyboard("{Tab}");
+    expect((input as HTMLInputElement).value).toBe("/effect ");
+    const options = screen.getAllByRole("option").map((o) => o.textContent ?? "");
+    expect(options.some((t) => t.includes("give"))).toBe(true);
+    expect(options.some((t) => t.includes("clear"))).toBe(true);
   });
 
   it("lấy lệnh của server rồi gợi ý cả lệnh của mod", async () => {
@@ -183,5 +207,36 @@ describe("ConsoleTab", () => {
     expect((await screen.findByRole("option")).textContent).toContain("Đang chơi");
     await userEvent.keyboard("{Tab}");
     expect((input as HTMLInputElement).value).toBe("tp Pharos_107 ");
+  });
+
+  it("gợi ý hiệu ứng bằng tiếng Việt và vật phẩm quét từ mod", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.endsWith("/commands/registry")) {
+          return Response.json({
+            scanned_at: "2026-11-17T00:00:00Z",
+            items: [{ id: "create:brass_ingot", label: "Brass Ingot" }],
+            effects: [],
+            entities: [],
+            enchantments: [],
+          });
+        }
+        return new Response(null, { status: 204 });
+      }),
+    );
+    renderConsole();
+    const input = screen.getByRole("combobox", { name: "Lệnh" });
+
+    await userEvent.type(input, "/effect give Steve hoi phuc");
+    const regenOption = await screen.findByRole("option", { name: /minecraft:regeneration/ });
+    expect(regenOption.textContent).toContain("Hồi phục");
+    await userEvent.keyboard("{Tab}");
+    expect((input as HTMLInputElement).value).toBe("/effect give Steve minecraft:regeneration ");
+
+    await userEvent.clear(input);
+    await userEvent.type(input, "/give Steve brass");
+    const modOption = await screen.findByRole("option", { name: /create:brass_ingot/ });
+    expect(modOption.textContent).toContain("Brass Ingot");
   });
 });

@@ -51,3 +51,8 @@ export function Field({ label, hint, error, children }: FieldProps) {
     </div>
   );
 }
+
+/** Dòng chú thích nhỏ màu dịu, dùng lại đúng kiểu `.hint` của `Field`. */
+export function Hint({ children }: { children: ReactNode }) {
+  return <div className={styles.hint}>{children}</div>;
+}

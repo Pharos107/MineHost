@@ -412,6 +412,14 @@
       "locate": {
         "usage": "locate structure <structure>",
         "desc": "Find the nearest structure"
+      },
+      "summon": {
+        "usage": "summon <entity> [x y z]",
+        "desc": "Summon an entity"
+      },
+      "enchant": {
+        "usage": "enchant <player> <enchantment> [level]",
+        "desc": "Enchant held item"
       }
     },
     "scan": {
@@ -430,6 +438,116 @@
       "r": "A random player",
       "s": "Whoever runs the command (not the console)",
       "e": "All entities"
+    },
+    "shortcutHint": "Tab: autocomplete · ↑↓: select or history · Esc: dismiss",
+    "tags": {
+      "command": "Command",
+      "server": "Mod / Server",
+      "subcommand": "Subcommand",
+      "mode": "Option",
+      "player": "Player",
+      "selector": "Target",
+      "rule": "Rule",
+      "number": "Preset",
+      "boolean": "Boolean",
+      "effect": "Effect",
+      "item": "Item",
+      "entity": "Entity",
+      "enchantment": "Enchantment",
+      "structure": "Structure",
+      "biome": "Biome",
+      "other": "Value"
+    },
+    "params": {
+      "player": "<player>",
+      "playerOpt": "[player]",
+      "target": "<target>",
+      "targetOpt": "[target]",
+      "message": "<message>",
+      "reasonOpt": "[reason]",
+      "item": "<item>",
+      "itemOpt": "[item]",
+      "countOpt": "[count]",
+      "maxCountOpt": "[maxCount]",
+      "effect": "<effect>",
+      "effectOpt": "[effect]",
+      "secondsOpt": "[seconds]",
+      "amplifierOpt": "[amplifier]",
+      "hideParticlesOpt": "[hideParticles]",
+      "durationOpt": "[duration]",
+      "rule": "<rule>",
+      "valueOpt": "[value]",
+      "amount": "<amount>",
+      "posOpt": "[x y z]",
+      "structure": "<structure>",
+      "biome": "<biome>",
+      "poi": "<poi>",
+      "entity": "<entity>",
+      "enchantment": "<enchantment>",
+      "levelOpt": "[level]"
+    },
+    "args": {
+      "gamemode": {
+        "survival": "Survival mode",
+        "creative": "Creative mode",
+        "adventure": "Adventure mode",
+        "spectator": "Spectator mode"
+      },
+      "difficulty": {
+        "peaceful": "Peaceful",
+        "easy": "Easy",
+        "normal": "Normal",
+        "hard": "Hard"
+      },
+      "time": {
+        "set": "Set time",
+        "add": "Add time",
+        "query": "Query current time",
+        "day": "Day (1000)",
+        "noon": "Noon (6000)",
+        "night": "Night (13000)",
+        "midnight": "Midnight (18000)",
+        "daytime": "Time of day",
+        "gametime": "Total world ticks",
+        "dayCount": "Days elapsed"
+      },
+      "weather": {
+        "clear": "Clear sky",
+        "rain": "Rain",
+        "thunder": "Thunderstorm"
+      },
+      "whitelist": {
+        "add": "Add player",
+        "remove": "Remove player",
+        "list": "Show whitelist",
+        "on": "Enable whitelist",
+        "off": "Disable whitelist",
+        "reload": "Reload from disk"
+      },
+      "effect": {
+        "give": "Give an effect",
+        "clear": "Clear effects"
+      },
+      "xp": {
+        "add": "Add experience",
+        "set": "Set experience",
+        "query": "Query experience",
+        "levels": "Levels",
+        "points": "Points"
+      },
+      "locate": {
+        "structure": "Find structure",
+        "biome": "Find biome",
+        "poi": "Find point of interest"
+      },
+      "saveAll": {
+        "flush": "Flush immediately to disk"
+      },
+      "boolean": {
+        "true": "Enable",
+        "false": "Disable"
+      },
+      "coords": "Relative coordinates"
     }
   },
   "game": {

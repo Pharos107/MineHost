@@ -437,6 +437,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/commands/registry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["registry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}/commands/scan": {
         parameters: {
             query?: never;
@@ -1413,6 +1429,11 @@ export interface components {
             key: string;
             value: string;
         };
+        /** @description Một mục trong registry của mod (`minecraft:diamond`, `create:brass_ingot`…). */
+        RegistryEntryDto: {
+            id: string;
+            label?: string | null;
+        };
         RenameBody: {
             from: string;
             to: string;
@@ -1536,6 +1557,14 @@ export interface components {
             source: string;
             version_id?: string | null;
             version_name?: string | null;
+        };
+        /** @description Tên vật phẩm, hiệu ứng, sinh vật, phù phép trích từ `mods/*.jar` của server. */
+        ServerRegistryDto: {
+            effects: components["schemas"]["RegistryEntryDto"][];
+            enchantments: components["schemas"]["RegistryEntryDto"][];
+            entities: components["schemas"]["RegistryEntryDto"][];
+            items: components["schemas"]["RegistryEntryDto"][];
+            scanned_at?: string | null;
         };
         SessionDto: {
             /** @description Có khi đang đăng nhập. Gửi lại bằng header `X-CSRF-Token`. */
@@ -2870,6 +2899,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ServerCommandsDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    registry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerRegistryDto"];
                 };
             };
             404: {

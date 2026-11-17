@@ -63,7 +63,7 @@ export function ConsoleTab({ server }: { server: Server }) {
   }
 
   return (
-    <Stack gap={3}>
+    <Stack gap={3} grow>
       <Stack direction="row" gap={2} align="center" justify="between" wrap>
         <Stack direction="row" gap={2} align="center" wrap>
           <SearchInput value={view.filter} onChange={(filter) => update({ filter })} label={t("console.filter")} />

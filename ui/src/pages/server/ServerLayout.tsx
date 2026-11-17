@@ -55,7 +55,7 @@ function ServerView({ server }: { server: Server }) {
   const drawer = useMediaQuery("(max-width: 767px)", false);
 
   return (
-    <Stack gap={5}>
+    <Stack gap={5} grow>
       <PageHeader
         title={serverName(server)}
         eyebrow={serverSummary(t, server)}

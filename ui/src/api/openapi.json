@@ -1648,6 +1648,44 @@
         }
       }
     },
+    "/api/v1/servers/{id}/commands/registry": {
+      "get": {
+        "tags": [
+          "console"
+        ],
+        "operationId": "registry",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerRegistryDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}/commands/scan": {
       "post": {
         "tags": [
@@ -5463,6 +5501,24 @@
           }
         }
       },
+      "RegistryEntryDto": {
+        "type": "object",
+        "description": "Một mục trong registry của mod (`minecraft:diamond`, `create:brass_ingot`…).",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "RenameBody": {
         "type": "object",
         "required": [
@@ -5936,6 +5992,48 @@
             ]
           },
           "version_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ServerRegistryDto": {
+        "type": "object",
+        "description": "Tên vật phẩm, hiệu ứng, sinh vật, phù phép trích từ `mods/*.jar` của server.",
+        "required": [
+          "items",
+          "effects",
+          "entities",
+          "enchantments"
+        ],
+        "properties": {
+          "effects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegistryEntryDto"
+            }
+          },
+          "enchantments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegistryEntryDto"
+            }
+          },
+          "entities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegistryEntryDto"
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegistryEntryDto"
+            }
+          },
+          "scanned_at": {
             "type": [
               "string",
               "null"

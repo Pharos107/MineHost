@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use axum::Json;
 use axum::extract::State;
-use mh_app::{App, CommandList};
+use mh_app::{App, CommandList, RegistryList};
 use serde::Serialize;
 use time::format_description::well_known::Rfc3339;
 use utoipa::ToSchema;
@@ -67,4 +67,51 @@ pub async fn scan(
     IdPath(id): IdPath,
 ) -> ApiResult<Json<ServerCommandsDto>> {
     Ok(Json(app.scan_commands(id).await?.into()))
+}
+
+/// Một mục trong registry của mod (`minecraft:diamond`, `create:brass_ingot`…).
+#[derive(Debug, Serialize, ToSchema)]
+pub struct RegistryEntryDto {
+    pub id: String,
+    pub label: Option<String>,
+}
+
+/// Tên vật phẩm, hiệu ứng, sinh vật, phù phép trích từ `mods/*.jar` của server.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ServerRegistryDto {
+    pub scanned_at: Option<String>,
+    pub items: Vec<RegistryEntryDto>,
+    pub effects: Vec<RegistryEntryDto>,
+    pub entities: Vec<RegistryEntryDto>,
+    pub enchantments: Vec<RegistryEntryDto>,
+}
+
+impl From<RegistryList> for ServerRegistryDto {
+    fn from(reg: RegistryList) -> Self {
+        let map = |list: Vec<mh_core::commands::RegistryEntry>| {
+            list.into_iter()
+                .map(|e| RegistryEntryDto {
+                    id: e.id,
+                    label: e.label,
+                })
+                .collect()
+        };
+        Self {
+            scanned_at: reg.scanned_at.and_then(|at| at.format(&Rfc3339).ok()),
+            items: map(reg.items),
+            effects: map(reg.effects),
+            entities: map(reg.entities),
+            enchantments: map(reg.enchantments),
+        }
+    }
+}
+
+#[utoipa::path(get, path = "/api/v1/servers/{id}/commands/registry", tag = "console",
+    params(("id" = String, Path)),
+    responses((status = 200, body = ServerRegistryDto), (status = 404, body = ErrorBody)))]
+pub async fn registry(
+    State(app): State<Arc<App>>,
+    IdPath(id): IdPath,
+) -> ApiResult<Json<ServerRegistryDto>> {
+    Ok(Json(app.server_registry(id).await?.into()))
 }
