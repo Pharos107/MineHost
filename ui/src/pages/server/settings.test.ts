@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { Server } from "../../api/client";
-import { getProperty, sameProperties, setProperty } from "./properties";
+import { countChangedProperties, getProperty, HIDDEN_FROM_ADVANCED, removeProperty, sameProperties, setProperty } from "./properties";
+import { isModServer, isValidPropertyKey, resolvePropertyControl } from "./propertiesMeta";
 import { javaChoices, settingsErrors, settingsFrom, settingsPatch } from "./settings";
 
 const server: Server = {
@@ -71,5 +72,34 @@ describe("server.properties", () => {
     expect(sameProperties(list, [...list])).toBe(true);
     expect(sameProperties(list, setProperty(list, "pvp", "false"))).toBe(false);
     expect(sameProperties(list, [...list].reverse())).toBe(false);
+  });
+
+  it("xóa khóa, đếm thay đổi và ẩn khóa phổ biến khỏi bảng Nâng cao", () => {
+    const added = setProperty(list, "custom-flag", "true");
+    expect(countChangedProperties(added, list)).toBe(1);
+    expect(removeProperty(added, "custom-flag")).toEqual(list);
+    expect(HIDDEN_FROM_ADVANCED.has("server-port")).toBe(true);
+    expect(HIDDEN_FROM_ADVANCED.has("pvp")).toBe(true);
+    expect(HIDDEN_FROM_ADVANCED.has("allow-flight")).toBe(true);
+    expect(HIDDEN_FROM_ADVANCED.has("allow-nether")).toBe(false);
+  });
+
+  it("nhận diện kiểu nhập liệu cho khóa chuẩn, khóa lạ và giá trị hỏng", () => {
+    expect(resolvePropertyControl("allow-nether", "true").kind).toBe("boolean");
+    expect(resolvePropertyControl("allow-nether", "maybe").kind).toBe("text");
+    expect(resolvePropertyControl("level-type", "minecraft:normal").kind).toBe("select");
+    expect(resolvePropertyControl("max-world-size", "29999984").kind).toBe("number");
+    expect(resolvePropertyControl("rcon.password", "secret").kind).toBe("password");
+    expect(resolvePropertyControl("modpack-custom-bool", "false").kind).toBe("boolean");
+    expect(resolvePropertyControl("modpack-custom-str", "abc").kind).toBe("text");
+  });
+
+  it("kiểm tra tên khóa hợp lệ và nhận diện server mod", () => {
+    expect(isValidPropertyKey("allow-nether")).toBe(true);
+    expect(isValidPropertyKey("rcon.port")).toBe(true);
+    expect(isValidPropertyKey("bad key")).toBe(false);
+    expect(isValidPropertyKey("a=b")).toBe(false);
+    expect(isModServer(server)).toBe(false);
+    expect(isModServer({ ...server, loader: "fabric" })).toBe(true);
   });
 });
