@@ -3,102 +3,15 @@
 // Hàm trợ giúp ngoài `#[test]` không được clippy coi là code test.
 #![allow(clippy::unwrap_used)]
 
-use std::future::Future;
-use std::path::PathBuf;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+mod support;
+
+use std::sync::atomic::Ordering;
 use std::time::Duration;
 
 use mh_core::{ConsoleStream, CrashHint, ErrorCode, PlayerLogEvent, PlayerName, ServerState};
-use mh_runtime::{ProcessRuntime, ProcessSpec};
-use mh_supervisor::{
-    LaunchError, Launcher, Status, SupervisorConfig, SupervisorEvent, SupervisorHandle,
-};
+use mh_supervisor::{SupervisorConfig, SupervisorEvent};
+use support::{Setup, WAIT, config, console_has, supervisor, wait_state};
 use tokio::sync::broadcast;
-
-const WAIT: Duration = Duration::from_secs(10);
-
-#[derive(Clone, Default)]
-struct Probe {
-    prepares: Arc<AtomicUsize>,
-    marker: Arc<AtomicBool>,
-}
-
-struct FakeLauncher {
-    args: Vec<String>,
-    restart_on_crash: bool,
-    fail: Option<ErrorCode>,
-    probe: Probe,
-}
-
-impl Launcher for FakeLauncher {
-    fn prepare(&self) -> impl Future<Output = Result<ProcessSpec, LaunchError>> + Send {
-        self.probe.prepares.fetch_add(1, Ordering::SeqCst);
-        let result = match self.fail {
-            Some(code) => Err(LaunchError::new(code, "test")),
-            None => Ok(ProcessSpec {
-                program: PathBuf::from(env!("CARGO_BIN_EXE_supervisor-fake-mc")),
-                args: self.args.clone(),
-                work_dir: std::env::temp_dir(),
-                limits: None,
-            }),
-        };
-        async move { result }
-    }
-
-    fn restart_on_crash(&self) -> bool {
-        self.restart_on_crash
-    }
-
-    fn set_running_marker(&self, running: bool) {
-        self.probe.marker.store(running, Ordering::SeqCst);
-    }
-}
-
-fn config() -> SupervisorConfig {
-    SupervisorConfig {
-        slow_start_after: Duration::from_millis(300),
-        stop_timeout: Duration::from_millis(300),
-        restart_delays: vec![Duration::from_millis(20); 3],
-        ..SupervisorConfig::default()
-    }
-}
-
-struct Setup {
-    args: &'static [&'static str],
-    restart_on_crash: bool,
-    fail: Option<ErrorCode>,
-    config: SupervisorConfig,
-}
-
-impl Default for Setup {
-    fn default() -> Self {
-        Self {
-            args: &[],
-            restart_on_crash: true,
-            fail: None,
-            config: config(),
-        }
-    }
-}
-
-fn supervisor(setup: Setup) -> (SupervisorHandle, Probe) {
-    let runtime = Arc::new(ProcessRuntime::new().unwrap());
-    let probe = Probe::default();
-    let launcher = FakeLauncher {
-        args: setup.args.iter().map(|a| (*a).to_owned()).collect(),
-        restart_on_crash: setup.restart_on_crash,
-        fail: setup.fail,
-        probe: probe.clone(),
-    };
-    (mh_supervisor::spawn(setup.config, runtime, launcher), probe)
-}
-
-async fn wait_state(sup: &SupervisorHandle, state: ServerState) -> Status {
-    let status = sup.wait_for(WAIT, |s| s.state == state).await;
-    assert_eq!(status.state, state, "{status:?}");
-    status
-}
 
 #[tokio::test]
 async fn start_reaches_running_then_stop_reaches_stopped() {
@@ -133,6 +46,29 @@ async fn start_twice_is_busy() {
     let err = sup.start().await.unwrap_err();
     assert_eq!(err.code(), ErrorCode::ServerBusy);
     sup.kill().await.unwrap();
+}
+
+/// Khởi động lại mà server treo khi dừng, người dùng bấm Buộc dừng: server tắt hẳn, không tự bật lại.
+#[tokio::test]
+async fn kill_during_restart_cancels_the_restart() {
+    let (sup, probe) = supervisor(Setup {
+        args: &["--hang-on-stop"],
+        config: SupervisorConfig {
+            stop_timeout: Duration::from_secs(30),
+            ..config()
+        },
+        ..Setup::default()
+    });
+    sup.start().await.unwrap();
+    wait_state(&sup, ServerState::Running).await;
+
+    sup.restart().await.unwrap();
+    assert_eq!(sup.status().state, ServerState::Stopping);
+    sup.kill().await.unwrap();
+    wait_state(&sup, ServerState::Stopped).await;
+    tokio::time::sleep(Duration::from_millis(500)).await;
+    assert_eq!(sup.status().state, ServerState::Stopped);
+    assert_eq!(probe.prepares.load(Ordering::SeqCst), 1);
 }
 
 #[tokio::test]
@@ -182,13 +118,6 @@ async fn stop_max_caps_extensions() {
     sup.stop().await.unwrap();
     wait_state(&sup, ServerState::Stopped).await;
     assert!(!console_has(&sup, "All dimensions are saved"));
-}
-
-fn console_has(sup: &SupervisorHandle, text: &str) -> bool {
-    sup.console()
-        .after(None)
-        .iter()
-        .any(|line| line.text.contains(text))
 }
 
 #[tokio::test]
