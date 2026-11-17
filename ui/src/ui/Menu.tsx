@@ -1,4 +1,4 @@
-import { Ellipsis, type LucideIcon } from "lucide-react";
+import { Check, Ellipsis, type LucideIcon } from "lucide-react";
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import { IconButton, type ButtonSize } from "./Button";
@@ -11,6 +11,8 @@ export interface MenuItem {
   onSelect: () => void;
   tone?: "danger";
   disabled?: boolean;
+  /** Có thì là mục bật/tắt (có dấu tích); bấm không đóng menu để thấy trạng thái mới. */
+  checked?: boolean;
 }
 
 interface MenuProps {
@@ -80,18 +82,20 @@ export function Menu({ label, items, icon = Ellipsis, size = "md" }: MenuProps) 
       />
       {open && (
         <div className={styles.menu} id={menuId} role="menu" aria-label={label} ref={list} onKeyDown={onKeyDown}>
-          {items.map(({ label: itemLabel, icon: Icon, onSelect, tone, disabled }) => (
+          {items.map(({ label: itemLabel, icon: Icon, onSelect, tone, disabled, checked }) => (
             <button
               key={itemLabel}
               type="button"
-              role="menuitem"
+              role={checked === undefined ? "menuitem" : "menuitemcheckbox"}
+              aria-checked={checked}
               disabled={disabled}
               className={cx(styles.item, tone === "danger" && styles.danger)}
               onClick={() => {
-                close(true);
+                if (checked === undefined) close(true);
                 onSelect();
               }}
             >
+              {checked !== undefined && <Check size={16} aria-hidden className={cx(styles.check, checked && styles.checked)} />}
               {Icon && <Icon size={16} aria-hidden />}
               {itemLabel}
             </button>

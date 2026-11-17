@@ -1,5 +1,5 @@
 import { ChevronDown, Eye, EyeOff, Search } from "lucide-react";
-import { useState, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { useState, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { useTranslation } from "react-i18next";
 
 import { cx } from "./cx";
@@ -62,22 +62,25 @@ interface SearchInputProps {
   /** Đã dịch; dùng làm cả placeholder và nhãn cho trình đọc màn hình. */
   label: string;
   autoFocus?: boolean;
+  /** Nút nhỏ ở cuối ô, ví dụ `Menu` cài đặt tìm kiếm. */
+  trailing?: ReactNode;
 }
 
 /** Ô tìm kiếm có kính lúp, dùng chung cho mọi danh sách. */
-export function SearchInput({ value, onChange, label, autoFocus }: SearchInputProps) {
+export function SearchInput({ value, onChange, label, autoFocus, trailing }: SearchInputProps) {
   return (
     <span className={styles.searchWrap}>
       <Search className={styles.searchIcon} size={16} aria-hidden />
       <input
         type="search"
-        className={cx(styles.control, styles.search)}
+        className={cx(styles.control, styles.search, trailing !== undefined && styles.searchWithTrailing)}
         value={value}
         placeholder={label}
         aria-label={label}
         data-autofocus={autoFocus || undefined}
         onChange={(e) => onChange(e.target.value)}
       />
+      {trailing !== undefined && <span className={styles.searchTrailing}>{trailing}</span>}
     </span>
   );
 }

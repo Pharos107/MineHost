@@ -49,7 +49,7 @@ nhúng được vào binary, dùng được trên điện thoại).
 ### 2. Bảng file `/servers/:id/files`
 
 - **Thanh công cụ một hàng** ở đầu bảng (prop `toolbar` của `DataTable`): Tải lên, Tệp mới, Thư mục
-  mới, Tìm trong thư mục con; ô lọc của bảng ở bên phải.
+  mới; ô tìm của bảng ở bên phải.
 - **Bỏ ô kéo thả riêng.** Kéo file thả vào bảng là tải lên đúng thư mục bảng đang mở (lớp phủ "Thả để
   tải lên <thư mục>"), kể cả khi thư mục trống.
 - **Thông báo nổi** (component `Toast`, góc phải dưới, không đẩy bảng xuống): xong việc thì hiện 5 giây
@@ -65,9 +65,12 @@ nhúng được vào binary, dùng được trên điện thoại).
   "Chuyển vào đây". Không chọn được chính thư mục đang chuyển hay thư mục con của nó. Nhiều mục thì
   chuyển lần lượt, dừng ở mục lỗi đầu tiên và báo mục đó.
 - **Xóa nhiều:** một hộp thoại xác nhận "Chuyển N mục vào thùng rác", xóa lần lượt như xóa một mục.
-- **Tìm trong thư mục con:** hộp thoại có ô tìm; Enter thì gọi route tìm (mục 3) từ thư mục đang mở.
-  Kết quả là danh sách đường dẫn: thư mục thì mở thư mục đó, file văn bản nhỏ thì mở trình sửa, file
-  khác thì mở thư mục chứa nó. Quá giới hạn thì ghi "Chỉ hiện 200 kết quả đầu".
+- **Tìm trong thư mục con:** nút cài đặt nhỏ ở cuối ô tìm của bảng mở menu có mục bật/tắt "Tìm cả thư
+  mục con", **mặc định tắt** (ô tìm chỉ lọc thư mục đang mở). Bật thì ô đổi chữ gợi ý thành "Tìm trong
+  mọi thư mục con"; gõ xong 300 ms thì gọi route tìm (mục 3) từ thư mục đang mở và bảng hiện kết quả,
+  tên là đường dẫn tính từ thư mục đó (ví dụ `Essentials/config.yml`). Mọi thao tác hàng và chọn nhiều
+  vẫn dùng được trên kết quả; đổi tên thì đổi ngay trong thư mục chứa mục đó. Quá giới hạn thì ghi
+  "Chỉ hiện 200 kết quả đầu" dưới bảng.
 - **Nén:** hộp thoại hỏi tên file zip (mặc định `<tên mục>.zip`, chọn nhiều thì `luu-tru.zip`), tạo
   trong thư mục đang mở. Chạy thành Job, tiến độ hiện như các Job khác.
 - **Giải nén:** hộp thoại hai lựa chọn: "Vào thư mục mới `<tên zip>`" (mặc định) hoặc "Vào thư mục

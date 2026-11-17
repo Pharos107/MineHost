@@ -10,7 +10,6 @@ import { Toaster, toast } from "../../../ui";
 import { FileEditorPage } from "./FileEditorPage";
 import { FilesPage } from "./FilesPage";
 import { canMoveInto } from "./MoveDialog";
-import { foundLink } from "./SearchDialog";
 
 // CodeMirror cần DOM thật để gõ; trang được thử với ô văn bản dự phòng khi trình sửa tải lỗi.
 // CodeMirror có test riêng ở `ui/CodeEditor.test.tsx`.
@@ -158,10 +157,28 @@ describe("FilesPage nhiều mục", () => {
     expect(JSON.parse(String(post?.[1]?.body))).toEqual({ path: "plugins/Pack.zip", dest: "plugins/Pack" });
   });
 
-  it("kết quả tìm: thư mục mở thư mục, file nhỏ mở trình sửa, file lớn mở thư mục chứa nó", () => {
-    expect(foundLink("A", { path: "plugins/Ess", kind: "dir" })).toBe("/servers/A/files?path=plugins%2FEss");
-    expect(foundLink("A", { path: "plugins/Ess/config.yml", kind: "file", size: 4 })).toBe("/servers/A/files/edit?path=plugins%2FEss%2Fconfig.yml");
-    expect(foundLink("A", { path: "logs/big.log", kind: "file", size: 5 * 1024 * 1024 })).toBe("/servers/A/files?path=logs");
+  it("tìm cả thư mục con bật trong cài đặt của ô tìm; mặc định chỉ lọc thư mục đang mở", async () => {
+    const fetchMock = mockFetch((url) => {
+      if (url.startsWith("/api/v1/servers/A/files/search?path=plugins&q=config")) {
+        return Response.json({ items: [{ path: "plugins/Essentials/config.yml", kind: "file", size: 4 }], truncated: false });
+      }
+      if (url.startsWith("/api/v1/servers/A/files?path=")) return Response.json([{ name: "Essentials", kind: "dir" }]);
+      return undefined;
+    });
+    renderAt("/servers/A/files?path=plugins");
+    const box = await screen.findByRole("searchbox", { name: "Tìm kiếm" });
+    await userEvent.type(box, "config");
+    expect(await screen.findByText("Không có kết quả cho “config”.")).toBeTruthy();
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/files/search"))).toBe(false);
+
+    await userEvent.click(screen.getByRole("button", { name: "Cài đặt tìm kiếm" }));
+    const option = screen.getByRole("menuitemcheckbox", { name: "Tìm cả thư mục con" });
+    expect(option.getAttribute("aria-checked")).toBe("false");
+    await userEvent.click(option);
+    expect(option.getAttribute("aria-checked")).toBe("true");
+    const link = await screen.findByRole("link", { name: "Essentials/config.yml" });
+    expect(link.getAttribute("href")).toBe("/servers/A/files/edit?path=plugins%2FEssentials%2Fconfig.yml");
+    expect(screen.getByRole("searchbox", { name: "Tìm trong mọi thư mục con" })).toBeTruthy();
   });
 });
 

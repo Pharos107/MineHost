@@ -3,11 +3,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ApiError, errorMessage } from "../../../api/client";
-import { filesApi, joinPath, type FileEntry } from "../../../api/files";
+import { filesApi, joinPath, parentOf, type FileEntry } from "../../../api/files";
 import { Button, ChoiceGroup, ConfirmDialog, Dialog, DialogBody, DialogFooter, Notice } from "../../../ui";
 import { MoveDialog } from "./MoveDialog";
 import { NameDialog } from "./NameDialog";
-import { SearchDialog } from "./SearchDialog";
 
 export type FileDialog =
   | { kind: "file" }
@@ -16,8 +15,7 @@ export type FileDialog =
   | { kind: "move"; paths: string[] }
   | { kind: "compress"; paths: string[] }
   | { kind: "extract"; path: string }
-  | { kind: "delete"; paths: string[] }
-  | { kind: "search" };
+  | { kind: "delete"; paths: string[] };
 
 /** Kết quả để trang hiện thông báo: đường dẫn trong thùng rác, hoặc Job nén / giải nén vừa chạy. */
 export interface DialogOutcome {
@@ -59,8 +57,6 @@ export function FileDialogs({ serverId, dir, dialog, onClose, onDone }: FileDial
   const common = { loading: run.isPending, error, onCancel: close };
 
   switch (dialog.kind) {
-    case "search":
-      return <SearchDialog serverId={serverId} dir={dir} onClose={close} />;
     case "file":
     case "dir":
     case "rename":
@@ -70,12 +66,16 @@ export function FileDialogs({ serverId, dir, dialog, onClose, onDone }: FileDial
           title={t(`files.dialog.${dialog.kind}`)}
           label={dialog.kind === "dir" ? t("files.dirName") : t("files.fileName")}
           confirmLabel={dialog.kind === "rename" ? t("files.rename") : t("files.create")}
-          initial={dialog.kind === "rename" ? dialog.entry.name : ""}
+          initial={dialog.kind === "rename" ? baseName(dialog.entry.name) : ""}
           onConfirm={(name) =>
             run.mutate(async () => {
               if (dialog.kind === "file") await filesApi.write(serverId, joinPath(dir, name), "");
               else if (dialog.kind === "dir") await filesApi.mkdir(serverId, joinPath(dir, name));
-              else await filesApi.rename(serverId, joinPath(dir, dialog.entry.name), joinPath(dir, name));
+              else {
+                // Kết quả tìm trong thư mục con có tên dạng `a/b.yml`: đổi tên ngay trong thư mục chứa nó.
+                const from = joinPath(dir, dialog.entry.name);
+                await filesApi.rename(serverId, from, joinPath(parentOf(from), name));
+              }
               return {};
             })
           }

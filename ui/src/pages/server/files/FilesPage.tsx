@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, Download, File, FilePlus, Folder, FolderInput, FolderPlus, PackageOpen, Pencil, Search, Trash2 } from "lucide-react";
+import { Archive, Download, File, FilePlus, Folder, FolderInput, FolderPlus, PackageOpen, Pencil, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router";
@@ -7,10 +7,11 @@ import { Link, useSearchParams } from "react-router";
 import { errorMessage } from "../../../api/client";
 import { EDITABLE_MAX_BYTES, filesApi, joinPath, pathSteps, type FileEntry } from "../../../api/files";
 import { formatBytes } from "../../../format";
-import { Breadcrumb, Button, DataTable, EmptyState, FileButton, FileDrop, Notice, Stack, type Column, type RowAction } from "../../../ui";
+import { Breadcrumb, Button, DataTable, EmptyState, FileButton, FileDrop, Menu, Notice, Stack, type Column, type RowAction } from "../../../ui";
 import { useServer } from "../ServerLayout";
 import { FileDialogs, type DialogOutcome, type FileDialog } from "./FileDialogs";
 import { trashedToast, uploadWithToast, watchJobInToast } from "./fileToasts";
+import { useDeepSearch } from "./useDeepSearch";
 
 const rowKey = (e: FileEntry) => `${e.kind}:${e.name}`;
 const isZip = (e: FileEntry) => e.kind === "file" && e.name.toLowerCase().endsWith(".zip");
@@ -31,7 +32,9 @@ export function FilesPage() {
   const [picked, setPicked] = useState<{ dir: string; keys: Set<string> }>({ dir, keys: new Set() });
   const selected = picked.dir === dir ? picked.keys : new Set<string>();
   const select = (keys: Set<string>) => setPicked({ dir, keys });
-  const selectedPaths = (list.data ?? []).filter((e) => selected.has(rowKey(e))).map((e) => joinPath(dir, e.name));
+  const search = useDeepSearch(server.id, dir);
+  const rows = search.rows ?? list.data ?? [];
+  const selectedPaths = rows.filter((e) => selected.has(rowKey(e))).map((e) => joinPath(dir, e.name));
   const columns = useColumns(server.id, dir);
   const pathOf = (e: FileEntry) => joinPath(dir, e.name);
 
@@ -67,9 +70,6 @@ export function FilesPage() {
       <Button size="sm" icon={FolderPlus} onClick={() => setDialog({ kind: "dir" })}>
         {t("files.newDir")}
       </Button>
-      <Button size="sm" icon={Search} onClick={() => setDialog({ kind: "search" })}>
-        {t("files.search.action")}
-      </Button>
     </>
   );
   const bulk = (
@@ -97,20 +97,30 @@ export function FilesPage() {
       />
       {/* Kéo file thả vào bảng là tải lên đúng thư mục bảng đang mở (spec trang Tệp, mục 2). */}
       <FileDrop variant="overlay" label={t("files.upload")} hint={t("files.dropHint", { dir: dir === "" ? t("files.root") : dir })} onFiles={upload}>
-        {list.isError ? (
-          <Notice tone="danger">{errorMessage(t, list.error)}</Notice>
+        {list.isError || search.error ? (
+          <Notice tone="danger">{errorMessage(t, list.error ?? search.error)}</Notice>
         ) : (
           <DataTable
             label={t("files.table")}
             columns={columns}
-            rows={list.data ?? []}
+            rows={rows}
             rowKey={rowKey}
             rowLabel={(e) => e.name}
             actions={actions}
             inlineActions={1}
             toolbar={toolbar}
             searchText={(e) => e.name}
-            loading={list.isPending}
+            loading={list.isPending || search.pending}
+            searchLabel={search.deep ? t("files.search.deepLabel") : undefined}
+            onSearchChange={search.setQuery}
+            searchOptions={
+              <Menu
+                size="sm"
+                icon={SlidersHorizontal}
+                label={t("files.search.options")}
+                items={[{ label: t("files.search.subfolders"), checked: search.deep, onSelect: search.toggle }]}
+              />
+            }
             selection={{ selected, onChange: select, actions: bulk }}
             empty={
               <Stack gap={3}>
@@ -124,6 +134,7 @@ export function FilesPage() {
           />
         )}
       </FileDrop>
+      {search.truncated && <Notice tone="info">{t("files.search.truncated", { count: rows.length })}</Notice>}
       {dialog && <FileDialogs serverId={server.id} dir={dir} dialog={dialog} onClose={() => setDialog(null)} onDone={onDone} />}
     </Stack>
   );
