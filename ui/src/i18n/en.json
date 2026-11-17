@@ -738,7 +738,6 @@
     "filter": {
       "label": "Filter players",
       "all": "All",
-      "online": "Online",
       "op": "Ops",
       "whitelisted": "Whitelist",
       "banned": "Banned"
@@ -755,7 +754,7 @@
       "online": "Online",
       "whitelist": "Whitelist",
       "whitelistOn": "On",
-      "whitelistOff": "Off: anyone can join",
+      "whitelistOff": "Off",
       "op": "Ops",
       "banned": "Banned"
     },

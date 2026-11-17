@@ -1,15 +1,14 @@
 import type { Player } from "../../../api/players";
 
-export type PlayerFilter = "all" | "online" | "op" | "whitelisted" | "banned";
+export type PlayerFilter = "all" | "op" | "whitelisted" | "banned";
 
-export const PLAYER_FILTERS: PlayerFilter[] = ["all", "online", "op", "whitelisted", "banned"];
+/** Không có "Đang chơi": nhóm Đang chơi đã đứng đầu danh sách. */
+export const PLAYER_FILTERS: PlayerFilter[] = ["all", "op", "whitelisted", "banned"];
 
 function matches(player: Player, filter: PlayerFilter): boolean {
   switch (filter) {
     case "all":
       return true;
-    case "online":
-      return player.online;
     case "op":
       return player.op;
     case "whitelisted":

@@ -12,7 +12,6 @@ const list = [player("Steve", { online: true, op: true, whitelisted: true }), pl
 describe("filterPlayers", () => {
   it("lọc theo nhóm, giữ thứ tự", () => {
     expect(filterPlayers(list, "all", "").map((p) => p.name)).toEqual(["Steve", "Alex", "Griefer"]);
-    expect(filterPlayers(list, "online", "").map((p) => p.name)).toEqual(["Steve"]);
     expect(filterPlayers(list, "op", "").map((p) => p.name)).toEqual(["Steve"]);
     expect(filterPlayers(list, "whitelisted", "").map((p) => p.name)).toEqual(["Steve", "Alex"]);
     expect(filterPlayers(list, "banned", "").map((p) => p.name)).toEqual(["Griefer"]);

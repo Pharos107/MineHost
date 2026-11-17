@@ -70,13 +70,15 @@ describe("PlayersPage", () => {
     expect(within(list).getByRole("heading", { name: /Đang chơi\s*1/ })).toBeTruthy();
     expect(within(list).getByRole("heading", { name: /Không online\s*2/ })).toBeTruthy();
     const steve = within(list).getByRole("button", { name: /Steve/ });
-    for (const badge of ["Op", "Whitelist", "Đóng băng"]) expect(within(steve).getByText(badge)).toBeTruthy();
+    for (const badge of ["Op", "Đóng băng"]) expect(within(steve).getByText(badge)).toBeTruthy();
+    // Hàng trong danh sách bỏ huy hiệu whitelist cho tên có chỗ.
+    expect(within(steve).queryByText("Whitelist")).toBeNull();
     expect(within(within(list).getByRole("button", { name: /Griefer/ })).getByText("Bị cấm")).toBeTruthy();
     expect(within(list).getByRole("button", { name: /Griefer/ }).textContent).toContain("Chưa vào");
 
     // Ô số: 1/20 đang chơi, 2 whitelist (đang tắt), 1 op, 1 bị cấm.
     expect(screen.getByText("/ 20")).toBeTruthy();
-    expect(screen.getByText("Đang tắt: ai cũng vào được")).toBeTruthy();
+    expect(screen.getByText("Đang tắt")).toBeTruthy();
     expect(screen.getByText(/Server đang tắt/)).toBeTruthy();
     expect(screen.getByText("Chọn một người chơi")).toBeTruthy();
   });
@@ -88,6 +90,8 @@ describe("PlayersPage", () => {
     await screen.findByText("Steve");
     await user.click(screen.getByRole("radio", { name: "Bị cấm" }));
     expect(rowNames()).toEqual(["Griefer"]);
+    await user.click(screen.getByRole("radio", { name: "Whitelist" }));
+    expect(rowNames()).toEqual(["Steve", "Alex"]);
     await user.click(screen.getByRole("radio", { name: "Tất cả" }));
     await user.type(screen.getByRole("searchbox", { name: "Tìm theo tên" }), "al");
     expect(rowNames()).toEqual(["Alex"]);

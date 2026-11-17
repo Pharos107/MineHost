@@ -10,11 +10,12 @@ server đang mở cho ai (bao nhiêu op, whitelist bật hay tắt, bao nhiêu n
 ## Hành vi
 
 - **Ô số** trên cùng: Đang chơi (số / tối đa), Whitelist (số người, dòng phụ "Đang bật" hoặc
-  "Đang tắt: ai cũng vào được"), Op, Bị cấm.
+  "Đang tắt"), Op, Bị cấm.
 - **Danh sách gộp** bên trái: ô tìm theo tên, nút "Thêm" (mở hộp thoại thêm theo tên như cũ, giữ mở
-  để thêm liền nhiều người), dải lọc Tất cả / Đang chơi / Op / Whitelist / Bị cấm. Hai nhóm: Đang chơi
+  để thêm liền nhiều người), dải lọc Tất cả / Op / Whitelist / Bị cấm (nhóm Đang chơi đã đứng đầu nên không có bộ lọc riêng). Hai nhóm: Đang chơi
   (luôn hiện khi lọc Tất cả, trống thì ghi "Chưa có ai đang chơi.") và Không online. Mỗi hàng: đầu skin
-  có chấm xanh khi đang chơi, tên, dòng phụ ("Đang chơi", "Vào 2 giờ trước", "Chưa vào"), huy hiệu.
+  có chấm xanh khi đang chơi, tên, dòng phụ ("Đang chơi", "Vào 2 giờ trước", "Chưa vào"), huy hiệu op / bị cấm / đóng băng (whitelist
+  chỉ hiện ở khung chi tiết, để tên dài không bị cắt).
 - **Khung chi tiết** bên phải, thay hộp thoại: skin 3D (hoặc đầu skin lớn), tên, huy hiệu, UUID có nút
   chép, lý do cấm. Bốn nhóm, mỗi nhóm có tiêu đề kèm icon:
   - Quyền: hai công tắc Whitelist và Op (làm được cả khi server tắt).
@@ -26,7 +27,8 @@ server đang mở cho ai (bao nhiêu op, whitelist bật hay tắt, bao nhiêu n
 - Thao tác nào bị mờ và vì sao vẫn theo bảng ở spec P2, mục 6.7.
 
 Component mới: `SelectList`, `SelectListGroup`, `SelectListItem`, `DetailHeader`, `DetailSection`.
-`Avatar` thêm cỡ `xl` và `online` (chấm xanh).
+`Avatar` thêm cỡ `xl` và `online` (chấm xanh). `SegmentedControl` thêm `size="sm"`. Sửa `SplitView`: màn
+rộng chưa chọn gì thì khung chi tiết vẫn hiện (trước bị luật của màn hẹp ẩn mất).
 
 ## Tiêu chí chấp nhận
 

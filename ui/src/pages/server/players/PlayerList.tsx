@@ -50,6 +50,7 @@ export function PlayerList({ players, loading, selected, onSelect, onAdd }: Play
       filters={
         <SegmentedControl
           label={t("players.filter.label")}
+          size="sm"
           value={filter}
           onChange={setFilter}
           options={PLAYER_FILTERS.map((value) => ({ value, label: t(`players.filter.${value}`) }))}
@@ -89,7 +90,7 @@ function PlayerRow({ player, selected, onSelect }: { player: Player; selected: b
       leading={<Avatar name={player.name} skinUrl={playersApi.skinUrl(player.uuid)} online={player.online} />}
       title={player.name}
       subtitle={subtitle}
-      trailing={<PlayerBadges player={player} />}
+      trailing={<PlayerBadges player={player} compact />}
       selected={selected}
       onSelect={() => onSelect(player)}
     />

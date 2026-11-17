@@ -738,7 +738,6 @@
     "filter": {
       "label": "Lọc người chơi",
       "all": "Tất cả",
-      "online": "Đang chơi",
       "op": "Op",
       "whitelisted": "Whitelist",
       "banned": "Bị cấm"
@@ -755,7 +754,7 @@
       "online": "Đang chơi",
       "whitelist": "Whitelist",
       "whitelistOn": "Đang bật",
-      "whitelistOff": "Đang tắt: ai cũng vào được",
+      "whitelistOff": "Đang tắt",
       "op": "Op",
       "banned": "Bị cấm"
     },
