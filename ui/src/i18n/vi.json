@@ -535,14 +535,38 @@
       "actionOn": "{{action}}: {{row}}",
       "moreFor": "Thao tác khác cho {{row}}",
       "noMatch": "Không có kết quả cho “{{query}}”.",
-      "count": "Hiển thị {{shown}}/{{total}}"
+      "count": "Hiển thị {{shown}}/{{total}}",
+      "selected": "Đã chọn {{count}}",
+      "clearSelection": "Bỏ chọn",
+      "selectAll": "Chọn tất cả hàng đang hiện",
+      "selectRow": "Chọn {{row}}"
     },
     "openMenu": "Mở menu",
     "closeMenu": "Đóng menu",
     "morePlayers": "và {{count}} người nữa",
     "downloads": "{{value}} lượt tải",
     "showPassword": "Hiện mật khẩu",
-    "hidePassword": "Ẩn mật khẩu"
+    "hidePassword": "Ẩn mật khẩu",
+    "codeEditor": {
+      "find": "Tìm",
+      "replace": "Thay bằng",
+      "next": "Tiếp",
+      "previous": "Trước",
+      "all": "Tất cả",
+      "matchCase": "Phân biệt hoa thường",
+      "regexp": "Biểu thức chính quy",
+      "byWord": "Cả từ",
+      "replaceOne": "Thay",
+      "replaceAll": "Thay tất cả",
+      "close": "Đóng",
+      "goToLine": "Tới dòng",
+      "go": "Đi",
+      "foldLine": "Gập khối",
+      "unfoldLine": "Mở khối",
+      "foldedCode": "đoạn đã gập",
+      "unfold": "mở"
+    },
+    "notifications": "Thông báo"
   },
   "serverState": {
     "installing": "Đang cài",
@@ -623,7 +647,9 @@
       "check_updates": "Kiểm tra cập nhật mod",
       "update_content": "Cập nhật mod",
       "change_version": "Đổi phiên bản",
-      "update_modpack": "Cập nhật modpack"
+      "update_modpack": "Cập nhật modpack",
+      "compress_files": "Nén file",
+      "extract_files": "Giải nén"
     },
     "states": {
       "running": "Đang chạy",
@@ -719,19 +745,71 @@
     "deleteBody": "Mục này được chuyển vào thùng rác của MineHost, bạn có thể tự lấy lại sau.",
     "trashed": "Đã chuyển vào thùng rác",
     "upload": "Tải file lên",
-    "uploadHint": "hoặc kéo thả file vào đây, tối đa 512 MiB mỗi file",
     "uploading": "Đang tải lên {{names}}",
     "uploaded_one": "Đã tải lên {{count}} file.",
     "uploaded_other": "Đã tải lên {{count}} file.",
     "back": "Quay lại thư mục",
     "editorLabel": "Nội dung {{path}}",
     "save": "Lưu",
-    "saved": "Đã lưu.",
-    "unsaved": "Có thay đổi chưa lưu.",
     "changedTitle": "File đã bị đổi ở chỗ khác",
     "changedBody": "Có người (hoặc server) đã sửa file này sau khi bạn mở. Tải lại bản mới sẽ bỏ thay đổi của bạn; hãy chép thay đổi của bạn trước nếu cần.",
     "reloadLatest": "Tải lại bản mới",
-    "copyMine": "Chép thay đổi của tôi"
+    "copyMine": "Chép thay đổi của tôi",
+    "wrap": "Xuống dòng",
+    "cursor": "Dòng {{line}}, Cột {{column}}",
+    "stateSaved": "Đã lưu",
+    "stateUnsaved": "Chưa lưu",
+    "encoding": "UTF-8",
+    "language": {
+      "json": "JSON",
+      "yaml": "YAML",
+      "toml": "TOML",
+      "properties": "Properties",
+      "shell": "Shell",
+      "text": "Văn bản"
+    },
+    "deleteMany": "Xóa {{count}} mục?",
+    "move": {
+      "action": "Di chuyển",
+      "title_one": "Di chuyển {{count}} mục",
+      "title_other": "Di chuyển {{count}} mục",
+      "up": "Lên trên",
+      "here": "Chuyển vào đây",
+      "noFolders": "Không có thư mục con"
+    },
+    "compress": {
+      "action": "Nén thành zip",
+      "title_one": "Nén {{count}} mục",
+      "title_other": "Nén {{count}} mục",
+      "name": "Tên file zip",
+      "submit": "Nén",
+      "defaultName": "luu-tru.zip"
+    },
+    "extract": {
+      "action": "Giải nén",
+      "title": "Giải nén {{name}}",
+      "where": "Giải nén vào đâu",
+      "newFolder": "Thư mục mới “{{name}}”",
+      "newFolderHint": "An toàn nhất: không đụng tới file đang có.",
+      "here": "Thư mục hiện tại",
+      "hereHint": "Báo lỗi nếu có file trùng tên, không ghi đè.",
+      "submit": "Giải nén"
+    },
+    "search": {
+      "action": "Tìm trong thư mục con",
+      "title": "Tìm file",
+      "label": "Tên file trong {{dir}} và mọi thư mục con",
+      "submit": "Tìm",
+      "none": "Không thấy file nào",
+      "truncated": "Chỉ hiện {{count}} kết quả đầu, hãy gõ cụ thể hơn."
+    },
+    "jobDone": {
+      "compress_files": "Đã nén xong.",
+      "extract_files": "Đã giải nén xong.",
+      "other": "Đã xong."
+    },
+    "dropHint": "Thả để tải lên {{dir}}",
+    "uploadFailed": "Tải lên không xong"
   },
   "auth": {
     "checking": "Đang kiểm tra đăng nhập…",

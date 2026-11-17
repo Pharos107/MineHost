@@ -50,6 +50,7 @@ Mỗi dòng: ý tưởng, vì sao đáng làm, nguồn (ai đề xuất hoặc t
 | --- | --- | --- | --- |
 | Hàng đợi thay đổi mod khi server đang chạy: bật/tắt, gỡ, cập nhật được ghi lại rồi áp dụng lúc server tắt | Hiện chỉ thêm được mod mới khi đang chạy; jar đang mở không thay được (nhất là trên Windows) | [Spec trình duyệt mod](specs/p3-trinh-duyet-mod.md), mục Không làm | Sau P3 |
 | Thư viện ảnh, changelog từng bản, danh sách mod trong một modpack ở khung chi tiết | Giúp chọn mod và chọn bản pack dễ hơn | Như trên | Sau P3 |
+| Trang Tệp: tải file về server từ URL, tìm theo nội dung, giải nén `.tar.gz` / `.7z`, xem ảnh và NBT | Dự án cũ có tải từ URL; người dùng hay nhận world, plugin qua link | [Spec trang Tệp](specs/p3-quan-ly-tep.md), mục Không làm | Sau P3 |
 
 ## Từ spec gốc (P5)
 

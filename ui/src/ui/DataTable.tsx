@@ -1,8 +1,8 @@
-import { ArrowDown, ArrowUp, ArrowUpDown, type LucideIcon } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown, X, type LucideIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { IconButton } from "./Button";
+import { Button, IconButton } from "./Button";
 import { cx } from "./cx";
 import styles from "./DataTable.module.css";
 import { SearchInput } from "./inputs";
@@ -33,6 +33,14 @@ export interface RowAction<T> {
   disabled?: (row: T) => boolean;
 }
 
+/** Chọn nhiều hàng: ô chọn đầu mỗi hàng, ô chọn tất cả ở tiêu đề. Khóa là `rowKey`. */
+export interface TableSelection {
+  selected: ReadonlySet<string>;
+  onChange: (selected: Set<string>) => void;
+  /** Nút hiện thay thanh công cụ khi có hàng được chọn, ví dụ "Xóa", "Tải xuống". */
+  actions: ReactNode;
+}
+
 interface DataTableProps<T> {
   /** Tên bảng cho trình đọc màn hình. */
   label: string;
@@ -52,6 +60,7 @@ interface DataTableProps<T> {
   loading?: boolean;
   /** Hiện thay cho bảng khi chưa có hàng nào, thường là `EmptyState`. */
   empty: ReactNode;
+  selection?: TableSelection;
 }
 
 /**
@@ -59,7 +68,7 @@ interface DataTableProps<T> {
  * cột và thao tác; giao diện, sắp xếp, tìm kiếm và bố cục trên điện thoại nằm ở đây.
  */
 export function DataTable<T>(props: DataTableProps<T>) {
-  const { label, columns, rows, rowKey, actions, toolbar, searchText, defaultSort, loading, empty } = props;
+  const { label, columns, rows, rowKey, actions, toolbar, searchText, defaultSort, loading, empty, selection } = props;
   const { t, i18n } = useTranslation();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortState | null>(defaultSort ?? null);
@@ -71,10 +80,21 @@ export function DataTable<T>(props: DataTableProps<T>) {
   }, [rows, query, searchText, columns, sort, i18n.language]);
 
   if (!loading && rows.length === 0) return <>{empty}</>;
+  const picking = selection !== undefined && selection.selected.size > 0;
 
   return (
     <div className={styles.surface}>
-      {(toolbar || searchText) && (
+      {picking ? (
+        <div className={cx(styles.toolbar, styles.bulk)}>
+          <div className={styles.toolbarActions}>
+            <span className={styles.bulkCount}>{t("ui.table.selected", { count: selection.selected.size })}</span>
+            {selection.actions}
+          </div>
+          <Button size="sm" variant="ghost" icon={X} onClick={() => selection.onChange(new Set())}>
+            {t("ui.table.clearSelection")}
+          </Button>
+        </div>
+      ) : (toolbar || searchText) && (
         <div className={styles.toolbar}>
           <div className={styles.toolbarActions}>{toolbar}</div>
           {searchText && (
@@ -94,6 +114,11 @@ export function DataTable<T>(props: DataTableProps<T>) {
             <caption className="visually-hidden">{label}</caption>
             <thead>
               <tr>
+                {selection && (
+                  <th scope="col" className={styles.selectCol}>
+                    <SelectAll keys={visible.map(rowKey)} selection={selection} />
+                  </th>
+                )}
                 {columns.map((column) => (
                   <HeaderCell key={column.id} column={column} sort={sort} onSort={(id) => setSort(nextSort(sort, id))} />
                 ))}
@@ -138,9 +163,28 @@ function HeaderCell<T>({ column, sort, onSort }: { column: Column<T>; sort: Sort
   );
 }
 
-function BodyRow<T>({ row, columns, actions, rowLabel, inlineActions = 2 }: DataTableProps<T> & { row: T }) {
+function BodyRow<T>({ row, columns, actions, rowLabel, rowKey, selection, inlineActions = 2 }: DataTableProps<T> & { row: T }) {
+  const { t } = useTranslation();
+  const key = rowKey(row);
+  const checked = selection?.selected.has(key) ?? false;
   return (
-    <tr>
+    <tr className={cx(checked && styles.picked)}>
+      {selection && (
+        <td className={styles.selectCell}>
+          <input
+            type="checkbox"
+            className={styles.check}
+            checked={checked}
+            aria-label={t("ui.table.selectRow", { row: rowLabel(row) })}
+            onChange={(e) => {
+              const next = new Set(selection.selected);
+              if (e.target.checked) next.add(key);
+              else next.delete(key);
+              selection.onChange(next);
+            }}
+          />
+        </td>
+      )}
       {columns.map((column) => (
         <td key={column.id} data-label={column.header} className={cx(styles[column.align ?? "start"], column.nowrap && styles.nowrap)}>
           {column.cell(row)}
@@ -152,6 +196,27 @@ function BodyRow<T>({ row, columns, actions, rowLabel, inlineActions = 2 }: Data
         </td>
       )}
     </tr>
+  );
+}
+
+/** Chọn hoặc bỏ mọi hàng đang hiện (sau khi lọc); chọn một phần thì ô ở trạng thái lửng. */
+function SelectAll({ keys, selection }: { keys: string[]; selection: TableSelection }) {
+  const { t } = useTranslation();
+  const ref = useRef<HTMLInputElement>(null);
+  const count = keys.filter((key) => selection.selected.has(key)).length;
+  const all = keys.length > 0 && count === keys.length;
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = count > 0 && !all;
+  }, [count, all]);
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      className={styles.check}
+      checked={all}
+      aria-label={t("ui.table.selectAll")}
+      onChange={() => selection.onChange(all ? new Set() : new Set(keys))}
+    />
   );
 }
 

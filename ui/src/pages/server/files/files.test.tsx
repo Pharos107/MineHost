@@ -6,8 +6,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Server } from "../../../api/client";
 import { joinPath, pathSteps, type FileEntry } from "../../../api/files";
+import { Toaster, toast } from "../../../ui";
 import { FileEditorPage } from "./FileEditorPage";
 import { FilesPage } from "./FilesPage";
+import { canMoveInto } from "./MoveDialog";
+import { foundLink } from "./SearchDialog";
+
+// CodeMirror cần DOM thật để gõ; trang được thử với ô văn bản dự phòng khi trình sửa tải lỗi.
+// CodeMirror có test riêng ở `ui/CodeEditor.test.tsx`.
+vi.mock("../../../ui/codemirror", () => {
+  throw new Error("không tải CodeMirror trong test trang");
+});
 
 const server: Server = { id: "A", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, preflight_blocking: false };
 
@@ -34,12 +43,14 @@ function renderAt(path: string) {
           </Route>
         </Routes>
       </MemoryRouter>
+      <Toaster />
     </QueryClientProvider>,
   );
 }
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  toast.clear();
 });
 
 const entries: FileEntry[] = [
@@ -66,7 +77,9 @@ describe("FilesPage", () => {
       return undefined;
     });
     renderAt("/servers/A/files?path=plugins");
-    await userEvent.click(await screen.findByRole("button", { name: "Thư mục mới" }));
+    // Chờ hết trạng thái đang tải: thư mục trống thì nút nằm ở màn hình trống, không còn ở thanh trên bảng.
+    await screen.findByText("Thư mục này trống");
+    await userEvent.click(screen.getByRole("button", { name: "Thư mục mới" }));
     await userEvent.type(screen.getByRole("textbox", { name: "Tên thư mục" }), "Essentials");
     await userEvent.click(screen.getByRole("button", { name: "Tạo" }));
     const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
@@ -88,6 +101,70 @@ describe("FilesPage", () => {
   });
 });
 
+describe("FilesPage nhiều mục", () => {
+  it("chọn hai mục rồi xóa: hỏi một lần, xóa lần lượt, báo cả hai chỗ trong thùng rác", async () => {
+    const fetchMock = mockFetch((url, init) => {
+      if (init?.method === "DELETE") return Response.json({ trash_path: `/trash/${new URL(url, "http://x").searchParams.get("path")}` });
+      if (url.startsWith("/api/v1/servers/A/files?path=")) return Response.json(entries);
+      return undefined;
+    });
+    renderAt("/servers/A/files");
+    await userEvent.click(await screen.findByRole("checkbox", { name: "Chọn world" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "Chọn big.log" }));
+    expect(screen.getByText("Đã chọn 2")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Xóa" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("Xóa 2 mục?")).toBeTruthy();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Xóa" }));
+    expect(await screen.findByText("/trash/world")).toBeTruthy();
+    expect(screen.getByText("/trash/big.log")).toBeTruthy();
+    expect(fetchMock.mock.calls.filter(([, init]) => init?.method === "DELETE")).toHaveLength(2);
+  });
+
+  it("di chuyển vào thư mục con; không chọn được chính thư mục đang chuyển", async () => {
+    const fetchMock = mockFetch((url, init) => {
+      if (init?.method === "POST") return new Response(null, { status: 204 });
+      if (url === "/api/v1/servers/A/files?path=world") return Response.json([{ name: "region", kind: "dir" }]);
+      if (url.startsWith("/api/v1/servers/A/files?path=")) return Response.json(entries);
+      return undefined;
+    });
+    renderAt("/servers/A/files");
+    await userEvent.click(await screen.findByRole("button", { name: "Thao tác khác cho server.properties" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Di chuyển" }));
+    const dialog = screen.getByRole("dialog");
+    expect((within(dialog).getByRole("button", { name: "Chuyển vào đây" }) as HTMLButtonElement).disabled).toBe(true);
+    await userEvent.click(await within(dialog).findByRole("button", { name: "world" }));
+    await within(dialog).findByRole("button", { name: "region" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Chuyển vào đây" }));
+    const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
+    expect(post?.[0]).toBe("/api/v1/servers/A/files/rename");
+    expect(JSON.parse(String(post?.[1]?.body))).toEqual({ from: "server.properties", to: "world/server.properties" });
+    expect(canMoveInto("world/region", ["world"])).toBe(false);
+    expect(canMoveInto("worlds", ["world"])).toBe(true);
+  });
+
+  it("giải nén file zip vào thư mục mới mang tên file", async () => {
+    const fetchMock = mockFetch((url, init) => {
+      if (init?.method === "POST") return Response.json({ job_id: 9 }, { status: 202 });
+      if (url.startsWith("/api/v1/servers/A/files?path=")) return Response.json([{ name: "Pack.zip", kind: "file", size: 10 }]);
+      return undefined;
+    });
+    renderAt("/servers/A/files?path=plugins");
+    await userEvent.click(await screen.findByRole("button", { name: "Thao tác khác cho Pack.zip" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Giải nén" }));
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Giải nén" }));
+    const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
+    expect(post?.[0]).toBe("/api/v1/servers/A/files/extract");
+    expect(JSON.parse(String(post?.[1]?.body))).toEqual({ path: "plugins/Pack.zip", dest: "plugins/Pack" });
+  });
+
+  it("kết quả tìm: thư mục mở thư mục, file nhỏ mở trình sửa, file lớn mở thư mục chứa nó", () => {
+    expect(foundLink("A", { path: "plugins/Ess", kind: "dir" })).toBe("/servers/A/files?path=plugins%2FEss");
+    expect(foundLink("A", { path: "plugins/Ess/config.yml", kind: "file", size: 4 })).toBe("/servers/A/files/edit?path=plugins%2FEss%2Fconfig.yml");
+    expect(foundLink("A", { path: "logs/big.log", kind: "file", size: 5 * 1024 * 1024 })).toBe("/servers/A/files?path=logs");
+  });
+});
+
 describe("FileEditorPage", () => {
   it("Ctrl+S lưu kèm If-Match; file bị đổi ở chỗ khác thì cho tải lại hoặc chép", async () => {
     const fetchMock = mockFetch((url, init) => {
@@ -99,7 +176,7 @@ describe("FileEditorPage", () => {
     const editor = await screen.findByRole("textbox", { name: "Nội dung server.properties" });
     expect((editor as HTMLTextAreaElement).value).toBe("motd=Xin chào\n");
     await userEvent.type(editor, "pvp=false");
-    expect(screen.getByText("Có thay đổi chưa lưu.")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe("Chưa lưu");
     await userEvent.keyboard("{Control>}s{/Control}");
     const put = fetchMock.mock.calls.find(([, init]) => init?.method === "PUT");
     expect((put?.[1]?.headers as Record<string, string>)["If-Match"]).toBe('"abc"');

@@ -99,6 +99,7 @@ function ButtonSection() {
         <Spinner label="Đang tải…" />
       </Stack>
       <Button variant="primary" fullWidth>Rộng hết khung (fullWidth)</Button>
+      <Button variant="ghost" icon={Plus} fullWidth align="start">Một dòng trong danh sách (align start)</Button>
     </Card>
   );
 }

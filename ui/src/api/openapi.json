@@ -2383,6 +2383,96 @@
         }
       }
     },
+    "/api/v1/servers/{id}/files/archive": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "operationId": "archive",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paths",
+            "in": "path",
+            "description": "Mảng JSON các đường dẫn, ví dụ `[\"world\",\"server.properties\"]`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File zip, stream"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/files/compress": {
+      "post": {
+        "tags": [
+          "files"
+        ],
+        "operationId": "compress",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompressBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Job nén đã chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStartedDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}/files/content": {
       "get": {
         "tags": [
@@ -2566,6 +2656,65 @@
         }
       }
     },
+    "/api/v1/servers/{id}/files/extract": {
+      "post": {
+        "tags": [
+          "files"
+        ],
+        "operationId": "extract",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Job giải nén đã chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStartedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Trùng file đã có; `params.path` là mục trùng",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}/files/mkdir": {
       "post": {
         "tags": [
@@ -2639,6 +2788,62 @@
             "description": "Đã đổi tên"
           },
           "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/files/search": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "operationId": "search",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "Thư mục bắt đầu tìm. Rỗng là gốc.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "path",
+            "description": "Một phần tên file, không phân biệt hoa thường.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileSearchDto"
+                }
+              }
+            }
+          },
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
@@ -3652,6 +3857,25 @@
           }
         }
       },
+      "CompressBody": {
+        "type": "object",
+        "required": [
+          "paths",
+          "dest"
+        ],
+        "properties": {
+          "dest": {
+            "type": "string",
+            "description": "File zip sẽ tạo. Đã có thì `FILE_EXISTS`."
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "ConsoleDto": {
         "type": "object",
         "required": [
@@ -4169,6 +4393,22 @@
           }
         }
       },
+      "ExtractBody": {
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "properties": {
+          "dest": {
+            "type": "string",
+            "description": "Thư mục đích, tạo nếu chưa có. Rỗng là gốc."
+          },
+          "path": {
+            "type": "string",
+            "description": "File zip."
+          }
+        }
+      },
       "FileEntryDto": {
         "type": "object",
         "required": [
@@ -4205,6 +4445,56 @@
           "file",
           "dir"
         ]
+      },
+      "FileSearchDto": {
+        "type": "object",
+        "required": [
+          "items",
+          "truncated"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FoundEntryDto"
+            }
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Còn kết quả chưa trả: tối đa 200 mục, duyệt tối đa 100 000 mục."
+          }
+        }
+      },
+      "FoundEntryDto": {
+        "type": "object",
+        "required": [
+          "path",
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/FileKindDto"
+          },
+          "modified": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "RFC 3339."
+          },
+          "path": {
+            "type": "string",
+            "description": "Đường dẫn tính từ gốc server."
+          },
+          "size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          }
+        }
       },
       "Health": {
         "type": "object",

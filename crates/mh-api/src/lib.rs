@@ -11,6 +11,7 @@ mod curseforge;
 mod dto;
 mod error;
 mod files;
+mod files_ops;
 mod guard;
 mod import;
 mod jobs;
@@ -93,6 +94,10 @@ pub use lan::{LanState, lan_listener};
         files::upload,
         files::mkdir,
         files::rename_file,
+        files_ops::search,
+        files_ops::archive,
+        files_ops::compress,
+        files_ops::extract,
         content::search,
         content::project,
         content::versions,
@@ -167,6 +172,10 @@ pub use lan::{LanState, lan_listener};
         dto::JobStateDto,
         dto::ProgressDto,
         files::FileEntryDto,
+        files_ops::FoundEntryDto,
+        files_ops::FileSearchDto,
+        files_ops::CompressBody,
+        files_ops::ExtractBody,
         files::FileKindDto,
         files::TextFileDto,
         files::TextBody,
@@ -315,6 +324,10 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         .route("/servers/{id}/files/download", get(files::download))
         .route("/servers/{id}/files/mkdir", post(files::mkdir))
         .route("/servers/{id}/files/rename", post(files::rename_file))
+        .route("/servers/{id}/files/search", get(files_ops::search))
+        .route("/servers/{id}/files/archive", get(files_ops::archive))
+        .route("/servers/{id}/files/compress", post(files_ops::compress))
+        .route("/servers/{id}/files/extract", post(files_ops::extract))
         // Chỉ route này nới giới hạn body. Route khác giữ mặc định 2 MiB của axum.
         .route(
             "/servers/{id}/files/upload",

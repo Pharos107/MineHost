@@ -535,14 +535,38 @@
       "actionOn": "{{action}}: {{row}}",
       "moreFor": "More actions for {{row}}",
       "noMatch": "No results for “{{query}}”.",
-      "count": "Showing {{shown}} of {{total}}"
+      "count": "Showing {{shown}} of {{total}}",
+      "selected": "{{count}} selected",
+      "clearSelection": "Clear selection",
+      "selectAll": "Select all shown rows",
+      "selectRow": "Select {{row}}"
     },
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "morePlayers": "and {{count}} more",
     "downloads": "{{value}} downloads",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "codeEditor": {
+      "find": "Find",
+      "replace": "Replace",
+      "next": "Next",
+      "previous": "Previous",
+      "all": "All",
+      "matchCase": "Match case",
+      "regexp": "Regex",
+      "byWord": "Whole word",
+      "replaceOne": "Replace",
+      "replaceAll": "Replace all",
+      "close": "Close",
+      "goToLine": "Go to line",
+      "go": "Go",
+      "foldLine": "Fold block",
+      "unfoldLine": "Unfold block",
+      "foldedCode": "folded code",
+      "unfold": "unfold"
+    },
+    "notifications": "Notifications"
   },
   "serverState": {
     "installing": "Installing",
@@ -623,7 +647,9 @@
       "check_updates": "Check mod updates",
       "update_content": "Update mods",
       "change_version": "Change version",
-      "update_modpack": "Update modpack"
+      "update_modpack": "Update modpack",
+      "compress_files": "Compress files",
+      "extract_files": "Extract archive"
     },
     "states": {
       "running": "Running",
@@ -719,19 +745,71 @@
     "deleteBody": "It is moved to MineHost's trash, so you can get it back later.",
     "trashed": "Moved to trash",
     "upload": "Upload files",
-    "uploadHint": "or drop files here, up to 512 MiB each",
     "uploading": "Uploading {{names}}",
     "uploaded_one": "Uploaded {{count}} file.",
     "uploaded_other": "Uploaded {{count}} files.",
     "back": "Back to folder",
     "editorLabel": "Contents of {{path}}",
     "save": "Save",
-    "saved": "Saved.",
-    "unsaved": "You have unsaved changes.",
     "changedTitle": "The file changed somewhere else",
     "changedBody": "Someone (or the server) edited this file after you opened it. Reloading discards your changes; copy them first if you need them.",
     "reloadLatest": "Reload latest",
-    "copyMine": "Copy my changes"
+    "copyMine": "Copy my changes",
+    "wrap": "Wrap lines",
+    "cursor": "Ln {{line}}, Col {{column}}",
+    "stateSaved": "Saved",
+    "stateUnsaved": "Unsaved",
+    "encoding": "UTF-8",
+    "language": {
+      "json": "JSON",
+      "yaml": "YAML",
+      "toml": "TOML",
+      "properties": "Properties",
+      "shell": "Shell",
+      "text": "Plain text"
+    },
+    "deleteMany": "Delete {{count}} items?",
+    "move": {
+      "action": "Move",
+      "title_one": "Move {{count}} item",
+      "title_other": "Move {{count}} items",
+      "up": "Up",
+      "here": "Move here",
+      "noFolders": "No subfolders"
+    },
+    "compress": {
+      "action": "Compress to zip",
+      "title_one": "Compress {{count}} item",
+      "title_other": "Compress {{count}} items",
+      "name": "Zip file name",
+      "submit": "Compress",
+      "defaultName": "archive.zip"
+    },
+    "extract": {
+      "action": "Extract",
+      "title": "Extract {{name}}",
+      "where": "Extract to",
+      "newFolder": "New folder “{{name}}”",
+      "newFolderHint": "Safest: existing files are not touched.",
+      "here": "Current folder",
+      "hereHint": "Fails if a file with the same name exists; nothing is overwritten.",
+      "submit": "Extract"
+    },
+    "search": {
+      "action": "Search subfolders",
+      "title": "Find files",
+      "label": "File name in {{dir}} and all subfolders",
+      "submit": "Search",
+      "none": "No files found",
+      "truncated": "Showing only the first {{count}} results; try a more specific name."
+    },
+    "jobDone": {
+      "compress_files": "Compression finished.",
+      "extract_files": "Extraction finished.",
+      "other": "Done."
+    },
+    "dropHint": "Drop to upload to {{dir}}",
+    "uploadFailed": "Upload failed"
   },
   "auth": {
     "checking": "Checking sign-in…",

@@ -246,19 +246,24 @@ pub async fn delete_file(
     }))
 }
 
+impl From<FileKind> for FileKindDto {
+    fn from(kind: FileKind) -> Self {
+        match kind {
+            FileKind::File => Self::File,
+            FileKind::Dir => Self::Dir,
+        }
+    }
+}
+
 impl FileEntryDto {
     fn from_entry(entry: FileEntry) -> Result<Self, ApiError> {
         let modified = match entry.modified {
             Some(time) => Some(time.format(&Rfc3339).map_err(ApiError::internal)?),
             None => None,
         };
-        let kind = match entry.kind {
-            FileKind::File => FileKindDto::File,
-            FileKind::Dir => FileKindDto::Dir,
-        };
         Ok(Self {
             name: entry.name,
-            kind,
+            kind: entry.kind.into(),
             size: entry.size,
             modified,
         })
@@ -384,13 +389,13 @@ fn quoted_etag(etag: &str) -> Result<HeaderValue, ApiError> {
     HeaderValue::from_str(&format!("\"{etag}\"")).map_err(ApiError::internal)
 }
 
-fn content_type(name: &str) -> Result<HeaderValue, ApiError> {
+pub(crate) fn content_type(name: &str) -> Result<HeaderValue, ApiError> {
     let mime = mime_guess::from_path(name).first_or_octet_stream();
     HeaderValue::from_str(mime.as_ref()).map_err(ApiError::internal)
 }
 
 /// `filename*` theo RFC 5987. Tên Unicode không nhét vào `filename` ASCII được.
-fn content_disposition(name: &str) -> Result<HeaderValue, ApiError> {
+pub(crate) fn content_disposition(name: &str) -> Result<HeaderValue, ApiError> {
     let mut value = String::from("attachment; filename*=UTF-8''");
     for byte in name.as_bytes() {
         if is_attr_char(*byte) {

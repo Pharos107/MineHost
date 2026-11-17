@@ -1,13 +1,23 @@
 import { useState } from "react";
 import { MemoryRouter } from "react-router";
 
-import { Breadcrumb, Card, Field, FileButton, FileDrop, Stack, TextArea } from "../ui";
+import { Breadcrumb, Button, Card, CodeEditor, Field, FileButton, FileDrop, Stack, TextArea, toast } from "../ui";
 
-/** Breadcrumb, FileDrop (hai biến thể), FileButton và TextArea. `MemoryRouter` vì Breadcrumb dùng `Link`. */
+const SAMPLE_YAML = `# Cấu hình plugin
+settings:
+  enabled: true
+  max-homes: 5
+  prefix: "&a[Home]"
+worlds:
+  - world
+  - world_nether
+`;
+
+/** Breadcrumb, FileDrop (hai biến thể), FileButton, TextArea, CodeEditor và Toast. `MemoryRouter` vì Breadcrumb dùng `Link`. */
 export function FilesSection() {
   const [picked, setPicked] = useState<string[]>([]);
   return (
-    <Card title="Breadcrumb / FileDrop / FileButton / TextArea">
+    <Card title="Breadcrumb / FileDrop / FileButton / TextArea / CodeEditor">
       <MemoryRouter>
         <Stack gap={4}>
           <Breadcrumb
@@ -32,8 +42,38 @@ export function FilesSection() {
             <TextArea rows={3} defaultValue="Ghi chú cho bản sao lưu" />
           </Field>
           <TextArea variant="code" aria-label="TextArea code" defaultValue={"motd=A Minecraft Server\npvp=true\n\tview-distance=10"} />
+          <CodeSample />
+          <Stack direction="row" gap={2} wrap>
+            <Button size="sm" onClick={() => toast.show({ tone: "success", title: "Đã nén xong." })}>
+              Toast thường (5 giây)
+            </Button>
+            <Button size="sm" onClick={() => toast.show({ tone: "danger", title: "Tải lên không xong", body: "Ổ đĩa đầy." })}>
+              Toast lỗi
+            </Button>
+          </Stack>
         </Stack>
       </MemoryRouter>
     </Card>
+  );
+}
+
+function CodeSample() {
+  const [text, setText] = useState(SAMPLE_YAML);
+  const [cursor, setCursor] = useState("1:1");
+  return (
+    <CodeEditor
+      label="CodeEditor YAML"
+      value={text}
+      onChange={setText}
+      language="yaml"
+      onCursor={(line, column) => setCursor(`${line}:${column}`)}
+      status={
+        <>
+          <span>{text === SAMPLE_YAML ? "Đã lưu" : "Chưa lưu"}</span>
+          <span>Dòng:Cột {cursor}</span>
+          <span>YAML</span>
+        </>
+      }
+    />
   );
 }

@@ -1,0 +1,50 @@
+.frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--mh-input-bg);
+  border: 1px solid var(--mh-border-strong);
+  border-radius: var(--mh-radius-md);
+}
+
+.frame:focus-within {
+  border-color: var(--mh-focus);
+}
+
+/* Trừ phần đầu trang, thanh nút và thanh trạng thái để trình sửa vừa một màn hình. */
+.host {
+  height: max(360px, calc(100dvh - 300px));
+  min-width: 0;
+}
+
+.loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mh-space-1) var(--mh-space-4);
+  align-items: center;
+  padding: var(--mh-space-1) var(--mh-space-3);
+  color: var(--mh-text-muted);
+  font-size: var(--mh-text-sm);
+  background: var(--mh-surface-raised);
+  border-top: 1px solid var(--mh-border);
+}
+
+/* Mục đầu (trạng thái lưu) bên trái, các mục còn lại dồn sang phải. */
+.status > :first-child {
+  margin-right: auto;
+}
+
+@media (max-width: 560px) {
+  .host {
+    height: 60dvh;
+  }
+}
