@@ -44,7 +44,7 @@ cổng, bảo đảm có Java), rồi `mh-runtime` spawn:
 
 Không có cờ GC nào do MineHost tự thêm. Actor chuyển sang `Running` khi thấy dòng log khớp `]: Done (`.
 
-**Dừng:** gửi `stop` qua stdin, chờ tối đa 60 giây, quá hạn thì kill.
+**Dừng:** gửi `stop` qua stdin; còn in log thì chờ tiếp, im 60 giây hoặc quá 10 phút thì kill ([spec P1, mục 5.6](../specs/p1-mot-server-chay-duoc.md)).
 
 **Crash:** process thoát mà không ai yêu cầu. Nếu `restart_on_crash` thì bật lại sau 5, 15, 30 giây;
 quá 3 lần trong 10 phút thì dừng ở `Crashed`, kèm 200 dòng log cuối và một `CrashHint` đoán từ 5 chuỗi

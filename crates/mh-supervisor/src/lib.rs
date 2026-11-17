@@ -92,8 +92,11 @@ pub struct SupervisorConfig {
     /// Thấy dòng bật hỏng (`Failed to start the minecraft server`) mà process chưa thoát sau chừng
     /// này thì kill, để server sang `Crashed` thay vì treo ở `Starting`.
     pub failed_start_grace: Duration,
-    /// Gửi `stop` rồi chờ chừng này, quá hạn thì kill.
+    /// Sau `stop`, quá chừng này mà server không in thêm dòng nào thì kill. Mỗi dòng mới (đang lưu
+    /// chunk) là gia hạn: world lớn lưu lâu hơn hạn này vẫn không bị cắt ngang.
     pub stop_timeout: Duration,
+    /// Trần cứng tính từ lúc gửi `stop`, kể cả khi server cứ in log mãi (treo mà vẫn spam lỗi).
+    pub stop_max: Duration,
     /// Thời gian chờ trước lần tự khởi động lại thứ 1, 2, 3…; hết danh sách thì dừng ở `Crashed`.
     pub restart_delays: Vec<Duration>,
     /// Chỉ đếm các lần crash trong khoảng này.
@@ -110,6 +113,7 @@ impl Default for SupervisorConfig {
             slow_start_after: Duration::from_secs(5 * 60),
             failed_start_grace: Duration::from_secs(20),
             stop_timeout: Duration::from_secs(60),
+            stop_max: Duration::from_secs(10 * 60),
             restart_delays: [5, 15, 30].map(Duration::from_secs).to_vec(),
             restart_window: Duration::from_secs(10 * 60),
             console_lines: 5000,
