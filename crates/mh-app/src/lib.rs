@@ -297,9 +297,10 @@ impl App {
         self.shutdown.notified().await;
     }
 
-    /// Thời gian chờ một server dừng khi thoát MineHost hoặc khôi phục: hạn `stop` cộng thêm một chút.
+    /// Thời gian chờ một server dừng khi thoát MineHost hoặc khôi phục: trần `stop` cộng thêm một
+    /// chút, vì supervisor chỉ kill sau `stop_max` nếu server vẫn đang in log lưu world.
     pub(crate) fn shutdown_timeout(&self) -> Duration {
-        self.supervisor_config.stop_timeout + Duration::from_secs(10)
+        self.supervisor_config.stop_max + Duration::from_secs(10)
     }
 }
 

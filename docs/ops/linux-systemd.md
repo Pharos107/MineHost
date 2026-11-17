@@ -41,8 +41,9 @@ RestartSec=5
 # cả Java, khiến server tự tắt cùng lúc controller đang ra lệnh.
 KillMode=mixed
 KillSignal=SIGTERM
-# Mỗi server có tối đa 60 giây để lưu world; chừa thêm cho controller.
-TimeoutStopSec=120
+# Server còn in log lúc lưu world thì được chờ tiếp, tối đa 10 phút; chừa thêm cho controller.
+# Hạn ngắn hơn thì systemd kill cả controller lẫn Java khi world lớn chưa lưu xong.
+TimeoutStopSec=660
 # Giao cgroup cho MineHost để giới hạn RAM của từng server (spec P3, mục 3.8). Thiếu dòng này thì
 # server chỉ bị giới hạn bằng -Xmx.
 Delegate=yes

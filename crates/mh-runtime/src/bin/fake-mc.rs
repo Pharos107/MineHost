@@ -6,6 +6,8 @@
 //! Cờ:
 //! - `--no-done`: không bao giờ in dòng `Done (…)!`.
 //! - `--hang-on-stop`: bỏ qua lệnh `stop`, giống server bị treo khi lưu world.
+//! - `--slow-stop-ms <n>`: sau `stop`, in một dòng lưu chunk mỗi 100 ms trong `n` mili giây rồi mới
+//!   thoát, giống world lớn lưu lâu.
 //! - `--crash-after-ms <n>`: in lỗi hết RAM rồi thoát mã 1 sau `n` mili giây.
 //! - `--slow-start-ms <n>`: chờ `n` mili giây trước khi in dòng `Done`.
 //! - `--fail-start-hang`: in dòng bật hỏng như Forge rồi treo, không đọc stdin, không thoát.
@@ -25,7 +27,10 @@
 #![allow(clippy::print_stdout, clippy::print_stderr)]
 
 use std::io::BufRead;
-use std::time::Duration;
+use std::sync::OnceLock;
+use std::time::{Duration, Instant};
+
+static SLOW_STOP_MS: OnceLock<u64> = OnceLock::new();
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -48,6 +53,9 @@ fn main() {
     }
     if !has_flag(&args, "--no-done") {
         println!("[10:00:01 INFO]: Done (0.100s)! For help, type \"help\"");
+    }
+    if let Some(ms) = flag_number(&args, "--slow-stop-ms") {
+        let _ = SLOW_STOP_MS.set(ms);
     }
     let hang_save_all = has_flag(&args, "--hang-on-save-all")
         || std::env::var("MINEHOST_FAKE_SAVE_ALL_HANG").ok().as_deref() == Some("1");
@@ -179,6 +187,16 @@ fn on_stop(hang_on_stop: bool) -> bool {
         return true;
     }
     println!("[10:00:02 INFO]: Stopping server");
+    if let Some(&ms) = SLOW_STOP_MS.get() {
+        let until = Instant::now() + Duration::from_millis(ms);
+        while Instant::now() < until {
+            println!(
+                "[10:00:02 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld"
+            );
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        println!("[10:00:03 INFO]: All dimensions are saved");
+    }
     false
 }
 

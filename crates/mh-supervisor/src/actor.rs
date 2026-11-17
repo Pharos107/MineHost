@@ -51,6 +51,8 @@ pub(crate) struct Actor<L> {
     /// Người dùng đã yêu cầu dừng: process thoát lúc này không phải crash.
     restart_after_stop: bool,
     stop_deadline: Option<Instant>,
+    /// Lúc gửi `stop`, để gia hạn không vượt `stop_max`.
+    stop_started: Option<Instant>,
     restart_at: Option<Instant>,
     slow_start_at: Option<Instant>,
     /// Hạn chót cho process tự thoát sau dòng bật hỏng.
@@ -79,6 +81,7 @@ impl<L: Launcher> Actor<L> {
             live: None,
             restart_after_stop: false,
             stop_deadline: None,
+            stop_started: None,
             restart_at: None,
             slow_start_at: None,
             failed_start_at: None,
@@ -191,9 +194,20 @@ impl<L: Launcher> Actor<L> {
             // Stdin đã đóng thì process sắp thoát; hạn chót bên dưới vẫn bảo đảm nó dừng.
             let _ = control.send_line("stop").await;
         }
-        self.stop_deadline = Some(Instant::now() + self.config.stop_timeout);
+        let now = Instant::now();
+        self.stop_started = Some(now);
+        self.stop_deadline = Some(now + self.config.stop_timeout);
         self.set_state(next);
         Ok(())
+    }
+
+    /// Server còn in log sau `stop` nghĩa là còn đang lưu: dời hạn kill, nhưng không quá `stop_max`.
+    fn extend_stop_deadline(&mut self) {
+        let (Some(started), Some(_)) = (self.stop_started, self.stop_deadline) else {
+            return;
+        };
+        let idle = Instant::now() + self.config.stop_timeout;
+        self.stop_deadline = Some(idle.min(started + self.config.stop_max));
     }
 
     fn kill(&mut self) -> Result<(), SupervisorError> {
@@ -239,6 +253,9 @@ impl<L: Launcher> Actor<L> {
     }
 
     async fn on_line(&mut self, line: OutputLine) {
+        if self.status.state == ServerState::Stopping {
+            self.extend_stop_deadline();
+        }
         let starting = self.status.state == ServerState::Starting;
         let ready = starting && is_done_line(&line.text);
         if starting && self.failed_start_at.is_none() && is_startup_failed_line(&line.text) {
@@ -291,6 +308,7 @@ impl<L: Launcher> Actor<L> {
         }
         self.console.close_log();
         self.stop_deadline = None;
+        self.stop_started = None;
         self.slow_start_at = None;
         self.failed_start_at = None;
         self.status.pid = None;

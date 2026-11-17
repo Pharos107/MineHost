@@ -290,7 +290,10 @@ Lệnh chạy:
   `Failed to start the minecraft server` rồi treo vì còn luồng chưa dừng. Đang `Starting` mà thấy dòng
   đó thì chờ 20 giây cho process tự thoát, quá hạn thì kill. Server sang `Crashed` như mọi lần crash
   khác (giữ log cuối, áp luật tự bật lại bên dưới).
-- **Dừng an toàn:** gửi `stop`, chờ tối đa 60 giây, quá hạn thì kill.
+- **Dừng an toàn:** gửi `stop`; 60 giây không có dòng log mới thì kill. Mỗi dòng mới (server đang
+  in "Saving chunks…") dời hạn thêm 60 giây, nhưng không quá 10 phút tính từ lúc gửi `stop`
+  (`SupervisorConfig::stop_timeout`, `stop_max`; sửa 2026-11-17). Trước đây hạn cố định 60 giây
+  cắt ngang world lớn đang lưu dở. Thoát MineHost và khôi phục chờ tới `stop_max` cộng 10 giây.
 - **Crash:** process thoát mà không do người dùng yêu cầu. Nếu `restart_on_crash` thì tự bật lại
   sau 5 s, 15 s, 30 s; quá 3 lần trong 10 phút thì dừng ở `Crashed`.
 - **Console:** bộ đệm vòng 5.000 dòng, `seq` tăng dần không bao giờ lặp. Đồng thời ghi

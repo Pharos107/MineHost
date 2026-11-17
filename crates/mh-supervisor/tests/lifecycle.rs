@@ -152,6 +152,45 @@ async fn hung_stop_is_killed_after_timeout() {
     assert!(!probe.marker.load(Ordering::SeqCst));
 }
 
+/// World lớn lưu lâu hơn hạn `stop`: còn in log thì được chờ tiếp, không bị kill giữa chừng.
+#[tokio::test]
+async fn slow_save_keeps_extending_stop_deadline() {
+    let (sup, _) = supervisor(Setup {
+        args: &["--slow-stop-ms", "1200"],
+        ..Setup::default()
+    });
+    sup.start().await.unwrap();
+    wait_state(&sup, ServerState::Running).await;
+    sup.stop().await.unwrap();
+    wait_state(&sup, ServerState::Stopped).await;
+    assert!(console_has(&sup, "All dimensions are saved"));
+}
+
+/// Server cứ in log mãi vẫn bị kill khi chạm trần `stop_max`.
+#[tokio::test]
+async fn stop_max_caps_extensions() {
+    let (sup, _) = supervisor(Setup {
+        args: &["--slow-stop-ms", "5000"],
+        config: SupervisorConfig {
+            stop_max: Duration::from_millis(700),
+            ..config()
+        },
+        ..Setup::default()
+    });
+    sup.start().await.unwrap();
+    wait_state(&sup, ServerState::Running).await;
+    sup.stop().await.unwrap();
+    wait_state(&sup, ServerState::Stopped).await;
+    assert!(!console_has(&sup, "All dimensions are saved"));
+}
+
+fn console_has(sup: &SupervisorHandle, text: &str) -> bool {
+    sup.console()
+        .after(None)
+        .iter()
+        .any(|line| line.text.contains(text))
+}
+
 #[tokio::test]
 async fn four_crashes_stay_crashed() {
     let (sup, probe) = supervisor(Setup {
