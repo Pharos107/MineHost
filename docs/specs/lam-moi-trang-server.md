@@ -60,7 +60,7 @@ Component: `StatTile` thêm `meter`, `NavSection` thêm `actions` và `extra`, `
 
 ## Không làm
 
-- Chọn khoảng thời gian dài hơn 1 giờ: backend chỉ giữ 1 giờ mẫu.
+- Chọn khoảng thời gian dài hơn 1 giờ: đã tách thành spec riêng ở [nang-cap-bieu-do.md](nang-cap-bieu-do.md).
 - TPS, MSPT, chunk, entity, lưu lượng mạng như mc-controller: cần RCON hoặc plugin, MineHost điều khiển
   qua console.
 - Chế độ bảo trì.

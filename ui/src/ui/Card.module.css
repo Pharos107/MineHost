@@ -9,6 +9,35 @@
   border-radius: var(--mh-radius-lg);
 }
 
+.interactive {
+  cursor: pointer;
+  transition: border-color var(--mh-fast), box-shadow var(--mh-fast);
+}
+
+.interactive:hover {
+  border-color: var(--mh-border-strong);
+  box-shadow: var(--mh-shadow-sm);
+}
+
+.titleTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mh-space-3);
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.titleTrigger:focus-visible {
+  border-radius: var(--mh-radius-sm);
+  outline: 2px solid var(--mh-focus);
+  outline-offset: 2px;
+}
+
 .subtle {
   gap: var(--mh-space-3);
   padding: var(--mh-space-3) var(--mh-space-4);

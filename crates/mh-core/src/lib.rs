@@ -16,6 +16,7 @@ pub mod ids;
 pub mod instance;
 pub mod launch;
 pub mod memory;
+pub mod metrics;
 pub mod mod_meta;
 pub mod mrpack;
 pub mod players;
@@ -37,6 +38,10 @@ pub use ids::{GamePort, ServerId, ServerName};
 pub use instance::{InstanceError, InstanceSpec};
 pub use launch::{ArgsFilePath, ArgsOs, Launch};
 pub use memory::{MemoryLimits, memory_limit_mb, suggest_memory_mb, suggest_modpack_memory_mb};
+pub use metrics::{
+    DEFAULT_METRICS_RETENTION_MINUTES, MAX_METRICS_RETENTION_MINUTES,
+    MIN_METRICS_RETENTION_MINUTES, check_metrics_retention,
+};
 pub use mod_meta::{
     FabricDepOverrides, ModDependency, ModMeta, ModMetaError, ModMetaFormat, ModSide,
     matches_version_req, parse_fabric_dep_overrides, parse_jarjar_metadata, parse_mod_meta,

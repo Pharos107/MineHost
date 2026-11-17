@@ -1,9 +1,9 @@
-//! Chỉ số CPU, RAM và dung lượng đĩa của từng server (spec P2, mục 3.5 và 5.7).
+//! Chỉ số CPU, RAM và dung lượng đĩa của từng server (spec P2 mục 3.5; nâng cấp đa tầng RAM).
 //!
 //! Mẫu chỉ nằm trong RAM: tắt MineHost là mất. Server không còn process thì không thêm mẫu,
 //! bộ đệm cũ được giữ để biểu đồ còn tới lúc controller thoát.
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Weak};
@@ -16,17 +16,10 @@ use tokio::sync::{broadcast, watch};
 
 use crate::{App, AppError, lock};
 
-/// 1 giờ nếu lấy mẫu mỗi 5 giây.
-const SAMPLE_CAP: usize = 720;
+mod rollup;
 
-/// Một điểm trên biểu đồ. `players` là số người online theo log lúc lấy mẫu.
-#[derive(Debug, Clone, PartialEq)]
-pub struct MetricSample {
-    pub at: OffsetDateTime,
-    pub cpu_percent: f32,
-    pub memory_bytes: u64,
-    pub players: Option<u32>,
-}
+use rollup::ServerHistory;
+pub use rollup::{MetricSample, MetricsRange};
 
 /// Kết quả `GET /servers/{id}/metrics`.
 #[derive(Debug, Clone, PartialEq)]
@@ -34,6 +27,9 @@ pub struct ServerMetrics {
     pub samples: Vec<MetricSample>,
     pub disk_bytes: Option<u64>,
     pub running_since: Option<OffsetDateTime>,
+    pub oldest_at: Option<OffsetDateTime>,
+    pub retention_minutes: u32,
+    pub step_seconds: u32,
 }
 
 /// Một mẫu vừa được ghi. Không phát lại mẫu cũ — lịch sử đọc qua [`App::metrics`].
@@ -62,7 +58,7 @@ impl Default for MetricsConfig {
 
 #[derive(Debug)]
 pub(crate) struct MetricsHub {
-    samples: Mutex<HashMap<ServerId, VecDeque<MetricSample>>>,
+    histories: Mutex<HashMap<ServerId, ServerHistory>>,
     disk: Mutex<HashMap<ServerId, u64>>,
     events: broadcast::Sender<MetricsEvent>,
     stop: watch::Sender<bool>,
@@ -75,10 +71,18 @@ struct Measured {
     disks: Option<Vec<(ServerId, u64)>>,
 }
 
+struct HistorySnapshot {
+    samples: Vec<MetricSample>,
+    oldest_at: Option<OffsetDateTime>,
+    retention_minutes: u32,
+    step_seconds: u32,
+    disk_bytes: Option<u64>,
+}
+
 impl MetricsHub {
     pub(crate) fn new() -> Self {
         Self {
-            samples: Mutex::new(HashMap::new()),
+            histories: Mutex::new(HashMap::new()),
             disk: Mutex::new(HashMap::new()),
             events: broadcast::channel(256).0,
             stop: watch::channel(false).0,
@@ -95,29 +99,61 @@ impl MetricsHub {
     }
 
     fn clear(&self, id: ServerId) {
-        lock(&self.samples).remove(&id);
+        lock(&self.histories).remove(&id);
         lock(&self.disk).remove(&id);
+    }
+
+    pub(crate) fn has_history(&self, id: ServerId) -> bool {
+        lock(&self.histories).contains_key(&id)
+    }
+
+    pub(crate) fn set_retention(&self, id: ServerId, minutes: u32) {
+        let mut histories = lock(&self.histories);
+        histories
+            .entry(id)
+            .or_insert_with(|| ServerHistory::new(minutes))
+            .set_retention(minutes);
     }
 
     fn snapshot(
         &self,
         id: ServerId,
-        since: Option<OffsetDateTime>,
-    ) -> (Vec<MetricSample>, Option<u64>) {
-        let samples = {
-            let guard = lock(&self.samples);
+        range: MetricsRange,
+        configured_retention: u32,
+    ) -> HistorySnapshot {
+        let (samples, oldest_at, retention_minutes, step_seconds) = {
+            let guard = lock(&self.histories);
             match guard.get(&id) {
-                Some(buf) => buf.iter().filter(|s| is_after(s, since)).cloned().collect(),
-                None => Vec::new(),
+                Some(history) => {
+                    let (samples, step) = history.query(range);
+                    (
+                        samples,
+                        history.oldest_at(),
+                        history.retention_minutes(),
+                        step,
+                    )
+                }
+                None => (Vec::new(), None, configured_retention, 5),
             }
         };
-        (samples, lock(&self.disk).get(&id).copied())
+        HistorySnapshot {
+            samples,
+            oldest_at,
+            retention_minutes,
+            step_seconds,
+            disk_bytes: lock(&self.disk).get(&id).copied(),
+        }
     }
 
-    fn push_all(&self, batch: &[(ServerId, MetricSample)]) {
-        let mut samples = lock(&self.samples);
-        for (id, sample) in batch {
-            push_sample(samples.entry(*id).or_default(), sample.clone());
+    fn push_all(&self, batch: &[(ServerId, MetricSample, Option<u32>)]) {
+        let mut histories = lock(&self.histories);
+        for (id, sample, initial_retention) in batch {
+            let entry = histories.entry(*id).or_insert_with(|| {
+                ServerHistory::new(
+                    initial_retention.unwrap_or(mh_core::DEFAULT_METRICS_RETENTION_MINUTES),
+                )
+            });
+            entry.push(sample.clone());
         }
     }
 
@@ -137,22 +173,41 @@ impl Drop for App {
 
 impl App {
     /// Mẫu sau `since` (không gồm đúng thời điểm đó), dung lượng thư mục và thời gian chạy.
-    ///
-    /// Không có thư mục server thì `NOT_FOUND`. Server tắt không thêm mẫu; mẫu đã có vẫn trả về.
     pub fn metrics(
         &self,
         id: ServerId,
         since: Option<OffsetDateTime>,
     ) -> Result<ServerMetrics, AppError> {
-        self.store.load(id)?;
-        let (samples, disk_bytes) = self.metrics_hub.snapshot(id, since);
+        self.metrics_range(
+            id,
+            MetricsRange {
+                since,
+                until: None,
+                max_points: None,
+            },
+        )
+    }
+
+    /// Mẫu trong khoảng `(since, until]`, gộp về tối đa `max_points` điểm nếu có.
+    pub fn metrics_range(
+        &self,
+        id: ServerId,
+        range: MetricsRange,
+    ) -> Result<ServerMetrics, AppError> {
+        let spec = self.store.load(id)?;
+        let snap = self
+            .metrics_hub
+            .snapshot(id, range, spec.metrics.retention_minutes);
         let running_since = lock(&self.supervisors)
             .get(&id)
             .and_then(|handle| handle.status().running_since);
         Ok(ServerMetrics {
-            samples,
-            disk_bytes,
+            samples: snap.samples,
+            disk_bytes: snap.disk_bytes,
             running_since,
+            oldest_at: snap.oldest_at,
+            retention_minutes: snap.retention_minutes,
+            step_seconds: snap.step_seconds,
         })
     }
 
@@ -189,13 +244,27 @@ impl App {
         let at = OffsetDateTime::now_utc();
         let batch: Vec<_> = usages
             .into_iter()
-            .map(|(id, usage)| (id, sample_from(at, usage, self.online_count(id))))
+            .map(|(id, usage)| {
+                // Chỉ đọc instance.toml khi server chưa có trong cache; khi đổi cài đặt `update_settings` đã gọi `set_retention`.
+                let initial_retention = (!self.metrics_hub.has_history(id)).then(|| {
+                    self.store
+                        .load(id)
+                        .map_or(mh_core::DEFAULT_METRICS_RETENTION_MINUTES, |s| {
+                            s.metrics.retention_minutes
+                        })
+                });
+                (
+                    id,
+                    sample_from(at, usage, self.online_count(id)),
+                    initial_retention,
+                )
+            })
             .collect();
         self.metrics_hub.push_all(&batch);
         if let Some(disks) = &disks {
             self.metrics_hub.replace_disk(disks);
         }
-        for (id, sample) in batch {
+        for (id, sample, _) in batch {
             let _ = self.metrics_hub.events.send(MetricsEvent { id, sample });
         }
     }
@@ -205,20 +274,12 @@ fn sample_from(at: OffsetDateTime, usage: ProcessUsage, players: u32) -> MetricS
     MetricSample {
         at,
         cpu_percent: usage.cpu_percent,
+        cpu_max: None,
         memory_bytes: usage.rss_bytes,
+        memory_max_bytes: None,
         players: Some(players),
+        players_max: None,
     }
-}
-
-fn is_after(sample: &MetricSample, since: Option<OffsetDateTime>) -> bool {
-    since.is_none_or(|at| sample.at > at)
-}
-
-fn push_sample(buf: &mut VecDeque<MetricSample>, sample: MetricSample) {
-    if buf.len() >= SAMPLE_CAP {
-        buf.pop_front();
-    }
-    buf.push_back(sample);
 }
 
 async fn run_sampler(app: Weak<App>, stop: &mut watch::Receiver<bool>, config: MetricsConfig) {
@@ -228,7 +289,6 @@ async fn run_sampler(app: Weak<App>, stop: &mut watch::Receiver<bool>, config: M
     };
     let sample_every = config.sample_every.max(Duration::from_millis(1));
     let disk_every = config.disk_every.max(Duration::from_millis(1));
-    // Lần đầu tính đĩa ngay; các lần sau cách nhau `disk_every`.
     let mut next_disk = tokio::time::Instant::now();
     loop {
         if *stop.borrow() {
@@ -263,7 +323,6 @@ fn live_pids(app: &App) -> Vec<(ServerId, u32)> {
         .collect()
 }
 
-/// `None` khi không đọc được danh sách — giữ số cũ thay vì xóa nhầm.
 fn disk_targets(app: &App) -> Option<Vec<(ServerId, PathBuf)>> {
     let listed = match app.store.list() {
         Ok(listed) => listed,
@@ -311,39 +370,10 @@ fn measure(
     }
 }
 
-/// `true` khi app đang tắt.
 async fn wait_interval(stop: &mut watch::Receiver<bool>, every: Duration) -> bool {
     tokio::select! {
         biased;
         result = stop.changed() => result.is_err() || *stop.borrow(),
         () = tokio::time::sleep(every) => false,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use time::Duration as TimeDuration;
-
-    #[test]
-    fn buffer_drops_oldest_after_720() {
-        let mut buf = VecDeque::new();
-        for i in 0u64..725 {
-            push_sample(&mut buf, numbered(i));
-        }
-        assert_eq!(buf.len(), 720);
-        // Mẫu 1..=5 bị bỏ; mẫu đầu còn lại là mẫu thứ 6 (chỉ số 5).
-        assert_eq!(buf.front().map(|sample| sample.memory_bytes), Some(5));
-        assert_eq!(buf.back().map(|sample| sample.memory_bytes), Some(724));
-    }
-
-    fn numbered(i: u64) -> MetricSample {
-        let seconds = i64::try_from(i).unwrap_or(0);
-        MetricSample {
-            at: OffsetDateTime::UNIX_EPOCH + TimeDuration::seconds(seconds),
-            cpu_percent: 0.0,
-            memory_bytes: i,
-            players: None,
-        }
     }
 }

@@ -37,6 +37,38 @@ describe("LineChart", () => {
     render(<LineChart label="RAM" points={[]} {...format} />);
     expect(screen.getByRole("img", { name: "RAM" })).toBeTruthy();
   });
+
+  it("nới trần trục y khi expandYMax bật và vẽ đường mốc tham chiếu", () => {
+    render(
+      <LineChart
+        label="RAM"
+        points={[{ t: 0, v: 8 }, { t: 5_000, v: 12 }]}
+        yMax={10}
+        expandYMax
+        referenceValue={10}
+        referenceLabel="Đặt 10 GB"
+        formatValue={(v) => `${Math.round(v)} GB`}
+        formatTime={(t) => `${t / 1000}s`}
+      />,
+    );
+    expect(screen.getByText("Đặt 10 GB")).toBeTruthy();
+    expect(screen.getByText("20 GB")).toBeTruthy();
+  });
+
+  it("hiện cả giá trị đỉnh khi mẫu có vMax", () => {
+    render(
+      <LineChart
+        label="CPU"
+        points={[{ t: 0, v: 20, vMax: 85 }]}
+        yMax={100}
+        peakPrefix="Đỉnh"
+        {...format}
+      />,
+    );
+    const chart = screen.getByRole("img");
+    fireEvent.keyDown(chart, { key: "ArrowLeft" });
+    expect(screen.getByRole("status").textContent).toContain("Đỉnh: 85 %");
+  });
 });
 
 describe("StatTile", () => {

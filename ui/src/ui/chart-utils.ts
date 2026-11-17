@@ -1,7 +1,8 @@
-/** Một điểm trên biểu đồ: `t` là mili giây (Unix), `v` là giá trị. */
+/** Một điểm trên biểu đồ: `t` là mili giây (Unix), `v` là giá trị, `vMax` là đỉnh khi đã gộp mẫu. */
 export interface ChartPoint {
   t: number;
   v: number;
+  vMax?: number;
 }
 
 /** Làm tròn trần trục y lên 1, 2, 2.5 hoặc 5 × 10ⁿ để vạch chia là số dễ đọc. */
@@ -42,12 +43,13 @@ export function linePath(
   x: (t: number) => number,
   y: (v: number) => number,
   gapMs: number,
+  pick: (p: ChartPoint) => number = (p) => p.v,
 ): string {
   return points
     .map((p, i) => {
       const previous = points[i - 1];
       const jump = previous === undefined || p.t - previous.t > gapMs;
-      return `${jump ? "M" : "L"}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`;
+      return `${jump ? "M" : "L"}${x(p.t).toFixed(1)},${y(pick(p)).toFixed(1)}`;
     })
     .join("");
 }

@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import { api, type MetricSample, type ServerMetrics } from "../../../api/client";
@@ -19,6 +19,16 @@ export function appendSample(metrics: ServerMetrics | undefined, sample: MetricS
   if (!metrics) return metrics;
   const samples = [...metrics.samples, sample].slice(-MAX_SAMPLES);
   return { ...metrics, samples };
+}
+
+/** Ghép mẫu realtime mới nhất vào dữ liệu khung dài (> 1h) để điểm cuối không bị trễ 60 giây. */
+export function mergeLiveSample(base: ServerMetrics | undefined, liveData: ServerMetrics | undefined): ServerMetrics | undefined {
+  if (!base) return liveData;
+  const latest = liveData?.samples.at(-1);
+  if (!latest) return base;
+  const baseLast = base.samples.at(-1);
+  if (baseLast && Date.parse(latest.at) <= Date.parse(baseLast.at)) return base;
+  return { ...base, samples: [...base.samples, latest] };
 }
 
 /**
@@ -43,4 +53,38 @@ export function useServerMetrics(id: string, state: string) {
   }, [id, state, queryClient]);
 
   return query;
+}
+
+/** Dữ liệu tổng hợp cho khung > 1 giờ trên thẻ Tổng quan. */
+export function useWindowMetrics(id: string, windowMinutes: number, enabled: boolean) {
+  return useQuery({
+    queryKey: ["metrics", id, "window", windowMinutes],
+    enabled,
+    refetchInterval: REFRESH_MS,
+    placeholderData: keepPreviousData,
+    queryFn: () =>
+      api.metrics(id, {
+        since: new Date(Date.now() - windowMinutes * 60_000).toISOString(),
+        maxPoints: 360,
+      }),
+  });
+}
+
+/** Dữ liệu cho hộp thoại Xem chi tiết theo khoảng `since..until` và số điểm tối đa. */
+export function useDetailMetrics(
+  id: string,
+  sinceIso: string | undefined,
+  untilIso: string | undefined,
+  maxPoints: number,
+  enabled: boolean,
+  liveRefresh: boolean,
+  keepPrev = true,
+) {
+  return useQuery({
+    queryKey: ["metrics", id, "detail", sinceIso ?? "", untilIso ?? "", maxPoints],
+    enabled,
+    refetchInterval: liveRefresh ? REFRESH_MS : false,
+    placeholderData: keepPrev ? keepPreviousData : undefined,
+    queryFn: () => api.metrics(id, { since: sinceIso, until: untilIso, maxPoints }),
+  });
 }

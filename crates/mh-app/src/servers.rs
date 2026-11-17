@@ -46,6 +46,8 @@ pub struct SettingsPatch {
     pub backup_keep: Option<u16>,
     /// Phiên bản Java chính (8, 11, 17, 21, 25). Có hiệu lực từ lần bật sau.
     pub java_major: Option<u16>,
+    /// Thời gian giữ lịch sử chỉ số trong RAM (phút), 5..=14_398_560.
+    pub metrics_retention_minutes: Option<u32>,
 }
 
 impl App {
@@ -119,6 +121,11 @@ impl App {
                 .with_params(serde_json::json!({ "field": "java_major" })));
             }
             spec.game.java_major = major;
+        }
+        if let Some(minutes) = patch.metrics_retention_minutes {
+            spec.metrics.retention_minutes = mh_core::check_metrics_retention(minutes)?;
+            self.metrics_hub
+                .set_retention(id, spec.metrics.retention_minutes);
         }
         self.store.save(&spec)?;
         self.notify_changed(id);

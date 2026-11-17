@@ -128,9 +128,16 @@ export const api = {
   updateServer: (id: string, patch: ServerPatch) => request<Server>("PATCH", serverPath(id), patch),
   trashServer: (id: string, confirmName: string) =>
     request<Trashed>("DELETE", `${serverPath(id)}?confirm_name=${encodeURIComponent(confirmName)}`),
-  /** Chỉ số 1 giờ gần nhất; `since` (RFC 3339) có thì chỉ lấy mẫu sau thời điểm đó. */
-  metrics: (id: string, since?: string) =>
-    request<ServerMetrics>("GET", `${serverPath(id)}/metrics${since ? `?since=${encodeURIComponent(since)}` : ""}`),
+  /** Chỉ số của server; mặc định trả 1 giờ gần nhất (mẫu 5 giây), hỗ trợ lọc `since`, `until`, `maxPoints`. */
+  metrics: (id: string, query?: string | { since?: string; until?: string; maxPoints?: number }) => {
+    const q = typeof query === "string" ? { since: query } : query;
+    const params = new URLSearchParams();
+    if (q?.since) params.set("since", q.since);
+    if (q?.until) params.set("until", q.until);
+    if (q?.maxPoints !== undefined) params.set("max_points", String(q.maxPoints));
+    const qs = params.toString();
+    return request<ServerMetrics>("GET", `${serverPath(id)}/metrics${qs ? `?${qs}` : ""}`);
+  },
   properties: (id: string) => request<{ properties: Property[] }>("GET", `${serverPath(id)}/properties`),
   saveProperties: (id: string, properties: Property[]) => request<void>("PUT", `${serverPath(id)}/properties`, { properties }),
   /** Bản cài được của một loại server, mới nhất trước. */

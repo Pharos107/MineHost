@@ -11,6 +11,7 @@ use crate::error::{ErrorCode, InvalidValue};
 use crate::ids::{GamePort, ServerId, ServerName};
 use crate::launch::Launch;
 use crate::memory::MemoryLimits;
+use crate::metrics::{DEFAULT_METRICS_RETENTION_MINUTES, check_metrics_retention};
 use crate::schedule::DailyTime;
 use crate::version::{LoaderKind, LoaderVersion, McVersion};
 
@@ -43,6 +44,9 @@ pub struct InstanceSpec {
     /// Sao lưu tự động (spec P2, mục 4.1). Không ghi khi để mặc định, để file P1 không đổi.
     #[serde(default, skip_serializing_if = "BackupSection::is_default")]
     pub backup: BackupSection,
+    /// Thời gian giữ chỉ số trong RAM. Không ghi khi để mặc định.
+    #[serde(default, skip_serializing_if = "MetricsSection::is_default")]
+    pub metrics: MetricsSection,
     #[serde(default, skip_serializing_if = "EulaSection::is_empty")]
     pub eula: EulaSection,
     /// Nguồn modpack (spec P3, mục 4.1). Chỉ có khi server được tạo từ modpack.
@@ -155,6 +159,42 @@ impl BackupSection {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MetricsSection {
+    /// Số phút giữ lịch sử chỉ số trong RAM, `5..=14_398_560` (tối đa 9.999 ngày).
+    #[serde(
+        default = "default_retention_minutes",
+        deserialize_with = "retention_in_range"
+    )]
+    pub retention_minutes: u32,
+    #[serde(flatten)]
+    pub extra: Table,
+}
+
+const fn default_retention_minutes() -> u32 {
+    DEFAULT_METRICS_RETENTION_MINUTES
+}
+
+fn retention_in_range<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<u32, D::Error> {
+    let minutes = u32::deserialize(deserializer)?;
+    check_metrics_retention(minutes).map_err(serde::de::Error::custom)
+}
+
+impl Default for MetricsSection {
+    fn default() -> Self {
+        Self {
+            retention_minutes: DEFAULT_METRICS_RETENTION_MINUTES,
+            extra: Table::new(),
+        }
+    }
+}
+
+impl MetricsSection {
+    fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EulaSection {
     /// Không có giá trị nghĩa là người dùng chưa bấm đồng ý EULA.
@@ -230,6 +270,7 @@ impl InstanceSpec {
             },
             policy: PolicySection::default(),
             backup: BackupSection::default(),
+            metrics: MetricsSection::default(),
             eula: EulaSection::default(),
             modpack: None,
             extra: Table::new(),

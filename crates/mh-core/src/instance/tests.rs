@@ -234,3 +234,18 @@ fn backup_section_round_trips_and_is_omitted_by_default() {
     let bad = format!("{SPEC_EXAMPLE}\n[backup]\nschedule = \"every_0h\"\n");
     assert!(InstanceSpec::from_toml(&bad).is_err());
 }
+
+#[test]
+fn metrics_section_round_trips_and_is_omitted_by_default() {
+    let text = format!("{SPEC_EXAMPLE}\n[metrics]\nretention_minutes = 1440\n");
+    let spec = InstanceSpec::from_toml(&text).unwrap();
+    assert_eq!(spec.metrics.retention_minutes, 1440);
+    let written = spec.to_toml().unwrap();
+    assert!(written.contains("retention_minutes = 1440"), "{written}");
+
+    assert!(!sample().to_toml().unwrap().contains("[metrics]"));
+    let too_low = format!("{SPEC_EXAMPLE}\n[metrics]\nretention_minutes = 4\n");
+    assert!(InstanceSpec::from_toml(&too_low).is_err());
+    let too_high = format!("{SPEC_EXAMPLE}\n[metrics]\nretention_minutes = 20000000\n");
+    assert!(InstanceSpec::from_toml(&too_high).is_err());
+}

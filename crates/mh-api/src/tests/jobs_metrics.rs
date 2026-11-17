@@ -62,14 +62,48 @@ async fn metrics_route_checks_since_and_missing_server() {
     let (status, body) = api.get(&base).await;
     assert_eq!(status, StatusCode::OK, "{body}");
     assert_eq!(body["samples"], json!([]));
+    assert_eq!(body["retention_minutes"], 60);
+    assert_eq!(body["step_seconds"], 5);
     assert!(body["disk_bytes"].is_null() && body["running_since"].is_null());
 
-    let since = format!("{base}?since=2020-01-01T00:00:00Z");
+    let since =
+        format!("{base}?since=2020-01-01T00:00:00Z&until=2025-01-01T00:00:00Z&max_points=360");
     let (status, body) = api.get(&since).await;
     assert_eq!(status, StatusCode::OK, "{body}");
     assert_eq!(body["samples"], json!([]));
 
     let (status, body) = api.get(&format!("{base}?since=khong-phai-ngay")).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+    assert_eq!(body["code"], "INVALID_INPUT");
+
+    let (status, body) = api.get(&format!("{base}?until=khong-phai-ngay")).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+    assert_eq!(body["code"], "INVALID_INPUT");
+
+    let (status, body) = api.get(&format!("{base}?max_points=0")).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+    assert_eq!(body["code"], "INVALID_INPUT");
+
+    let (status, patched) = api
+        .call(
+            Method::PATCH,
+            &format!("/api/v1/servers/{id}"),
+            Some(json!({ "metrics_retention_minutes": 1440 })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK, "{patched}");
+    assert_eq!(patched["metrics_retention_minutes"], 1440);
+    let (status, body) = api.get(&base).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["retention_minutes"], 1440);
+
+    let (status, body) = api
+        .call(
+            Method::PATCH,
+            &format!("/api/v1/servers/{id}"),
+            Some(json!({ "metrics_retention_minutes": 2 })),
+        )
+        .await;
     assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
     assert_eq!(body["code"], "INVALID_INPUT");
 

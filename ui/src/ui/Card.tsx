@@ -1,9 +1,16 @@
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 
 import { BlockBanner } from "./BlockBanner";
 import styles from "./Card.module.css";
 import { cx } from "./cx";
+
+export interface RectBox {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
 
 interface CardProps {
   id?: string;
@@ -21,21 +28,47 @@ interface CardProps {
   variant?: "default" | "subtle" | "dashed";
   /** Nút ở góc phải tiêu đề. */
   actions?: ReactNode;
+  /** Cho phép bấm cả thẻ (trừ nút trong `actions`) để mở chi tiết. */
+  onClick?: (rect?: RectBox) => void;
+  /** Nhãn cho nút tiêu đề bàn phím khi thẻ bấm được. */
+  clickLabel?: string;
   children?: ReactNode;
 }
 
-function CardHeader({ title, titleAs: Heading = "h2", description, icon: Icon, actions }: Pick<CardProps, "title" | "titleAs" | "description" | "icon" | "actions">) {
+function CardHeader({
+  title,
+  titleAs: Heading = "h2",
+  description,
+  icon: Icon,
+  actions,
+  onTitleClick,
+  clickLabel,
+}: Pick<CardProps, "title" | "titleAs" | "description" | "icon" | "actions" | "clickLabel"> & {
+  onTitleClick?: () => void;
+}) {
+  const titleInner = (
+    <>
+      {Icon && (
+        <span className={styles.icon}>
+          <Icon size={18} aria-hidden />
+        </span>
+      )}
+      {title}
+    </>
+  );
+
   return (
     <header className={styles.header}>
       <div>
         {title && (
           <Heading className={styles.title}>
-            {Icon && (
-              <span className={styles.icon}>
-                <Icon size={18} aria-hidden />
-              </span>
+            {onTitleClick ? (
+              <button type="button" className={styles.titleTrigger} aria-label={clickLabel ?? title} onClick={onTitleClick}>
+                {titleInner}
+              </button>
+            ) : (
+              titleInner
             )}
-            {title}
           </Heading>
         )}
         {description && <p className={styles.description}>{description}</p>}
@@ -55,24 +88,53 @@ export function Card({
   layout = "stack",
   variant = "default",
   actions,
+  onClick,
+  clickLabel,
   children,
 }: CardProps) {
+  const cardRef = useRef<HTMLElement>(null);
+  const triggerClick = () => {
+    const rect = cardRef.current?.getBoundingClientRect();
+    onClick?.(rect ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height } : undefined);
+  };
   const hasHeader = title !== undefined || actions !== undefined;
   const body = (
     <>
-      {hasHeader && <CardHeader title={title} titleAs={titleAs} description={description} icon={icon} actions={actions} />}
+      {hasHeader && (
+        <CardHeader
+          title={title}
+          titleAs={titleAs}
+          description={description}
+          icon={icon}
+          actions={actions}
+          onTitleClick={onClick ? triggerClick : undefined}
+          clickLabel={clickLabel}
+        />
+      )}
       {layout === "split" ? <div className={styles.content}>{children}</div> : children}
     </>
   );
 
   return (
     <section
+      ref={cardRef}
       id={id}
       className={cx(
         styles.card,
         variant !== "default" && styles[variant],
+        onClick && styles.interactive,
         bannerSeed ? styles.withBanner : layout === "split" && styles.split,
       )}
+      onClick={
+        onClick
+          ? (e) => {
+              const target = e.target as Element | null;
+              if (target?.closest("button, a, input, select")) return;
+              if (window.getSelection()?.toString()) return;
+              triggerClick();
+            }
+          : undefined
+      }
     >
       {bannerSeed ? (
         <>

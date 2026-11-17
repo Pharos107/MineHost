@@ -1,13 +1,14 @@
 //! Kiểu dữ liệu của API. Tách khỏi kiểu bên trong để thay đổi ở tầng dưới không vô tình đổi API.
 
 use mh_app::jobs::{JobProgress, JobSnapshot, JobState};
-use mh_app::{CatalogVersion, MetricSample, ServerMetrics, ServerView};
+use mh_app::{CatalogVersion, ServerView};
 use mh_core::{ConsoleLine, ConsoleStream, ContentKind, ServerState};
 use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use utoipa::ToSchema;
 
 use crate::error::ErrorBody;
+pub use crate::metrics_dto::{MetricSampleDto, ServerMetricsDto};
 
 #[derive(Debug, Clone, Copy, Serialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
@@ -88,6 +89,8 @@ pub struct ServerDto {
     /// Giờ khởi động lại hằng ngày (giờ máy), dạng `HH:MM`, đã sắp xếp.
     pub restart_at: Option<Vec<String>>,
     pub backup: Option<BackupSettingsDto>,
+    /// Thời gian giữ lịch sử chỉ số trong RAM (phút).
+    pub metrics_retention_minutes: Option<u32>,
     pub eula_accepted: bool,
     /// RFC 3339.
     pub created_at: Option<String>,
@@ -129,6 +132,7 @@ impl From<ServerView> for ServerDto {
             restart_on_crash: None,
             restart_at: None,
             backup: None,
+            metrics_retention_minutes: None,
             eula_accepted: false,
             created_at: None,
             job_id: None,
@@ -177,6 +181,7 @@ impl From<ServerView> for ServerDto {
                 schedule: spec.backup.schedule.to_string(),
                 keep: spec.backup.keep,
             });
+            dto.metrics_retention_minutes = Some(spec.metrics.retention_minutes);
             dto.eula_accepted = spec.eula_accepted();
             dto.created_at = spec.created_at.format(&Rfc3339).ok();
             dto.modpack = spec.modpack.as_ref().map(Into::into);
@@ -235,6 +240,8 @@ pub struct PatchServerBody {
     pub backup: Option<BackupSettingsBody>,
     /// Phiên bản Java chính (`8`, `11`, `17`, `21`, `25`).
     pub java_major: Option<u16>,
+    /// Thời gian giữ lịch sử chỉ số trong RAM (phút), từ `5` tới `14398560`.
+    pub metrics_retention_minutes: Option<u32>,
 }
 
 /// Sao lưu tự động của một server (spec P2, mục 4.1).
@@ -434,46 +441,5 @@ fn progress_dto(p: JobProgress) -> ProgressDto {
         step_count: p.step_count,
         bytes_done: p.bytes_done,
         bytes_total: p.bytes_total,
-    }
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct MetricSampleDto {
-    /// RFC 3339.
-    pub at: String,
-    pub cpu_percent: f32,
-    pub memory_bytes: u64,
-    /// `null` cho tới khi có theo dõi người chơi.
-    pub players: Option<u32>,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct ServerMetricsDto {
-    pub samples: Vec<MetricSampleDto>,
-    pub disk_bytes: Option<u64>,
-    /// RFC 3339. Có khi server đang ở trạng thái chạy.
-    pub running_since: Option<String>,
-}
-
-impl From<MetricSample> for MetricSampleDto {
-    fn from(sample: MetricSample) -> Self {
-        Self {
-            at: sample.at.format(&Rfc3339).unwrap_or_default(),
-            cpu_percent: sample.cpu_percent,
-            memory_bytes: sample.memory_bytes,
-            players: sample.players,
-        }
-    }
-}
-
-impl From<ServerMetrics> for ServerMetricsDto {
-    fn from(metrics: ServerMetrics) -> Self {
-        Self {
-            samples: metrics.samples.into_iter().map(Into::into).collect(),
-            disk_bytes: metrics.disk_bytes,
-            running_since: metrics
-                .running_since
-                .and_then(|at| at.format(&Rfc3339).ok()),
-        }
     }
 }

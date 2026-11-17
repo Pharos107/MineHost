@@ -64,7 +64,7 @@ pub use files::{
 };
 pub use import::{Detected, ImportRequest};
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};
-pub use metrics::{MetricSample, MetricsConfig, MetricsEvent, ServerMetrics};
+pub use metrics::{MetricSample, MetricsConfig, MetricsEvent, MetricsRange, ServerMetrics};
 pub use mh_supervisor::{Status, SupervisorEvent, SupervisorHandle};
 pub use modpack::{ModpackRequest, ModpackSourceInput, ModpackSummary, ModpackUpdateResult};
 pub use players::{
