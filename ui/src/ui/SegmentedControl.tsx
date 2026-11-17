@@ -17,12 +17,14 @@ interface SegmentedControlProps<V extends string> {
   value: V;
   options: Segment<V>[];
   onChange: (value: V) => void;
+  /** `sm`: nút thấp và hẹp hơn, cho khung hẹp (dải lọc của danh sách). */
+  size?: "sm" | "md";
 }
 
 /** Chọn một trong vài cách xem (ví dụ Thẻ / Bảng). Gọn hơn `ChoiceGroup`, đặt được trên thanh công cụ. */
-export function SegmentedControl<V extends string>({ label, value, options, onChange }: SegmentedControlProps<V>) {
+export function SegmentedControl<V extends string>({ label, value, options, onChange, size = "md" }: SegmentedControlProps<V>) {
   return (
-    <div className={styles.group} role="radiogroup" aria-label={label}>
+    <div className={cx(styles.group, size === "sm" && styles.sm)} role="radiogroup" aria-label={label}>
       {options.map(({ value: option, label: text, icon: Icon, disabled, title }) => (
         <button
           key={option}

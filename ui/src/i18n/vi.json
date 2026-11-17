@@ -940,14 +940,10 @@
       }
     },
     "stoppedHint": "Server đang tắt: vẫn sửa được whitelist, op và danh sách cấm. Đuổi, đóng băng, dịch chuyển cần server đang chạy.",
-    "online": "Đang online",
-    "onlineCount": "Đang online ({{count}}/{{max}})",
-    "noneOnline": "Chưa có ai online.",
-    "known": "Đã từng vào",
+    "online": "Đang chơi",
+    "noneOnline": "Chưa có ai đang chơi.",
     "noneKnown": "Chưa có người chơi nào",
     "noneKnownHint": "Người đã vào server, có trong whitelist, là op hoặc bị cấm sẽ hiện ở đây.",
-    "status": "Trạng thái",
-    "lastSeen": "Lần cuối vào",
     "neverJoined": "Chưa vào",
     "badge": {
       "op": "Op",
@@ -955,7 +951,6 @@
       "banned": "Bị cấm",
       "frozen": "Đóng băng"
     },
-    "details": "Chi tiết",
     "uuid": "UUID",
     "copyUuid": "Chép UUID",
     "uuidUnknown": "Chưa biết (người này chưa vào server)",
@@ -994,6 +989,38 @@
       "teleport_to_player": "Dịch chuyển",
       "message": "Nhắn tin",
       "title": "Hiện giữa màn hình"
+    },
+    "addShort": "Thêm",
+    "list": "Người chơi",
+    "search": "Tìm theo tên",
+    "filter": {
+      "label": "Lọc người chơi",
+      "all": "Tất cả",
+      "op": "Op",
+      "whitelisted": "Whitelist",
+      "banned": "Bị cấm"
+    },
+    "offline": "Không online",
+    "noMatch": "Không có ai khớp.",
+    "playingNow": "Đang chơi",
+    "seenAgo": "Vào {{when}}",
+    "lastSeenAgo": "Lần cuối vào {{when}}",
+    "backToList": "Danh sách người chơi",
+    "pickHint": "Chọn một người chơi",
+    "pickHintDetail": "Bấm vào một người trong danh sách để xem skin, đổi quyền, dịch chuyển hoặc nhắn tin.",
+    "stat": {
+      "online": "Đang chơi",
+      "whitelist": "Whitelist",
+      "whitelistOn": "Đang bật",
+      "whitelistOff": "Đang tắt",
+      "op": "Op",
+      "banned": "Bị cấm"
+    },
+    "perm": {
+      "whitelist": "Trong whitelist",
+      "whitelistHint": "Được vào server khi whitelist bật.",
+      "op": "Op",
+      "opHint": "Dùng được lệnh quản trị trong game."
     }
   },
   "tile": {

@@ -33,8 +33,11 @@
     gap: var(--mh-space-5);
   }
 
+  /* Viết lại đủ hai bộ chọn ẩn ở trên: `:not(.detailOpen)` làm chúng mạnh hơn `.split .detail`. */
   .split .list,
-  .split .detail {
+  .split .detail,
+  .split:not(.detailOpen) .detail,
+  .detailOpen .list {
     display: block;
   }
 

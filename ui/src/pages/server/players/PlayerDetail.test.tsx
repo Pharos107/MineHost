@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -52,55 +52,68 @@ function lastBody(fetchMock: ReturnType<typeof setup>, name: string): unknown {
   return JSON.parse(String(call?.[1]?.body));
 }
 
+async function open(name: string) {
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: new RegExp(name) }));
+  return user;
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("PlayerDialog", () => {
+describe("PlayerDetail", () => {
   it("server tắt: nút tương tác mờ, cấm vẫn gửi kèm lý do", async () => {
     const fetchMock = setup(false);
-    const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: /Chi tiết.*Steve/ }));
-    const dialog = await screen.findByRole("dialog");
-    expect(await within(dialog).findByRole("img", { name: /Skin của Steve/ })).toBeTruthy();
-    expect(within(dialog).getByText(/Server đang tắt: chỉ đổi được/)).toBeTruthy();
+    const user = await open("Steve");
+    expect(await screen.findByRole("img", { name: /Skin của Steve/ })).toBeTruthy();
+    expect(screen.getByText(/Server đang tắt: chỉ đổi được/)).toBeTruthy();
     for (const name of ["Đuổi", "Đóng băng", "Về điểm spawn", "Dịch chuyển", "Nhắn tin"]) {
-      expect(within(dialog).getByRole("button", { name })).toHaveProperty("disabled", true);
+      expect(screen.getByRole("button", { name })).toHaveProperty("disabled", true);
     }
-    await user.type(within(dialog).getByRole("textbox", { name: "Lý do" }), "phá nhà");
-    await user.click(within(dialog).getByRole("button", { name: "Cấm" }));
+    await user.type(screen.getByRole("textbox", { name: "Lý do" }), "phá nhà");
+    await user.click(screen.getByRole("button", { name: "Cấm" }));
     await waitFor(() => expect(lastBody(fetchMock, "Steve")).toEqual({ action: "ban", reason: "phá nhà" }));
-    expect(await within(dialog).findByText(/Đã lưu/)).toBeTruthy();
+    expect(await screen.findByText(/Đã lưu/)).toBeTruthy();
+  });
+
+  it("công tắc whitelist và op gửi đúng thao tác theo trạng thái", async () => {
+    const fetchMock = setup(false);
+    const user = await open("Alex");
+    const whitelist = screen.getByRole("switch", { name: /Trong whitelist/ });
+    expect(whitelist).toHaveProperty("checked", true);
+    await user.click(whitelist);
+    await waitFor(() => expect(lastBody(fetchMock, "Alex")).toEqual({ action: "whitelist_remove" }));
+    const op = screen.getByRole("switch", { name: /^Op/ });
+    expect(op).toHaveProperty("checked", false);
+    await user.click(op);
+    await waitFor(() => expect(lastBody(fetchMock, "Alex")).toEqual({ action: "op" }));
   });
 
   it("server chạy: dịch chuyển tới người khác và nhắn tin", async () => {
     const fetchMock = setup(true);
-    const user = userEvent.setup();
-    const online = await screen.findByRole("table", { name: "Đang online" });
-    await user.click(within(online).getByRole("button", { name: /Chi tiết.*Steve/ }));
-    const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByRole("combobox", { name: "Dịch chuyển tới" })).toHaveProperty("value", "Alex");
-    await user.click(within(dialog).getByRole("button", { name: "Dịch chuyển" }));
+    const user = await open("Steve");
+    expect(screen.getByRole("combobox", { name: "Dịch chuyển tới" })).toHaveProperty("value", "Alex");
+    await user.click(screen.getByRole("button", { name: "Dịch chuyển" }));
     await waitFor(() => expect(lastBody(fetchMock, "Steve")).toEqual({ action: "teleport_to_player", target: "Alex" }));
 
-    const send = within(dialog).getByRole("button", { name: "Nhắn tin" });
+    const send = screen.getByRole("button", { name: "Nhắn tin" });
     expect(send).toHaveProperty("disabled", true);
-    await user.type(within(dialog).getByRole("textbox", { name: "Nội dung" }), "chào");
+    await user.type(screen.getByRole("textbox", { name: "Nội dung" }), "chào");
     await user.click(send);
     await waitFor(() => expect(lastBody(fetchMock, "Steve")).toEqual({ action: "message", text: "chào" }));
-    expect(await within(dialog).findByText(/Đã gửi lệnh/)).toBeTruthy();
+    expect(await screen.findByText(/Đã gửi lệnh/)).toBeTruthy();
   });
 
-  it("bỏ cấm người chỉ có trong danh sách cấm thì hộp thoại vẫn mở", async () => {
+  it("bỏ cấm người chỉ có trong danh sách cấm thì khung chi tiết vẫn mở", async () => {
     let banned = true;
     const griefer = { name: "Griefer", uuid: "u-g", online: false, last_seen: null, whitelisted: false, op: false, banned: true, ban_reason: "phá", frozen: false };
-    setup(false, () => ({ ...makePlayers(false), players: banned ? [griefer] : [] }));
-    const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: /Chi tiết.*Griefer/ }));
-    const dialog = await screen.findByRole("dialog");
+    setup(false, () => ({ ...makePlayers(false), players: banned ? [griefer, ...makePlayers(false).players] : makePlayers(false).players }));
+    const user = await open("Griefer");
     banned = false;
-    await user.click(within(dialog).getByRole("button", { name: "Bỏ cấm" }));
-    expect(await within(screen.getByRole("dialog")).findByRole("button", { name: "Cấm" })).toBeTruthy();
-    expect(within(screen.getByRole("dialog")).getByText(/Đã lưu/)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Bỏ cấm" }));
+    expect(await screen.findByRole("button", { name: "Cấm" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 2, name: "Griefer" })).toBeTruthy();
+    expect(screen.getByText(/Đã lưu/)).toBeTruthy();
   });
 });

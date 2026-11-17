@@ -34,6 +34,7 @@ import { NavSectionDemo } from "./GalleryNav";
 import { ChartSection } from "./GalleryCharts";
 import { FilesSection } from "./GalleryFiles";
 import { FormSection, OverlaySection, ProgressSection } from "./GallerySections";
+import { ListSection } from "./GalleryList";
 import { SuggestSection } from "./GallerySuggest";
 import { TableSection } from "./GalleryTable";
 
@@ -55,6 +56,7 @@ export function Gallery() {
         <NoticeSection />
         <CardSection />
         <TableSection />
+        <ListSection />
         <FormSection />
         <SuggestSection />
         <ProgressSection />
@@ -119,6 +121,7 @@ function BadgeSection() {
         <Avatar name="Steve" size="sm" />
         <Avatar name="Alex" />
         <Avatar name="Notch" size="lg" />
+        <Avatar name="jeb_" online />
         <AvatarStack players={["Steve", "Alex", "Notch", "jeb_", "Dinnerbone", "Grumm"].map((name) => ({ name }))} max={4} />
         <BlockBanner seed="server-a" variant="mark" />
         <BlockBanner seed="MineHost" variant="logo" />

@@ -13,6 +13,7 @@ export { CodeEditor } from "./CodeEditor";
 export { languageFor, type CodeLanguage } from "./codeLanguage";
 export { Columns } from "./Columns";
 export { CopyField } from "./CopyField";
+export { DetailHeader, DetailSection } from "./DetailPanel";
 export { DataTable, type Column, type RowAction, type TableSelection } from "./DataTable";
 export { ConfirmDialog, Dialog, DialogBody, DialogFooter } from "./Dialog";
 export { EmptyState } from "./EmptyState";
@@ -39,6 +40,7 @@ export {
   type ProjectLinkItem,
 } from "./ProjectCard";
 export { SegmentedControl, type Segment } from "./SegmentedControl";
+export { SelectList, SelectListGroup, SelectListItem } from "./SelectList";
 export { ServerCard, ServerCardGrid } from "./ServerCard";
 export { Slider } from "./Slider";
 export { Spinner } from "./Spinner";

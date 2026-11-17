@@ -30,6 +30,28 @@
   font-size: var(--mh-text-lg);
 }
 
+.xl {
+  --size: 96px;
+  font-size: var(--mh-text-2xl);
+}
+
+.presence {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.dot {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 11px;
+  height: 11px;
+  background: var(--mh-success);
+  border: 2px solid var(--mh-surface);
+  border-radius: var(--mh-radius-full);
+}
+
 /* Skin rộng 64 điểm ảnh, mặt rộng 8: phóng skin lên 8 lần cỡ ô rồi dời tới ô mặt (8, 8). */
 .face {
   position: absolute;

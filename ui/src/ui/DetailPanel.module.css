@@ -1,0 +1,65 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--mh-space-4);
+}
+
+.media {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  min-height: 96px;
+  background: var(--mh-surface-raised);
+  border-radius: var(--mh-radius-lg);
+}
+
+.headerBody {
+  display: flex;
+  flex: 1 1 240px;
+  flex-direction: column;
+  gap: var(--mh-space-3);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--mh-text-xl);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.subtitle {
+  margin: var(--mh-space-1) 0 0;
+  color: var(--mh-text-muted);
+  font-size: var(--mh-text-sm);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mh-space-3);
+  padding-top: var(--mh-space-4);
+  border-top: 1px solid var(--mh-border);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--mh-space-2);
+  margin: 0;
+  font-size: var(--mh-text-md);
+  font-weight: 600;
+}
+
+.sectionTitle svg {
+  color: var(--mh-text-muted);
+}
+
+.danger .sectionTitle,
+.danger .sectionTitle svg {
+  color: var(--mh-danger);
+}

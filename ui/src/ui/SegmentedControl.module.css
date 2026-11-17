@@ -19,7 +19,13 @@
   color: var(--mh-text-muted);
   font-size: var(--mh-text-sm);
   font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
+}
+
+.sm .segment {
+  min-height: calc(var(--mh-control-height-sm) - 6px);
+  padding: 0 var(--mh-space-2);
 }
 
 .segment:hover:not(:disabled) {

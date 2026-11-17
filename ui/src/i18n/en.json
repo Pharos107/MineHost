@@ -941,13 +941,9 @@
     },
     "stoppedHint": "The server is stopped: you can still change the whitelist, ops and bans. Kicking, freezing and teleporting need a running server.",
     "online": "Online",
-    "onlineCount": "Online ({{count}}/{{max}})",
-    "noneOnline": "Nobody is online.",
-    "known": "Joined before",
+    "noneOnline": "Nobody is playing right now.",
     "noneKnown": "No players yet",
     "noneKnownHint": "Players who joined, are whitelisted, are ops or are banned show up here.",
-    "status": "Status",
-    "lastSeen": "Last joined",
     "neverJoined": "Never joined",
     "badge": {
       "op": "Op",
@@ -955,7 +951,6 @@
       "banned": "Banned",
       "frozen": "Frozen"
     },
-    "details": "Details",
     "uuid": "UUID",
     "copyUuid": "Copy UUID",
     "uuidUnknown": "Unknown (this player has not joined yet)",
@@ -994,6 +989,38 @@
       "teleport_to_player": "Teleport",
       "message": "Send message",
       "title": "Show on screen"
+    },
+    "addShort": "Add",
+    "list": "Players",
+    "search": "Search by name",
+    "filter": {
+      "label": "Filter players",
+      "all": "All",
+      "op": "Ops",
+      "whitelisted": "Whitelist",
+      "banned": "Banned"
+    },
+    "offline": "Offline",
+    "noMatch": "No players match.",
+    "playingNow": "Playing now",
+    "seenAgo": "Joined {{when}}",
+    "lastSeenAgo": "Last joined {{when}}",
+    "backToList": "All players",
+    "pickHint": "Pick a player",
+    "pickHintDetail": "Select someone from the list to see their skin, change permissions, teleport or message them.",
+    "stat": {
+      "online": "Online",
+      "whitelist": "Whitelist",
+      "whitelistOn": "On",
+      "whitelistOff": "Off",
+      "op": "Ops",
+      "banned": "Banned"
+    },
+    "perm": {
+      "whitelist": "On the whitelist",
+      "whitelistHint": "Can join while the whitelist is on.",
+      "op": "Operator",
+      "opHint": "Can use admin commands in game."
     }
   },
   "tile": {

@@ -366,9 +366,12 @@ Các phần thêm sau (tô màu theo mức, lệnh nhanh…): xem [lam-moi-trang
 
 ### 6.7 Người chơi `/servers/:id/players`
 
-- Hai bảng: Đang online, Đã từng vào. Mỗi người có đầu skin, tên, huy hiệu op / whitelist / bị cấm /
-  đóng băng. Ô thêm người chơi theo tên (để whitelist hoặc cấm người chưa vào bao giờ).
-- Bấm vào một người thì mở hộp thoại chi tiết: skin 3D xoay được, UUID có nút chép, các nhóm nút:
+Bố cục trang đã làm lại sau P2: xem [lam-moi-trang-nguoi-choi.md](lam-moi-trang-nguoi-choi.md). Mục này
+giữ phần thao tác và cách MineHost làm khi server tắt.
+
+- Mỗi người có đầu skin, tên, huy hiệu op / whitelist / bị cấm / đóng băng. Thêm người chơi theo tên
+  (để whitelist hoặc cấm người chưa vào bao giờ).
+- Chi tiết một người: skin 3D xoay được, UUID có nút chép, các nhóm thao tác:
 
 | Nhóm | Thao tác | Lệnh | Khi server tắt |
 | --- | --- | --- | --- |
