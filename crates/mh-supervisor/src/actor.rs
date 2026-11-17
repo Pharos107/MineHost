@@ -221,6 +221,8 @@ impl<L: Launcher> Actor<L> {
             live.control.kill();
         }
         self.stop_deadline = None;
+        // Bấm Khởi động lại rồi Buộc dừng (vì server treo khi dừng): người dùng muốn nó tắt hẳn.
+        self.restart_after_stop = false;
         self.set_state(next);
         Ok(())
     }
