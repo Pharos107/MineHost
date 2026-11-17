@@ -173,7 +173,7 @@ pub use lan::{LanState, lan_listener};
         dto::ProgressDto,
         files::FileEntryDto,
         files_ops::FoundEntryDto,
-        files_ops::SearchResultDto,
+        files_ops::FileSearchDto,
         files_ops::CompressBody,
         files_ops::ExtractBody,
         files::FileKindDto,

@@ -40,7 +40,7 @@ pub struct FoundEntryDto {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct SearchResultDto {
+pub struct FileSearchDto {
     pub items: Vec<FoundEntryDto>,
     /// Còn kết quả chưa trả: tối đa 200 mục, duyệt tối đa 100 000 mục.
     pub truncated: bool,
@@ -70,18 +70,18 @@ pub struct ExtractBody {
 
 #[utoipa::path(get, path = "/api/v1/servers/{id}/files/search", tag = "files",
     params(("id" = String, Path), SearchQuery),
-    responses((status = 200, body = SearchResultDto), (status = 400, body = ErrorBody)))]
+    responses((status = 200, body = FileSearchDto), (status = 400, body = ErrorBody)))]
 pub async fn search(
     State(app): State<Arc<App>>,
     IdPath(id): IdPath,
     Query(query): Query<SearchQuery>,
-) -> ApiResult<Json<SearchResultDto>> {
+) -> ApiResult<Json<FileSearchDto>> {
     let result = app.search_files(id, &query.path, &query.q).await?;
     let mut items = Vec::with_capacity(result.items.len());
     for entry in result.items {
         items.push(found_dto(entry)?);
     }
-    Ok(Json(SearchResultDto {
+    Ok(Json(FileSearchDto {
         items,
         truncated: result.truncated,
     }))
