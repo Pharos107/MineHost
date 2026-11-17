@@ -83,6 +83,9 @@ fn run(dirs: DataDirs, allow_browser: bool, with_tray: bool) -> anyhow::Result<(
         runtime.block_on(serve::run(dirs, config, allow_browser, &lock, on_ready))
     };
 
+    // Có khay hay không, tắt máy cũng phải đi qua `shutdown_all` như nút Thoát.
+    #[cfg(windows)]
+    win32::watch_session_end(serve::request_session_end);
     #[cfg(windows)]
     if with_tray {
         return tray::run(controller);
