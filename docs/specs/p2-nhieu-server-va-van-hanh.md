@@ -425,6 +425,10 @@ Cài đặt game thêm mô tả ngắn cho từng khóa phổ biến của `serv
 - **Thông tin:** phiên bản MineHost, thư mục dữ liệu, RAM và ổ đĩa của máy.
 - **Đăng nhập:** một ô mật khẩu và nút Đăng nhập. Sai quá 5 lần thì khóa 1 phút, mỗi lần sau gấp đôi,
   tối đa 15 phút; trang hiện thời gian còn phải chờ. Đăng nhập xong quay về trang đang mở dở.
+  Cả controller chỉ băm tối đa 2 mật khẩu cùng lúc (sửa 2026-11-17): request đăng nhập thứ ba trong lúc
+  đó nhận ngay `AUTH_RATE_LIMITED` với `retry_after_s: 1`. Argon2 tốn khoảng 19 MiB mỗi lần, nên trước
+  đây vài trăm request song song từ LAN làm cạn RAM, và đều qua được bước kiểm tra khóa trước khi lần
+  sai thứ 5 kịp ghi.
 
 ### 6.11 Nhập server có sẵn
 

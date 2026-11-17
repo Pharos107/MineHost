@@ -65,10 +65,25 @@ impl FromRef<ApiState> for Arc<LanState> {
     }
 }
 
-#[derive(Default)]
+/// Số lần băm mật khẩu cùng lúc. Argon2 mặc định tốn khoảng 19 MiB RAM mỗi lần; không giới hạn thì
+/// vài trăm request đăng nhập song song từ LAN chiếm hàng GB RAM và hết CPU. Cũng là để lần sai thứ 5
+/// kịp được ghi trước khi các lần thử khác được băm, nên không vượt khóa bằng cách gửi song song.
+const MAX_VERIFYING: usize = 2;
+
 struct AuthGate {
     sessions: Mutex<HashMap<String, Session>>,
     logins: Mutex<HashMap<IpAddr, Attempt>>,
+    verifying: tokio::sync::Semaphore,
+}
+
+impl Default for AuthGate {
+    fn default() -> Self {
+        Self {
+            sessions: Mutex::default(),
+            logins: Mutex::default(),
+            verifying: tokio::sync::Semaphore::new(MAX_VERIFYING),
+        }
+    }
 }
 
 struct Session {
@@ -265,6 +280,11 @@ pub async fn login(
     ApiJson(body): ApiJson<LoginBody>,
 ) -> Response {
     let ip = peer.ip();
+    // Đang băm đủ số lần cho phép: bảo thử lại sau, không xếp hàng (hàng chờ cũng tốn RAM).
+    let Ok(_verifying) = state.auth.verifying.try_acquire() else {
+        return rate_limited(1);
+    };
+    // Kiểm tra khóa sau khi giữ chỗ: lần sai vừa ghi bởi request khác đã có hiệu lực.
     if let Some(wait) = state.auth.retry_after_secs(ip) {
         return rate_limited(wait);
     }
