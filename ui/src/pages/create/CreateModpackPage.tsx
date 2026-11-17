@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Package, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -8,10 +8,10 @@ import { errorMessage, type Created } from "../../api/client";
 import { contentApi, modpackApi, type CreateModpackBody, type SearchHit } from "../../api/content";
 import { formatBytes } from "../../format";
 import { memoryFor } from "../../memory";
-import { Button, Card, Facts, Field, FileButton, FileDrop, Notice, PageHeader, ProjectCard, Select, Spinner, Stack } from "../../ui";
+import { Button, Card, Facts, Field, FileButton, FileDrop, Notice, PageHeader, ProjectCard, Select, Spinner, Stack, Steps } from "../../ui";
 import { CatalogBrowser } from "../catalog/CatalogBrowser";
 import { hitLoaders, hitVersion, versionOptionLabel } from "../server/content/content";
-import { nameError, portError } from "./form";
+import { DEFAULT_GAME_SETTINGS, hasGameSettingsError, nameError, portError, toInitialProperties } from "./form";
 import { ModpackJobView } from "./ModpackJobView";
 import { SettingsStep, type ServerSettingsValues } from "./steps";
 
@@ -32,6 +32,10 @@ function buildUploadForm(file: File, form: ServerSettingsValues): FormData {
   if (form.port.trim() !== "") {
     body.append("port", form.port.trim());
   }
+  const props = toInitialProperties(form.game);
+  if (props.length > 0) {
+    body.append("properties", JSON.stringify(props));
+  }
   return body;
 }
 
@@ -48,6 +52,7 @@ export function CreateModpackPage() {
     name: t("wizard.defaultName"),
     memoryMb: null,
     port: "",
+    game: DEFAULT_GAME_SETTINGS,
   }));
 
   const createPack = useMutation({
@@ -65,7 +70,7 @@ export function CreateModpackPage() {
     uploadPack.reset();
     setTarget({ kind: "catalog", hit });
     setVersionId(chosenVersionId);
-    setForm({ name: hit.title.trim().slice(0, 64) || t("wizard.defaultName"), memoryMb: null, port: "" });
+    setForm({ name: hit.title.trim().slice(0, 64) || t("wizard.defaultName"), memoryMb: null, port: "", game: DEFAULT_GAME_SETTINGS });
   }
 
   function chooseFile(file: File) {
@@ -73,7 +78,7 @@ export function CreateModpackPage() {
     uploadPack.reset();
     setTarget({ kind: "file", file });
     setVersionId("");
-    setForm({ name: nameFromFile(file.name, t("wizard.defaultName")), memoryMb: null, port: "" });
+    setForm({ name: nameFromFile(file.name, t("wizard.defaultName")), memoryMb: null, port: "", game: DEFAULT_GAME_SETTINGS });
   }
 
   function submit(chosenVersionId: string) {
@@ -82,6 +87,8 @@ export function CreateModpackPage() {
       uploadPack.mutate(buildUploadForm(target.file, form));
       return;
     }
+    setVersionId(chosenVersionId);
+    const props = toInitialProperties(form.game);
     createPack.mutate({
       source: target.hit.source,
       project_id: target.hit.project_id,
@@ -89,6 +96,7 @@ export function CreateModpackPage() {
       name: form.name.trim(),
       memory_mb: form.memoryMb === null ? null : memoryFor(form.memoryMb),
       port: form.port.trim() === "" ? null : Number(form.port),
+      ...(props.length > 0 ? { properties: props } : {}),
     });
   }
 
@@ -102,6 +110,13 @@ export function CreateModpackPage() {
     );
   }
 
+  const stepBar = (
+    <Steps
+      steps={[t("wizard.steps.loader"), t("wizard.steps.modpack"), t("wizard.steps.settings")]}
+      current={target ? 2 : 1}
+    />
+  );
+
   return (
     <>
       <PageHeader
@@ -114,20 +129,23 @@ export function CreateModpackPage() {
         }
       />
       {target ? (
-        <ConfigurePackCard
-          target={target}
-          versionId={versionId}
-          onVersionChange={setVersionId}
-          form={form}
-          update={(patch) => setForm((cur) => ({ ...cur, ...patch }))}
-          pending={activeMutation.isPending}
-          error={activeMutation.isError ? activeMutation.error : null}
-          onBack={() => {
-            activeMutation.reset();
-            setTarget(null);
-          }}
-          onSubmit={submit}
-        />
+        <Card>
+          {stepBar}
+          <ConfigurePackForm
+            target={target}
+            versionId={versionId}
+            onVersionChange={setVersionId}
+            form={form}
+            update={(patch) => setForm((cur) => ({ ...cur, ...patch }))}
+            pending={activeMutation.isPending}
+            error={activeMutation.isError ? activeMutation.error : null}
+            onBack={() => {
+              activeMutation.reset();
+              setTarget(null);
+            }}
+            onSubmit={submit}
+          />
+        </Card>
       ) : (
         <FileDrop
           variant="overlay"
@@ -138,19 +156,25 @@ export function CreateModpackPage() {
             if (file) chooseFile(file);
           }}
         >
-          <Stack gap={4}>
-            <Stack direction="row" gap={3} align="center" wrap>
-              <FileButton
-                label={t("modpack.dropLabel")}
-                accept=".mrpack,.zip"
-                multiple={false}
-                onFiles={(files) => {
-                  const file = files[0];
-                  if (file) chooseFile(file);
-                }}
-              />
-              <span>{t("modpack.dropHint")}</span>
-            </Stack>
+          <Card>
+            {stepBar}
+            <Card variant="dashed">
+              <Stack direction="row" justify="between" align="center" gap={3} wrap>
+                <Stack direction="row" align="center" gap={2}>
+                  <Package size={18} aria-hidden />
+                  <span>{t("modpack.dropHint")}</span>
+                </Stack>
+                <FileButton
+                  label={t("modpack.dropLabel")}
+                  accept=".mrpack,.zip"
+                  multiple={false}
+                  onFiles={(files) => {
+                    const file = files[0];
+                    if (file) chooseFile(file);
+                  }}
+                />
+              </Stack>
+            </Card>
             <CatalogBrowser
               kind="modpack"
               scope={{}}
@@ -164,14 +188,19 @@ export function CreateModpackPage() {
                 )
               }
             />
-          </Stack>
+            <Stack direction="row" justify="between">
+              <Button icon={ArrowLeft} onClick={() => void navigate("/new")}>
+                {t("wizard.back")}
+              </Button>
+            </Stack>
+          </Card>
         </FileDrop>
       )}
     </>
   );
 }
 
-interface ConfigurePackCardProps {
+interface ConfigurePackFormProps {
   target: PackTarget;
   versionId: string;
   onVersionChange: (versionId: string) => void;
@@ -183,7 +212,7 @@ interface ConfigurePackCardProps {
   onSubmit: (chosenVersionId: string) => void;
 }
 
-function ConfigurePackCard({
+function ConfigurePackForm({
   target,
   versionId,
   onVersionChange,
@@ -193,7 +222,7 @@ function ConfigurePackCard({
   error,
   onBack,
   onSubmit,
-}: ConfigurePackCardProps) {
+}: ConfigurePackFormProps) {
   const { t, i18n } = useTranslation();
   const isCatalog = target.kind === "catalog";
   const versions = useQuery({
@@ -206,68 +235,68 @@ function ConfigurePackCard({
   const versionList = versions.data ?? [];
   const chosenVersionId = versionId || versionList[0]?.id || "";
   const versionReady = !isCatalog || (versions.isSuccess && chosenVersionId !== "");
-  const canSubmit = versionReady && !nameError(form.name) && !portError(form.port);
+  const canSubmit = versionReady && !nameError(form.name) && !portError(form.port) && !hasGameSettingsError(form.game);
 
   return (
-    <Card>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (canSubmit) onSubmit(chosenVersionId);
-        }}
-      >
-        <Stack gap={5}>
-          {isCatalog ? (
-            <>
-              <ProjectCard
-                title={target.hit.title}
-                description={target.hit.description}
-                iconUrl={target.hit.icon_url}
-                downloads={target.hit.downloads}
-                loaders={hitLoaders(target.hit.categories)}
-                version={hitVersion(target.hit.game_versions)}
-              />
-              {versions.isPending ? (
-                <Spinner label={t("ui.loading")} />
-              ) : versions.isError ? (
-                <Notice tone="danger">{errorMessage(t, versions.error)}</Notice>
-              ) : versionList.length === 0 ? (
-                <Notice tone="warning">{t("errors.CONTENT_NOT_FOUND")}</Notice>
-              ) : (
-                <Field label={t("modpack.version")}>
-                  <Select value={chosenVersionId} disabled={pending} onChange={(e) => onVersionChange(e.target.value)}>
-                    {versionList.map((ver, index) => {
-                      const label = versionOptionLabel(ver);
-                      return (
-                        <option key={ver.id} value={ver.id}>
-                          {index === 0 ? t("wizard.latest", { version: label }) : label}
-                        </option>
-                      );
-                    })}
-                  </Select>
-                </Field>
-              )}
-            </>
-          ) : (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (canSubmit) onSubmit(chosenVersionId);
+      }}
+    >
+      <Stack gap={5}>
+        {isCatalog ? (
+          <>
+            <ProjectCard
+              title={target.hit.title}
+              description={target.hit.description}
+              iconUrl={target.hit.icon_url}
+              downloads={target.hit.downloads}
+              loaders={hitLoaders(target.hit.categories)}
+              version={hitVersion(target.hit.game_versions)}
+            />
+            {versions.isPending ? (
+              <Spinner label={t("ui.loading")} />
+            ) : versions.isError ? (
+              <Notice tone="danger">{errorMessage(t, versions.error)}</Notice>
+            ) : versionList.length === 0 ? (
+              <Notice tone="warning">{t("errors.CONTENT_NOT_FOUND")}</Notice>
+            ) : (
+              <Field label={t("modpack.version")}>
+                <Select value={chosenVersionId} disabled={pending} onChange={(e) => onVersionChange(e.target.value)}>
+                  {versionList.map((ver, index) => {
+                    const label = versionOptionLabel(ver);
+                    return (
+                      <option key={ver.id} value={ver.id}>
+                        {index === 0 ? t("wizard.latest", { version: label }) : label}
+                      </option>
+                    );
+                  })}
+                </Select>
+              </Field>
+            )}
+          </>
+        ) : (
+          <Card variant="subtle">
             <Facts
               items={[
                 { label: t("modpack.fileLabel"), value: target.file.name },
                 { label: t("modpack.fileSize"), value: formatBytes(target.file.size, i18n.language) },
               ]}
             />
-          )}
-          <SettingsStep form={form} update={update} modpack />
-          {error !== null && <Notice tone="danger">{errorMessage(t, error)}</Notice>}
-          <Stack direction="row" justify="between">
-            <Button icon={ArrowLeft} disabled={pending} onClick={onBack}>
-              {t("wizard.back")}
-            </Button>
-            <Button type="submit" variant="primary" icon={Plus} disabled={!canSubmit} loading={pending}>
-              {t("wizard.create")}
-            </Button>
-          </Stack>
+          </Card>
+        )}
+        <SettingsStep form={form} update={update} modpack />
+        {error !== null && <Notice tone="danger">{errorMessage(t, error)}</Notice>}
+        <Stack direction="row" justify="between">
+          <Button icon={ArrowLeft} disabled={pending} onClick={onBack}>
+            {t("wizard.back")}
+          </Button>
+          <Button type="submit" variant="primary" icon={Plus} disabled={!canSubmit} loading={pending}>
+            {t("wizard.create")}
+          </Button>
         </Stack>
-      </form>
-    </Card>
+      </Stack>
+    </form>
   );
 }

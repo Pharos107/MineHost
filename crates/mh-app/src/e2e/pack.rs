@@ -425,7 +425,12 @@ pub(super) fn cf_version(
         version_number: None,
         version_type: "release".to_owned(),
         game_versions: GAME_VERSIONS.iter().map(|s| (*s).to_owned()).collect(),
-        loaders: vec!["fabric".to_owned()],
+        loaders: vec![
+            "fabric".to_owned(),
+            "neoforge".to_owned(),
+            "forge".to_owned(),
+            "quilt".to_owned(),
+        ],
         date_published,
         dependencies,
         files: vec![file],

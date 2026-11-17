@@ -61,7 +61,12 @@ pub async fn create(
         .iter()
         .map(crate::content::validate_item)
         .collect::<ApiResult<Vec<_>>>()?;
-    let created = app.create_with_content(req, content)?;
+    let properties: Vec<(String, String)> = body
+        .properties
+        .into_iter()
+        .map(|p| (p.key, p.value))
+        .collect();
+    let created = app.create_with_options(req, content, properties)?;
     let dto = CreatedDto {
         server_id: created.server_id.to_string(),
         job_id: created.job_id,
