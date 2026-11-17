@@ -17,7 +17,7 @@ use super::{
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum Node {
+pub(super) enum Node {
     Missing,
     File,
     Dir,
@@ -127,6 +127,10 @@ pub(super) fn rename_sync(root: &SafeRoot, from: &str, to: &str) -> Result<(), A
     if node_at(dest.as_path())? != Node::Missing {
         return Err(exists(to));
     }
+    // Chuyển thư mục vào chính nó: Linux báo lỗi khó hiểu, Windows có thể để lại nửa chừng.
+    if dest.as_path().starts_with(src.as_path()) {
+        return Err(invalid("không chuyển thư mục vào chính nó"));
+    }
     ensure_parent_dir(dest.as_path())?;
     fs::rename(src.as_path(), dest.as_path()).map_err(|err| io_err(src.as_path(), err))
 }
@@ -216,7 +220,7 @@ fn list_item(
     }))
 }
 
-fn join_user(root: &SafeRoot, user_path: &str) -> Result<SafePath, AppError> {
+pub(super) fn join_user(root: &SafeRoot, user_path: &str) -> Result<SafePath, AppError> {
     // SafeRoot hiểu `/...` là tính từ gốc. Tuyệt đối của OS (`/etc`, `C:\`) phải chặn trước.
     if Path::new(user_path).is_absolute() {
         return Err(super::outside(user_path));
@@ -225,7 +229,7 @@ fn join_user(root: &SafeRoot, user_path: &str) -> Result<SafePath, AppError> {
 }
 
 /// Từ chối chính thư mục `server/`: đổi tên hoặc ghi đè gốc làm hỏng server.
-fn joined_file(root: &SafeRoot, user_path: &str) -> Result<SafePath, AppError> {
+pub(super) fn joined_file(root: &SafeRoot, user_path: &str) -> Result<SafePath, AppError> {
     let path = join_user(root, user_path)?;
     if path.as_path() == root.path() {
         return Err(invalid("không sửa thư mục gốc của server"));
@@ -240,7 +244,7 @@ fn relative_inside(root: &SafeRoot, path: &Path) -> Result<PathBuf, AppError> {
     }
 }
 
-fn require_dir(path: &Path, user_path: &str) -> Result<(), AppError> {
+pub(super) fn require_dir(path: &Path, user_path: &str) -> Result<(), AppError> {
     match node_at(path)? {
         Node::Dir => Ok(()),
         Node::File => Err(invalid("không phải thư mục")),
@@ -248,7 +252,7 @@ fn require_dir(path: &Path, user_path: &str) -> Result<(), AppError> {
     }
 }
 
-fn node_at(path: &Path) -> Result<Node, AppError> {
+pub(super) fn node_at(path: &Path) -> Result<Node, AppError> {
     let meta = match fs::symlink_metadata(path) {
         Ok(meta) => meta,
         Err(err) if err.kind() == io::ErrorKind::NotFound => return Ok(Node::Missing),
@@ -299,7 +303,7 @@ fn read_limited(path: &Path) -> Result<Vec<u8>, AppError> {
     Ok(bytes)
 }
 
-fn ensure_parent_dir(path: &Path) -> Result<(), AppError> {
+pub(super) fn ensure_parent_dir(path: &Path) -> Result<(), AppError> {
     match path.parent() {
         Some(parent) if parent.is_dir() => Ok(()),
         Some(parent) => Err(AppError::not_found(parent.display())),

@@ -642,7 +642,9 @@
       "check_updates": "Kiểm tra cập nhật mod",
       "update_content": "Cập nhật mod",
       "change_version": "Đổi phiên bản",
-      "update_modpack": "Cập nhật modpack"
+      "update_modpack": "Cập nhật modpack",
+      "compress_files": "Nén file",
+      "extract_files": "Giải nén"
     },
     "states": {
       "running": "Đang chạy",

@@ -18,6 +18,9 @@ pub enum JobKind {
     UpdateContent,
     ChangeVersion,
     UpdateModpack,
+    /// Nén file ở trang Tệp thành zip (spec trang Tệp, mục 3).
+    CompressFiles,
+    ExtractFiles,
 }
 
 /// Bước đang làm. UI dịch theo `kind`, ví dụ "Tải Java 21 (48/61 MB)".
