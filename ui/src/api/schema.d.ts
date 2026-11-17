@@ -1153,6 +1153,11 @@ export interface components {
         };
         /** @enum {string} */
         FileKindDto: "file" | "dir";
+        FileSearchDto: {
+            items: components["schemas"]["FoundEntryDto"][];
+            /** @description Còn kết quả chưa trả: tối đa 200 mục, duyệt tối đa 100 000 mục. */
+            truncated: boolean;
+        };
         FoundEntryDto: {
             kind: components["schemas"]["FileKindDto"];
             /** @description RFC 3339. */
@@ -3735,7 +3740,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchResultDto"];
+                    "application/json": components["schemas"]["FileSearchDto"];
                 };
             };
             400: {

@@ -2838,7 +2838,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SearchResultDto"
+                  "$ref": "#/components/schemas/FileSearchDto"
                 }
               }
             }
@@ -4431,6 +4431,25 @@
           "file",
           "dir"
         ]
+      },
+      "FileSearchDto": {
+        "type": "object",
+        "required": [
+          "items",
+          "truncated"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FoundEntryDto"
+            }
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Còn kết quả chưa trả: tối đa 200 mục, duyệt tối đa 100 000 mục."
+          }
+        }
       },
       "FoundEntryDto": {
         "type": "object",
