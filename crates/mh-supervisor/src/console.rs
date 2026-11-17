@@ -33,7 +33,7 @@ impl Console {
                 lines: VecDeque::with_capacity(capacity.min(1024)),
                 capacity: capacity.max(1),
                 next_seq: u64::try_from(now_us).unwrap_or(1),
-                log: logs_dir.map(|dir| DailyLog::new(dir, keep_days)),
+                log: logs_dir.map(|dir| DailyLog::new(dir, keep_days, MAX_LOG_DAY_BYTES)),
             }),
         }
     }
@@ -71,7 +71,15 @@ impl Console {
     /// đổi tên (chuyển vào thùng rác) thư mục server khi còn file mở bên trong.
     pub(crate) fn close_log(&self) {
         if let Some(log) = self.lock().log.as_mut() {
+            log.flush();
             log.current = None;
+        }
+    }
+
+    /// Đẩy phần log còn trong bộ đệm xuống file.
+    pub(crate) fn flush_log(&self) {
+        if let Some(log) = self.lock().log.as_mut() {
+            log.flush();
         }
     }
 
@@ -93,50 +101,102 @@ impl Console {
     }
 }
 
+/// Trần dung lượng file log của một ngày. Server spam lỗi vài MB mỗi giây làm đầy ổ trong một
+/// ngày, và ổ đầy thì Minecraft lưu world thất bại.
+const MAX_LOG_DAY_BYTES: u64 = 100 * 1024 * 1024;
+
 /// `logs/console-YYYY-MM-DD.log` theo ngày UTC, xóa file cũ hơn `keep_days` khi sang ngày mới.
 #[derive(Debug)]
 struct DailyLog {
     dir: PathBuf,
     keep_days: i64,
-    current: Option<(Date, BufWriter<File>)>,
+    max_bytes: u64,
+    current: Option<OpenLog>,
+}
+
+#[derive(Debug)]
+struct OpenLog {
+    day: Date,
+    file: BufWriter<File>,
+    /// Kích thước file, kể cả phần đã có trước khi mở.
+    written: u64,
+    /// Đã chạm `max_bytes`: không ghi gì nữa tới ngày sau.
+    full: bool,
 }
 
 impl DailyLog {
-    fn new(dir: PathBuf, keep_days: i64) -> Self {
+    fn new(dir: PathBuf, keep_days: i64, max_bytes: u64) -> Self {
         Self {
             dir,
             keep_days,
+            max_bytes,
             current: None,
         }
     }
 
+    /// Chỉ ghi vào bộ đệm; actor gọi `flush` khi hết dòng chờ, để không phải một syscall mỗi dòng.
     fn write(&mut self, line: &ConsoleLine) {
         let today = OffsetDateTime::now_utc().date();
-        if self.current.as_ref().is_none_or(|(day, _)| *day != today) {
-            self.current = self.open(today).map(|file| (today, file));
+        if self.current.as_ref().is_none_or(|log| log.day != today) {
+            self.current = self.open(today);
             prune_old_logs(&self.dir, today, self.keep_days);
         }
-        let Some((_, file)) = self.current.as_mut() else {
+        let max = self.max_bytes;
+        let Some(log) = self.current.as_mut() else {
             return;
         };
+        if log.full {
+            return;
+        }
         let prefix = match line.stream {
             ConsoleStream::Stdin => "> ",
             ConsoleStream::Stdout | ConsoleStream::Stderr => "",
         };
-        // Lỗi ghi log không được làm hỏng server; chỉ ghi lại một lần rồi bỏ file này.
-        let written = writeln!(file, "{prefix}{}", line.text).and_then(|()| file.flush());
-        if let Err(e) = written {
+        let len = (prefix.len() + line.text.len() + 1) as u64;
+        let written = if log.written.saturating_add(len) > max {
+            log.full = true;
+            writeln!(
+                log.file,
+                "[MineHost] log hôm nay đã quá {} MB, ngừng ghi file tới hết ngày (giờ UTC); console trên giao diện vẫn đủ",
+                max / (1024 * 1024)
+            )
+        } else {
+            log.written += len;
+            writeln!(log.file, "{prefix}{}", line.text)
+        };
+        self.on_result(written);
+    }
+
+    fn flush(&mut self) {
+        if let Some(log) = self.current.as_mut() {
+            let flushed = log.file.flush();
+            self.on_result(flushed);
+        }
+    }
+
+    /// Lỗi ghi log không được làm hỏng server; chỉ ghi lại một lần rồi bỏ file này.
+    fn on_result(&mut self, result: std::io::Result<()>) {
+        if let Err(e) = result {
             tracing::warn!(error = %e, dir = %self.dir.display(), "không ghi được log console");
             self.current = None;
         }
     }
 
-    fn open(&self, day: Date) -> Option<BufWriter<File>> {
+    fn open(&self, day: Date) -> Option<OpenLog> {
         let path = self.dir.join(log_name(day));
         let opened = fs::create_dir_all(&self.dir)
             .and_then(|()| OpenOptions::new().create(true).append(true).open(&path));
         match opened {
-            Ok(file) => Some(BufWriter::new(file)),
+            Ok(file) => {
+                let written = file.metadata().map_or(0, |m| m.len());
+                Some(OpenLog {
+                    day,
+                    file: BufWriter::new(file),
+                    written,
+                    // Controller bật lại trong ngày: dòng báo đầy đã có trong file.
+                    full: written >= self.max_bytes,
+                })
+            }
             Err(e) => {
                 tracing::warn!(error = %e, path = %path.display(), "không mở được file log console");
                 None
@@ -209,9 +269,40 @@ mod tests {
         let console = Console::new(10, Some(tmp.path().to_path_buf()), 14);
         console.push(ConsoleStream::Stdout, "xin chào".to_owned());
         console.push(ConsoleStream::Stdin, "say hi".to_owned());
+        console.flush_log();
         let name = log_name(OffsetDateTime::now_utc().date());
         let text = fs::read_to_string(tmp.path().join(name)).unwrap();
         assert_eq!(text, "xin chào\n> say hi\n");
+    }
+
+    #[test]
+    fn daily_log_stops_at_size_cap_and_says_so_once() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut log = DailyLog::new(tmp.path().to_path_buf(), 14, 20);
+        for seq in 0..10 {
+            let text = format!("dòng {seq}");
+            log.write(&ConsoleLine {
+                seq,
+                stream: ConsoleStream::Stdout,
+                text,
+            });
+        }
+        log.flush();
+        let name = log_name(OffsetDateTime::now_utc().date());
+        let text = fs::read_to_string(tmp.path().join(&name)).unwrap();
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(lines[..2], ["dòng 0", "dòng 1"]);
+        assert_eq!(lines.len(), 3, "{text}");
+        assert!(lines[2].contains("ngừng ghi file"));
+        // Mở lại trong cùng ngày (controller bật lại): file đã đầy, không ghi thêm dòng báo nào.
+        let mut again = DailyLog::new(tmp.path().to_path_buf(), 14, 20);
+        again.write(&ConsoleLine {
+            seq: 99,
+            stream: ConsoleStream::Stdout,
+            text: "nữa".to_owned(),
+        });
+        again.flush();
+        assert_eq!(fs::read_to_string(tmp.path().join(name)).unwrap(), text);
     }
 
     #[test]
@@ -225,6 +316,7 @@ mod tests {
         fs::rename(tmp.path(), &moved).unwrap();
         fs::rename(&moved, tmp.path()).unwrap();
         console.push(ConsoleStream::Stdout, "hai".to_owned());
+        console.flush_log();
         let name = log_name(OffsetDateTime::now_utc().date());
         let text = fs::read_to_string(tmp.path().join(name)).unwrap();
         assert_eq!(

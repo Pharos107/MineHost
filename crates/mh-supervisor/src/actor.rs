@@ -24,7 +24,7 @@ type Reply = oneshot::Sender<Result<(), SupervisorError>>;
 
 struct Live {
     control: ProcessControl,
-    output: Option<mpsc::UnboundedReceiver<OutputLine>>,
+    output: Option<mpsc::Receiver<OutputLine>>,
     exit: oneshot::Receiver<Exit>,
 }
 
@@ -94,7 +94,10 @@ impl<L: Launcher> Actor<L> {
             match self.next(&mut rx).await {
                 Wake::Command(None) => break,
                 Wake::Command(Some(cmd)) => self.on_command(cmd).await,
-                Wake::Line(line) => self.on_line(line).await,
+                Wake::Line(line) => {
+                    self.on_line(line).await;
+                    self.flush_log_if_idle();
+                }
                 Wake::OutputClosed => {
                     if let Some(live) = self.live.as_mut() {
                         live.output = None;
@@ -121,15 +124,17 @@ impl<L: Launcher> Actor<L> {
             Some(Live { output, exit, .. }) => (output.as_mut(), Some(exit)),
             None => (None, None),
         };
+        // Hẹn giờ đứng trước dòng log: server spam log liên tục thì nhánh dòng log luôn sẵn, và nếu
+        // đứng sau, hạn kill sau `stop` hay sau dòng bật hỏng không bao giờ tới lượt.
         tokio::select! {
             biased;
             cmd = rx.recv() => Wake::Command(cmd),
-            line = recv_line(output) => line.map_or(Wake::OutputClosed, Wake::Line),
-            exit = wait_exit(exit) => Wake::Exited(exit),
             () = sleep_until(stop) => Wake::StopTimeout,
+            () = sleep_until(failed) => Wake::FailedStart,
             () = sleep_until(restart) => Wake::RestartDue,
             () = sleep_until(slow) => Wake::SlowStart,
-            () = sleep_until(failed) => Wake::FailedStart,
+            line = recv_line(output) => line.map_or(Wake::OutputClosed, Wake::Line),
+            exit = wait_exit(exit) => Wake::Exited(exit),
         }
     }
 
@@ -286,6 +291,18 @@ impl<L: Launcher> Actor<L> {
         let _ = self.events.send(SupervisorEvent::Players(event));
     }
 
+    /// Ghi file log theo lô: flush mỗi dòng là một syscall, server spam log thì actor tụt lại sau.
+    fn flush_log_if_idle(&self) {
+        let idle = self
+            .live
+            .as_ref()
+            .and_then(|live| live.output.as_ref())
+            .is_none_or(mpsc::Receiver::is_empty);
+        if idle {
+            self.console.flush_log();
+        }
+    }
+
     async fn sync_online_players(&self) {
         let Some(live) = self.live.as_ref() else {
             return;
@@ -428,7 +445,7 @@ fn respond(reply: Reply, result: Result<(), SupervisorError>) {
     let _ = reply.send(result);
 }
 
-async fn recv_line(output: Option<&mut mpsc::UnboundedReceiver<OutputLine>>) -> Option<OutputLine> {
+async fn recv_line(output: Option<&mut mpsc::Receiver<OutputLine>>) -> Option<OutputLine> {
     match output {
         Some(rx) => rx.recv().await,
         None => std::future::pending().await,
