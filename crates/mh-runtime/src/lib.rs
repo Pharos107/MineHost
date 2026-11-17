@@ -13,6 +13,7 @@ use mh_core::{ConsoleStream, ErrorCode};
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWriteExt, BufReader};
 use tokio::process::{Child, ChildStdin};
 use tokio::runtime::Handle;
+use tokio::sync::mpsc::error::TrySendError;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinHandle;
 
@@ -22,6 +23,13 @@ pub use launch::{ENCODING_FLAGS, JavaLaunch};
 /// Sau khi process thoát, chờ tối đa chừng này để đọc nốt log còn trong pipe. Process cháu
 /// có thể giữ pipe mở mãi, nên không chờ vô hạn.
 const DRAIN_TIMEOUT: Duration = Duration::from_secs(2);
+
+/// Dòng dài hơn chừng này bị cắt. Mod in cả registry trên một dòng, hay dữ liệu nhị phân không có
+/// xuống dòng, sẽ làm bộ đệm đọc và bộ đệm console lớn vô hạn.
+pub const MAX_LINE_BYTES: usize = 16 * 1024;
+/// Số dòng chờ người đọc xử lý. Đầy thì bỏ bớt và báo số dòng đã bỏ, nhưng không bao giờ ngừng đọc
+/// pipe: ngừng đọc thì server bị treo ngay khi ghi log.
+pub const OUTPUT_QUEUE: usize = 4096;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProcessSpec {
@@ -107,7 +115,8 @@ pub struct ProcessRuntime {
 pub struct RunningProcess {
     pub pid: Option<u32>,
     pub control: ProcessControl,
-    pub output: mpsc::UnboundedReceiver<OutputLine>,
+    /// Tối đa [`OUTPUT_QUEUE`] dòng chờ đọc; đọc chậm hơn server in thì dòng thừa bị bỏ.
+    pub output: mpsc::Receiver<OutputLine>,
     pub exit: oneshot::Receiver<Exit>,
 }
 
@@ -143,7 +152,7 @@ impl ProcessRuntime {
             .await
             .map_err(|source| RuntimeError::Spawn { program, source })?;
         let pid = child.id();
-        let (out_tx, output) = mpsc::unbounded_channel();
+        let (out_tx, output) = mpsc::channel(OUTPUT_QUEUE);
         // Các task đọc/ghi chạy trên runtime của controller, không phải runtime của người gọi:
         // người gọi có thể là một luồng sắp thoát.
         let mut readers = Vec::new();
@@ -198,26 +207,98 @@ impl ProcessControl {
 async fn read_lines(
     pipe: impl AsyncRead + Unpin,
     stream: ConsoleStream,
-    tx: mpsc::UnboundedSender<OutputLine>,
+    tx: mpsc::Sender<OutputLine>,
 ) {
     let mut reader = BufReader::new(pipe);
-    let mut buf = Vec::new();
+    let mut out = LineSink::new(stream, tx);
     loop {
-        buf.clear();
-        match reader.read_until(b'\n', &mut buf).await {
-            Ok(0) => break,
-            Ok(_) => {
-                let line = buf.strip_suffix(b"\n").unwrap_or(&buf);
-                let line = line.strip_suffix(b"\r").unwrap_or(line);
-                let text = String::from_utf8_lossy(line).into_owned();
-                // Không ai nghe thì vẫn đọc tiếp, để pipe không đầy làm server bị treo.
-                let _ = tx.send(OutputLine { stream, text });
-            }
+        let chunk = match reader.fill_buf().await {
+            Ok(chunk) => chunk,
             Err(e) => {
                 tracing::debug!(error = %e, "ngừng đọc pipe của process");
                 break;
             }
+        };
+        if chunk.is_empty() {
+            out.finish();
+            break;
         }
+        let newline = chunk.iter().position(|&b| b == b'\n');
+        let taken = newline.map_or(chunk.len(), |i| i + 1);
+        out.extend(&chunk[..newline.unwrap_or(taken)]);
+        reader.consume(taken);
+        if newline.is_some() {
+            out.emit();
+        }
+    }
+}
+
+/// Gom một dòng (có trần độ dài) rồi đẩy vào hàng đợi mà không bao giờ chờ.
+struct LineSink {
+    stream: ConsoleStream,
+    tx: mpsc::Sender<OutputLine>,
+    line: Vec<u8>,
+    truncated: bool,
+    dropped: u64,
+}
+
+impl LineSink {
+    fn new(stream: ConsoleStream, tx: mpsc::Sender<OutputLine>) -> Self {
+        Self {
+            stream,
+            tx,
+            line: Vec::new(),
+            truncated: false,
+            dropped: 0,
+        }
+    }
+
+    fn extend(&mut self, bytes: &[u8]) {
+        let room = MAX_LINE_BYTES.saturating_sub(self.line.len());
+        if bytes.len() > room {
+            self.truncated = true;
+        }
+        self.line.extend_from_slice(&bytes[..bytes.len().min(room)]);
+    }
+
+    /// Dòng cuối không có ký tự xuống dòng vẫn được giữ.
+    fn finish(&mut self) {
+        if !self.line.is_empty() || self.truncated {
+            self.emit();
+        }
+    }
+
+    fn emit(&mut self) {
+        let raw = self.line.strip_suffix(b"\r").unwrap_or(&self.line);
+        let mut text = String::from_utf8_lossy(raw).into_owned();
+        if self.truncated {
+            text.push_str(" …[MineHost: dòng quá dài, đã cắt]");
+        }
+        self.line.clear();
+        self.truncated = false;
+        if self.dropped > 0 {
+            let note = format!(
+                "[MineHost] đã bỏ {} dòng log vì server in nhanh hơn MineHost kịp xử lý",
+                self.dropped
+            );
+            if !self.send(note) {
+                self.dropped += 1;
+                return;
+            }
+            self.dropped = 0;
+        }
+        if !self.send(text) {
+            self.dropped += 1;
+        }
+    }
+
+    /// `false` khi hàng đợi đầy. Không ai nghe thì coi như đã gửi: vẫn đọc tiếp để pipe không đầy.
+    fn send(&self, text: String) -> bool {
+        let line = OutputLine {
+            stream: self.stream,
+            text,
+        };
+        !matches!(self.tx.try_send(line), Err(TrySendError::Full(_)))
     }
 }
 
@@ -267,4 +348,61 @@ async fn watch(
         code,
         memory_limit_hit,
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sink(capacity: usize) -> (LineSink, mpsc::Receiver<OutputLine>) {
+        let (tx, rx) = mpsc::channel(capacity);
+        (LineSink::new(ConsoleStream::Stdout, tx), rx)
+    }
+
+    #[tokio::test]
+    async fn long_line_is_cut_and_next_line_is_intact() {
+        let (tx, mut rx) = mpsc::channel(8);
+        let mut input = vec![b'x'; MAX_LINE_BYTES * 3];
+        input.extend_from_slice(b"\r\nsau\n");
+        read_lines(input.as_slice(), ConsoleStream::Stdout, tx).await;
+        let first = rx.recv().await.unwrap().text;
+        assert!(
+            first.starts_with(&"x".repeat(MAX_LINE_BYTES)),
+            "{}",
+            first.len()
+        );
+        assert!(first.ends_with("đã cắt]"));
+        assert_eq!(rx.recv().await.unwrap().text, "sau");
+        assert!(rx.recv().await.is_none());
+    }
+
+    #[tokio::test]
+    async fn last_line_without_newline_is_kept() {
+        let (tx, mut rx) = mpsc::channel(8);
+        read_lines(b"a\nb".as_slice(), ConsoleStream::Stderr, tx).await;
+        assert_eq!(rx.recv().await.unwrap().text, "a");
+        let last = rx.recv().await.unwrap();
+        assert_eq!(
+            (last.stream, last.text.as_str()),
+            (ConsoleStream::Stderr, "b")
+        );
+    }
+
+    #[test]
+    fn full_queue_drops_lines_then_reports_how_many() {
+        let (mut out, mut rx) = sink(2);
+        for text in ["a", "b", "c", "d"] {
+            out.extend(text.as_bytes());
+            out.emit();
+        }
+        let texts = |rx: &mut mpsc::Receiver<OutputLine>| {
+            std::iter::from_fn(|| rx.try_recv().ok().map(|l| l.text)).collect::<Vec<_>>()
+        };
+        assert_eq!(texts(&mut rx), ["a", "b"]);
+        out.extend(b"e");
+        out.emit();
+        let after = texts(&mut rx);
+        assert!(after[0].contains("đã bỏ 2 dòng"), "{after:?}");
+        assert_eq!(after[1], "e");
+    }
 }

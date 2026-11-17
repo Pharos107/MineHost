@@ -8,6 +8,7 @@
 //! - `--hang-on-stop`: bỏ qua lệnh `stop`, giống server bị treo khi lưu world.
 //! - `--slow-stop-ms <n>`: sau `stop`, in một dòng lưu chunk mỗi 100 ms trong `n` mili giây rồi mới
 //!   thoát, giống world lớn lưu lâu.
+//! - `--spam-on-stop`: sau `stop`, in log liên tục không nghỉ và không bao giờ thoát.
 //! - `--crash-after-ms <n>`: in lỗi hết RAM rồi thoát mã 1 sau `n` mili giây.
 //! - `--slow-start-ms <n>`: chờ `n` mili giây trước khi in dòng `Done`.
 //! - `--fail-start-hang`: in dòng bật hỏng như Forge rồi treo, không đọc stdin, không thoát.
@@ -31,6 +32,7 @@ use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
 static SLOW_STOP_MS: OnceLock<u64> = OnceLock::new();
+static SPAM_ON_STOP: OnceLock<()> = OnceLock::new();
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -53,6 +55,9 @@ fn main() {
     }
     if !has_flag(&args, "--no-done") {
         println!("[10:00:01 INFO]: Done (0.100s)! For help, type \"help\"");
+    }
+    if has_flag(&args, "--spam-on-stop") {
+        let _ = SPAM_ON_STOP.set(());
     }
     if let Some(ms) = flag_number(&args, "--slow-stop-ms") {
         let _ = SLOW_STOP_MS.set(ms);
@@ -187,6 +192,11 @@ fn on_stop(hang_on_stop: bool) -> bool {
         return true;
     }
     println!("[10:00:02 INFO]: Stopping server");
+    if SPAM_ON_STOP.get().is_some() {
+        loop {
+            println!("[10:00:02 ERROR]: Exception in server tick loop");
+        }
+    }
     if let Some(&ms) = SLOW_STOP_MS.get() {
         let until = Instant::now() + Duration::from_millis(ms);
         while Instant::now() < until {

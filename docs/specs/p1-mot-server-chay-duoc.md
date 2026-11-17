@@ -265,6 +265,11 @@ Lệnh chạy:
 
 - Thư mục làm việc là `servers/<id>/server/`. stdin, stdout và stderr đều là pipe; stdout và stderr
   được gộp thành một luồng `ConsoleLine { seq, stream, text }`, giải mã UTF-8 kiểu lossy.
+- **Server spam log (sửa 2026-11-17):** pipe luôn được đọc hết, không bao giờ dừng (dừng là server
+  treo khi ghi log). Dòng dài quá 16 KiB bị cắt, thêm đuôi `…[MineHost: dòng quá dài, đã cắt]`. Hàng
+  đợi tới actor giữ tối đa 4.096 dòng; đầy thì bỏ dòng mới và khi có chỗ thì chèn một dòng
+  `[MineHost] đã bỏ N dòng log…`. Trong actor, hẹn giờ (kill sau `stop`, sau dòng bật hỏng, tự bật
+  lại) được xét trước dòng log, để log liên tục không làm chúng không bao giờ tới lượt.
 - Các cờ `encoding` là bắt buộc: Java trên Windows ghi ra pipe theo code page của hệ thống, nên
   thiếu chúng là tiếng Việt trong log bị vỡ.
 - **Windows:** cờ `CREATE_NO_WINDOW`; gán process vào một Job Object có `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`.
@@ -297,7 +302,9 @@ Lệnh chạy:
 - **Crash:** process thoát mà không do người dùng yêu cầu. Nếu `restart_on_crash` thì tự bật lại
   sau 5 s, 15 s, 30 s; quá 3 lần trong 10 phút thì dừng ở `Crashed`.
 - **Console:** bộ đệm vòng 5.000 dòng, `seq` tăng dần không bao giờ lặp. Đồng thời ghi
-  `servers/<id>/logs/console-YYYY-MM-DD.log`, giữ 14 ngày.
+  `servers/<id>/logs/console-YYYY-MM-DD.log`, giữ 14 ngày. File ghi qua bộ đệm, flush khi hết dòng chờ
+  xử lý. Mỗi ngày tối đa 100 MB: chạm trần thì ghi một dòng báo rồi ngừng ghi file tới ngày sau (giờ
+  UTC); console trên giao diện vẫn đủ.
 - **Dấu đang chạy:** khi bật, tạo file `servers/<id>/.running`; khi dừng sạch, xóa file đó. Lúc
   controller khởi động, server nào còn file này (tức controller đã chết giữa chừng) hoặc có
   `autostart = true` thì được bật lại. Các server bật song song, sau khi web đã mở. Server còn
