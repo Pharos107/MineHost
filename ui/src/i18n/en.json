@@ -796,11 +796,9 @@
       "submit": "Extract"
     },
     "search": {
-      "action": "Search subfolders",
-      "title": "Find files",
-      "label": "File name in {{dir}} and all subfolders",
-      "submit": "Search",
-      "none": "No files found",
+      "options": "Search settings",
+      "subfolders": "Include subfolders",
+      "deepLabel": "Search all subfolders",
       "truncated": "Showing only the first {{count}} results; try a more specific name."
     },
     "jobDone": {

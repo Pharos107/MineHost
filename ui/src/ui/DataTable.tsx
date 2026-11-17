@@ -61,6 +61,12 @@ interface DataTableProps<T> {
   /** Hiện thay cho bảng khi chưa có hàng nào, thường là `EmptyState`. */
   empty: ReactNode;
   selection?: TableSelection;
+  /** Nút ở cuối ô tìm kiếm, ví dụ menu cài đặt tìm kiếm. */
+  searchOptions?: ReactNode;
+  /** Thay chữ mặc định "Tìm kiếm" của ô tìm. */
+  searchLabel?: string;
+  /** Báo chuỗi đang gõ, cho trang tự tìm thêm (ví dụ tìm trên server). */
+  onSearchChange?: (query: string) => void;
 }
 
 /**
@@ -69,6 +75,7 @@ interface DataTableProps<T> {
  */
 export function DataTable<T>(props: DataTableProps<T>) {
   const { label, columns, rows, rowKey, actions, toolbar, searchText, defaultSort, loading, empty, selection } = props;
+  const { searchOptions, searchLabel, onSearchChange } = props;
   const { t, i18n } = useTranslation();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortState | null>(defaultSort ?? null);
@@ -79,7 +86,8 @@ export function DataTable<T>(props: DataTableProps<T>) {
     return sort && sortValue ? sortRows(filtered, sortValue, sort.direction, i18n.language) : filtered;
   }, [rows, query, searchText, columns, sort, i18n.language]);
 
-  if (!loading && rows.length === 0) return <>{empty}</>;
+  // Đang tìm (có thể tìm trên server) mà không ra gì thì vẫn giữ bảng và ô tìm, chỉ báo không khớp.
+  if (!loading && rows.length === 0 && query === "") return <>{empty}</>;
   const picking = selection !== undefined && selection.selected.size > 0;
 
   return (
@@ -99,7 +107,15 @@ export function DataTable<T>(props: DataTableProps<T>) {
           <div className={styles.toolbarActions}>{toolbar}</div>
           {searchText && (
             <div className={styles.search}>
-              <SearchInput value={query} onChange={setQuery} label={t("ui.table.search")} />
+              <SearchInput
+                value={query}
+                onChange={(value) => {
+                  setQuery(value);
+                  onSearchChange?.(value);
+                }}
+                label={searchLabel ?? t("ui.table.search")}
+                trailing={searchOptions}
+              />
             </div>
           )}
         </div>

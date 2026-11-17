@@ -138,6 +138,19 @@
   padding-left: calc(var(--mh-space-3) + 16px + var(--mh-space-2));
 }
 
+/* Nút nhỏ ở cuối ô tìm (ví dụ cài đặt tìm kiếm). */
+.searchWithTrailing {
+  padding-right: calc(var(--mh-control-height-sm) + var(--mh-space-2));
+}
+
+.searchTrailing {
+  position: absolute;
+  top: 50%;
+  right: var(--mh-space-1);
+  transform: translateY(-50%);
+  display: flex;
+}
+
 .searchIcon {
   position: absolute;
   top: 50%;

@@ -45,3 +45,13 @@
 .danger {
   color: var(--mh-danger);
 }
+
+/* Mục bật/tắt: chừa chỗ dấu tích cả khi đang tắt để chữ thẳng hàng. */
+.check {
+  visibility: hidden;
+  color: var(--mh-primary);
+}
+
+.checked {
+  visibility: visible;
+}

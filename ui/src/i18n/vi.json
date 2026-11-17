@@ -796,11 +796,9 @@
       "submit": "Giải nén"
     },
     "search": {
-      "action": "Tìm trong thư mục con",
-      "title": "Tìm file",
-      "label": "Tên file trong {{dir}} và mọi thư mục con",
-      "submit": "Tìm",
-      "none": "Không thấy file nào",
+      "options": "Cài đặt tìm kiếm",
+      "subfolders": "Tìm cả thư mục con",
+      "deepLabel": "Tìm trong mọi thư mục con",
       "truncated": "Chỉ hiện {{count}} kết quả đầu, hãy gõ cụ thể hơn."
     },
     "jobDone": {

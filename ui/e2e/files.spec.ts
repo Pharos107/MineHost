@@ -95,12 +95,14 @@ test("nén, giải nén, tìm và xóa nhiều mục", async ({ page, request })
   await page.getByRole("dialog", { name: "Giải nén cau-hinh.zip" }).getByRole("button", { name: "Giải nén" }).click();
   await expect(table.getByRole("link", { name: "cau-hinh", exact: true })).toBeVisible({ timeout: 15_000 });
 
-  await page.getByRole("button", { name: "Tìm trong thư mục con" }).click();
-  const search = page.getByRole("dialog", { name: "Tìm file" });
-  await search.getByRole("textbox").fill("properties");
-  await search.getByRole("button", { name: "Tìm" }).click();
-  await expect(search.getByRole("link", { name: /cau-hinh\/server\.properties/ })).toBeVisible();
-  await search.getByRole("button", { name: "Đóng" }).first().click();
+  // Tìm cả thư mục con: bật trong cài đặt của ô tìm (mặc định tắt), kết quả hiện ngay trong bảng.
+  const box = page.getByRole("searchbox", { name: "Tìm kiếm" });
+  await box.fill("properties");
+  await page.getByRole("button", { name: "Cài đặt tìm kiếm" }).click();
+  await page.getByRole("menuitemcheckbox", { name: "Tìm cả thư mục con" }).click();
+  await page.keyboard.press("Escape");
+  await expect(table.getByRole("link", { name: "cau-hinh/server.properties" })).toBeVisible();
+  await page.getByRole("searchbox", { name: "Tìm trong mọi thư mục con" }).fill("");
 
   await table.getByRole("checkbox", { name: "Chọn cau-hinh", exact: true }).check();
   await table.getByRole("checkbox", { name: "Chọn cau-hinh.zip" }).check();
