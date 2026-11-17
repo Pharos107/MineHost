@@ -27,7 +27,16 @@ export { Menu, type MenuItem } from "./Menu";
 export { NavItem, NavSection } from "./Nav";
 export { Notice, type NoticeTone } from "./Notice";
 export { ProgressBar, Steps } from "./progress";
-export { ProjectCard, ProjectCardGrid, type ProjectCardProps } from "./ProjectCard";
+export {
+  ProjectCard,
+  ProjectCardGrid,
+  ProjectChip,
+  ProjectDetailHeader,
+  type ProjectCardProps,
+  type ProjectChipProps,
+  type ProjectDetailHeaderProps,
+  type ProjectLinkItem,
+} from "./ProjectCard";
 export { SegmentedControl, type Segment } from "./SegmentedControl";
 export { SelectList, SelectListGroup, SelectListItem } from "./SelectList";
 export { ServerCard, ServerCardGrid } from "./ServerCard";
@@ -36,6 +45,7 @@ export { Spinner } from "./Spinner";
 export { Stack, type Space } from "./Stack";
 export { StatGrid, StatTile } from "./StatTile";
 export { StatStrip, type StripItem } from "./StatStrip";
+export { SuggestBox, type Suggestion } from "./SuggestBox";
 export { Switch } from "./Switch";
 export { Tabs, type TabItem } from "./Tabs";
 export { filterRows } from "./table-utils";

@@ -1610,6 +1610,83 @@
         }
       }
     },
+    "/api/v1/servers/{id}/commands": {
+      "get": {
+        "tags": [
+          "console"
+        ],
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerCommandsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/commands/scan": {
+      "post": {
+        "tags": [
+          "console"
+        ],
+        "summary": "Gửi `help` rồi đọc kết quả, mất vài giây. Server phải đang chạy.",
+        "operationId": "scan",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerCommandsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}/console": {
       "get": {
         "tags": [
@@ -3831,6 +3908,13 @@
           "project_id": {
             "type": "string"
           },
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PropertyDto"
+            },
+            "description": "Các khóa `server.properties` đặt ngay khi tạo."
+          },
           "source": {
             "type": "string",
             "description": "`modrinth` hoặc `curseforge`."
@@ -3892,6 +3976,13 @@
             ],
             "format": "int32",
             "minimum": 0
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PropertyDto"
+            },
+            "description": "Các khóa `server.properties` đặt ngay khi tạo (ví dụ `online-mode`, `white-list`, `difficulty`)."
           }
         }
       },
@@ -5219,6 +5310,54 @@
             "type": "integer",
             "format": "int32",
             "minimum": 0
+          }
+        }
+      },
+      "ServerCommandDto": {
+        "type": "object",
+        "description": "Một lệnh đọc từ `help` của server.",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Chỉ có ở Paper, Purpur (trang trợ giúp của Bukkit)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Không có dấu `/`, ví dụ `tp` hoặc `ftbquests`."
+          },
+          "usage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Cách gõ, không có dấu `/`, tối đa 300 ký tự, ví dụ `tp <targets> <location>`."
+          }
+        }
+      },
+      "ServerCommandsDto": {
+        "type": "object",
+        "required": [
+          "commands"
+        ],
+        "properties": {
+          "commands": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServerCommandDto"
+            }
+          },
+          "scanned_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "RFC 3339. `null` khi chưa quét lần nào."
           }
         }
       },

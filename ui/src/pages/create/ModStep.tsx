@@ -1,12 +1,13 @@
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import type { Loader } from "../../api/client";
-import { Avatar, Badge, Button, Card, IconButton, Stack } from "../../ui";
+import { Badge, Button, Card, Notice, ProjectChip, Stack } from "../../ui";
 import { CatalogBrowser } from "../catalog/CatalogBrowser";
 import type { CatalogActionContext } from "../catalog/CatalogDetail";
 import { MAX_QUEUE, type ContentQueue } from "../catalog/queue";
 import { versionOptionLabel } from "../server/content/content";
+import { isPluginLoader } from "./form";
 
 interface ModStepProps {
   loader: Loader;
@@ -14,14 +15,18 @@ interface ModStepProps {
   queue: ContentQueue;
   /** Đã xóa danh sách vì người dùng quay lại đổi loader hoặc Minecraft. */
   cleared: boolean;
+  /** Gọi khi người dùng thêm mục mới để ẩn thông báo đã xóa cũ. */
+  onAdded?: () => void;
 }
 
 /**
- * Bước "Mod" khi tạo server có mod (spec trình duyệt mod, mục 5): chọn mod hợp loader và Minecraft
- * vừa chọn; MineHost cài chúng ngay sau khi tạo server. Bước này không bắt buộc.
+ * Bước "Mod" / "Plugin" khi tạo server (spec trình duyệt mod, mục 5): chọn mod/plugin hợp loader
+ * và Minecraft vừa chọn; MineHost cài chúng ngay sau khi tạo server. Bước này không bắt buộc.
  */
-export function ModStep({ loader, minecraft, queue, cleared }: ModStepProps) {
+export function ModStep({ loader, minecraft, queue, cleared, onAdded }: ModStepProps) {
   const { t } = useTranslation();
+  const kind = isPluginLoader(loader) ? "plugin" : "mod";
+  const prefix = kind === "plugin" ? "wizard.plugins" : "wizard.mods";
 
   const renderAction = ({ hit, version }: CatalogActionContext) => {
     if (version === null) return null;
@@ -41,7 +46,7 @@ export function ModStep({ loader, minecraft, queue, cleared }: ModStepProps) {
           variant="primary"
           icon={Plus}
           disabled={queue.items.length >= MAX_QUEUE}
-          onClick={() =>
+          onClick={() => {
             queue.add({
               source: hit.source,
               project_id: hit.project_id,
@@ -49,8 +54,9 @@ export function ModStep({ loader, minecraft, queue, cleared }: ModStepProps) {
               title: hit.title,
               version_label: versionOptionLabel(version),
               icon_url: hit.icon_url,
-            })
-          }
+            });
+            onAdded?.();
+          }}
         >
           {t("catalog.queue.add")}
         </Button>
@@ -60,34 +66,44 @@ export function ModStep({ loader, minecraft, queue, cleared }: ModStepProps) {
 
   return (
     <Stack gap={4}>
-      <p>{t("wizard.mods.hint")}</p>
-      {cleared && <p>{t("wizard.mods.cleared")}</p>}
-      <Card title={t("wizard.mods.chosen", { count: queue.items.length })}>
-        {queue.items.length === 0 ? (
-          <p>{t("wizard.mods.none")}</p>
-        ) : (
-          <Stack gap={2}>
+      <span>{t(`${prefix}.hint`)}</span>
+      {cleared && queue.items.length === 0 && <Notice tone="info">{t(`${prefix}.cleared`)}</Notice>}
+      <Card variant="subtle">
+        <Stack direction="row" justify="between" align="center" gap={2} wrap>
+          <Stack direction="row" align="center" gap={2} wrap>
+            <strong>{t(`${prefix}.chosen`, { count: queue.items.length })}</strong>
+            <Badge tone="primary">{t(`loaders.${loader}`)}</Badge>
+            <Badge>{minecraft}</Badge>
+          </Stack>
+          {queue.items.length === 0 ? (
+            <span>{t(`${prefix}.none`)}</span>
+          ) : (
+            <Button size="sm" variant="ghost" onClick={queue.clear}>
+              {t("wizard.mods.clearAll")}
+            </Button>
+          )}
+        </Stack>
+        {queue.items.length > 0 && (
+          <Stack direction="row" gap={2} wrap>
             {queue.items.map((item) => (
-              <Stack key={`${item.source}:${item.project_id}`} direction="row" gap={2} align="center" wrap>
-                <Avatar name={item.title} imageUrl={item.icon_url} size="sm" />
-                <strong>{item.title}</strong>
-                {item.version_label && <Badge>{item.version_label}</Badge>}
-                <IconButton
-                  icon={X}
-                  size="sm"
-                  label={t("catalog.queue.remove", { name: item.title })}
-                  onClick={() => queue.remove(item.source, item.project_id)}
-                />
-              </Stack>
+              <ProjectChip
+                key={`${item.source}:${item.project_id}`}
+                title={item.title}
+                iconUrl={item.icon_url}
+                version={item.version_label}
+                removeLabel={t("catalog.queue.remove", { name: item.title })}
+                onRemove={() => queue.remove(item.source, item.project_id)}
+              />
             ))}
           </Stack>
         )}
       </Card>
       <CatalogBrowser
-        kind="mod"
+        kind={kind}
         scope={{ loader, minecraft }}
         loader={loader}
         minecraft={minecraft}
+        isQueued={(hit) => queue.has(hit.source, hit.project_id)}
         renderAction={renderAction}
       />
     </Stack>

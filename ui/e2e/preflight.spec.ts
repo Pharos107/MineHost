@@ -1,5 +1,7 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
+import { serverButton } from "./helpers";
+
 function crc32(bytes: Uint8Array): number {
   let crc = 0xffffffff;
   for (const byte of bytes) {
@@ -115,8 +117,9 @@ test("preflight chặn bật khi thiếu dependency và Vẫn bật bỏ qua đ�
     timeout: 15_000,
   });
 
-  await page.getByRole("main").getByRole("button", { name: "Bật server" }).click();
+  await serverButton(page, "Bật server").click();
   await expect(page.getByText(/Còn thiếu mod bắt buộc: absent-lib/)).toBeVisible({ timeout: 10_000 });
+  await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Vẫn bật" }).click();
   await expect(page.getByRole("main").getByText("Đang chạy", { exact: true })).toBeVisible({ timeout: 30_000 });

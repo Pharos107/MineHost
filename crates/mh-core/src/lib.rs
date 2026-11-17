@@ -7,6 +7,7 @@
 
 pub mod backup_schedule;
 pub mod cf_manifest;
+pub mod commands;
 pub mod console;
 pub mod crash;
 pub mod curseforge;

@@ -18,3 +18,8 @@
 .terminal.small {
   height: 180px;
 }
+
+/* Trừ phần đầu trang, thanh công cụ, nút lệnh nhanh và ô lệnh để cả trang vừa một màn hình. */
+.terminal.fill {
+  height: max(320px, calc(100dvh - 400px));
+}

@@ -5,7 +5,7 @@ import { cx } from "./cx";
 import { subscribeTheme } from "./theme";
 import styles from "./Terminal.module.css";
 
-export type TerminalTone = "normal" | "muted" | "primary" | "danger";
+export type TerminalTone = "normal" | "muted" | "primary" | "warning" | "danger";
 
 export interface TerminalHandle {
   /** Ghi một dòng; `tone` tô màu cả dòng (lệnh người dùng gõ, stderr…). */
@@ -13,7 +13,7 @@ export interface TerminalHandle {
   clear: () => void;
 }
 
-const ANSI: Record<TerminalTone, string> = { normal: "", muted: "\x1b[90m", primary: "\x1b[36m", danger: "\x1b[31m" };
+const ANSI: Record<TerminalTone, string> = { normal: "", muted: "\x1b[90m", primary: "\x1b[36m", warning: "\x1b[33m", danger: "\x1b[31m" };
 const RESET = "\x1b[0m";
 
 interface TerminalProps {
@@ -22,8 +22,8 @@ interface TerminalProps {
   ref?: Ref<TerminalHandle>;
   /** Số dòng giữ lại để cuộn xem (spec P1: 5.000). */
   maxLines?: number;
-  /** `sm`: khung thấp khoảng 8 dòng, để xem nhanh vài dòng cuối (Tổng quan). */
-  size?: "md" | "sm";
+  /** `sm`: khung thấp khoảng 8 dòng (Tổng quan). `fill`: cao theo màn hình, ít nhất bằng `md` (trang Console). */
+  size?: "md" | "sm" | "fill";
 }
 
 /** Màu của xterm lấy từ token, để console theo đúng bảng màu sáng/tối của app. */
@@ -116,5 +116,5 @@ export function Terminal({ label, ref, maxLines = 5000, size = "md" }: TerminalP
     };
   }, [maxLines]);
 
-  return <div className={cx(styles.terminal, size === "sm" && styles.small)} ref={host} role="log" aria-label={label} />;
+  return <div className={cx(styles.terminal, size === "sm" && styles.small, size === "fill" && styles.fill)} ref={host} role="log" aria-label={label} />;
 }

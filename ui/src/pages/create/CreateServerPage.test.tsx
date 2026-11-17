@@ -51,6 +51,30 @@ const lithiumVersion = {
   date_published: "2026-11-01T00:00:00Z",
   manual_download: false,
 };
+const luckpermsHit = {
+  source: "modrinth",
+  project_id: "luckperms",
+  slug: "luckperms",
+  kind: "plugin",
+  title: "LuckPerms",
+  description: "Plugin phân quyền.",
+  icon_url: null,
+  downloads: 800,
+  categories: ["paper", "purpur"],
+  game_versions: ["1.21.4"],
+  server_side: "required",
+};
+const luckpermsVersion = {
+  id: "lp-1",
+  project_id: "luckperms",
+  name: "5.4.0",
+  version_number: "5.4.0",
+  version_type: "release",
+  game_versions: ["1.21.4"],
+  loaders: ["paper", "purpur"],
+  date_published: "2026-11-01T00:00:00Z",
+  manual_download: false,
+};
 const versions = ["1.21.4", "1.21.3", "1.21.1", "1.20.6", "1.20.4", "1.19.4"].map((id) => ({ id, release_time: "" }));
 
 function mockApi() {
@@ -67,9 +91,14 @@ function mockApi() {
     }
     if (url === "/api/v1/system") return Response.json(system);
     if (url === "/api/v1/settings/curseforge") return Response.json({ available: false, source: "none" });
-    if (url.startsWith("/api/v1/content/search")) return Response.json({ hits: [lithiumHit], page: 1, page_size: 20, total: 1 });
+    if (url.startsWith("/api/v1/content/search")) {
+      const kind = new URL(url, "http://localhost").searchParams.get("kind");
+      return Response.json({ hits: [kind === "plugin" ? luckpermsHit : lithiumHit], page: 1, page_size: 20, total: 1 });
+    }
     if (url === "/api/v1/content/modrinth/projects/lithium") return Response.json({ ...lithiumHit, body: "Nhanh", loaders: ["fabric"], links: { page: "https://modrinth.com/mod/lithium" } });
-    if (url === "/api/v1/content/modrinth/projects/lithium/versions?loader=fabric&minecraft=1.21.4") return Response.json([lithiumVersion]);
+    if (url.startsWith("/api/v1/content/modrinth/projects/lithium/versions?loader=fabric")) return Response.json([lithiumVersion]);
+    if (url === "/api/v1/content/modrinth/projects/luckperms") return Response.json({ ...luckpermsHit, body: "Phân quyền", loaders: ["paper", "purpur"], links: { page: "https://modrinth.com/plugin/luckperms" } });
+    if (url === "/api/v1/content/modrinth/projects/luckperms/versions?loader=paper&minecraft=1.21.4") return Response.json([luckpermsVersion]);
     if (url === "/api/v1/servers" && init?.method === "POST") return Response.json({ server_id: "01JB", job_id: 7 }, { status: 202 });
     if (url === "/api/v1/jobs/7") return Response.json(runningJob);
     return Response.json({ code: "NOT_FOUND", params: {} }, { status: 404 });
@@ -113,13 +142,14 @@ describe("CreateServerPage", () => {
     const select = await screen.findByRole("combobox", { name: "Phiên bản Minecraft" });
     expect(select).toHaveProperty("value", "1.21.3");
     await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await user.click(await screen.findByRole("button", { name: "Bỏ qua" }));
     await user.click(screen.getByRole("button", { name: "Tạo server" }));
 
     const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
     expect(JSON.parse(String(post?.[1]?.body))).toMatchObject({ loader: "purpur", minecraft: "1.21.3" });
   });
 
-  it("đi hết 3 bước, gửi yêu cầu tạo rồi theo dõi Job tới trang chi tiết", async () => {
+  it("đi hết các bước Paper, gửi yêu cầu tạo rồi theo dõi Job tới trang chi tiết", async () => {
     const fetchMock = mockApi();
     const user = userEvent.setup();
     renderWizard();
@@ -133,6 +163,7 @@ describe("CreateServerPage", () => {
     await user.click(screen.getByRole("switch", { name: "Hiện bản cũ hơn" }));
     await user.selectOptions(select, "1.19.4");
     await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await user.click(await screen.findByRole("button", { name: "Bỏ qua" }));
 
     const name = screen.getByRole("textbox", { name: "Tên server" });
     expect(name).toHaveProperty("value", "Server của tôi");
@@ -194,7 +225,9 @@ describe("CreateServerPage", () => {
     await user.click(await screen.findByRole("button", { name: /^Lithium/ }));
     await user.click(await screen.findByRole("button", { name: "Thêm vào danh sách" }));
     expect(screen.getByText("Mod đã chọn (1)")).toBeTruthy();
+    expect(screen.getByText("Đã chọn")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    expect(screen.getByText("Mod sẽ cài kèm")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Tạo server" }));
 
     const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
@@ -237,6 +270,7 @@ describe("CreateServerPage", () => {
     await user.click(screen.getByRole("button", { name: "Tiếp" }));
     await screen.findByRole("combobox");
     await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await user.click(await screen.findByRole("button", { name: "Bỏ qua" }));
     await user.click(screen.getByRole("button", { name: "Tạo server" }));
     await screen.findByText("Đang tạo server");
 
@@ -246,13 +280,111 @@ describe("CreateServerPage", () => {
     expect(screen.getByRole("textbox", { name: "Tên server" })).toHaveProperty("value", "Server của tôi");
   });
 
-  it("chọn Từ modpack và bấm Tiếp thì chuyển sang /new/modpack", async () => {
+  it("tạo server Paper chọn plugin ở bước Plugin và tùy chỉnh cấu hình game khi tạo", async () => {
+    const fetchMock = mockApi();
+    const user = userEvent.setup();
+    renderWizard();
+
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await screen.findByRole("combobox", { name: "Phiên bản Minecraft" });
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+
+    expect(screen.queryByRole("radio", { name: "CurseForge" })).toBeNull();
+    await user.click(await screen.findByRole("button", { name: /^LuckPerms/ }));
+    await user.click(await screen.findByRole("button", { name: "Thêm vào danh sách" }));
+    expect(screen.getByText("Plugin đã chọn (1)")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    expect(screen.getByText("Plugin sẽ cài kèm")).toBeTruthy();
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Độ khó" }), "hard");
+    await user.click(screen.getByRole("switch", { name: /^Kiểm tra tài khoản Minecraft chính thức/ }));
+    await user.click(screen.getByRole("switch", { name: /^Chỉ cho người trong danh sách trắng vào/ }));
+    await user.click(screen.getByRole("button", { name: "Nâng cao" }));
+    await user.click(screen.getByRole("switch", { name: /^Cho phép khối lệnh/ }));
+    await user.click(screen.getByRole("button", { name: "Tạo server" }));
+
+    const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
+    expect(JSON.parse(String(post?.[1]?.body))).toMatchObject({
+      loader: "paper",
+      minecraft: "1.21.4",
+      content: [{ source: "modrinth", project_id: "luckperms", version_id: "lp-1" }],
+      properties: [
+        { key: "difficulty", value: "hard" },
+        { key: "online-mode", value: "false" },
+        { key: "white-list", value: "true" },
+        { key: "enable-command-blocks", value: "true" },
+      ],
+    });
+    await screen.findByText("Đang tạo server");
+    pushJob({
+      state: "succeeded",
+      result: { content_failed: [{ source: "modrinth", project_id: "luckperms", code: "CONTENT_INCOMPATIBLE" }] } as unknown as Job["result"],
+    });
+    expect(await screen.findByText("Server đã tạo, nhưng 1 plugin không cài được")).toBeTruthy();
+    expect(screen.getByText(/^LuckPerms:/)).toBeTruthy();
+  });
+
+  it("nhập giá trị Nâng cao không hợp lệ giữ nguyên mục Nâng cao hiển thị lỗi và ẩn thông báo cleared khi thêm mod", async () => {
+    mockApi();
+    const user = userEvent.setup();
+    renderWizard();
+
+    await user.click(screen.getByRole("radio", { name: /^Server có mod/ }));
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await screen.findByRole("combobox", { name: "Phiên bản Minecraft" });
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await user.click(await screen.findByRole("button", { name: /^Lithium/ }));
+    await user.click(await screen.findByRole("button", { name: "Thêm vào danh sách" }));
+    await user.click(screen.getByRole("button", { name: "Quay lại" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Phiên bản Minecraft" }), "1.21.3");
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    expect(await screen.findByText("Đã bỏ danh sách mod vì bạn đổi loại server hoặc phiên bản Minecraft.")).toBeTruthy();
+
+    await user.click(await screen.findByRole("button", { name: /^Lithium/ }));
+    await user.click(await screen.findByRole("button", { name: "Thêm vào danh sách" }));
+    expect(screen.queryByText("Đã bỏ danh sách mod vì bạn đổi loại server hoặc phiên bản Minecraft.")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await user.click(screen.getByRole("button", { name: "Nâng cao" }));
+    const viewDist = screen.getByRole("spinbutton", { name: "Tầm nhìn (chunk)" });
+    await user.clear(viewDist);
+    await user.type(viewDist, "1");
+    expect(screen.getByText("Tầm nhìn phải là số nguyên từ 2 đến 32.")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Nâng cao" }));
+    expect(screen.getByText("Tầm nhìn phải là số nguyên từ 2 đến 32.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Tạo server" })).toHaveProperty("disabled", true);
+  });
+
+  it("bước Mod: nút Xóa hết xóa sạch mod đã chọn và phím Enter trong ô tìm không chuyển bước", async () => {
+    mockApi();
+    const user = userEvent.setup();
+    renderWizard();
+
+    await user.click(screen.getByRole("radio", { name: /^Server có mod/ }));
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+    await screen.findByRole("combobox", { name: "Phiên bản Minecraft" });
+    await user.click(screen.getByRole("button", { name: "Tiếp" }));
+
+    const searchBox = await screen.findByRole("searchbox", { name: "Tìm mod trên Modrinth…" });
+    await user.type(searchBox, "Lithium{Enter}");
+    expect(screen.getByText("Mod đã chọn (0)")).toBeTruthy();
+
+    await user.click(await screen.findByRole("button", { name: /^Lithium/ }));
+    await user.click(await screen.findByRole("button", { name: "Thêm vào danh sách" }));
+    expect(screen.getByText("Mod đã chọn (1)")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Xóa hết" }));
+    expect(screen.getByText("Mod đã chọn (0)")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Bỏ qua" })).toBeTruthy();
+  });
+
+  it("chọn Từ modpack hiện bước Chọn modpack trên Steps và bấm Tiếp chuyển sang /new/modpack", async () => {
     mockApi();
     const user = userEvent.setup();
     renderWizard();
     const modpackRadio = screen.getByRole("radio", { name: /^Từ modpack/ });
     expect(modpackRadio).toHaveProperty("disabled", false);
     await user.click(modpackRadio);
+    expect(screen.getByText("Chọn modpack")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Tiếp" }));
     expect(await screen.findByText("trang modpack")).toBeTruthy();
   });

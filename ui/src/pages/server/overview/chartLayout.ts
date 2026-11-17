@@ -1,6 +1,5 @@
-import { useSyncExternalStore } from "react";
-
 import type { ChartPoint } from "../../../ui";
+import { useMediaQuery } from "../../../useMediaQuery";
 
 export type ChartLayout = "side" | "stacked";
 
@@ -39,17 +38,7 @@ export function summarize(points: ChartPoint[]): ChartStats | undefined {
   return { last: last.v, average: sum / values.length, max: Math.max(...values), min: Math.min(...values) };
 }
 
-/** Cùng mốc với `Columns`: hẹp hơn thì luôn một cột, nút đổi cách xếp không còn tác dụng. */
-const WIDE = "(min-width: 900px)";
-
-function subscribeWide(onChange: () => void) {
-  if (typeof window.matchMedia !== "function") return () => undefined;
-  const query = window.matchMedia(WIDE);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-/** Màn hình đủ rộng để xếp hai biểu đồ cạnh nhau. jsdom không có `matchMedia` thì coi là rộng. */
+/** Màn hình đủ rộng để xếp biểu đồ cạnh nhau (cùng mốc 900 px với `Columns`). jsdom thì coi là rộng. */
 export function useWideScreen(): boolean {
-  return useSyncExternalStore(subscribeWide, () => (typeof window.matchMedia === "function" ? window.matchMedia(WIDE).matches : true));
+  return useMediaQuery("(min-width: 900px)", true);
 }

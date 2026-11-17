@@ -7,6 +7,7 @@ mod auth;
 mod backup;
 mod backup_schedule;
 mod backup_snapshot;
+mod commands;
 pub mod content;
 mod create;
 mod curseforge;
@@ -46,6 +47,7 @@ use mh_supervisor::SupervisorConfig;
 pub use auth::AuthStore;
 pub use backup::{BackupKind, BackupMeta, BackupRequest, BackupStarted};
 pub use backup_schedule::{BackupCandidate, BackupPlanner};
+pub use commands::CommandList;
 pub use content::{
     CatalogSource, ClientOnlyMod, ContentCatalog, ContentInstallPlan, ContentList,
     CurseforgeCatalog, MissingDependency, ModrinthCatalog, NoContentCatalog, PlannedContent,

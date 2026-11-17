@@ -101,6 +101,8 @@
       "loader": "Server type",
       "version": "Version",
       "mods": "Mods",
+      "plugins": "Plugins",
+      "modpack": "Choose modpack",
       "settings": "Name and RAM",
       "folder": "Folder",
       "importName": "Name"
@@ -164,16 +166,47 @@
     "importPickVersionHint": "For example 1.21.4.",
     "importNote": "MineHost copies the folder into its own data folder; the original stays as is. You will be asked to accept the EULA before the first start.",
     "importSubmit": "Import server",
+    "modpackStepHint": "Click Next to browse modpacks on Modrinth or CurseForge, or drop a .mrpack or .zip file.",
+    "importStepHint": "Click Next to pick an existing server folder on this computer. MineHost will detect the loader and copy it in.",
+    "summaryMods": "Mods to install",
+    "summaryPlugins": "Plugins to install",
+    "gameSettingsTitle": "Gameplay settings (server.properties)",
+    "gameSettingsDescription": "Applied when creating the server. You can change any of these later in Game settings.",
+    "motdPlaceholder": "Defaults to server name",
+    "maxPlayersInvalid": "Maximum players must be a whole number from 1 to 100000.",
+    "viewDistance": "View distance (chunks)",
+    "viewDistanceHint": "Chunk render radius around each player; defaults to 10.",
+    "viewDistanceInvalid": "View distance must be a whole number from 2 to 32.",
+    "spawnProtection": "Spawn protection radius",
+    "spawnProtectionHint": "Blocks around spawn protected from non-op players; 0 disables protection.",
+    "spawnProtectionInvalid": "Spawn protection must be a whole number from 0 to 1000.",
+    "levelSeed": "World seed",
+    "levelSeedHint": "Leave empty for Minecraft to pick a random seed.",
+    "seedPlaceholder": "Random",
+    "commandBlocks": "Enable command blocks",
+    "commandBlocksHint": "Turn on if maps or plugins rely on Command Blocks.",
+    "allowFlight": "Allow flight",
+    "allowFlightHint": "Stops kicking survival players who fly using mods.",
     "mods": {
       "hint": "Pick the mods the server should start with. MineHost installs them with their dependencies right after the loader. You can skip this and add mods later on the Mods page.",
       "cleared": "The mod list was cleared because you changed the server type or Minecraft version.",
       "chosen_one": "Selected mods ({{count}})",
       "chosen_other": "Selected mods ({{count}})",
       "none": "No mods selected.",
+      "clearAll": "Clear all",
       "skip": "Skip",
       "failedTitle_one": "The server was created, but {{count}} mod couldn't be installed",
       "failedTitle_other": "The server was created, but {{count}} mods couldn't be installed",
       "openServer": "Open server"
+    },
+    "plugins": {
+      "hint": "Pick the plugins the server should start with. MineHost installs them from Modrinth right after creating the server. You can skip this and add plugins later on the Plugins page.",
+      "cleared": "The plugin list was cleared because you changed the server type or Minecraft version.",
+      "chosen_one": "Selected plugins ({{count}})",
+      "chosen_other": "Selected plugins ({{count}})",
+      "none": "No plugins selected.",
+      "failedTitle_one": "The server was created, but {{count}} plugin couldn't be installed",
+      "failedTitle_other": "The server was created, but {{count}} plugins couldn't be installed"
     }
   },
   "jobs": {
@@ -222,7 +255,8 @@
       "id_mismatch": "The ID in instance.toml ({{found}}) does not match the folder name. The folder may have been copied by hand.",
       "unknown": "The server folder is damaged."
     },
-    "minecraftVersion": "Minecraft {{version}}"
+    "minecraftVersion": "Minecraft {{version}}",
+    "actionFailed": "Couldn't do that"
   },
   "crashHints": {
     "NOT_ENOUGH_MEMORY": "The server ran out of RAM. Give it more RAM on the Server settings page.",
@@ -250,7 +284,153 @@
     "resume": "Resume",
     "clear": "Clear screen",
     "newLines_one": "{{count}} new line",
-    "newLines_other": "{{count}} new lines"
+    "newLines_other": "{{count}} new lines",
+    "status": {
+      "connecting": "Connecting…",
+      "open": "Connected",
+      "reconnecting": "Disconnected, retrying…"
+    },
+    "quick": {
+      "list": "Who's online",
+      "save": "Save world",
+      "day": "Make it day",
+      "clearWeather": "Clear weather",
+      "say": "Announce…"
+    },
+    "say": {
+      "title": "Send an announcement",
+      "label": "Message",
+      "hint": "Shows in every online player's chat, prefixed with [Server].",
+      "placeholder": "Server restarts in 5 minutes"
+    },
+    "download": "Download log",
+    "hintsLabel": "Command suggestions",
+    "level": {
+      "label": "Filter by level",
+      "all": "All",
+      "warn": "Warnings",
+      "error": "Errors",
+      "chat": "Chat"
+    },
+    "hints": {
+      "list": {
+        "usage": "list",
+        "desc": "See who's online"
+      },
+      "say": {
+        "usage": "say <message>",
+        "desc": "Message everyone"
+      },
+      "msg": {
+        "usage": "msg <player> <message>",
+        "desc": "Message one player"
+      },
+      "tp": {
+        "usage": "tp <player> <target>",
+        "desc": "Teleport a player"
+      },
+      "give": {
+        "usage": "give <player> <item> [count]",
+        "desc": "Give an item"
+      },
+      "gamemode": {
+        "usage": "gamemode <survival|creative|adventure|spectator> [player]",
+        "desc": "Change game mode"
+      },
+      "difficulty": {
+        "usage": "difficulty <peaceful|easy|normal|hard>",
+        "desc": "Change difficulty"
+      },
+      "time": {
+        "usage": "time set <day|night|noon|midnight>",
+        "desc": "Set the time"
+      },
+      "weather": {
+        "usage": "weather <clear|rain|thunder>",
+        "desc": "Set the weather"
+      },
+      "gamerule": {
+        "usage": "gamerule <rule> [value]",
+        "desc": "View or change a game rule"
+      },
+      "op": {
+        "usage": "op <player>",
+        "desc": "Make a player an operator"
+      },
+      "deop": {
+        "usage": "deop <player>",
+        "desc": "Remove operator status"
+      },
+      "kick": {
+        "usage": "kick <player> [reason]",
+        "desc": "Kick a player"
+      },
+      "ban": {
+        "usage": "ban <player> [reason]",
+        "desc": "Ban a player"
+      },
+      "pardon": {
+        "usage": "pardon <player>",
+        "desc": "Unban a player"
+      },
+      "whitelist": {
+        "usage": "whitelist <add|remove|list|on|off> [player]",
+        "desc": "Manage the whitelist"
+      },
+      "saveAll": {
+        "usage": "save-all",
+        "desc": "Save the world now"
+      },
+      "kill": {
+        "usage": "kill <target>",
+        "desc": "Kill a player or entity"
+      },
+      "effect": {
+        "usage": "effect give <player> <effect> [seconds]",
+        "desc": "Give an effect"
+      },
+      "xp": {
+        "usage": "xp add <player> <amount> [levels]",
+        "desc": "Add experience"
+      },
+      "clear": {
+        "usage": "clear <player> [item]",
+        "desc": "Clear a player's inventory"
+      },
+      "spawnpoint": {
+        "usage": "spawnpoint [player]",
+        "desc": "Set a player's spawn point"
+      },
+      "setworldspawn": {
+        "usage": "setworldspawn [x y z]",
+        "desc": "Set the world spawn"
+      },
+      "seed": {
+        "usage": "seed",
+        "desc": "Show the world seed"
+      },
+      "locate": {
+        "usage": "locate structure <structure>",
+        "desc": "Find the nearest structure"
+      }
+    },
+    "scan": {
+      "first": "Get the server's commands (mods, plugins) for suggestions",
+      "again_one": "Rescan server commands ({{count}} command, scanned {{at}})",
+      "again_other": "Rescan server commands ({{count}} commands, scanned {{at}})",
+      "fromServer": "Server command"
+    },
+    "player": {
+      "online": "Online",
+      "offline": "Has joined before"
+    },
+    "selector": {
+      "a": "All players",
+      "p": "Nearest player",
+      "r": "A random player",
+      "s": "Whoever runs the command (not the console)",
+      "e": "All entities"
+    }
   },
   "game": {
     "common": "Common settings",
@@ -906,7 +1086,7 @@
     "title": "Create server from modpack",
     "description": "Search modpacks on Modrinth or upload an existing .mrpack file.",
     "dropLabel": "Choose modpack file",
-    "dropHint": "or drop a .mrpack or .zip file anywhere on this page, up to 512 MiB.",
+    "dropHint": "Already have a modpack file? Drop a .mrpack or .zip anywhere on this page (up to 512 MiB).",
     "searchPlaceholder": "Search modpacks on Modrinth…",
     "searchPlaceholderCurseforge": "Search modpacks on CurseForge…",
     "curseforgeNoKey": "CurseForge is unavailable because no API key is configured in Settings.",
@@ -949,6 +1129,7 @@
     "queue": {
       "add": "Add to list",
       "added": "In the install list",
+      "selected": "Selected",
       "undo": "Remove from list",
       "remove": "Remove {{name}}",
       "summary_one": "{{count}} item waiting to install: {{names}}",

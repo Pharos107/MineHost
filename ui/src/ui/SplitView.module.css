@@ -9,6 +9,13 @@
   min-width: 0;
 }
 
+.detail {
+  padding: var(--mh-space-4);
+  background: var(--mh-bg);
+  border: 1px solid var(--mh-border);
+  border-radius: var(--mh-radius-lg);
+}
+
 .back {
   margin-bottom: var(--mh-space-3);
 }
@@ -21,8 +28,9 @@
 
 @media (min-width: 1024px) {
   .split {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-columns: minmax(300px, 5fr) minmax(0, 7fr);
     align-items: start;
+    gap: var(--mh-space-5);
   }
 
   /* Viết lại đủ hai bộ chọn ẩn ở trên: `:not(.detailOpen)` làm chúng mạnh hơn `.split .detail`. */
@@ -33,6 +41,12 @@
     display: block;
   }
 
+  .list {
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 2px var(--mh-space-1) 2px 2px;
+  }
+
   .back {
     display: none;
   }
@@ -40,9 +54,9 @@
   .detail {
     position: sticky;
     top: var(--mh-space-4);
-    max-height: calc(100vh - 2 * var(--mh-space-4));
+    min-height: 420px;
+    max-height: 600px;
     overflow-y: auto;
-    padding-left: var(--mh-space-4);
-    border-left: 1px solid var(--mh-border);
+    padding: var(--mh-space-5);
   }
 }

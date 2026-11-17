@@ -353,6 +353,7 @@ Lọc theo server. Cập nhật realtime qua WebSocket.
 
 Giữ console của P1, thêm: ô lọc dòng, nút Tạm dừng / Tiếp tục cuộn, nút Xóa màn hình (chỉ xóa phía
 trình duyệt). Không đổi gì ở backend.
+Các phần thêm sau (tô màu theo mức, lệnh nhanh…): xem [lam-moi-trang-server.md](lam-moi-trang-server.md).
 
 ### 6.6 Tệp `/servers/:id/files`
 

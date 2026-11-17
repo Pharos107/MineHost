@@ -30,7 +30,7 @@ khoảng cách; mọi giá trị đó là token trong `ui/src/ui/tokens.css`.
 | Nhóm | Component | Dùng ở |
 | --- | --- | --- |
 | Cơ bản (13a) | `Button` (primary, secondary, danger, ghost; cỡ sm, md, lg; `loading`, `fullWidth`), `IconButton` (bắt buộc `label`) | mọi trang |
-| | `Card` (tiêu đề, `titleAs`, mô tả, `bannerSeed`, nút ở góc, thân) | chi tiết, cài đặt |
+| | `Card` (`variant: default \| subtle \| dashed`, tiêu đề, `titleAs`, mô tả, `bannerSeed`, nút ở góc, thân) | chi tiết, cài đặt, wizard |
 | | `HangingSign` (bảng hiệu gỗ treo hai sợi xích có khuy sắt, khung gỗ pixel có ke sắt bốn góc: logo, tiêu đề, mô tả, thân, chân; gỗ sồi khi sáng, gỗ vân sam khi tối) | đăng nhập |
 | | `BlockWordmark` (logo chữ MineHost kiểu tiêu đề MINECRAFT: mặt đá texture pixel, gờ vát, vết nứt, mặt Creeper, khối 3D hội tụ về giữa và viền đen dày; SVG) | đăng nhập |
 | | `PageHeader` (tiêu đề, `eyebrow` phía trên, dòng phụ, vùng nút) | mọi trang |
@@ -43,14 +43,15 @@ khoảng cách; mọi giá trị đó là token trong `ui/src/ui/tokens.css`.
 | Form (13b) | `Field` (nhãn, gợi ý, lỗi; tự nối `id` và `aria-describedby`) | wizard, cài đặt |
 | | `TextInput` (cỡ md, lg; kèm nút hiện/ẩn khi `type="password"`), `Select`, `Switch`, `Slider` (có vạch "đề xuất") | wizard, cài đặt, đăng nhập |
 | | `Steps` (wizard 3 bước), `ProgressBar` (có số %, hoặc chạy vô định) | wizard, tiến độ Job |
-| | `ChoiceGroup` (chọn một trong vài thẻ lớn, radio bên dưới; thêm ở PR-13) | wizard: loại server |
+| | `ChoiceGroup` (chọn một trong vài thẻ lớn, hỗ trợ `icon`, radio bên dưới; thêm ở PR-13) | wizard: loại server |
 | Lớp phủ (13c) | `Dialog` (dựa trên `<dialog>`: khóa focus, Esc để đóng) | EULA |
 | | `ConfirmDialog` (tùy chọn bắt gõ lại một chuỗi mới cho bấm) | Buộc dừng, Xóa, Thoát |
 | | `Tabs` (phím mũi tên chuyển tab) | chi tiết server |
 | | `Menu` (nút "…", Esc và bấm ra ngoài để đóng) | Buộc dừng |
 | | `CopyField` (giá trị kèm nút chép vào clipboard, báo "Đã chép") | địa chỉ LAN |
+| | `SuggestBox` (ô nhập kèm danh sách gợi ý mở lên trên, `listbox` cho trình đọc màn hình) | ô lệnh console |
 | Bảng (13d) | `DataTable` (cột khai báo, sắp xếp, tìm không dấu, thao tác theo hàng, dạng thẻ khi hẹp), `SearchInput` | danh sách server; P2: file, backup, người chơi |
-| Nội dung (P3) | `ProjectCard` (ảnh, tên, mô tả một dòng, số lượt tải, nhãn loader và phiên bản) | tìm mod, tìm modpack |
+| Nội dung (P3) | `ProjectCard` (ảnh, tên, mô tả một dòng, lượt tải, loader, phiên bản, `selected`, `badge`), `ProjectChip` (thẻ gọn mục đã chọn), `ProjectDetailHeader` (đầu khung chi tiết kèm link ngoài) | tìm và cài mod, plugin, modpack |
 | Danh sách và chi tiết | `SelectList` (ô tìm, nút, dải lọc), `SelectListGroup` (tiêu đề, số, câu khi trống), `SelectListItem` (ảnh, tên, dòng phụ, huy hiệu, `selected`); `DetailHeader` (ảnh lớn, tên `h2`, dòng phụ), `DetailSection` (tiêu đề có icon, `tone="danger"`); `Avatar` cỡ `xl`, `online` | người chơi |
 
 ### Bảng

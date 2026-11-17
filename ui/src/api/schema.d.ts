@@ -421,6 +421,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/commands": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/commands/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Gửi `help` rồi đọc kết quả, mất vài giây. Server phải đang chạy. */
+        post: operations["scan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}/console": {
         parameters: {
             query?: never;
@@ -961,6 +994,8 @@ export interface components {
             /** Format: int32 */
             port?: number | null;
             project_id: string;
+            /** @description Các khóa `server.properties` đặt ngay khi tạo. */
+            properties?: components["schemas"]["PropertyDto"][];
             /** @description `modrinth` hoặc `curseforge`. */
             source: string;
             version_id?: string | null;
@@ -977,6 +1012,8 @@ export interface components {
             name: string;
             /** Format: int32 */
             port?: number | null;
+            /** @description Các khóa `server.properties` đặt ngay khi tạo (ví dụ `online-mode`, `white-list`, `difficulty`). */
+            properties?: components["schemas"]["PropertyDto"][];
         };
         CreatedDto: {
             /** Format: int64 */
@@ -1325,6 +1362,20 @@ export interface components {
             page_size: number;
             /** Format: int32 */
             total: number;
+        };
+        /** @description Một lệnh đọc từ `help` của server. */
+        ServerCommandDto: {
+            /** @description Chỉ có ở Paper, Purpur (trang trợ giúp của Bukkit). */
+            description?: string | null;
+            /** @description Không có dấu `/`, ví dụ `tp` hoặc `ftbquests`. */
+            name: string;
+            /** @description Cách gõ, không có dấu `/`, tối đa 300 ký tự, ví dụ `tp <targets> <location>`. */
+            usage?: string | null;
+        };
+        ServerCommandsDto: {
+            commands: components["schemas"]["ServerCommandDto"][];
+            /** @description RFC 3339. `null` khi chưa quét lần nào. */
+            scanned_at?: string | null;
         };
         ServerContentDto: {
             files: components["schemas"]["InstalledContentDto"][];
@@ -2704,6 +2755,64 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerCommandsDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    scan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerCommandsDto"];
+                };
+            };
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -19,7 +19,7 @@
 //!
 //! Lệnh stdin: `stop` thoát, `say …` in lại nội dung; `save-off`, `save-all flush`, `save-on`
 //! (sao lưu); cho test người chơi: `list`,
-//! `fake-join <tên>`, `fake-leave <tên>`.
+//! `fake-join <tên>`, `fake-leave <tên>`; `help` in vài lệnh như vanilla (quét lệnh).
 
 // Đây là chương trình dòng lệnh, in ra stdout/stderr là việc chính của nó.
 #![allow(clippy::print_stdout, clippy::print_stderr)]
@@ -144,6 +144,18 @@ fn on_command(cmd: &str, hang_on_stop: bool, online: &mut Vec<String>) -> bool {
     }
     if cmd == "list" {
         print_online(online);
+        return true;
+    }
+    if cmd == "help" {
+        // Định dạng thật của vanilla và Fabric, có một lệnh "của mod".
+        for usage in [
+            "list",
+            "say <message>",
+            "tp <targets> <location>",
+            "fakemod reload",
+        ] {
+            println!("[10:00:02] [Server thread/INFO]: /{usage}");
+        }
         return true;
     }
     if let Some(name) = cmd.strip_prefix("fake-join ") {

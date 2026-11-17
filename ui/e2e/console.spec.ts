@@ -22,7 +22,7 @@ test("gửi lệnh và lọc dòng trong console", async ({ page, request }) => 
   const log = page.getByRole("log", { name: "Log của server" });
   await expect(log).toContainText("Starting minecraft server version fake", { timeout: 15_000 });
 
-  const command = page.getByRole("textbox", { name: "Lệnh" });
+  const command = page.getByRole("combobox", { name: "Lệnh" });
   await command.fill("say hello from e2e");
   await command.press("Enter");
   // `fake-mc` in lại nội dung của `say`; dòng lệnh người dùng gõ hiện với dấu `>`.

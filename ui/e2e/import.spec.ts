@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-import { getServer, removeServer } from "./helpers";
+import { getServer, removeServer, serverButton } from "./helpers";
 
 let serverId: string | null = null;
 let source: string | null = null;
@@ -59,6 +59,6 @@ test("nhập thư mục server có sẵn", async ({ page, request }) => {
   expect(existsSync(join(dir, "paper-1.21.4-232.jar"))).toBe(true);
 
   // `eula=true` trong thư mục cũ không được tính: vẫn phải bấm đồng ý trong MineHost.
-  await page.getByRole("main").getByRole("button", { name: "Bật server" }).click();
+  await serverButton(page, "Bật server").click();
   await expect(page.getByRole("button", { name: "Tôi đồng ý" })).toBeVisible();
 });

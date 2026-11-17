@@ -100,6 +100,7 @@ function renderModpackPage() {
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={["/new/modpack"]}>
         <Routes>
+          <Route path="/new" element={<p>trang tạo mới</p>} />
           <Route path="/new/modpack" element={<CreateModpackPage />} />
           <Route path="/servers/:id" element={<p>trang server 01PACK</p>} />
         </Routes>
@@ -138,11 +139,17 @@ describe("CreateModpackPage", () => {
       }),
     );
     renderModpackPage();
-    // Có key: chọn được CurseForge và tìm kiếm gửi đúng nguồn.
+    // Có key: chọn được CurseForge và tìm kiếm gửi đúng nguồn; đổi nguồn xóa chi tiết mục cũ.
+    await vi.waitFor(() => expect(screen.getAllByRole("button", { name: /Fabulously Optimized/ })).toHaveLength(2));
+    const fabBtn = screen.getAllByRole("button", { name: /Fabulously Optimized/ })[1];
+    if (!fabBtn) throw new Error("thiếu nút Fabulously Optimized");
+    await userEvent.click(fabBtn);
+    expect(screen.getAllByText("Chọn một mục bên trái để xem chi tiết")).toHaveLength(1);
     const cfWithKey = (await screen.findAllByRole("radio", { name: "CurseForge" }))[1];
     if (!cfWithKey) throw new Error("thiếu nút CurseForge");
     await vi.waitFor(() => expect(cfWithKey).toHaveProperty("disabled", false));
     await userEvent.click(cfWithKey);
+    expect(screen.getAllByText("Chọn một mục bên trái để xem chi tiết")).toHaveLength(2);
     await vi.waitFor(() => {
       const calls = (fetch as unknown as { mock: { calls: [string][] } }).mock.calls.map(([u]) => u);
       expect(calls.some((u) => u.startsWith("/api/v1/content/search") && u.includes("source=curseforge"))).toBe(true);
@@ -195,6 +202,8 @@ describe("CreateModpackPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Nâng cao" }));
     await user.type(screen.getByRole("spinbutton", { name: "Cổng" }), "25570");
+    await user.click(screen.getByRole("switch", { name: /^Kiểm tra tài khoản Minecraft chính thức/ }));
+    await user.click(screen.getByRole("switch", { name: /^Chỉ cho người trong danh sách trắng vào/ }));
     await user.click(screen.getByRole("button", { name: "Tạo server" }));
 
     const post = fetchMock.mock.calls.find(([u, init]) => u === "/api/v1/servers/modpack" && init?.method === "POST");
@@ -205,6 +214,10 @@ describe("CreateModpackPage", () => {
       name: "Pack VIP",
       memory_mb: null,
       port: 25570,
+      properties: [
+        { key: "online-mode", value: "false" },
+        { key: "white-list", value: "true" },
+      ],
     });
 
     expect(await screen.findByText("Đang cài modpack")).toBeTruthy();
@@ -278,5 +291,23 @@ describe("CreateModpackPage", () => {
     expect(sent.get("name")).toBe("my-pack");
     expect((sent.get("file") as File).name).toBe("my-pack.mrpack");
     expect(await screen.findByText("Đã cài xong modpack")).toBeTruthy();
+  });
+
+  it("hiện thanh bước và nút Quay lại về trang tạo mới khi đang chọn modpack", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/v1/settings/curseforge") return Response.json({ available: false, source: "none" });
+        if (url.startsWith("/api/v1/content/search")) return Response.json({ hits: [], page: 1, page_size: 20, total: 0 });
+        return Response.json({ code: "NOT_FOUND", params: {} }, { status: 404 });
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderModpackPage();
+
+    expect(screen.getByRole("list", { name: "Bước 2 trên 3" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Quay lại" }));
+    expect(await screen.findByText("trang tạo mới")).toBeTruthy();
   });
 });

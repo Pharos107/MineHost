@@ -99,19 +99,23 @@ async fn post_servers_modpack_upload_mrpack_and_reject_bad_ext() {
             ("name", "Upload API"),
             ("memory_mb", r#"{"min":2048,"max":6144}"#),
             ("port", "25566"),
+            (
+                "properties",
+                r#"[{"key":"online-mode","value":"false"},{"key":"white-list","value":"true"}]"#,
+            ),
         ],
     )
     .await;
     assert_eq!(st, StatusCode::ACCEPTED, "{created}");
     let job = wait_job_json(&api, created["job_id"].as_u64().unwrap()).await;
     assert_eq!(job["result"]["installed_mods"], 1);
-    let (_, srv) = api
-        .get(&format!(
-            "/api/v1/servers/{}",
-            created["server_id"].as_str().unwrap()
-        ))
-        .await;
+    let sid = created["server_id"].as_str().unwrap();
+    let (_, srv) = api.get(&format!("/api/v1/servers/{sid}")).await;
     assert_eq!(srv["port"], 25566);
+    let (_, props) = api.get(&format!("/api/v1/servers/{sid}/properties")).await;
+    let entries = props["properties"].as_array().unwrap();
+    assert!(entries.contains(&json!({ "key": "online-mode", "value": "false" })));
+    assert!(entries.contains(&json!({ "key": "white-list", "value": "true" })));
 
     let (st, err) = upload_pack(&api.router, "bad.tar", b"tarbytes", &[("name", "Bad Tar")]).await;
     assert_eq!(

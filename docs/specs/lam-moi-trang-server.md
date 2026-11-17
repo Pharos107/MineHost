@@ -12,6 +12,8 @@ CPU / RAM, nút bật / tắt ở thanh bên.
 
 - **Đầu trang** (mọi tab của server): dòng nhỏ phía trên tên, ví dụ
   "Fabric 0.16.14 · Minecraft 1.20.1 · Prominence II v4.1.8". Thiếu phần nào thì bỏ phần đó.
+- **Nút ở đầu trang:** màn hình rộng chỉ còn menu "…" (Buộc dừng) vì thanh bên đã có nút bật / tắt;
+  điện thoại (thanh bên là ngăn kéo) vẫn giữ đủ nút Bật / Khởi động lại / Tắt ở đầu trang.
 - **Thanh bên:** cạnh tên server có nút icon Bật, Khởi động lại, Tắt theo trạng thái, dưới tên là trạng thái;
   dùng chung logic với nút ở đầu trang (hỏi EULA trước khi bật lần đầu). "Buộc dừng" chỉ ở menu "…"
   đầu trang. Server đang cài hoặc hỏng thì chỉ có trạng thái. Mục "Tất cả máy chủ"
@@ -25,9 +27,24 @@ CPU / RAM, nút bật / tắt ở thanh bên.
   - **Thông tin server:** Java, RAM tối thiểu – tối đa, cổng, tự bật cùng MineHost, tự bật lại khi crash,
     giờ khởi động lại hằng ngày, lịch sao lưu tự động.
   - **Console gần đây:** khung log thấp chỉ đọc (giữ 200 dòng), nút "Mở console" sang trang Console.
+- **Trang Console:**
+  - Dòng có nhãn `WARN` ở đầu tô vàng, `ERROR`/`FATAL`/`SEVERE` tô đỏ (đọc được kiểu Paper, vanilla,
+    Fabric, Forge); chat có chữ "WARN]" không bị tô. stderr vẫn đỏ, lệnh người gõ màu nhấn.
+  - Khung log cao theo màn hình (ít nhất 320 px) để cả trang vừa một màn hình.
+  - Chấm trạng thái kết nối realtime: Đang kết nối, Đã kết nối, Mất kết nối và đang thử lại.
+  - Hàng nút lệnh nhanh trên ô lệnh: Ai đang chơi (`list`), Lưu thế giới (`save-all`), Chuyển ban
+    ngày (`time set day`), Tắt mưa (`weather clear`), Thông báo… (hộp nhập lời nhắn, gửi `say`).
+    Server tắt thì khóa.
+  - Lọc theo mức cạnh ô lọc chữ: Tất cả, Cảnh báo (WARN trở lên), Lỗi, Chat (tin nhắn, người vào / rời).
+  - Nút "Tải log": lưu các dòng trình duyệt đang giữ (tối đa 5.000) thành `<tên>-console-<ngày-giờ>.txt`,
+    bỏ mã màu. Không hỏi server.
+  - Gợi ý lệnh khi gõ tên lệnh: 25 lệnh vanilla hay dùng kèm cách gõ và mô tả. Mũi tên chọn, Tab điền,
+    Esc đóng; Enter luôn gửi đúng chữ đang có; ô trống thì mũi tên vẫn là lịch sử lệnh.
+  - Gõ đối số (sau dấu cách) thì gợi ý tên người chơi khớp chữ đang gõ (người online trước, rồi người đã
+    từng vào) và bộ chọn `@a @p @r @s @e`; Tab điền thay đối số cuối. Chưa gõ chữ nào thì không gợi ý.
 
 Component: `StatTile` thêm `meter`, `NavSection` thêm `actions` và `extra`, `PageHeader` thêm `eyebrow`,
-`AppShell` thêm `navEnd`, `Terminal` thêm `size="sm"`, thêm `Columns` (1, 2 hoặc 3 cột).
+`AppShell` thêm `navEnd`, `Terminal` thêm `size="sm"`, `size="fill"` và tông `warning`, thêm `SuggestBox`, thêm `Columns` (1, 2 hoặc 3 cột).
 
 ## Tiêu chí chấp nhận
 
@@ -36,6 +53,8 @@ Component: `StatTile` thêm `meter`, `NavSection` thêm `actions` và `extra`, `
 - Ô Người chơi chỉ hiện số; ô RAM có thanh mức đúng phần trăm (Vitest).
 - Thẻ Thông tin server hiện đúng từng cài đặt; lịch sao lưu đọc thành câu; dòng console mới hiện ở thẻ
   Console gần đây; có biểu đồ Người chơi (Vitest).
+- Nhận đúng mức WARN / ERROR theo từng kiểu log; nút lệnh nhanh và Thông báo gửi đúng lệnh; trạng thái
+  kết nối đổi theo socket; lọc theo mức đúng; gợi ý lệnh và Tab điền; tên file log an toàn (Vitest).
 - Đổi sang "Từng hàng" thì lần mở sau vẫn là từng hàng; hộp chi tiết có trung bình, cao nhất, thấp nhất (Vitest).
 - Xem tay ở chế độ sáng, tối và bề ngang 375 px: không cuộn ngang.
 

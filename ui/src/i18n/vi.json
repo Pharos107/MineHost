@@ -101,6 +101,8 @@
       "loader": "Loại server",
       "version": "Phiên bản",
       "mods": "Mod",
+      "plugins": "Plugin",
+      "modpack": "Chọn modpack",
       "settings": "Tên và RAM",
       "folder": "Thư mục",
       "importName": "Tên"
@@ -164,16 +166,47 @@
     "importPickVersionHint": "Ví dụ 1.21.4.",
     "importNote": "MineHost chép thư mục vào kho dữ liệu của nó, bản gốc giữ nguyên. Trước lần bật đầu tiên, bạn sẽ được hỏi đồng ý EULA.",
     "importSubmit": "Nhập server",
+    "modpackStepHint": "Bấm Tiếp để duyệt modpack trên Modrinth hoặc CurseForge, hoặc kéo thả file .mrpack / .zip.",
+    "importStepHint": "Bấm Tiếp để chọn thư mục server có sẵn trên máy. MineHost sẽ nhận diện loader và chép vào kho dữ liệu.",
+    "summaryMods": "Mod sẽ cài kèm",
+    "summaryPlugins": "Plugin sẽ cài kèm",
+    "gameSettingsTitle": "Cài đặt lối chơi (server.properties)",
+    "gameSettingsDescription": "Áp dụng ngay khi tạo server. Có thể chỉnh lại bất kỳ lúc nào ở tab Cài đặt game.",
+    "motdPlaceholder": "Lấy theo tên server",
+    "maxPlayersInvalid": "Số người chơi tối đa phải là số nguyên từ 1 đến 100000.",
+    "viewDistance": "Tầm nhìn (chunk)",
+    "viewDistanceHint": "Khoảng cách tải chunk quanh người chơi, mặc định 10.",
+    "viewDistanceInvalid": "Tầm nhìn phải là số nguyên từ 2 đến 32.",
+    "spawnProtection": "Bán kính bảo vệ spawn",
+    "spawnProtectionHint": "Số block quanh điểm spawn mà người chơi thường không phá được; 0 là tắt.",
+    "spawnProtectionInvalid": "Bán kính phải là số nguyên từ 0 đến 1000.",
+    "levelSeed": "Hạt giống thế giới (Seed)",
+    "levelSeedHint": "Để trống để Minecraft tự tạo ngẫu nhiên.",
+    "seedPlaceholder": "Ngẫu nhiên",
+    "commandBlocks": "Cho phép khối lệnh (Command Block)",
+    "commandBlocksHint": "Bật nếu map hoặc plugin cần dùng Command Block.",
+    "allowFlight": "Cho phép bay (allow-flight)",
+    "allowFlightHint": "Tắt cảnh báo/kick khi người chơi dùng mod bay ở chế độ Sinh tồn.",
     "mods": {
       "hint": "Chọn mod muốn có sẵn khi tạo server. MineHost cài chúng cùng dependency ngay sau khi cài xong loader. Bỏ qua được, thêm mod sau ở trang Mod.",
       "cleared": "Đã bỏ danh sách mod vì bạn đổi loại server hoặc phiên bản Minecraft.",
       "chosen_one": "Mod đã chọn ({{count}})",
       "chosen_other": "Mod đã chọn ({{count}})",
       "none": "Chưa chọn mod nào.",
+      "clearAll": "Xóa hết",
       "skip": "Bỏ qua",
       "failedTitle_one": "Server đã tạo, nhưng {{count}} mod không cài được",
       "failedTitle_other": "Server đã tạo, nhưng {{count}} mod không cài được",
       "openServer": "Mở server"
+    },
+    "plugins": {
+      "hint": "Chọn plugin muốn có sẵn khi tạo server. MineHost cài chúng từ Modrinth ngay sau khi tạo xong server. Bỏ qua được, thêm plugin sau ở trang Plugin.",
+      "cleared": "Đã bỏ danh sách plugin vì bạn đổi loại server hoặc phiên bản Minecraft.",
+      "chosen_one": "Plugin đã chọn ({{count}})",
+      "chosen_other": "Plugin đã chọn ({{count}})",
+      "none": "Chưa chọn plugin nào.",
+      "failedTitle_one": "Server đã tạo, nhưng {{count}} plugin không cài được",
+      "failedTitle_other": "Server đã tạo, nhưng {{count}} plugin không cài được"
     }
   },
   "jobs": {
@@ -222,7 +255,8 @@
       "id_mismatch": "ID trong instance.toml ({{found}}) khác tên thư mục. Có thể thư mục đã bị chép tay.",
       "unknown": "Thư mục server bị hỏng."
     },
-    "minecraftVersion": "Minecraft {{version}}"
+    "minecraftVersion": "Minecraft {{version}}",
+    "actionFailed": "Không làm được"
   },
   "crashHints": {
     "NOT_ENOUGH_MEMORY": "Server hết RAM. Hãy tăng RAM trong mục Cài đặt server.",
@@ -250,7 +284,153 @@
     "resume": "Tiếp tục",
     "clear": "Xóa màn hình",
     "newLines_one": "{{count}} dòng mới",
-    "newLines_other": "{{count}} dòng mới"
+    "newLines_other": "{{count}} dòng mới",
+    "status": {
+      "connecting": "Đang kết nối…",
+      "open": "Đã kết nối",
+      "reconnecting": "Mất kết nối, đang thử lại…"
+    },
+    "quick": {
+      "list": "Ai đang chơi",
+      "save": "Lưu thế giới",
+      "day": "Chuyển ban ngày",
+      "clearWeather": "Tắt mưa",
+      "say": "Thông báo…"
+    },
+    "say": {
+      "title": "Gửi thông báo cho mọi người",
+      "label": "Lời nhắn",
+      "hint": "Hiện trong khung chat của mọi người đang chơi, kèm chữ [Server] phía trước.",
+      "placeholder": "Server sẽ khởi động lại sau 5 phút"
+    },
+    "download": "Tải log",
+    "hintsLabel": "Gợi ý lệnh",
+    "level": {
+      "label": "Lọc theo mức",
+      "all": "Tất cả",
+      "warn": "Cảnh báo",
+      "error": "Lỗi",
+      "chat": "Chat"
+    },
+    "hints": {
+      "list": {
+        "usage": "list",
+        "desc": "Xem ai đang chơi"
+      },
+      "say": {
+        "usage": "say <lời nhắn>",
+        "desc": "Gửi thông báo cho mọi người"
+      },
+      "msg": {
+        "usage": "msg <người chơi> <lời nhắn>",
+        "desc": "Nhắn riêng một người"
+      },
+      "tp": {
+        "usage": "tp <người chơi> <đích>",
+        "desc": "Dịch chuyển người chơi"
+      },
+      "give": {
+        "usage": "give <người chơi> <vật phẩm> [số lượng]",
+        "desc": "Tặng vật phẩm"
+      },
+      "gamemode": {
+        "usage": "gamemode <survival|creative|adventure|spectator> [người chơi]",
+        "desc": "Đổi chế độ chơi"
+      },
+      "difficulty": {
+        "usage": "difficulty <peaceful|easy|normal|hard>",
+        "desc": "Đổi độ khó"
+      },
+      "time": {
+        "usage": "time set <day|night|noon|midnight>",
+        "desc": "Đổi giờ trong game"
+      },
+      "weather": {
+        "usage": "weather <clear|rain|thunder>",
+        "desc": "Đổi thời tiết"
+      },
+      "gamerule": {
+        "usage": "gamerule <luật> [giá trị]",
+        "desc": "Xem hoặc đổi luật game"
+      },
+      "op": {
+        "usage": "op <người chơi>",
+        "desc": "Cho quyền quản trị"
+      },
+      "deop": {
+        "usage": "deop <người chơi>",
+        "desc": "Bỏ quyền quản trị"
+      },
+      "kick": {
+        "usage": "kick <người chơi> [lý do]",
+        "desc": "Đá khỏi server"
+      },
+      "ban": {
+        "usage": "ban <người chơi> [lý do]",
+        "desc": "Cấm vào server"
+      },
+      "pardon": {
+        "usage": "pardon <người chơi>",
+        "desc": "Bỏ cấm"
+      },
+      "whitelist": {
+        "usage": "whitelist <add|remove|list|on|off> [người chơi]",
+        "desc": "Quản lý danh sách được vào"
+      },
+      "saveAll": {
+        "usage": "save-all",
+        "desc": "Lưu thế giới ngay"
+      },
+      "kill": {
+        "usage": "kill <mục tiêu>",
+        "desc": "Giết người chơi hoặc sinh vật"
+      },
+      "effect": {
+        "usage": "effect give <người chơi> <hiệu ứng> [giây]",
+        "desc": "Cho hiệu ứng"
+      },
+      "xp": {
+        "usage": "xp add <người chơi> <số> [levels]",
+        "desc": "Cộng kinh nghiệm"
+      },
+      "clear": {
+        "usage": "clear <người chơi> [vật phẩm]",
+        "desc": "Xóa đồ trong túi"
+      },
+      "spawnpoint": {
+        "usage": "spawnpoint [người chơi]",
+        "desc": "Đặt điểm hồi sinh của người chơi"
+      },
+      "setworldspawn": {
+        "usage": "setworldspawn [x y z]",
+        "desc": "Đặt điểm hồi sinh của thế giới"
+      },
+      "seed": {
+        "usage": "seed",
+        "desc": "Xem seed của thế giới"
+      },
+      "locate": {
+        "usage": "locate structure <công trình>",
+        "desc": "Tìm công trình gần nhất"
+      }
+    },
+    "scan": {
+      "first": "Lấy lệnh của server (mod, plugin) để gợi ý khi gõ",
+      "again_one": "Quét lại lệnh của server ({{count}} lệnh, quét lúc {{at}})",
+      "again_other": "Quét lại lệnh của server ({{count}} lệnh, quét lúc {{at}})",
+      "fromServer": "Lệnh của server"
+    },
+    "player": {
+      "online": "Đang chơi",
+      "offline": "Đã từng vào"
+    },
+    "selector": {
+      "a": "Mọi người chơi",
+      "p": "Người chơi gần nhất",
+      "r": "Một người chơi ngẫu nhiên",
+      "s": "Người gõ lệnh (console không dùng được)",
+      "e": "Mọi thực thể"
+    }
   },
   "game": {
     "common": "Cài đặt thường dùng",
@@ -906,7 +1086,7 @@
     "title": "Tạo server từ modpack",
     "description": "Tìm modpack trên Modrinth hoặc tải lên file .mrpack có sẵn.",
     "dropLabel": "Chọn file modpack",
-    "dropHint": "hoặc kéo thả file .mrpack, .zip vào bất kỳ chỗ nào trên trang, tối đa 512 MiB.",
+    "dropHint": "Đã có file modpack? Kéo thả .mrpack hoặc .zip vào trang (tối đa 512 MiB).",
     "searchPlaceholder": "Tìm modpack trên Modrinth…",
     "searchPlaceholderCurseforge": "Tìm modpack trên CurseForge…",
     "curseforgeNoKey": "CurseForge chưa sẵn sàng vì chưa cấu hình API key trong Cài đặt.",
@@ -949,6 +1129,7 @@
     "queue": {
       "add": "Thêm vào danh sách",
       "added": "Đã có trong danh sách",
+      "selected": "Đã chọn",
       "undo": "Bỏ khỏi danh sách",
       "remove": "Bỏ {{name}}",
       "summary_one": "{{count}} mục chờ cài: {{names}}",

@@ -18,6 +18,7 @@ use crate::launcher::{PROPERTIES_FILE, read_properties, write_properties};
 use crate::{App, AppError, Installing, JobId, lock};
 
 const STEPS: u8 = 5;
+const MAX_INITIAL_PROPERTIES: usize = 64;
 
 #[derive(Debug, Clone)]
 pub struct CreateRequest {
@@ -52,9 +53,20 @@ impl App {
         req: CreateRequest,
         content: Vec<ContentRequest>,
     ) -> Result<Created, AppError> {
+        self.create_with_options(req, content, Vec::new())
+    }
+
+    /// Như `create_with_content`, kèm các khóa `server.properties` cần ghi ngay khi tạo server.
+    pub fn create_with_options(
+        self: &Arc<Self>,
+        req: CreateRequest,
+        content: Vec<ContentRequest>,
+        properties: Vec<(String, String)>,
+    ) -> Result<Created, AppError> {
         if !content.is_empty() {
             self.check_initial_content(req.loader, &content)?;
         }
+        validate_initial_properties(&properties)?;
         let port = self.resolve_new_port(req.port)?;
         let memory = req.memory_mb.unwrap_or_else(|| self.suggested_memory());
         let id = ServerId::generate();
@@ -72,7 +84,10 @@ impl App {
         let job_id = self
             .jobs
             .spawn(JobKind::CreateServer, Some(id), move |ctx| async move {
-                let result = app.install(&ctx, id, &req, memory, port).await;
+                let mut result = app.install(&ctx, id, &req, memory, port).await;
+                if result.is_ok() && !properties.is_empty() {
+                    result = app.apply_initial_properties(id, port, &properties);
+                }
                 app.finish_install(id, result.is_ok(), "đã tạo server");
                 result?;
                 if content.is_empty() {
@@ -271,4 +286,49 @@ fn write_initial_properties(
     }
     props.set("server-port", &port.to_string());
     write_properties(server_dir, &props)
+}
+
+pub(crate) fn validate_initial_properties(entries: &[(String, String)]) -> Result<(), AppError> {
+    if entries.len() > MAX_INITIAL_PROPERTIES {
+        return Err(
+            AppError::new(ErrorCode::InvalidInput, "quá nhiều thuộc tính")
+                .with_params(serde_json::json!({ "field": "properties" })),
+        );
+    }
+    for (key, value) in entries {
+        let k = key.trim();
+        let bad_key = k.is_empty()
+            || k.chars()
+                .any(|c| c.is_control() || c.is_whitespace() || matches!(c, '=' | ':' | '#' | '!'));
+        let bad_value = value.chars().any(|c| matches!(c, '\0' | '\n' | '\r'));
+        if bad_key || bad_value {
+            return Err(AppError::new(
+                ErrorCode::InvalidInput,
+                "khóa hoặc giá trị server.properties không hợp lệ",
+            )
+            .with_params(serde_json::json!({ "field": "properties" })));
+        }
+    }
+    Ok(())
+}
+
+impl App {
+    pub(crate) fn apply_initial_properties(
+        &self,
+        id: ServerId,
+        port: GamePort,
+        entries: &[(String, String)],
+    ) -> Result<(), AppError> {
+        let dir = self.store.paths(id).server_dir;
+        let mut props = read_properties(&dir)?;
+        for (key, value) in entries {
+            let key = key.trim();
+            if key == "server-port" || (key == "motd" && value.trim().is_empty()) {
+                continue;
+            }
+            props.set(key, value);
+        }
+        props.set("server-port", &port.to_string());
+        write_properties(&dir, &props)
+    }
 }

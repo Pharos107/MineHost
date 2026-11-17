@@ -13,7 +13,7 @@ use serde::Deserialize;
 use utoipa::ToSchema;
 
 use crate::content::parse_source;
-use crate::dto::{CreatedDto, MemoryDto};
+use crate::dto::{CreatedDto, MemoryDto, PropertyDto};
 use crate::error::{ApiError, ApiJson, ErrorBody};
 use crate::files::{self, TempUploadGuard, UploadLimit};
 use crate::servers::{memory, port};
@@ -29,6 +29,9 @@ pub struct CreateModpackBody {
     pub name: String,
     pub memory_mb: Option<MemoryDto>,
     pub port: Option<u16>,
+    /// Các khóa `server.properties` đặt ngay khi tạo.
+    #[serde(default)]
+    pub properties: Vec<PropertyDto>,
 }
 
 #[utoipa::path(post, path = "/api/v1/servers/modpack", tag = "servers", request_body = CreateModpackBody,
@@ -73,7 +76,12 @@ pub async fn create(
         memory_mb: body.memory_mb.map(memory).transpose()?,
         port: body.port.map(port).transpose()?,
     };
-    let created = app.create_from_modpack(req)?;
+    let properties: Vec<(String, String)> = body
+        .properties
+        .into_iter()
+        .map(|p| (p.key, p.value))
+        .collect();
+    let created = app.create_from_modpack_with_properties(req, properties)?;
     Ok((
         StatusCode::ACCEPTED,
         Json(CreatedDto {
@@ -117,7 +125,7 @@ pub async fn upload(
         memory_mb: form.memory_mb,
         port: form.port,
     };
-    let created = app.create_from_modpack(req)?;
+    let created = app.create_from_modpack_with_properties(req, form.properties)?;
     // Chỉ nhường quyền xóa file tạm cho Job khi `create_from_modpack` đã nhận chạy.
     let _ = guard.disarm();
     Ok((
@@ -134,6 +142,7 @@ struct UploadForm {
     name: Option<String>,
     memory_mb: Option<MemoryLimits>,
     port: Option<GamePort>,
+    properties: Vec<(String, String)>,
 }
 
 async fn read_upload_form(
@@ -146,6 +155,7 @@ async fn read_upload_form(
         name: None,
         memory_mb: None,
         port: None,
+        properties: Vec::new(),
     };
     while let Some(field) = multipart
         .next_field()
@@ -176,6 +186,13 @@ async fn read_upload_form(
             Some("port") => {
                 let text = field.text().await.map_err(|_| ApiError::invalid("port"))?;
                 form.port = parse_port_field(&text)?;
+            }
+            Some("properties") => {
+                let text = field
+                    .text()
+                    .await
+                    .map_err(|_| ApiError::invalid("properties"))?;
+                form.properties = parse_properties_field(&text)?;
             }
             _ => files::drain_field(field).await?,
         }
@@ -234,4 +251,14 @@ fn parse_port_field(raw: &str) -> ApiResult<Option<GamePort>> {
     }
     let p: u16 = trimmed.parse().map_err(|_| ApiError::invalid("port"))?;
     Ok(Some(port(p)?))
+}
+
+fn parse_properties_field(raw: &str) -> ApiResult<Vec<(String, String)>> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Ok(Vec::new());
+    }
+    let list: Vec<PropertyDto> =
+        serde_json::from_str(trimmed).map_err(|_| ApiError::invalid("properties"))?;
+    Ok(list.into_iter().map(|p| (p.key, p.value)).collect())
 }
