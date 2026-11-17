@@ -30,6 +30,23 @@ pub(crate) fn kill_with_parent(cmd: &mut tokio::process::Command) {
     }
 }
 
+/// SIGKILL cả nhóm process `pgid`: Java và mọi process con của nó. Nhóm đã hết process thì `killpg`
+/// trả `ESRCH`, bỏ qua. Gọi ngay sau khi Java thoát vẫn an toàn: pid được cấp tăng dần, nên số này
+/// không bị một nhóm khác dùng lại trong vài mili giây đó.
+pub(crate) fn kill_group(pgid: u32) {
+    // 0 là nhóm của chính controller, 1 là init: không bao giờ là nhóm của server.
+    let Ok(pgid) = libc::pid_t::try_from(pgid) else {
+        return;
+    };
+    if pgid <= 1 {
+        return;
+    }
+    // SAFETY: `killpg` chỉ nhận hai số nguyên, không có con trỏ; lỗi chỉ trả về qua errno.
+    unsafe {
+        libc::killpg(pgid, libc::SIGKILL);
+    }
+}
+
 /// Process con tự chuyển vào cgroup của nó trước khi exec, để Java chưa chạy dòng nào đã bị
 /// giới hạn. `procs_fd` là `cgroup.procs` đã mở sẵn ở process cha.
 pub(crate) fn join_cgroup(cmd: &mut tokio::process::Command, procs_fd: RawFd) {

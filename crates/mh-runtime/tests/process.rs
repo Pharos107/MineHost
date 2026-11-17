@@ -262,3 +262,42 @@ async fn full_stdin_fails_fast_and_kill_still_works() {
     proc.control.kill();
     exit_code(proc).await;
 }
+
+/// Process cháu (plugin chạy chương trình ngoài) chết theo khi server bị kill.
+#[cfg(target_os = "linux")]
+#[tokio::test]
+async fn kill_takes_down_grandchildren() {
+    let rt = ProcessRuntime::new().unwrap();
+    let mut proc = rt.spawn(fake_mc(&["--spawn-child"])).await.unwrap();
+    let lines = read_until(&mut proc, "child pid ").await;
+    let pid: u32 = lines
+        .iter()
+        .find_map(|l| l.text.split("child pid ").nth(1))
+        .unwrap()
+        .trim()
+        .parse()
+        .unwrap();
+    assert!(alive(pid));
+    proc.control.kill();
+    exit_code(proc).await;
+    // Process cháu mồ côi được init thu dọn; chờ một chút để nó biến khỏi `/proc` (hoặc chỉ còn zombie).
+    let deadline = std::time::Instant::now() + WAIT;
+    while alive(pid) {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "process cháu {pid} vẫn sống"
+        );
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn alive(pid: u32) -> bool {
+    match std::fs::read_to_string(format!("/proc/{pid}/stat")) {
+        // Trường thứ 3 là trạng thái; `Z` là đã chết, chờ được thu dọn.
+        Ok(stat) => stat
+            .rsplit_once(") ")
+            .is_some_and(|(_, rest)| !rest.starts_with('Z')),
+        Err(_) => false,
+    }
+}

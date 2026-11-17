@@ -6,6 +6,7 @@
 //! Cờ:
 //! - `--no-done`: không bao giờ in dòng `Done (…)!`.
 //! - `--hang-on-stop`: bỏ qua lệnh `stop`, giống server bị treo khi lưu world.
+//! - `--spawn-child`: chạy `sleep 60` như plugin chạy chương trình ngoài, in `child pid <n>` (chỉ Unix).
 //! - `--slow-stop-ms <n>`: sau `stop`, in một dòng lưu chunk mỗi 100 ms trong `n` mili giây rồi mới
 //!   thoát, giống world lớn lưu lâu.
 //! - `--spam-on-stop`: sau `stop`, in log liên tục không nghỉ và không bao giờ thoát.
@@ -40,6 +41,9 @@ fn main() {
         install(&args);
     }
     print_banner();
+    if has_flag(&args, "--spawn-child") {
+        spawn_child();
+    }
     schedule_crash(flag_number(&args, "--crash-after-ms"));
     let _held = flag_number(&args, "--alloc-mb").map(alloc_mb);
     if let Some(ms) = flag_number(&args, "--slow-start-ms") {
@@ -112,6 +116,13 @@ fn alloc_mb(mb: u64) -> Vec<Vec<u8>> {
     let held: Vec<Vec<u8>> = (0..mb).map(|_| vec![1u8; 1024 * 1024]).collect();
     println!("[10:00:00 INFO]: allocated {mb} MB");
     held
+}
+
+fn spawn_child() {
+    match std::process::Command::new("sleep").arg("60").spawn() {
+        Ok(child) => println!("[10:00:00 INFO]: child pid {}", child.id()),
+        Err(err) => eprintln!("không chạy được sleep: {err}"),
+    }
 }
 
 fn schedule_crash(after_ms: Option<u64>) {
