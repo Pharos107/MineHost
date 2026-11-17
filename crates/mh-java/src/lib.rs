@@ -34,6 +34,8 @@ pub struct JavaManager {
     probe: ProbeFn,
     /// Khóa theo `major`: hai server cùng cần Java 21 thì chỉ tải một lần.
     locks: Mutex<HashMap<u16, Arc<tokio::sync::Mutex<()>>>>,
+    /// Bản đã chạy thử được trong lần chạy controller này, kèm chuỗi phiên bản.
+    verified: Mutex<HashMap<u16, String>>,
 }
 
 impl std::fmt::Debug for JavaManager {
@@ -60,6 +62,7 @@ impl JavaManager {
             api_base: API_BASE.to_owned(),
             probe: Arc::new(java_version),
             locks: Mutex::new(HashMap::new()),
+            verified: Mutex::new(HashMap::new()),
         }
     }
 
@@ -90,18 +93,40 @@ impl JavaManager {
         let lock = self.lock_for(major);
         let _guard = lock.lock().await;
         let home = self.java_dir.join(major.to_string());
+        // Server khác có thể đang chạy bằng bản này. Chạy thử lại mỗi lần bật thì một lần lỗi tạm
+        // thời (thiếu RAM, antivirus khóa file) sẽ dẫn tới cài lại ngay dưới chân server đó.
+        if let Some(runtime) = self.already_verified(major, &home) {
+            return Ok(runtime);
+        }
         if home.exists() {
             match self.check(major, &home).await {
-                Ok(runtime) => return Ok(runtime),
+                Ok(runtime) => return Ok(self.remember(runtime)),
+                // Chưa xóa: tải hỏng hay mất mạng thì bản cũ vẫn còn. `install` thay nó ở bước cuối.
                 Err(err) => {
-                    tracing::warn!(major, error = %err, "Java đã cài không chạy được, cài lại");
-                    tokio::fs::remove_dir_all(&home)
-                        .await
-                        .map_err(JavaError::install)?;
+                    tracing::warn!(major, error = %err, "Java đã cài không chạy được, cài lại")
                 }
             }
         }
-        self.install(major, &home, progress, cancel).await
+        let runtime = self.install(major, &home, progress, cancel).await?;
+        Ok(self.remember(runtime))
+    }
+
+    fn already_verified(&self, major: u16, home: &Path) -> Option<JavaRuntime> {
+        let verified = self.verified.lock().unwrap_or_else(|e| e.into_inner());
+        let version = verified.get(&major)?;
+        let bin = java_bin(home);
+        bin.is_file().then(|| JavaRuntime {
+            major,
+            home: home.to_path_buf(),
+            java_bin: bin,
+            version: version.clone(),
+        })
+    }
+
+    fn remember(&self, runtime: JavaRuntime) -> JavaRuntime {
+        let mut verified = self.verified.lock().unwrap_or_else(|e| e.into_inner());
+        verified.insert(runtime.major, runtime.version.clone());
+        runtime
     }
 
     async fn install(
@@ -136,6 +161,12 @@ impl JavaManager {
             .map_err(JavaError::install)??;
         // Chạy thử trước khi đổi tên, để `java/<major>/` chỉ tồn tại khi Java dùng được.
         let runtime = self.check(major, &root).await?;
+        // Bản cũ chạy thử lỗi: chỉ xóa khi bản mới đã sẵn sàng thay vào.
+        if tokio::fs::try_exists(home).await.unwrap_or(false) {
+            tokio::fs::remove_dir_all(home)
+                .await
+                .map_err(JavaError::install)?;
+        }
         tokio::fs::rename(&root, home)
             .await
             .map_err(JavaError::install)?;
