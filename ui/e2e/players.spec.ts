@@ -38,7 +38,8 @@ test("người vào server hiện trong nhóm Đang chơi", async ({ page, reque
   const id = await runningServer(request);
   serverId = id;
   await page.goto(`/servers/${id}/players`);
-  await expect(page.getByText("Chưa có ai đang chơi.")).toBeVisible();
+  // Server mới chưa có ai: danh sách hiện ô trống thay cho các nhóm.
+  await expect(page.getByText("Chưa có người chơi nào")).toBeVisible();
 
   const sent = await request.post(`/api/v1/servers/${id}/console`, { headers: HEADERS, data: { command: "fake-join Steve" } });
   expect(sent.ok()).toBe(true);

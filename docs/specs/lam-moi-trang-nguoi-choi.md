@@ -13,7 +13,8 @@ server đang mở cho ai (bao nhiêu op, whitelist bật hay tắt, bao nhiêu n
   "Đang tắt"), Op, Bị cấm.
 - **Danh sách gộp** bên trái: ô tìm theo tên, nút "Thêm" (mở hộp thoại thêm theo tên như cũ, giữ mở
   để thêm liền nhiều người), dải lọc Tất cả / Op / Whitelist / Bị cấm (nhóm Đang chơi đã đứng đầu nên không có bộ lọc riêng). Hai nhóm: Đang chơi
-  (luôn hiện khi lọc Tất cả, trống thì ghi "Chưa có ai đang chơi.") và Không online. Mỗi hàng: đầu skin
+  (luôn hiện khi lọc Tất cả, trống thì ghi "Chưa có ai đang chơi.") và Không online. Server chưa có người chơi nào thì cả danh
+  sách là ô trống "Chưa có người chơi nào". Mỗi hàng: đầu skin
   có chấm xanh khi đang chơi, tên, dòng phụ ("Đang chơi", "Vào 2 giờ trước", "Chưa vào"), huy hiệu op / bị cấm / đóng băng (whitelist
   chỉ hiện ở khung chi tiết, để tên dài không bị cắt).
 - **Khung chi tiết** bên phải, thay hộp thoại: skin 3D (hoặc đầu skin lớn), tên, huy hiệu, UUID có nút

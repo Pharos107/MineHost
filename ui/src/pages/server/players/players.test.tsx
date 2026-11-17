@@ -25,9 +25,9 @@ const players: Players = {
   ],
 };
 
-function mockFetch() {
+function mockFetch(data: Players = players) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
-    if (url === "/api/v1/servers/A/players") return Response.json(players);
+    if (url === "/api/v1/servers/A/players") return Response.json(data);
     if (url.endsWith("/actions") && init?.method === "POST") return Response.json({ done: "saved" });
     return Response.json({ code: "NOT_FOUND", params: {} }, { status: 404 });
   });
@@ -81,6 +81,13 @@ describe("PlayersPage", () => {
     expect(screen.getByText("Đang tắt")).toBeTruthy();
     expect(screen.getByText(/Server đang tắt/)).toBeTruthy();
     expect(screen.getByText("Chọn một người chơi")).toBeTruthy();
+  });
+
+  it("server chưa có ai thì danh sách là ô trống, không có nhóm", async () => {
+    mockFetch({ ...players, players: [] });
+    renderPage();
+    expect(await screen.findByText("Chưa có người chơi nào")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: /Đang chơi/ })).toBeNull();
   });
 
   it("lọc theo nhóm và tìm theo tên", async () => {
