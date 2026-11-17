@@ -112,5 +112,9 @@ fn truncate(text: &str) -> String {
     cut
 }
 
+pub mod registry;
+
+pub use registry::{RegistryBuilder, RegistryEntry, ServerRegistry, is_lang_asset_path};
+
 #[cfg(test)]
 mod tests;

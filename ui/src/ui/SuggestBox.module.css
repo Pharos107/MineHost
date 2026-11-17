@@ -1,5 +1,8 @@
 .box {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mh-space-1);
   flex: 1;
   min-width: 0;
 }
@@ -12,7 +15,9 @@
   z-index: var(--mh-z-menu);
   display: flex;
   flex-direction: column;
-  width: min(100%, 36rem);
+  width: min(100%, 42rem);
+  max-height: 17rem;
+  overflow-y: auto;
   margin: 0;
   padding: var(--mh-space-1);
   list-style: none;
@@ -46,4 +51,61 @@
 .detail {
   color: var(--mh-text-muted);
   font-size: var(--mh-text-sm);
+}
+
+.tag {
+  margin-left: auto;
+  padding: 0 var(--mh-space-2);
+  border: 1px solid var(--mh-border);
+  border-radius: var(--mh-radius-sm);
+  background: var(--mh-surface);
+  color: var(--mh-text-muted);
+  font-size: var(--mh-text-sm);
+  white-space: nowrap;
+}
+
+.syntax {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--mh-space-1) var(--mh-space-3);
+  padding: var(--mh-space-1) var(--mh-space-3);
+  background: var(--mh-surface);
+  border: 1px solid var(--mh-border);
+  border-radius: var(--mh-radius-md);
+  font-size: var(--mh-text-sm);
+}
+
+.syntaxTokens {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--mh-space-1);
+  font-family: var(--mh-font-mono);
+}
+
+.syntaxCommand {
+  color: var(--mh-text);
+  font-weight: 600;
+}
+
+.syntaxPart {
+  padding: 0 var(--mh-space-1);
+  border-radius: var(--mh-radius-sm);
+  color: var(--mh-text);
+}
+
+.syntaxOptional {
+  color: var(--mh-text-muted);
+}
+
+.syntaxActive {
+  background: var(--mh-primary-soft);
+  color: var(--mh-primary);
+  font-weight: 600;
+}
+
+.syntaxDesc {
+  color: var(--mh-text-muted);
 }

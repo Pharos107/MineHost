@@ -412,6 +412,14 @@
       "locate": {
         "usage": "locate structure <công trình>",
         "desc": "Tìm công trình gần nhất"
+      },
+      "summon": {
+        "usage": "summon <sinh vật> [x y z]",
+        "desc": "Triệu hồi sinh vật"
+      },
+      "enchant": {
+        "usage": "enchant <người chơi> <phù phép> [cấp]",
+        "desc": "Phù phép đồ đang cầm"
       }
     },
     "scan": {
@@ -430,6 +438,116 @@
       "r": "Một người chơi ngẫu nhiên",
       "s": "Người gõ lệnh (console không dùng được)",
       "e": "Mọi thực thể"
+    },
+    "shortcutHint": "Tab: điền gợi ý · ↑↓: chọn hoặc lịch sử · Esc: đóng gợi ý",
+    "tags": {
+      "command": "Lệnh",
+      "server": "Mod / Server",
+      "subcommand": "Nhánh",
+      "mode": "Chế độ",
+      "player": "Người chơi",
+      "selector": "Mục tiêu",
+      "rule": "Luật",
+      "number": "Mẫu",
+      "boolean": "Bật / Tắt",
+      "effect": "Hiệu ứng",
+      "item": "Vật phẩm",
+      "entity": "Sinh vật",
+      "enchantment": "Phù phép",
+      "structure": "Công trình",
+      "biome": "Quần xã",
+      "other": "Giá trị"
+    },
+    "params": {
+      "player": "<người chơi>",
+      "playerOpt": "[người chơi]",
+      "target": "<đích>",
+      "targetOpt": "[mục tiêu]",
+      "message": "<lời nhắn>",
+      "reasonOpt": "[lý do]",
+      "item": "<vật phẩm>",
+      "itemOpt": "[vật phẩm]",
+      "countOpt": "[số lượng]",
+      "maxCountOpt": "[tối đa]",
+      "effect": "<hiệu ứng>",
+      "effectOpt": "[hiệu ứng]",
+      "secondsOpt": "[giây]",
+      "amplifierOpt": "[cấp độ]",
+      "hideParticlesOpt": "[ẩn hạt]",
+      "durationOpt": "[giây]",
+      "rule": "<luật>",
+      "valueOpt": "[giá trị]",
+      "amount": "<số>",
+      "posOpt": "[x y z]",
+      "structure": "<công trình>",
+      "biome": "<quần xã>",
+      "poi": "<địa điểm>",
+      "entity": "<sinh vật>",
+      "enchantment": "<phù phép>",
+      "levelOpt": "[cấp độ]"
+    },
+    "args": {
+      "gamemode": {
+        "survival": "Sinh tồn",
+        "creative": "Sáng tạo",
+        "adventure": "Phiêu lưu",
+        "spectator": "Khán giả"
+      },
+      "difficulty": {
+        "peaceful": "Bình yên (không quái)",
+        "easy": "Dễ",
+        "normal": "Bình thường",
+        "hard": "Khó"
+      },
+      "time": {
+        "set": "Đặt giờ",
+        "add": "Cộng thêm thời gian",
+        "query": "Xem giờ hiện tại",
+        "day": "Ban ngày (1000)",
+        "noon": "Buổi trưa (6000)",
+        "night": "Ban đêm (13000)",
+        "midnight": "Nửa đêm (18000)",
+        "daytime": "Giờ trong ngày",
+        "gametime": "Tổng tick thế giới",
+        "dayCount": "Số ngày đã qua"
+      },
+      "weather": {
+        "clear": "Trời quang",
+        "rain": "Trời mưa",
+        "thunder": "Mưa giông"
+      },
+      "whitelist": {
+        "add": "Thêm người chơi",
+        "remove": "Xóa khỏi danh sách",
+        "list": "Xem danh sách",
+        "on": "Bật whitelist",
+        "off": "Tắt whitelist",
+        "reload": "Tải lại từ đĩa"
+      },
+      "effect": {
+        "give": "Cho hiệu ứng",
+        "clear": "Xóa hiệu ứng"
+      },
+      "xp": {
+        "add": "Cộng kinh nghiệm",
+        "set": "Đặt kinh nghiệm",
+        "query": "Xem kinh nghiệm",
+        "levels": "Cấp độ",
+        "points": "Điểm"
+      },
+      "locate": {
+        "structure": "Tìm công trình",
+        "biome": "Tìm quần xã",
+        "poi": "Tìm điểm đặc biệt"
+      },
+      "saveAll": {
+        "flush": "Ghi thẳng ra đĩa ngay"
+      },
+      "boolean": {
+        "true": "Bật",
+        "false": "Tắt"
+      },
+      "coords": "Tọa độ tương đối"
     }
   },
   "game": {

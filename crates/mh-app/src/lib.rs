@@ -25,6 +25,7 @@ mod loader_install;
 mod metrics;
 mod modpack;
 mod players;
+mod registry;
 mod restart_schedule;
 mod restore;
 mod servers;
@@ -70,6 +71,7 @@ pub use players::{
     ActionDone, MojangDirectory, NoDirectory, PlayerDirectory, PlayerProfile, PlayerRequest,
     PlayerView, PlayersView,
 };
+pub use registry::RegistryList;
 pub use restart_schedule::{RestartAction, RestartPlanner, RestartWarning, ServerSchedule};
 pub use restore::RestoreStarted;
 pub use servers::{ServerView, SettingsPatch};

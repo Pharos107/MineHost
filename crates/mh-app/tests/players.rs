@@ -374,3 +374,32 @@ async fn scan_commands_reads_help_and_saves() {
     assert_eq!(app.server_commands(id).unwrap(), list);
     app.kill(id).await.unwrap();
 }
+
+#[tokio::test]
+async fn server_registry_quet_mods_jar_va_cache() {
+    use std::io::Write;
+
+    let (_tmp, app) = test_app();
+    let id = create(&app).await;
+    assert!(app.server_registry(id).await.unwrap().items.is_empty());
+
+    let paths = mh_store::ServerStore::new(app.dirs().servers(), app.dirs().trash()).paths(id);
+    let mods_dir = paths.server_dir.join("mods");
+    std::fs::create_dir_all(&mods_dir).unwrap();
+    let jar_path = mods_dir.join("sample-mod.jar");
+    let file = std::fs::File::create(&jar_path).unwrap();
+    let mut zip = zip::ZipWriter::new(file);
+    zip.start_file(
+        "assets/create/lang/en_us.json",
+        zip::write::SimpleFileOptions::default(),
+    )
+    .unwrap();
+    zip.write_all(br#"{"item.create.brass_ingot": "Brass Ingot"}"#)
+        .unwrap();
+    zip.finish().unwrap();
+
+    let reg = app.server_registry(id).await.unwrap();
+    assert!(reg.scanned_at.is_some());
+    assert_eq!(reg.items.len(), 1);
+    assert_eq!(reg.items[0].id, "create:brass_ingot");
+}

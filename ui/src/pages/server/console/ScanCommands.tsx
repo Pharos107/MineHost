@@ -9,17 +9,33 @@ export function commandsKey(id: string) {
   return ["server-commands", id] as const;
 }
 
+export function registryKey(id: string) {
+  return ["server-registry", id] as const;
+}
+
 /** Lệnh đã quét của server; ô lệnh và nút quét dùng chung. */
 export function useServerCommands(id: string) {
   return useQuery({ queryKey: commandsKey(id), queryFn: () => api.serverCommands(id) });
 }
 
-/** Quét lệnh bằng `help`; hàng lệnh nhanh hiện lỗi chung với các nút khác. */
+/** Registry vật phẩm, hiệu ứng, sinh vật từ `mods/*.jar`; chỉ tải một lần và giữ cache. */
+export function useServerRegistry(id: string) {
+  return useQuery({
+    queryKey: registryKey(id),
+    queryFn: () => api.serverRegistry(id),
+    staleTime: Infinity,
+  });
+}
+
+/** Quét lệnh bằng `help` (và làm mới registry mod); hàng lệnh nhanh hiện lỗi chung với các nút khác. */
 export function useScanCommands(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => api.scanCommands(id),
-    onSuccess: (data) => queryClient.setQueryData<ServerCommands>(commandsKey(id), data),
+    onSuccess: (data) => {
+      queryClient.setQueryData<ServerCommands>(commandsKey(id), data);
+      void queryClient.invalidateQueries({ queryKey: registryKey(id) });
+    },
   });
 }
 
