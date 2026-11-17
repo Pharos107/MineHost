@@ -1,4 +1,5 @@
 // Bộ component dùng chung. Trang chỉ import từ đây; xem spec docs/specs/p1-ui-components.md.
+export { ActionBar } from "./ActionBar";
 export { AppShell } from "./AppShell";
 export { Avatar } from "./Avatar";
 export { AvatarStack, type StackedPlayer } from "./AvatarStack";
@@ -23,9 +24,11 @@ export { Field, Hint } from "./Field";
 export { FileButton } from "./FileButton";
 export { FileDrop } from "./FileDrop";
 export { HangingSign } from "./HangingSign";
+export { InfoTip } from "./InfoTip";
 export { SearchInput, Select, TextArea, TextInput } from "./inputs";
 export { LineChart } from "./LineChart";
 export { Menu, type MenuItem } from "./Menu";
+export { MotdPreview } from "./MotdPreview";
 export { NavItem, NavSection } from "./Nav";
 export { Notice, type NoticeTone } from "./Notice";
 export { ProgressBar, Steps } from "./progress";
