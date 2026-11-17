@@ -37,7 +37,7 @@
 | Phụ thuộc có lỗ hổng hoặc giấy phép lạ | `cargo-deny` trong CI | `deny.toml` |
 | Lỗi bộ nhớ | `unsafe` bị cấm ngoài ba module nhỏ; cấm `unwrap`, `expect`, `panic!` | `Cargo.toml`, ADR 0002 |
 | Ghi đè `server.jar` khi server đang chạy | Chặn sửa và xóa | `mh-app/src/files.rs` |
-| Đoán mật khẩu admin | Băm `argon2id`; sai 5 lần theo IP thì khóa 1 phút, gấp đôi mỗi lần, tối đa 15 phút | `mh-app/src/auth/`, `mh-api/src/auth.rs` |
+| Đoán mật khẩu admin | Băm `argon2id`; sai 5 lần theo IP thì khóa 1 phút, gấp đôi mỗi lần, tối đa 15 phút; mỗi IP băm một lần tại một lúc, cả controller tối đa 4 | `mh-app/src/auth/`, `mh-api/src/auth.rs`, `mh-api/src/auth_gate.rs` |
 | Trang lạ dùng phiên đã đăng nhập | Cookie `HttpOnly`, `SameSite=Strict`; request thay đổi dữ liệu phải có `X-CSRF-Token` khớp phiên | `mh-api/src/auth.rs` |
 | Máy trong LAN vào khi LAN đã tắt hoặc vừa xóa mật khẩu | Request đi vào listener LAN được đánh dấu theo kết nối, không theo header `Host`; mỗi request đọc lại cờ `lan`, tắt là bị 403 dù listener chưa kịp đóng | `mh-api/src/lan.rs`, `minehost/src/lan.rs` |
 

@@ -160,6 +160,40 @@ async fn password_requires_session_even_on_localhost() {
     assert_eq!(body["code"], "AUTH_REQUIRED");
 }
 
+/// Gửi song song không vượt được khóa: chỉ vài lần được băm thật, phần còn lại nhận 429.
+#[tokio::test]
+async fn parallel_wrong_logins_cannot_skip_the_lock() {
+    let api = api();
+    api.app.auth().set_password(None, PASSWORD).unwrap();
+    let mut tasks = tokio::task::JoinSet::new();
+    for _ in 0..20 {
+        let router = api.router.clone();
+        tasks.spawn(async move {
+            let body = json!({ "password": "wrong-password" });
+            call(
+                &router,
+                Method::POST,
+                "/api/v1/auth/login",
+                Some(body),
+                None,
+                None,
+            )
+            .await
+            .status
+        });
+    }
+    let mut checked = 0;
+    while let Some(status) = tasks.join_next().await {
+        match status.unwrap() {
+            StatusCode::UNAUTHORIZED => checked += 1,
+            StatusCode::TOO_MANY_REQUESTS => {}
+            other => panic!("{other}"),
+        }
+    }
+    // Mỗi IP chỉ băm một lần tại một lúc và lần sai được ghi trước khi nhả chỗ: không quá 5 lần.
+    assert!((1..=5).contains(&checked), "{checked}");
+}
+
 #[tokio::test]
 async fn sixth_login_is_rate_limited() {
     let api = api();
