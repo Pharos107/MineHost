@@ -103,3 +103,110 @@
   padding-top: var(--mh-space-2);
   border-top: 1px solid var(--mh-border);
 }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mh-space-2);
+  max-width: 100%;
+  padding: var(--mh-space-1) var(--mh-space-2);
+  background: var(--mh-surface);
+  border: 1px solid var(--mh-border);
+  border-radius: var(--mh-radius-md);
+}
+
+.chipTitle {
+  font-size: var(--mh-text-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detailHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mh-space-3);
+}
+
+.detailTop {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mh-space-3);
+  min-width: 0;
+}
+
+.detailMeta {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--mh-space-1);
+  min-width: 0;
+}
+
+.detailTitle {
+  font-size: var(--mh-text-lg);
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.detailTitleLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mh-space-1);
+  color: var(--mh-text);
+  text-decoration: none;
+}
+
+.detailTitleLink:hover {
+  color: var(--mh-primary);
+  text-decoration: underline;
+}
+
+.detailDescription {
+  margin: 0;
+  color: var(--mh-text-muted);
+  font-size: var(--mh-text-sm);
+  line-height: 1.45;
+}
+
+.detailBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mh-space-2);
+  margin-top: var(--mh-space-1);
+}
+
+.detailLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mh-space-2);
+}
+
+.linkPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mh-space-1);
+  padding: var(--mh-space-1) var(--mh-space-2);
+  background: var(--mh-surface);
+  border: 1px solid var(--mh-border);
+  border-radius: var(--mh-radius-sm);
+  color: var(--mh-text-muted);
+  font-size: var(--mh-text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+}
+
+.linkPill:hover {
+  color: var(--mh-primary);
+  border-color: var(--mh-primary);
+  background: var(--mh-primary-soft);
+}
+
+.linkPill:focus-visible,
+.detailTitleLink:focus-visible {
+  outline: 2px solid var(--mh-focus);
+  outline-offset: 2px;
+}

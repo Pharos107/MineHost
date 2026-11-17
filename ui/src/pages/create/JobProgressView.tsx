@@ -15,7 +15,9 @@ interface JobProgressViewProps {
   onRetry: () => void;
   /** Về bước cuối của wizard, giữ nguyên những gì đã nhập. */
   onBack: () => void;
-  /** Tên mod chọn ở bước Mod theo `source:project_id`, để báo mod nào không cài được. */
+  /** Loại nội dung cài kèm (`mod` hoặc `plugin`) để hiển thị đúng thông báo khi lỗi. */
+  contentKind?: "mod" | "plugin" | null;
+  /** Tên mod/plugin chọn ở bước Mod/Plugin theo `source:project_id`, để báo mục nào không cài được. */
   contentNames?: Record<string, string>;
 }
 
@@ -31,7 +33,7 @@ function contentFailures(result: unknown): ContentFailure[] {
 }
 
 /** Tiến độ Job tạo server; xong thì chuyển sang trang chi tiết, nơi có nút "Bật server". */
-export function JobProgressView({ created, onRetry, onBack, contentNames = {} }: JobProgressViewProps) {
+export function JobProgressView({ created, onRetry, onBack, contentKind, contentNames = {} }: JobProgressViewProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const job = useJob(created.job_id);
@@ -50,12 +52,13 @@ export function JobProgressView({ created, onRetry, onBack, contentNames = {} }:
       {t("wizard.back")}
     </Button>
   );
+  const failedTitleKey = contentKind === "plugin" ? "wizard.plugins.failedTitle" : "wizard.mods.failedTitle";
   let body;
   if (state === "succeeded" && failed.length > 0) {
     body = (
       <Notice
         tone="warning"
-        title={t("wizard.mods.failedTitle", { count: failed.length })}
+        title={t(failedTitleKey, { count: failed.length })}
         action={
           <Button variant="primary" onClick={open}>
             {t("wizard.mods.openServer")}

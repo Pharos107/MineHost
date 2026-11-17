@@ -89,6 +89,7 @@ export function ContentAddPage() {
         scope={{ serverId: server.id }}
         loader={server.loader}
         minecraft={server.minecraft}
+        isQueued={(hit) => queue.has(hit.source, hit.project_id)}
         renderAction={renderAction}
       />
       <QueueDialog

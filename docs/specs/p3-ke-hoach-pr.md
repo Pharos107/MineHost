@@ -9,7 +9,7 @@ Một bản phát hành: `v0.5.0` (PR-38) chốt cả P3. Kế hoạch ban đầ
 
 ## Tiến độ
 
-Cập nhật 2026-11-15, khi làm PR-37a. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-17, khi làm PR-48. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -61,8 +61,8 @@ chính PR ấy.
 | 44 | Trình duyệt mod có khung chi tiết, danh sách chờ | Đã merge | [#144](https://github.com/Pharos107/MineHost/pull/144) |
 | 45 | Bước Mod khi tạo server | Đã merge | [#145](https://github.com/Pharos107/MineHost/pull/145) |
 | 46 | Trang Từ modpack dùng trình duyệt | Đã merge | [#146](https://github.com/Pharos107/MineHost/pull/146) |
-| 47 | Spec trang Tệp, trình sửa code CodeMirror ([spec](p3-quan-ly-tep.md)) | Đang làm | |
-| 48 | Tìm file, tải zip, nén, giải nén (backend) | Chưa bắt đầu | |
+| 47 | Spec trang Tệp, trình sửa code CodeMirror ([spec](p3-quan-ly-tep.md)) | Đã merge | [#147](https://github.com/Pharos107/MineHost/pull/147) |
+| 48 | Tìm file, tải zip, nén, giải nén (backend) | Đã merge | [#149](https://github.com/Pharos107/MineHost/pull/149) |
 | 49 | Bảng file: chọn nhiều, di chuyển, tìm, nén / giải nén | Chưa bắt đầu | |
 | 38 | Phát hành `v0.5.0` | Chưa bắt đầu | |
 

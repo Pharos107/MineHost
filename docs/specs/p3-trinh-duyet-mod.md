@@ -92,27 +92,36 @@ Một khối dùng ở trang thêm mod của server, bước Mod khi tạo serve
   theo nguồn của nó rồi gộp lại; một project có mặt hai lần thì giữ bản do người dùng chọn. Job tải hết
   vào thư mục tạm rồi mới chép, nên một mục lỗi thì không file nào được chép (như hiện nay).
 
-### 5. Bước Mod khi tạo server có mod
+### 5. Bước Mod / Plugin và cấu hình `server.properties` khi tạo server
 
-- Ở `/new`, kiểu "Server có mod" có thêm bước "Mod" nằm giữa Phiên bản và Cài đặt. Bước này dùng trình
-  duyệt ở mục 3, lọc theo loader và Minecraft đã chọn. Bước này không bắt buộc: danh sách trống thì nút
-  Tiếp ghi "Bỏ qua".
-- Mod đã chọn hiện thành danh sách dưới trình duyệt (tên, bản, nút bỏ). Quay lại đổi loader hoặc
-  Minecraft thì danh sách bị xóa, kèm một dòng thông báo.
+- Ở `/new`, kiểu "Server có mod" có thêm bước "Mod" nằm giữa Phiên bản và Cài đặt; server hỗ trợ
+  plugin (**Paper**, **Purpur**) có bước "Plugin" (tìm trên Modrinth, không dùng CurseForge). Bước
+  này dùng trình duyệt ở mục 3, lọc theo loader và Minecraft đã chọn, không bắt buộc: danh sách trống
+  thì nút Tiếp ghi "Bỏ qua".
+- Mục đã chọn hiển thị thành khay `ProjectChip` gọn phía trên trình duyệt kèm nút *Xóa hết*. Quay
+  lại đổi loader hoặc Minecraft thì danh sách bị xóa, kèm thông báo (và thông báo ẩn khi thêm mục
+  mới hoặc đổi sang Vanilla).
 - Chưa có server nên tìm kiếm và danh sách bản nhận `loader`, `minecraft` thay cho `server_id`
   (`GET /content/search`, `GET /content/{source}/projects/{pid}/versions`).
-- `POST /servers` nhận `content: [{source, project_id, version_id?}]` (tối đa 50). Job tạo server cài
-  loader xong thì lập kế hoạch và cài mod như mục 4, dependency tự thêm. Mod nào không cài được (không
-  còn bản hợp, tải hỏng) thì không làm hỏng server: server vẫn được tạo, màn hình tóm tắt của Job liệt
-  kê những mod đó.
+- Bước cuối của wizard hiện tóm tắt cấu hình và cho phép đặt sẵn các khóa `server.properties` phổ
+  biến (`gamemode`, `difficulty`, `max-players`, `motd`, `online-mode`, `white-list`, `pvp`) cùng mục
+  *Nâng cao* (`view-distance`, `spawn-protection`, `level-seed`, `enable-command-blocks`,
+  `allow-flight`). `POST /servers` nhận `content: [{source, project_id, version_id?}]` (tối đa 50)
+  và `properties: [{key, value}]` (tối đa 64; `server-port` luôn giữ theo cổng MineHost chọn). Job
+  tạo server cài xong loader và áp cấu hình thì lập kế hoạch và cài mod/plugin như mục 4, dependency
+  tự thêm. Mục nào không cài được thì không làm hỏng server: màn hình tóm tắt của Job liệt kê tên
+  mục lỗi (phân biệt mod và plugin).
 
 ### 6. Trang Từ modpack
 
-- Trang dùng trình duyệt ở mục 3 với loại modpack. Chọn pack thì khung phải hiện chi tiết và ô chọn
-  bản; mỗi bản ghi kèm Minecraft và loader của nó. Nút "Dùng pack này" sang phần tên, RAM, cổng như
-  hiện nay.
-- Thẻ kéo thả `.mrpack` / `.zip` thu gọn thành nút "Tải lên file pack" cạnh ô tìm. Thả file vào bất kỳ
-  chỗ nào của trang vẫn nhận.
+- Trang dùng `Card` kèm thanh bước 3 bước, nút *Quay lại* `/new` và trình duyệt ở mục 3 với loại
+  modpack. Chọn pack thì khung phải hiện chi tiết và ô chọn bản; mỗi bản ghi kèm Minecraft và loader
+  của nó. Nút "Dùng pack này" chuyển sang bước cấu hình tên, RAM, cổng và các khóa `server.properties`
+  như wizard `/new` (chỉ gửi các khóa khác mặc định để giữ nguyên cấu hình sẵn của pack).
+- `POST /servers/modpack` nhận `properties: [{key, value}]`; `POST /servers/modpack/upload` nhận thêm
+  trường multipart `properties` (JSON).
+- Thẻ kéo thả `.mrpack` / `.zip` dùng thanh `Card` viền nét đứt kèm nút "Chọn file modpack". Thả file
+  vào bất kỳ chỗ nào của trang vẫn nhận.
 
 ## Component
 

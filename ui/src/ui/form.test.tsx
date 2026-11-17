@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Package, Server } from "lucide-react";
 import { describe, expect, it, vi } from "vitest";
 
 import { ChoiceGroup, Field, ProgressBar, Slider, Steps, Switch, TextInput } from ".";
@@ -117,5 +118,21 @@ describe("ChoiceGroup", () => {
     expect(onChange).not.toHaveBeenCalled();
     await userEvent.click(screen.getByText("Fabric"));
     expect(onChange).toHaveBeenLastCalledWith("fabric");
+  });
+
+  it("nhận icon trên lựa chọn mà vẫn giữ nguyên tên radio", () => {
+    render(
+      <ChoiceGroup
+        label="Kiểu server"
+        value="standard"
+        onChange={vi.fn()}
+        options={[
+          { value: "standard", label: "Server thường", icon: Server },
+          { value: "modpack", label: "Từ modpack", icon: Package },
+        ]}
+      />,
+    );
+    expect(screen.getByRole("radio", { name: "Server thường" })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Từ modpack" })).toBeTruthy();
   });
 });

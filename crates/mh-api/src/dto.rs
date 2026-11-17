@@ -211,6 +211,9 @@ pub struct CreateServerBody {
     /// Mod/plugin cài ngay sau khi tạo (tối đa 50); mục lỗi nằm trong `result.content_failed` của Job.
     #[serde(default)]
     pub content: Vec<crate::content_dto::ContentItemBody>,
+    /// Các khóa `server.properties` đặt ngay khi tạo (ví dụ `online-mode`, `white-list`, `difficulty`).
+    #[serde(default)]
+    pub properties: Vec<PropertyDto>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
