@@ -584,6 +584,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/files/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["archive"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/files/compress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["compress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}/files/content": {
         parameters: {
             query?: never;
@@ -616,6 +648,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/files/extract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["extract"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}/files/mkdir": {
         parameters: {
             query?: never;
@@ -642,6 +690,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["rename_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/files/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["search"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -933,6 +997,11 @@ export interface components {
         CommandBody: {
             command: string;
         };
+        CompressBody: {
+            /** @description File zip sẽ tạo. Đã có thì `FILE_EXISTS`. */
+            dest: string;
+            paths: string[];
+        };
         ConsoleDto: {
             lines: components["schemas"]["ConsoleLineDto"][];
         };
@@ -1068,6 +1137,12 @@ export interface components {
             /** @description Phải là `true`: người dùng bấm "Tôi đồng ý". */
             accept: boolean;
         };
+        ExtractBody: {
+            /** @description Thư mục đích, tạo nếu chưa có. Rỗng là gốc. */
+            dest?: string;
+            /** @description File zip. */
+            path: string;
+        };
         FileEntryDto: {
             kind: components["schemas"]["FileKindDto"];
             /** @description RFC 3339. */
@@ -1078,6 +1153,15 @@ export interface components {
         };
         /** @enum {string} */
         FileKindDto: "file" | "dir";
+        FoundEntryDto: {
+            kind: components["schemas"]["FileKindDto"];
+            /** @description RFC 3339. */
+            modified?: string | null;
+            /** @description Đường dẫn tính từ gốc server. */
+            path: string;
+            /** Format: int64 */
+            size?: number | null;
+        };
         Health: {
             status: string;
             version: string;
@@ -3336,6 +3420,70 @@ export interface operations {
             };
         };
     };
+    archive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Mảng JSON các đường dẫn, ví dụ `["world","server.properties"]`. */
+                paths: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File zip, stream */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    compress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompressBody"];
+            };
+        };
+        responses: {
+            /** @description Job nén đã chạy */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStartedDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     read: {
         parameters: {
             query?: never;
@@ -3460,6 +3608,49 @@ export interface operations {
             };
         };
     };
+    extract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtractBody"];
+            };
+        };
+        responses: {
+            /** @description Job giải nén đã chạy */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStartedDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Trùng file đã có; `params.path` là mục trùng */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     mkdir: {
         parameters: {
             query?: never;
@@ -3515,6 +3706,39 @@ export interface operations {
                 content?: never;
             };
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    search: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Thư mục bắt đầu tìm. Rỗng là gốc. */
+                path: string;
+                /** @description Một phần tên file, không phân biệt hoa thường. */
+                q: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResultDto"];
+                };
+            };
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
