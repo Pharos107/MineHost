@@ -251,6 +251,14 @@ Không thêm cạnh phụ thuộc mới giữa các crate: mọi phần ghép n�
 - **Backup khi server đang chạy:** `save-off` → `save-all flush` → chờ `Saved the game` (tối đa 60 giây)
   → nén → `save-on`. `save-on` luôn được gửi, kể cả khi nén lỗi hoặc bị hủy. Server tắt thì nén luôn.
   Trước khi nén kiểm tra ổ đĩa còn trống ít nhất bằng kích thước thư mục server.
+- **Một thao tác chạm world mỗi lần (sửa 2026-11-17):** sao lưu, khôi phục, cập nhật mod, cập nhật
+  modpack và đổi phiên bản giữ khóa của server suốt Job. Đang có một Job như vậy thì Job thứ hai, nút
+  Bật, nút Khởi động lại và lịch khởi động lại đều nhận `SERVER_BUSY` với
+  `params: { reason: "world_job", job }`; lịch backup bỏ qua lần đó. Tắt và Buộc dừng vẫn được.
+  Server bật, tắt hay crash rồi tự bật lại trong lúc sao lưu (pid hoặc trạng thái khác lúc bắt đầu)
+  thì bản nén bị bỏ và Job lỗi `SERVER_BUSY` với `reason: "state_changed"`: lệnh `stop` lưu world bất
+  kể `save-off`, nên bản đó không còn nhất quán. Khôi phục đổi tên world dưới khóa `content.toml`,
+  để Job cài mod không chép file vào world đang bị thay.
 - **Khôi phục:** server phải đang tắt; nếu đang chạy thì Job tắt server trước (hộp thoại đã báo trước).
   Tạo backup `before_restore` của hiện trạng → giải nén vào `servers/<id>/.restore-<ulid>/` → đổi tên
   `server/` thành `.old-<ulid>/` → đổi `.restore-<ulid>/` thành `server/` → xóa `.old-<ulid>/`.

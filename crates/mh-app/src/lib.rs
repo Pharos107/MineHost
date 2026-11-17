@@ -31,6 +31,7 @@ mod servers;
 pub mod sources;
 mod update;
 mod version_change;
+mod world_lock;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -148,6 +149,8 @@ pub struct App {
     curseforge_catalog: Option<Arc<dyn ContentCatalog>>,
     content_scanner: Arc<ContentScanner>,
     content_locks: Mutex<HashMap<ServerId, Arc<tokio::sync::Mutex<()>>>>,
+    /// Job sao lưu, khôi phục, cập nhật đang giữ world của server ([`world_lock`]).
+    world_jobs: world_lock::WorldJobs,
     content_added: Mutex<content::AddedWhileRunning>,
     /// Kết quả "thiếu dependency" của lần `preflight` gần nhất, để `ServerView` không phải quét jar.
     preflight_missing: Mutex<HashMap<ServerId, bool>>,
@@ -219,6 +222,7 @@ impl App {
             curseforge_catalog: None,
             content_scanner: Arc::new(ContentScanner::new()),
             content_locks: Mutex::new(HashMap::new()),
+            world_jobs: Arc::default(),
             content_added: Mutex::new(HashMap::new()),
             preflight_missing: Mutex::new(HashMap::new()),
             curseforge_builtin: None,

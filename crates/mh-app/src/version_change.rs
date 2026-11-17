@@ -63,10 +63,12 @@ impl App {
         if req.loader_version.is_some() && !spec.game.loader.is_mod_loader() {
             return Err(invalid("loader_version", "server này không có mod loader"));
         }
+        let world = self.claim_world(id, JobKind::ChangeVersion)?;
         let app = Arc::clone(self);
         Ok(self
             .jobs
             .spawn(JobKind::ChangeVersion, Some(id), move |ctx| async move {
+                let _world = world;
                 let result = app.run_change_version(&ctx, id, &req).await?;
                 let value = serde_json::to_value(&result).map_err(|err| {
                     AppError::new(ErrorCode::Internal, format!("kết quả đổi phiên bản: {err}"))

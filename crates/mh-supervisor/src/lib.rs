@@ -266,6 +266,11 @@ impl SupervisorHandle {
         self.status.borrow().clone()
     }
 
+    /// Theo dõi trạng thái. Gọi `borrow_and_update` ngay để `has_changed` chỉ tính thay đổi sau đó.
+    pub fn watch_status(&self) -> watch::Receiver<Status> {
+        self.status.clone()
+    }
+
     pub fn subscribe(&self) -> broadcast::Receiver<SupervisorEvent> {
         self.events.subscribe()
     }
