@@ -179,6 +179,51 @@ async fn broken_existing_install_is_replaced() {
     assert!(!broken.join("garbage").exists());
 }
 
+#[tokio::test]
+async fn verified_java_is_not_probed_again() {
+    // `expect(1)`: lần gọi sau không được cài lại.
+    let server = adoptium(fake_jre_zip(GOOD), 1).await;
+    let tmp = tempfile::tempdir().unwrap();
+    let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let counter = Arc::clone(&calls);
+    // Lần chạy thử đầu được, các lần sau lỗi như máy đang thiếu RAM.
+    let probe: ProbeFn =
+        Arc::new(
+            move |_: &Path| match counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst) {
+                0 => Ok("21.0.5".to_owned()),
+                _ => Err("Could not reserve enough space for object heap".to_owned()),
+            },
+        );
+    let java = manager(&server, tmp.path(), probe);
+    let cancel = CancellationToken::new();
+
+    java.ensure(21, |_, _| {}, &cancel).await.unwrap();
+    let again = java.ensure(21, |_, _| {}, &cancel).await.unwrap();
+    assert_eq!(again.version, "21.0.5");
+    assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    assert!(tmp.path().join("java/21/release").is_file());
+}
+
+#[tokio::test]
+async fn failing_check_keeps_old_install_when_download_fails() {
+    // API giả không có route nào: tải bản mới thất bại.
+    let server = MockServer::start().await;
+    let tmp = tempfile::tempdir().unwrap();
+    let home = tmp.path().join("java").join("21");
+    std::fs::create_dir_all(home.join("bin")).unwrap();
+    std::fs::write(java_bin(&home), b"old").unwrap();
+    let java = manager(
+        &server,
+        tmp.path(),
+        Arc::new(|_: &Path| Err("tạm thời lỗi".to_owned())),
+    );
+
+    java.ensure(21, |_, _| {}, &CancellationToken::new())
+        .await
+        .unwrap_err();
+    assert_eq!(std::fs::read(java_bin(&home)).unwrap(), b"old");
+}
+
 /// Tải JRE thật (~50 MB): `cargo test -p mh-java -- --ignored`.
 #[tokio::test]
 #[ignore = "tải JRE thật từ Adoptium"]

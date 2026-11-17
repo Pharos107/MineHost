@@ -236,7 +236,12 @@ Test bằng fixture JSON ghi từ API thật vào `crates/mh-providers/fixtures/
 ### 5.4 `mh-java`
 
 - `ensure(major) -> JavaRuntime { home, java_bin, version }`. Nếu `java/<major>/` đã có và chạy
-  `java -version` được thì dùng luôn.
+  `java -version` được thì dùng luôn. Mỗi bản chỉ chạy thử một lần cho mỗi lần chạy controller: đã
+  qua thì lần bật server sau dùng luôn, không chạy thử lại. Server khác có thể đang chạy bằng bản đó,
+  nên một lần chạy thử lỗi tạm thời (thiếu RAM, antivirus đang khóa file) không được dẫn tới xóa nó.
+- `java -version` quá 60 giây chưa xong thì kill và coi là lỗi, để khóa theo `major` không bị giữ mãi.
+- Bản đã có mà chạy thử lỗi thì tải bản mới vào thư mục tạm trước, chạy thử được rồi mới xóa bản cũ
+  và đổi tên. Không có mạng thì bản cũ vẫn còn nguyên.
 - Nếu chưa có: gọi
   `https://api.adoptium.net/v3/assets/latest/<major>/hotspot?architecture=<x64|aarch64>&image_type=jre&os=<windows|linux>&vendor=eclipse`,
   lấy `binary.package` (link, `checksum` sha256, size). Tải về, giải nén vào `java/.tmp-<major>-<ulid>/`
