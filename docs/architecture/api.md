@@ -76,4 +76,7 @@ Server gửi từng tin:
   trong bộ đệm 5.000 dòng, không mất và không lặp.
 - `since` không áp dụng cho `metrics`; lấy lịch sử bằng `GET /servers/{id}/metrics?since=`.
 - Các kiểu `…Dto` là kiểu trong OpenAPI, dùng chung với REST.
+- Topic lỗi (gửi `{ "topic": "error", data: { code, params: { topic } } }`) hay đã xong (`job.<id>` khi
+  Job kết thúc) thì không còn được theo dõi: gửi lại `subscribe` trên cùng kết nối là nhận lại từ đầu.
+  Mỗi kết nối theo dõi tối đa 64 topic cùng lúc; topic thứ 65 nhận lỗi `INVALID_INPUT` (sửa 2026-11-17).
 - Topic sẽ thêm ở P2: `server.<id>.players`.
