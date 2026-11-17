@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use mh_backup::ArchiveInfo;
-use mh_core::{ErrorCode, InstanceSpec, ServerId};
+use mh_core::{ErrorCode, InstanceSpec, ServerId, ServerState};
 use mh_platform::SafeRoot;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
@@ -72,6 +72,16 @@ impl App {
         req: BackupRequest,
     ) -> Result<BackupStarted, AppError> {
         self.store.load(id)?;
+        // Đang bật thì server chưa đọc lệnh (`save-off` chờ tới lúc xong, `save-all` quá hạn); đang tắt
+        // thì `stop` lưu world bất kể `save-off`. Cả hai đều cho bản nén không nhất quán.
+        let state = self.handle(id)?.status().state;
+        if matches!(state, ServerState::Starting | ServerState::Stopping) {
+            return Err(AppError::new(
+                ErrorCode::ServerBusy,
+                "server đang bật hoặc đang tắt, sao lưu sau",
+            )
+            .with_params(serde_json::json!({ "reason": "server_transition" })));
+        }
         let world = self.claim_world(id, JobKind::Backup)?;
         let app = Arc::clone(self);
         let job_id = self

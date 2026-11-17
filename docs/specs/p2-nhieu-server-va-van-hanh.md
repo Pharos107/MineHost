@@ -250,7 +250,10 @@ Không thêm cạnh phụ thuộc mới giữa các crate: mọi phần ghép n�
 - **Job mới:** `backup`, `restore`, `import` (mục 6.11). Mọi Job hiện trong trang Tác vụ.
 - **Backup khi server đang chạy:** `save-off` → `save-all flush` → chờ `Saved the game` (tối đa 60 giây)
   → nén → `save-on`. `save-on` luôn được gửi, kể cả khi nén lỗi hoặc bị hủy. Server tắt thì nén luôn.
-  Trước khi nén kiểm tra ổ đĩa còn trống ít nhất bằng kích thước thư mục server.
+  Trước khi nén kiểm tra ổ đĩa còn trống ít nhất bằng kích thước thư mục server. Server đang `Starting`
+  hoặc `Stopping` thì từ chối ngay, không tạo Job: `SERVER_BUSY` với `reason: "server_transition"`
+  (sửa 2026-11-17; lịch backup bỏ qua lần đó). Đang bật thì server chưa đọc lệnh; đang tắt thì `stop` lưu
+  world bất kể `save-off`.
 - **Một thao tác chạm world mỗi lần (sửa 2026-11-17):** sao lưu, khôi phục, cập nhật mod, cập nhật
   modpack và đổi phiên bản giữ khóa của server suốt Job. Đang có một Job như vậy thì Job thứ hai, nút
   Bật, nút Khởi động lại và lịch khởi động lại đều nhận `SERVER_BUSY` với

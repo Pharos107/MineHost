@@ -25,6 +25,11 @@ fn manual() -> BackupRequest {
 
 /// Server chạy `fake-mc` treo ở `save-all`, để Job sao lưu đứng yên ở bước chờ lưu.
 async fn running_server_hanging_on_save(app: &Arc<App>) -> ServerId {
+    boot(app, "--hang-on-save-all", ServerState::Running).await
+}
+
+/// Tạo server, bật với cờ `fake-mc` `flag`, chờ tới trạng thái `state`.
+async fn boot(app: &Arc<App>, flag: &str, state: ServerState) -> ServerId {
     let created = app
         .create(CreateRequest {
             name: ServerName::parse("Lock").unwrap(),
@@ -43,15 +48,15 @@ async fn running_server_hanging_on_save(app: &Arc<App>) -> ServerId {
     app.accept_eula(id).unwrap();
     let store = ServerStore::new(app.dirs().servers(), app.dirs().trash());
     let mut spec = store.load(id).unwrap();
-    spec.runtime.jvm_args = vec!["--hang-on-save-all".to_owned()];
+    spec.runtime.jvm_args = vec![flag.to_owned()];
     store.save(&spec).unwrap();
     app.start(id).await.unwrap();
     let status = app
         .handle(id)
         .unwrap()
-        .wait_for(WAIT, |s| s.state == ServerState::Running)
+        .wait_for(WAIT, |s| s.state == state)
         .await;
-    assert_eq!(status.state, ServerState::Running, "{status:?}");
+    assert_eq!(status.state, state, "{status:?}");
     id
 }
 
@@ -99,5 +104,19 @@ async fn backup_blocks_second_backup_and_restart_until_it_ends() {
     let again = app.backup(id, manual()).unwrap();
     app.jobs().cancel(again.job_id).unwrap();
     finish_job(&app, again.job_id).await;
+    app.kill(id).await.unwrap();
+}
+
+/// Server đang bật chưa đọc lệnh: sao lưu bị từ chối ngay, không tạo Job gửi `save-off` vô ích.
+#[tokio::test]
+async fn backup_is_refused_while_server_is_starting() {
+    let (_tmp, app) = test_app(Arc::new(FakeModCatalog::default()));
+    let id = boot(&app, "--no-done", ServerState::Starting).await;
+    let jobs_before = app.jobs().list(Some(id)).len();
+
+    let err = app.backup(id, manual()).unwrap_err();
+    assert_eq!(err.code, ErrorCode::ServerBusy);
+    assert_eq!(err.params["reason"], "server_transition");
+    assert_eq!(app.jobs().list(Some(id)).len(), jobs_before);
     app.kill(id).await.unwrap();
 }
