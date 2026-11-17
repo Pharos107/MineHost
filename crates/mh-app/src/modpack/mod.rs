@@ -130,11 +130,12 @@ impl App {
         let job_id = self
             .jobs
             .spawn(JobKind::CreateModpack, Some(id), move |ctx| async move {
+                let guard = crate::create::InstallGuard::new(Arc::clone(&app), id);
                 let mut result = app.install_modpack(&ctx, target, &req).await;
                 if result.is_ok() && !properties.is_empty() {
                     result = app.apply_initial_properties(id, port, &properties);
                 }
-                app.finish_install(id, result.is_ok(), "đã cài server từ modpack");
+                guard.finish(result.is_ok(), "đã cài server từ modpack");
                 result
             });
         if let Some(entry) = lock(&self.installing).get_mut(&id) {

@@ -91,28 +91,38 @@ impl<L: Launcher> Actor<L> {
 
     pub(crate) async fn run(mut self, mut rx: mpsc::Receiver<Command>) {
         loop {
-            match self.next(&mut rx).await {
-                Wake::Command(None) => break,
-                Wake::Command(Some(cmd)) => self.on_command(cmd).await,
-                Wake::Line(line) => {
-                    self.on_line(line).await;
-                    self.flush_log_if_idle();
-                }
-                Wake::OutputClosed => {
-                    if let Some(live) = self.live.as_mut() {
-                        live.output = None;
-                    }
-                }
-                Wake::Exited(exit) => self.on_exit(exit).await,
-                Wake::StopTimeout => self.on_stop_timeout(),
-                Wake::RestartDue => self.on_restart_due().await,
-                Wake::SlowStart => self.on_slow_start(),
-                Wake::FailedStart => self.on_failed_start(),
+            let wake = self.next(&mut rx).await;
+            if matches!(wake, Wake::Command(None)) {
+                break;
+            }
+            if crate::catch::catch_panic(self.handle(wake)).await.is_err() {
+                tracing::error!("actor của server panic khi xử lý một sự kiện, bỏ qua sự kiện đó");
             }
         }
         // Mọi handle đã bị drop: controller đang tắt. Không để process sống tiếp không ai quản.
         if let Some(live) = self.live.take() {
             live.control.kill();
+        }
+    }
+
+    async fn handle(&mut self, wake: Wake) {
+        match wake {
+            Wake::Command(None) => {}
+            Wake::Command(Some(cmd)) => self.on_command(cmd).await,
+            Wake::Line(line) => {
+                self.on_line(line).await;
+                self.flush_log_if_idle();
+            }
+            Wake::OutputClosed => {
+                if let Some(live) = self.live.as_mut() {
+                    live.output = None;
+                }
+            }
+            Wake::Exited(exit) => self.on_exit(exit).await,
+            Wake::StopTimeout => self.on_stop_timeout(),
+            Wake::RestartDue => self.on_restart_due().await,
+            Wake::SlowStart => self.on_slow_start(),
+            Wake::FailedStart => self.on_failed_start(),
         }
     }
 

@@ -332,6 +332,11 @@ Lệnh chạy:
 | `You need to agree to the EULA` | `EULA_NOT_ACCEPTED` | Đồng ý EULA |
 | `Exception in server tick loop` | `GAME_ERROR` | Xem log; thử khởi động lại |
 
+**Panic (sửa 2026-11-17):** actor bắt panic quanh việc xử lý từng sự kiện: chỉ mất sự kiện đó, actor vẫn
+quản process. Trước đây panic làm task actor dừng trong khi Java vẫn chạy, không ai gửi `stop` được. Thân
+mỗi Job chạy trong task riêng; panic thì Job thành `Failed` (`INTERNAL`, `reason: "panic"`) thay vì nằm
+mãi ở `Running`, và Job tạo, nhập, cài modpack vẫn dọn thư mục cài dở qua `InstallGuard`.
+
 ### 5.7 `mh-app`
 
 - `JobRunner`: Job chạy trên task tokio, có `CancellationToken`, tiến độ dạng
