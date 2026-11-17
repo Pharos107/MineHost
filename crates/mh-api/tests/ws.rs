@@ -327,6 +327,32 @@ async fn job_topic_reports_until_finished() {
     assert_eq!(last["data"]["server_id"], created.server_id.to_string());
 }
 
+/// Topic đã dừng (Job xong) đăng ký lại trên cùng kết nối thì nhận tin lại, không bị bỏ qua.
+#[tokio::test]
+async fn finished_topic_can_be_subscribed_again() {
+    let h = harness().await;
+    let created = h.create_job("Lại");
+    let topic = format!("job.{}", created.job_id);
+    let mut ws = h.subscribe(json!({ "subscribe": [topic] })).await;
+    read_until(&mut ws, |m| m["data"]["state"] == "succeeded").await;
+
+    // Kết nối nhận tin "task đã dừng" sau tin cuối: gửi lại vài lần cho tới khi có trả lời.
+    let again = json!({ "subscribe": [topic] }).to_string();
+    let mut answered = false;
+    for _ in 0..20 {
+        ws.send(Message::Text(again.clone().into())).await.unwrap();
+        let reply = tokio::time::timeout(Duration::from_millis(250), ws.next()).await;
+        if let Ok(Some(Ok(Message::Text(text)))) = reply {
+            let value: Value = serde_json::from_str(&text).unwrap();
+            if value["topic"] == topic.as_str() {
+                answered = true;
+                break;
+            }
+        }
+    }
+    assert!(answered, "đăng ký lại {topic} không nhận được tin nào");
+}
+
 #[tokio::test]
 async fn jobs_topic_receives_a_new_job() {
     let h = harness().await;

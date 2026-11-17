@@ -67,9 +67,15 @@ pub async fn upgrade(State(app): State<Arc<App>>, ws: WebSocketUpgrade) -> Respo
     ws.on_upgrade(move |socket| run(app, socket))
 }
 
+/// Số topic một kết nối được theo dõi cùng lúc. Giao diện dùng vài topic; không có trần thì một client
+/// gửi vô số topic khác nhau là vô số task.
+const MAX_TOPICS: usize = 64;
+
 enum Wake {
     Incoming(Option<Result<Message, axum::Error>>),
     Outgoing(Option<String>),
+    /// Task của topic này đã dừng (lỗi, Job xong): bỏ khỏi danh sách để đăng ký lại được.
+    FeedDone(String),
 }
 
 async fn run(app: Arc<App>, mut socket: WebSocket) {
@@ -82,6 +88,7 @@ async fn run(app: Arc<App>, mut socket: WebSocket) {
         let wake = tokio::select! {
             msg = socket.recv() => Wake::Incoming(msg),
             out = rx.recv() => Wake::Outgoing(out),
+            Some(Ok(topic)) = feeds.join_next() => Wake::FeedDone(topic),
         };
         match wake {
             Wake::Incoming(Some(Ok(Message::Text(text)))) => {
@@ -90,11 +97,22 @@ async fn run(app: Arc<App>, mut socket: WebSocket) {
                     continue;
                 };
                 for topic in msg.subscribe {
+                    if !accept_topic(&subscribed, &topic) {
+                        let _ = outbox.error(&topic, ErrorCode::InvalidInput).await;
+                        continue;
+                    }
                     if subscribed.insert(topic.clone()) {
                         let since = msg.since.get(&topic).copied();
-                        feeds.spawn(feed(Arc::clone(&app), topic, since, outbox.clone()));
+                        let (app, out) = (Arc::clone(&app), outbox.clone());
+                        feeds.spawn(async move {
+                            feed(app, topic.clone(), since, out).await;
+                            topic
+                        });
                     }
                 }
+            }
+            Wake::FeedDone(topic) => {
+                subscribed.remove(&topic);
             }
             Wake::Incoming(Some(Ok(Message::Close(_))) | Some(Err(_)) | None) => break,
             Wake::Incoming(Some(Ok(_))) => {}
@@ -106,6 +124,11 @@ async fn run(app: Arc<App>, mut socket: WebSocket) {
             Wake::Outgoing(None) => break,
         }
     }
+}
+
+/// Topic đã theo dõi thì bỏ qua (không lỗi); đủ `MAX_TOPICS` thì từ chối topic mới.
+fn accept_topic(subscribed: &HashSet<String>, topic: &str) -> bool {
+    subscribed.contains(topic) || subscribed.len() < MAX_TOPICS
 }
 
 async fn feed(app: Arc<App>, topic: String, since: Option<u64>, out: Outbox) {
@@ -342,5 +365,19 @@ async fn job_feed(app: &App, topic: &str, id: u64, out: &Outbox) {
         if !out.send(topic, seq, data).await || done || rx.changed().await.is_err() {
             return;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn topic_limit_counts_only_new_topics() {
+        let mut subscribed: HashSet<String> = (0..MAX_TOPICS).map(|i| format!("t{i}")).collect();
+        assert!(accept_topic(&subscribed, "t0"));
+        assert!(!accept_topic(&subscribed, "mới"));
+        subscribed.remove("t1");
+        assert!(accept_topic(&subscribed, "mới"));
     }
 }
