@@ -2,6 +2,7 @@
 
 mod access;
 mod auth;
+mod auth_gate;
 mod backups;
 mod cache;
 mod commands;
