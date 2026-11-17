@@ -75,3 +75,38 @@ test("sửa server.properties rồi mở lại thấy nội dung mới", async (
   await page.reload();
   await expect(page.getByRole("textbox", { name: "Nội dung server.properties" })).toContainText("motd=Đã sửa từ e2e");
 });
+
+// Spec trang Tệp, mục 2: nén, giải nén, tìm trong thư mục con, chọn nhiều rồi xóa.
+test("nén, giải nén, tìm và xóa nhiều mục", async ({ page, request }) => {
+  const id = await createServer(request, "Zip e2e");
+  serverId = id;
+  await page.goto(`/servers/${id}/files`);
+  const table = page.getByRole("table", { name: "Tệp trong thư mục" });
+
+  await table.getByRole("button", { name: "Thao tác khác cho server.properties" }).click();
+  await page.getByRole("menuitem", { name: "Nén thành zip" }).click();
+  const compress = page.getByRole("dialog", { name: "Nén 1 mục" });
+  await compress.getByRole("textbox", { name: "Tên file zip" }).fill("cau-hinh.zip");
+  await compress.getByRole("button", { name: "Nén" }).click();
+  await expect(table.getByText("cau-hinh.zip", { exact: true })).toBeVisible({ timeout: 15_000 });
+
+  await table.getByRole("button", { name: "Thao tác khác cho cau-hinh.zip" }).click();
+  await page.getByRole("menuitem", { name: "Giải nén" }).click();
+  await page.getByRole("dialog", { name: "Giải nén cau-hinh.zip" }).getByRole("button", { name: "Giải nén" }).click();
+  await expect(table.getByRole("link", { name: "cau-hinh", exact: true })).toBeVisible({ timeout: 15_000 });
+
+  await page.getByRole("button", { name: "Tìm trong thư mục con" }).click();
+  const search = page.getByRole("dialog", { name: "Tìm file" });
+  await search.getByRole("textbox").fill("properties");
+  await search.getByRole("button", { name: "Tìm" }).click();
+  await expect(search.getByRole("link", { name: /cau-hinh\/server\.properties/ })).toBeVisible();
+  await search.getByRole("button", { name: "Đóng" }).first().click();
+
+  await table.getByRole("checkbox", { name: "Chọn cau-hinh", exact: true }).check();
+  await table.getByRole("checkbox", { name: "Chọn cau-hinh.zip" }).check();
+  await expect(page.getByText("Đã chọn 2")).toBeVisible();
+  await page.getByRole("button", { name: "Xóa", exact: true }).click();
+  await page.getByRole("dialog", { name: "Xóa 2 mục?" }).getByRole("button", { name: "Xóa" }).click();
+  await expect(page.getByText("Đã chuyển vào thùng rác")).toBeVisible();
+  await expect(table.getByText("cau-hinh.zip", { exact: true })).toBeHidden();
+});

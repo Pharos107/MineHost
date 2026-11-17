@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MemoryRouter } from "react-router";
 
-import { Breadcrumb, Card, CodeEditor, Field, FileButton, FileDrop, Stack, TextArea } from "../ui";
+import { Breadcrumb, Button, Card, CodeEditor, Field, FileButton, FileDrop, Stack, TextArea, toast } from "../ui";
 
 const SAMPLE_YAML = `# Cấu hình plugin
 settings:
@@ -13,7 +13,7 @@ worlds:
   - world_nether
 `;
 
-/** Breadcrumb, FileDrop (hai biến thể), FileButton, TextArea và CodeEditor. `MemoryRouter` vì Breadcrumb dùng `Link`. */
+/** Breadcrumb, FileDrop (hai biến thể), FileButton, TextArea, CodeEditor và Toast. `MemoryRouter` vì Breadcrumb dùng `Link`. */
 export function FilesSection() {
   const [picked, setPicked] = useState<string[]>([]);
   return (
@@ -43,6 +43,14 @@ export function FilesSection() {
           </Field>
           <TextArea variant="code" aria-label="TextArea code" defaultValue={"motd=A Minecraft Server\npvp=true\n\tview-distance=10"} />
           <CodeSample />
+          <Stack direction="row" gap={2} wrap>
+            <Button size="sm" onClick={() => toast.show({ tone: "success", title: "Đã nén xong." })}>
+              Toast thường (5 giây)
+            </Button>
+            <Button size="sm" onClick={() => toast.show({ tone: "danger", title: "Tải lên không xong", body: "Ổ đĩa đầy." })}>
+              Toast lỗi
+            </Button>
+          </Stack>
         </Stack>
       </MemoryRouter>
     </Card>

@@ -9,7 +9,7 @@ Một bản phát hành: `v0.5.0` (PR-38) chốt cả P3. Kế hoạch ban đầ
 
 ## Tiến độ
 
-Cập nhật 2026-11-17, khi làm PR-48. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-17, khi làm PR-49. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -63,7 +63,7 @@ chính PR ấy.
 | 46 | Trang Từ modpack dùng trình duyệt | Đã merge | [#146](https://github.com/Pharos107/MineHost/pull/146) |
 | 47 | Spec trang Tệp, trình sửa code CodeMirror ([spec](p3-quan-ly-tep.md)) | Đã merge | [#147](https://github.com/Pharos107/MineHost/pull/147) |
 | 48 | Tìm file, tải zip, nén, giải nén (backend) | Đã merge | [#149](https://github.com/Pharos107/MineHost/pull/149) |
-| 49 | Bảng file: chọn nhiều, di chuyển, tìm, nén / giải nén | Chưa bắt đầu | |
+| 49 | Bảng file: chọn nhiều, di chuyển, tìm, nén / giải nén, toast | Đã merge | [#151](https://github.com/Pharos107/MineHost/pull/151) |
 | 38 | Phát hành `v0.5.0` | Chưa bắt đầu | |
 
 Ngoài kế hoạch, sửa lỗi tìm ra khi chạy thử modpack thật cho PR-37: [#108](https://github.com/Pharos107/MineHost/pull/108), [#109](https://github.com/Pharos107/MineHost/pull/109), [#110](https://github.com/Pharos107/MineHost/pull/110), [#111](https://github.com/Pharos107/MineHost/pull/111), [#114](https://github.com/Pharos107/MineHost/pull/114), [#115](https://github.com/Pharos107/MineHost/pull/115), [#117](https://github.com/Pharos107/MineHost/pull/117), [#123](https://github.com/Pharos107/MineHost/pull/123), [#124](https://github.com/Pharos107/MineHost/pull/124). Theo yêu cầu của chủ dự án: mở giao diện qua Tailscale khi bật LAN [#116](https://github.com/Pharos107/MineHost/pull/116).

@@ -12,6 +12,7 @@ import { App } from "./App";
 import "./i18n";
 import "./ui/base.css";
 import { initTheme } from "./ui/theme";
+import { Toaster } from "./ui/Toast";
 
 initTheme();
 
@@ -34,6 +35,7 @@ if (root) {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <Root />
+        <Toaster />
       </QueryClientProvider>
     </StrictMode>,
   );

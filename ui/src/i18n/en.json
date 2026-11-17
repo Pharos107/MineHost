@@ -535,7 +535,11 @@
       "actionOn": "{{action}}: {{row}}",
       "moreFor": "More actions for {{row}}",
       "noMatch": "No results for “{{query}}”.",
-      "count": "Showing {{shown}} of {{total}}"
+      "count": "Showing {{shown}} of {{total}}",
+      "selected": "{{count}} selected",
+      "clearSelection": "Clear selection",
+      "selectAll": "Select all shown rows",
+      "selectRow": "Select {{row}}"
     },
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
@@ -561,7 +565,8 @@
       "unfoldLine": "Unfold block",
       "foldedCode": "folded code",
       "unfold": "unfold"
-    }
+    },
+    "notifications": "Notifications"
   },
   "serverState": {
     "installing": "Installing",
@@ -740,7 +745,6 @@
     "deleteBody": "It is moved to MineHost's trash, so you can get it back later.",
     "trashed": "Moved to trash",
     "upload": "Upload files",
-    "uploadHint": "or drop files here, up to 512 MiB each",
     "uploading": "Uploading {{names}}",
     "uploaded_one": "Uploaded {{count}} file.",
     "uploaded_other": "Uploaded {{count}} files.",
@@ -763,7 +767,49 @@
       "properties": "Properties",
       "shell": "Shell",
       "text": "Plain text"
-    }
+    },
+    "deleteMany": "Delete {{count}} items?",
+    "move": {
+      "action": "Move",
+      "title_one": "Move {{count}} item",
+      "title_other": "Move {{count}} items",
+      "up": "Up",
+      "here": "Move here",
+      "noFolders": "No subfolders"
+    },
+    "compress": {
+      "action": "Compress to zip",
+      "title_one": "Compress {{count}} item",
+      "title_other": "Compress {{count}} items",
+      "name": "Zip file name",
+      "submit": "Compress",
+      "defaultName": "archive.zip"
+    },
+    "extract": {
+      "action": "Extract",
+      "title": "Extract {{name}}",
+      "where": "Extract to",
+      "newFolder": "New folder “{{name}}”",
+      "newFolderHint": "Safest: existing files are not touched.",
+      "here": "Current folder",
+      "hereHint": "Fails if a file with the same name exists; nothing is overwritten.",
+      "submit": "Extract"
+    },
+    "search": {
+      "action": "Search subfolders",
+      "title": "Find files",
+      "label": "File name in {{dir}} and all subfolders",
+      "submit": "Search",
+      "none": "No files found",
+      "truncated": "Showing only the first {{count}} results; try a more specific name."
+    },
+    "jobDone": {
+      "compress_files": "Compression finished.",
+      "extract_files": "Extraction finished.",
+      "other": "Done."
+    },
+    "dropHint": "Drop to upload to {{dir}}",
+    "uploadFailed": "Upload failed"
   },
   "auth": {
     "checking": "Checking sign-in…",

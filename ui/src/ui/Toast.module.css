@@ -1,0 +1,33 @@
+/* Góc phải dưới, nổi trên nội dung: thông báo không làm bảng nhảy xuống. */
+.stack {
+  position: fixed;
+  right: var(--mh-space-4);
+  bottom: var(--mh-space-4);
+  z-index: var(--mh-z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--mh-space-2);
+  width: min(380px, calc(100vw - 2 * var(--mh-space-4)));
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  background: var(--mh-surface);
+  border-radius: var(--mh-radius-md);
+  box-shadow: var(--mh-shadow-md);
+  animation: enter 160ms ease-out;
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}

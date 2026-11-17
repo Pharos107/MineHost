@@ -49,6 +49,10 @@
   width: 100%;
 }
 
+.alignStart {
+  justify-content: flex-start;
+}
+
 .iconOnly.md {
   width: var(--mh-control-height);
   padding: 0;

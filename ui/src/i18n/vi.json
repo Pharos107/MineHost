@@ -535,7 +535,11 @@
       "actionOn": "{{action}}: {{row}}",
       "moreFor": "Thao tác khác cho {{row}}",
       "noMatch": "Không có kết quả cho “{{query}}”.",
-      "count": "Hiển thị {{shown}}/{{total}}"
+      "count": "Hiển thị {{shown}}/{{total}}",
+      "selected": "Đã chọn {{count}}",
+      "clearSelection": "Bỏ chọn",
+      "selectAll": "Chọn tất cả hàng đang hiện",
+      "selectRow": "Chọn {{row}}"
     },
     "openMenu": "Mở menu",
     "closeMenu": "Đóng menu",
@@ -561,7 +565,8 @@
       "unfoldLine": "Mở khối",
       "foldedCode": "đoạn đã gập",
       "unfold": "mở"
-    }
+    },
+    "notifications": "Thông báo"
   },
   "serverState": {
     "installing": "Đang cài",
@@ -740,7 +745,6 @@
     "deleteBody": "Mục này được chuyển vào thùng rác của MineHost, bạn có thể tự lấy lại sau.",
     "trashed": "Đã chuyển vào thùng rác",
     "upload": "Tải file lên",
-    "uploadHint": "hoặc kéo thả file vào đây, tối đa 512 MiB mỗi file",
     "uploading": "Đang tải lên {{names}}",
     "uploaded_one": "Đã tải lên {{count}} file.",
     "uploaded_other": "Đã tải lên {{count}} file.",
@@ -763,7 +767,49 @@
       "properties": "Properties",
       "shell": "Shell",
       "text": "Văn bản"
-    }
+    },
+    "deleteMany": "Xóa {{count}} mục?",
+    "move": {
+      "action": "Di chuyển",
+      "title_one": "Di chuyển {{count}} mục",
+      "title_other": "Di chuyển {{count}} mục",
+      "up": "Lên trên",
+      "here": "Chuyển vào đây",
+      "noFolders": "Không có thư mục con"
+    },
+    "compress": {
+      "action": "Nén thành zip",
+      "title_one": "Nén {{count}} mục",
+      "title_other": "Nén {{count}} mục",
+      "name": "Tên file zip",
+      "submit": "Nén",
+      "defaultName": "luu-tru.zip"
+    },
+    "extract": {
+      "action": "Giải nén",
+      "title": "Giải nén {{name}}",
+      "where": "Giải nén vào đâu",
+      "newFolder": "Thư mục mới “{{name}}”",
+      "newFolderHint": "An toàn nhất: không đụng tới file đang có.",
+      "here": "Thư mục hiện tại",
+      "hereHint": "Báo lỗi nếu có file trùng tên, không ghi đè.",
+      "submit": "Giải nén"
+    },
+    "search": {
+      "action": "Tìm trong thư mục con",
+      "title": "Tìm file",
+      "label": "Tên file trong {{dir}} và mọi thư mục con",
+      "submit": "Tìm",
+      "none": "Không thấy file nào",
+      "truncated": "Chỉ hiện {{count}} kết quả đầu, hãy gõ cụ thể hơn."
+    },
+    "jobDone": {
+      "compress_files": "Đã nén xong.",
+      "extract_files": "Đã giải nén xong.",
+      "other": "Đã xong."
+    },
+    "dropHint": "Thả để tải lên {{dir}}",
+    "uploadFailed": "Tải lên không xong"
   },
   "auth": {
     "checking": "Đang kiểm tra đăng nhập…",
