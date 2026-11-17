@@ -266,7 +266,18 @@ fn watch_outcome(
     fut: impl Future<Output = Result<(), AppError>> + Send + 'static,
 ) {
     tokio::spawn(async move {
-        let state = outcome(id, fut.await);
+        // Thân Job chạy trong task riêng: panic (từ thư viện nào đó) chỉ làm Job này lỗi, không để
+        // nó nằm mãi ở `Running`.
+        let state = match tokio::spawn(fut).await {
+            Ok(result) => outcome(id, result),
+            Err(err) => {
+                tracing::error!(job = id, error = %err, "Job dừng bất thường");
+                JobState::Failed {
+                    code: ErrorCode::Internal,
+                    params: serde_json::json!({ "reason": "panic" }),
+                }
+            }
+        };
         status.send_modify(|snapshot| {
             snapshot.state = state;
             snapshot.finished_at = Some(OffsetDateTime::now_utc());
@@ -311,6 +322,26 @@ mod tests {
             .unwrap()
             .unwrap()
             .clone()
+    }
+
+    #[tokio::test]
+    async fn panicking_job_fails_instead_of_running_forever() {
+        let jobs = JobRunner::new(2);
+        fn boom() -> AppError {
+            panic!("thư viện nào đó panic");
+        }
+        let id = jobs.spawn(JobKind::CreateServer, None, |_| async { Err(boom()) });
+        let snap = finished(&jobs, id).await;
+        assert!(
+            matches!(
+                snap.state,
+                JobState::Failed {
+                    code: ErrorCode::Internal,
+                    ..
+                }
+            ),
+            "{snap:?}"
+        );
     }
 
     #[tokio::test]

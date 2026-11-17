@@ -70,8 +70,9 @@ impl App {
         let job_id = self
             .jobs
             .spawn(JobKind::ImportServer, Some(id), move |ctx| async move {
+                let guard = crate::create::InstallGuard::new(Arc::clone(&app), id);
                 let result = app.run_import(&ctx, id, name, &plan).await;
-                app.finish_install(id, result.is_ok(), "đã nhập server");
+                guard.finish(result.is_ok(), "đã nhập server");
                 result
             });
         if let Some(entry) = lock(&self.installing).get_mut(&id) {

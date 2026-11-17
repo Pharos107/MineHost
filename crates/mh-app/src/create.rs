@@ -84,11 +84,12 @@ impl App {
         let job_id = self
             .jobs
             .spawn(JobKind::CreateServer, Some(id), move |ctx| async move {
+                let guard = InstallGuard::new(Arc::clone(&app), id);
                 let mut result = app.install(&ctx, id, &req, memory, port).await;
                 if result.is_ok() && !properties.is_empty() {
                     result = app.apply_initial_properties(id, port, &properties);
                 }
-                app.finish_install(id, result.is_ok(), "đã tạo server");
+                guard.finish(result.is_ok(), "đã tạo server");
                 result?;
                 if content.is_empty() {
                     return Ok(());
@@ -236,8 +237,9 @@ impl App {
         Ok(())
     }
 
-    /// Job tạo hoặc nhập xong: lỗi thì xóa thư mục làm dở; xong thì tạo supervisor.
-    pub(crate) fn finish_install(&self, id: ServerId, ok: bool, done: &str) {
+    /// Job tạo hoặc nhập xong: lỗi thì xóa thư mục làm dở; xong thì tạo supervisor. Job gọi qua
+    /// [`InstallGuard`], để Job dừng bất thường vẫn dọn.
+    fn finish_install(&self, id: ServerId, ok: bool, done: &str) {
         if !ok && let Err(e) = self.store.remove_unfinished(id) {
             tracing::error!(server = %id, error = %e, "không dọn được thư mục server cài dở");
         }
@@ -271,6 +273,38 @@ impl App {
 
 /// Modpack hay mang sẵn `server.properties` (level-type, allow-flight...): giữ nguyên, chỉ đặt cổng
 /// MineHost đã chọn; `motd` chỉ đặt khi pack chưa có.
+/// Giữ suốt Job tạo, nhập hay cài modpack. Job panic hay bị drop trước khi gọi [`Self::finish`] thì
+/// vẫn dọn thư mục cài dở và gỡ server khỏi danh sách "đang cài", nếu không nó kẹt tới khi tắt MineHost.
+pub(crate) struct InstallGuard {
+    app: Arc<App>,
+    id: ServerId,
+    finished: bool,
+}
+
+impl InstallGuard {
+    pub(crate) fn new(app: Arc<App>, id: ServerId) -> Self {
+        Self {
+            app,
+            id,
+            finished: false,
+        }
+    }
+
+    pub(crate) fn finish(mut self, ok: bool, done: &str) {
+        self.finished = true;
+        self.app.finish_install(self.id, ok, done);
+    }
+}
+
+impl Drop for InstallGuard {
+    fn drop(&mut self) {
+        if !self.finished {
+            tracing::error!(server = %self.id, "Job cài dừng bất thường, dọn phần cài dở");
+            self.app.finish_install(self.id, false, "");
+        }
+    }
+}
+
 fn write_initial_properties(
     server_dir: &Path,
     name: &ServerName,

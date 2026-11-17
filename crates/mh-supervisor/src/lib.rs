@@ -6,6 +6,7 @@
 //! `mh-runtime` và `mh-core`.
 
 mod actor;
+mod catch;
 mod console;
 
 use std::future::Future;
