@@ -100,10 +100,12 @@ impl App {
         for item in &items {
             let _ = self.catalog_for(item.source)?;
         }
+        let world = self.claim_world(id, JobKind::UpdateContent)?;
         let app = Arc::clone(self);
         Ok(self
             .jobs
             .spawn(JobKind::UpdateContent, Some(id), move |ctx| async move {
+                let _world = world;
                 app.run_update(&ctx, id, &items).await
             }))
     }

@@ -180,6 +180,7 @@ impl App {
     /// Tự bật khi mở controller / sau crash / theo lịch gọi thẳng `SupervisorHandle`, không đi qua đây.
     pub async fn start_with(&self, id: ServerId, ignore_preflight: bool) -> Result<(), AppError> {
         let handle = self.handle(id)?;
+        self.ensure_world_idle(id)?;
         if handle.status().state.has_process() {
             return Err(AppError::new(
                 ErrorCode::ServerBusy,
@@ -199,8 +200,11 @@ impl App {
         Ok(self.handle(id)?.stop().await?)
     }
 
+    /// Lịch khởi động lại cũng đi qua đây, nên cũng chờ lần sau khi đang sao lưu hay cập nhật.
     pub async fn restart(&self, id: ServerId) -> Result<(), AppError> {
-        Ok(self.handle(id)?.restart().await?)
+        let handle = self.handle(id)?;
+        self.ensure_world_idle(id)?;
+        Ok(handle.restart().await?)
     }
 
     pub async fn kill(&self, id: ServerId) -> Result<(), AppError> {

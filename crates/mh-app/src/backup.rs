@@ -72,10 +72,12 @@ impl App {
         req: BackupRequest,
     ) -> Result<BackupStarted, AppError> {
         self.store.load(id)?;
+        let world = self.claim_world(id, JobKind::Backup)?;
         let app = Arc::clone(self);
         let job_id = self
             .jobs
             .spawn(JobKind::Backup, Some(id), move |ctx| async move {
+                let _world = world;
                 app.run_backup(&ctx, id, req).await
             });
         Ok(BackupStarted { job_id })
@@ -140,8 +142,11 @@ impl App {
     ) -> Result<(), AppError> {
         let spec = self.store.load(id)?;
         let handle = self.handle(id)?;
-        // Một ảnh trạng thái cho cả Job: server bật giữa chừng thì lần này không gửi lệnh.
-        let live = handle.status().state.has_process();
+        // Một ảnh trạng thái cho cả Job: server bật giữa chừng thì lần này không gửi lệnh, và
+        // bản nén bị bỏ ở cuối (`ensure_untouched`).
+        let mut status = handle.watch_status();
+        let before = status.borrow_and_update().clone();
+        let live = before.state.has_process();
         let steps = if live { STEPS_LIVE } else { STEPS_OFFLINE };
         ctx.step(JobStep::CheckDisk, 1, steps);
         self.ensure_disk(&self.store.paths(id).server_dir).await?;
@@ -162,7 +167,8 @@ impl App {
             ctx.check_cancel()?;
             // Bước cuối: 3/3 khi server đang chạy, 2/2 khi tắt.
             ctx.step(JobStep::Compress, steps, steps);
-            self.archive_world(ctx, &spec, &req).await.map(|_| ())
+            let meta = self.archive_world(ctx, &spec, &req).await?;
+            self.ensure_untouched(id, &status, &before, &meta)
         }
         .await;
         let result = if paused {
@@ -231,6 +237,34 @@ impl App {
         }
         tracing::info!(server = %spec.id, backup = %meta.id, bytes = meta.size, "đã sao lưu");
         Ok(meta)
+    }
+
+    /// Server bật, tắt hay crash rồi tự bật lại trong lúc nén thì world đã bị ghi giữa chừng (lệnh
+    /// `stop` lưu world bất kể `save-off`). Bỏ bản nén thay vì giữ một bản hỏng mang hash hợp lệ.
+    fn ensure_untouched(
+        &self,
+        id: ServerId,
+        status: &tokio::sync::watch::Receiver<crate::Status>,
+        before: &crate::Status,
+        meta: &BackupMeta,
+    ) -> Result<(), AppError> {
+        if !crate::world_lock::process_changed(before, &status.borrow()) {
+            return Ok(());
+        }
+        let dir = backup_dir(&self.dirs, id);
+        if let Ok(parsed) = parse_backup_id(&meta.id) {
+            for ext in ["json", "tar.zst"] {
+                if let Ok(path) = backup_file(&dir, &parsed, ext) {
+                    let _ = std::fs::remove_file(path);
+                }
+            }
+        }
+        tracing::warn!(server = %id, backup = %meta.id, "server đổi trạng thái lúc sao lưu, bỏ bản nén");
+        Err(AppError::new(
+            ErrorCode::ServerBusy,
+            "server bật hoặc tắt trong lúc sao lưu",
+        )
+        .with_params(serde_json::json!({ "reason": "state_changed" })))
     }
 
     async fn wait_until_saved(

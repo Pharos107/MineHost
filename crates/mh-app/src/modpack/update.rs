@@ -58,10 +58,12 @@ impl App {
             .spec
             .ok_or_else(|| AppError::new(ErrorCode::ConfigInvalid, "server hỏng cấu hình"))?;
         let _ = modrinth_project(&spec)?;
+        let world = self.claim_world(id, JobKind::UpdateModpack)?;
         let app = Arc::clone(self);
         Ok(self
             .jobs
             .spawn(JobKind::UpdateModpack, Some(id), move |ctx| async move {
+                let _world = world;
                 let result = app.run_modpack_update(&ctx, id, &version_id).await?;
                 if let Ok(value) = serde_json::to_value(&result) {
                     ctx.set_result(value);

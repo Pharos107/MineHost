@@ -29,10 +29,12 @@ impl App {
     ) -> Result<RestoreStarted, AppError> {
         self.store.load(id)?;
         let (meta, archive) = self.load_archive(id, backup_id)?;
+        let world = self.claim_world(id, JobKind::Restore)?;
         let app = Arc::clone(self);
         let job_id = self
             .jobs
             .spawn(JobKind::Restore, Some(id), move |ctx| async move {
+                let _world = world;
                 app.run_restore(&ctx, id, meta, archive).await
             });
         Ok(RestoreStarted { job_id })
@@ -106,8 +108,14 @@ impl App {
             return Err(discard(&staging, err));
         }
         ctx.step(JobStep::Swap, index, steps);
-        swap_world(&paths.server_dir, &staging, &old)?;
-        self.apply_snapshot(id, snapshot)?;
+        {
+            // Job cài mod chép file vào `mods/` dưới khóa này: không để nó ghi vào world đang bị
+            // đổi tên, rồi `content.toml` của bản backup đè mất mod vừa thêm.
+            let mutex = self.content_lock(id);
+            let _content = mutex.lock().await;
+            swap_world(&paths.server_dir, &staging, &old)?;
+            self.apply_snapshot(id, snapshot)?;
+        }
         self.refresh_preflight(id).await;
         self.prune_kind(id, BackupKind::BeforeRestore, KEEP_BEFORE_RESTORE);
         self.notify_changed(id);
