@@ -532,7 +532,8 @@
       "unfoldLine": "Unfold block",
       "foldedCode": "folded code",
       "unfold": "unfold"
-    }
+    },
+    "notifications": "Notifications"
   },
   "serverState": {
     "installing": "Installing",
@@ -711,7 +712,6 @@
     "deleteBody": "It is moved to MineHost's trash, so you can get it back later.",
     "trashed": "Moved to trash",
     "upload": "Upload files",
-    "uploadHint": "or drop files here, up to 512 MiB each",
     "uploading": "Uploading {{names}}",
     "uploaded_one": "Uploaded {{count}} file.",
     "uploaded_other": "Uploaded {{count}} files.",
@@ -774,7 +774,9 @@
       "compress_files": "Compression finished.",
       "extract_files": "Extraction finished.",
       "other": "Done."
-    }
+    },
+    "dropHint": "Drop to upload to {{dir}}",
+    "uploadFailed": "Upload failed"
   },
   "auth": {
     "checking": "Checking sign-in…",

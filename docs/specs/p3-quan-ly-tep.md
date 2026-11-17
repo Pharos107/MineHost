@@ -48,8 +48,13 @@ nhúng được vào binary, dùng được trên điện thoại).
 
 ### 2. Bảng file `/servers/:id/files`
 
-- **Thanh công cụ một hàng** ở đầu bảng (prop `toolbar` của `DataTable`): Tệp mới, Thư mục mới,
-  Tìm trong thư mục con; ô lọc của bảng ở bên phải. Ô tải lên kéo thả giữ nguyên dưới hàng nút.
+- **Thanh công cụ một hàng** ở đầu bảng (prop `toolbar` của `DataTable`): Tải lên, Tệp mới, Thư mục
+  mới, Tìm trong thư mục con; ô lọc của bảng ở bên phải.
+- **Bỏ ô kéo thả riêng.** Kéo file thả vào bảng là tải lên đúng thư mục bảng đang mở (lớp phủ "Thả để
+  tải lên <thư mục>"), kể cả khi thư mục trống.
+- **Thông báo nổi** (component `Toast`, góc phải dưới, không đẩy bảng xuống): xong việc thì hiện 5 giây
+  rồi tự tắt, có nút đóng. Việc còn chạy (tải lên, nén, giải nén) giữ toast kèm thanh tiến độ tới khi
+  xong, rồi đổi thành kết quả hoặc lỗi. Lỗi trong hộp thoại vẫn hiện trong hộp thoại.
 - **Chọn nhiều:** `DataTable` có thêm prop `selection` (ô chọn đầu mỗi hàng, ô chọn tất cả ở tiêu đề,
   chỉ tính các hàng đang hiện sau khi lọc). Khi có mục được chọn, thanh công cụ đổi thành thanh hàng
   loạt: "Đã chọn N", **Tải xuống** (zip), **Di chuyển**, **Nén**, **Xóa**, **Bỏ chọn**. Đổi thư mục thì

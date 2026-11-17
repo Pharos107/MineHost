@@ -532,7 +532,8 @@
       "unfoldLine": "Mở khối",
       "foldedCode": "đoạn đã gập",
       "unfold": "mở"
-    }
+    },
+    "notifications": "Thông báo"
   },
   "serverState": {
     "installing": "Đang cài",
@@ -711,7 +712,6 @@
     "deleteBody": "Mục này được chuyển vào thùng rác của MineHost, bạn có thể tự lấy lại sau.",
     "trashed": "Đã chuyển vào thùng rác",
     "upload": "Tải file lên",
-    "uploadHint": "hoặc kéo thả file vào đây, tối đa 512 MiB mỗi file",
     "uploading": "Đang tải lên {{names}}",
     "uploaded_one": "Đã tải lên {{count}} file.",
     "uploaded_other": "Đã tải lên {{count}} file.",
@@ -774,7 +774,9 @@
       "compress_files": "Đã nén xong.",
       "extract_files": "Đã giải nén xong.",
       "other": "Đã xong."
-    }
+    },
+    "dropHint": "Thả để tải lên {{dir}}",
+    "uploadFailed": "Tải lên không xong"
   },
   "auth": {
     "checking": "Đang kiểm tra đăng nhập…",

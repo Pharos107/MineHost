@@ -39,6 +39,7 @@ export { StatStrip, type StripItem } from "./StatStrip";
 export { SuggestBox, type Suggestion } from "./SuggestBox";
 export { Switch } from "./Switch";
 export { Tabs, type TabItem } from "./Tabs";
+export { TOAST_MS, Toaster, toast, type ToastInput } from "./Toast";
 export { filterRows } from "./table-utils";
 export { Terminal, type TerminalHandle, type TerminalTone } from "./Terminal";
 export { initTheme, useTheme, type Theme } from "./theme";

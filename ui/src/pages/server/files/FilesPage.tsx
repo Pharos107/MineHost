@@ -4,14 +4,13 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router";
 
-import { errorMessage, type Job } from "../../../api/client";
+import { errorMessage } from "../../../api/client";
 import { EDITABLE_MAX_BYTES, filesApi, joinPath, pathSteps, type FileEntry } from "../../../api/files";
 import { formatBytes } from "../../../format";
-import { Breadcrumb, Button, DataTable, EmptyState, Notice, Stack, type Column, type RowAction } from "../../../ui";
-import { JobProgress, jobError } from "../JobProgress";
+import { Breadcrumb, Button, DataTable, EmptyState, FileButton, FileDrop, Notice, Stack, type Column, type RowAction } from "../../../ui";
 import { useServer } from "../ServerLayout";
 import { FileDialogs, type DialogOutcome, type FileDialog } from "./FileDialogs";
-import { UploadZone } from "./UploadZone";
+import { trashedToast, uploadWithToast, watchJobInToast } from "./fileToasts";
 
 const rowKey = (e: FileEntry) => `${e.kind}:${e.name}`;
 const isZip = (e: FileEntry) => e.kind === "file" && e.name.toLowerCase().endsWith(".zip");
@@ -28,7 +27,6 @@ export function FilesPage() {
   const list = useQuery({ queryKey: ["files", server.id, dir], queryFn: () => filesApi.list(server.id, dir) });
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ["files", server.id] });
   const [dialog, setDialog] = useState<FileDialog | null>(null);
-  const [outcome, setOutcome] = useState<Outcome>({});
   // Chọn gắn với thư mục: sang thư mục khác thì coi như bỏ chọn.
   const [picked, setPicked] = useState<{ dir: string; keys: Set<string> }>({ dir, keys: new Set() });
   const selected = picked.dir === dir ? picked.keys : new Set<string>();
@@ -37,16 +35,15 @@ export function FilesPage() {
   const columns = useColumns(server.id, dir);
   const pathOf = (e: FileEntry) => joinPath(dir, e.name);
 
+  // Mọi thông báo đi vào toast ở góc màn hình: không chèn gì lên trên bảng để hàng không bị đẩy xuống.
   const onDone = (result: DialogOutcome) => {
     setDialog(null);
-    setOutcome(result);
     select(new Set());
     refresh();
+    if (result.trashed && result.trashed.length > 0) trashedToast(t, result.trashed);
+    if (result.jobId !== undefined) watchJobInToast(t, result.jobId, refresh);
   };
-  const onJobFinish = (job: Job) => {
-    setOutcome(job.state === "failed" ? { failed: job } : { finished: job });
-    refresh();
-  };
+  const upload = (files: File[]) => void uploadWithToast(t, server.id, dir, files, refresh);
 
   const actions: RowAction<FileEntry>[] = [
     {
@@ -63,6 +60,7 @@ export function FilesPage() {
 
   const toolbar = (
     <>
+      <FileButton size="sm" label={t("files.upload")} onFiles={upload} />
       <Button size="sm" icon={FilePlus} onClick={() => setDialog({ kind: "file" })}>
         {t("files.newFile")}
       </Button>
@@ -97,59 +95,38 @@ export function FilesPage() {
         label={t("files.path")}
         items={[{ label: t("files.root"), to: "?path=" }, ...pathSteps(dir).map((s) => ({ label: s.name, to: `?path=${encodeURIComponent(s.path)}` }))]}
       />
-      <OutcomeNotice outcome={outcome} onJobFinish={onJobFinish} />
-      <UploadZone serverId={server.id} dir={dir} onDone={refresh} />
-      {list.isError ? (
-        <Notice tone="danger">{errorMessage(t, list.error)}</Notice>
-      ) : (
-        <DataTable
-          label={t("files.table")}
-          columns={columns}
-          rows={list.data ?? []}
-          rowKey={rowKey}
-          rowLabel={(e) => e.name}
-          actions={actions}
-          inlineActions={1}
-          toolbar={toolbar}
-          searchText={(e) => e.name}
-          loading={list.isPending}
-          selection={{ selected, onChange: select, actions: bulk }}
-          empty={
-            <Stack gap={3}>
-              {/* Thư mục trống thì bảng chỉ hiện màn hình trống, nút tạo vẫn phải còn. */}
-              <Stack direction="row" gap={2} wrap>
-                {toolbar}
+      {/* Kéo file thả vào bảng là tải lên đúng thư mục bảng đang mở (spec trang Tệp, mục 2). */}
+      <FileDrop variant="overlay" label={t("files.upload")} hint={t("files.dropHint", { dir: dir === "" ? t("files.root") : dir })} onFiles={upload}>
+        {list.isError ? (
+          <Notice tone="danger">{errorMessage(t, list.error)}</Notice>
+        ) : (
+          <DataTable
+            label={t("files.table")}
+            columns={columns}
+            rows={list.data ?? []}
+            rowKey={rowKey}
+            rowLabel={(e) => e.name}
+            actions={actions}
+            inlineActions={1}
+            toolbar={toolbar}
+            searchText={(e) => e.name}
+            loading={list.isPending}
+            selection={{ selected, onChange: select, actions: bulk }}
+            empty={
+              <Stack gap={3}>
+                {/* Thư mục trống thì bảng chỉ hiện màn hình trống, nút tạo vẫn phải còn. */}
+                <Stack direction="row" gap={2} wrap>
+                  {toolbar}
+                </Stack>
+                <EmptyState icon={Folder} title={t("files.empty")} />
               </Stack>
-              <EmptyState icon={Folder} title={t("files.empty")} />
-            </Stack>
-          }
-        />
-      )}
+            }
+          />
+        )}
+      </FileDrop>
       {dialog && <FileDialogs serverId={server.id} dir={dir} dialog={dialog} onClose={() => setDialog(null)} onDone={onDone} />}
     </Stack>
   );
-}
-
-type Outcome = DialogOutcome & { failed?: Job; finished?: Job };
-
-/** Thông báo sau thao tác: mục đã vào thùng rác, tiến độ Job nén / giải nén, rồi kết quả của Job đó. */
-function OutcomeNotice({ outcome, onJobFinish }: { outcome: Outcome; onJobFinish: (job: Job) => void }) {
-  const { t } = useTranslation();
-  if (outcome.jobId !== undefined) return <JobProgress key={outcome.jobId} jobId={outcome.jobId} onFinish={onJobFinish} />;
-  if (outcome.failed) return <Notice tone="danger">{errorMessage(t, jobError(outcome.failed))}</Notice>;
-  if (outcome.finished) return <Notice tone="success">{t(`files.jobDone.${outcome.finished.kind}`, { defaultValue: t("files.jobDone.other") })}</Notice>;
-  if (outcome.trashed && outcome.trashed.length > 0) {
-    return (
-      <Notice tone="success" title={t("files.trashed")}>
-        {outcome.trashed.map((path) => (
-          <div key={path}>
-            <code>{path}</code>
-          </div>
-        ))}
-      </Notice>
-    );
-  }
-  return null;
 }
 
 function useColumns(serverId: string, dir: string): Column<FileEntry>[] {

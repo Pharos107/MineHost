@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Server } from "../../../api/client";
 import { joinPath, pathSteps, type FileEntry } from "../../../api/files";
+import { Toaster, toast } from "../../../ui";
 import { FileEditorPage } from "./FileEditorPage";
 import { FilesPage } from "./FilesPage";
 import { canMoveInto } from "./MoveDialog";
@@ -42,12 +43,14 @@ function renderAt(path: string) {
           </Route>
         </Routes>
       </MemoryRouter>
+      <Toaster />
     </QueryClientProvider>,
   );
 }
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  toast.clear();
 });
 
 const entries: FileEntry[] = [
