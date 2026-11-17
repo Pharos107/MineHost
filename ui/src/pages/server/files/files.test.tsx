@@ -9,6 +9,12 @@ import { joinPath, pathSteps, type FileEntry } from "../../../api/files";
 import { FileEditorPage } from "./FileEditorPage";
 import { FilesPage } from "./FilesPage";
 
+// CodeMirror cần DOM thật để gõ; trang được thử với ô văn bản dự phòng khi trình sửa tải lỗi.
+// CodeMirror có test riêng ở `ui/CodeEditor.test.tsx`.
+vi.mock("../../../ui/codemirror", () => {
+  throw new Error("không tải CodeMirror trong test trang");
+});
+
 const server: Server = { id: "A", name: "Survival", state: "running", eula_accepted: true, restart_pending: false, slow_start: false, ignored_jvm_args: false, preflight_blocking: false };
 
 type Handler = (url: string, init?: RequestInit) => Response | undefined;
@@ -99,7 +105,7 @@ describe("FileEditorPage", () => {
     const editor = await screen.findByRole("textbox", { name: "Nội dung server.properties" });
     expect((editor as HTMLTextAreaElement).value).toBe("motd=Xin chào\n");
     await userEvent.type(editor, "pvp=false");
-    expect(screen.getByText("Có thay đổi chưa lưu.")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe("Chưa lưu");
     await userEvent.keyboard("{Control>}s{/Control}");
     const put = fetchMock.mock.calls.find(([, init]) => init?.method === "PUT");
     expect((put?.[1]?.headers as Record<string, string>)["If-Match"]).toBe('"abc"');

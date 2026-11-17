@@ -542,7 +542,26 @@
     "morePlayers": "và {{count}} người nữa",
     "downloads": "{{value}} lượt tải",
     "showPassword": "Hiện mật khẩu",
-    "hidePassword": "Ẩn mật khẩu"
+    "hidePassword": "Ẩn mật khẩu",
+    "codeEditor": {
+      "find": "Tìm",
+      "replace": "Thay bằng",
+      "next": "Tiếp",
+      "previous": "Trước",
+      "all": "Tất cả",
+      "matchCase": "Phân biệt hoa thường",
+      "regexp": "Biểu thức chính quy",
+      "byWord": "Cả từ",
+      "replaceOne": "Thay",
+      "replaceAll": "Thay tất cả",
+      "close": "Đóng",
+      "goToLine": "Tới dòng",
+      "go": "Đi",
+      "foldLine": "Gập khối",
+      "unfoldLine": "Mở khối",
+      "foldedCode": "đoạn đã gập",
+      "unfold": "mở"
+    }
   },
   "serverState": {
     "installing": "Đang cài",
@@ -726,12 +745,23 @@
     "back": "Quay lại thư mục",
     "editorLabel": "Nội dung {{path}}",
     "save": "Lưu",
-    "saved": "Đã lưu.",
-    "unsaved": "Có thay đổi chưa lưu.",
     "changedTitle": "File đã bị đổi ở chỗ khác",
     "changedBody": "Có người (hoặc server) đã sửa file này sau khi bạn mở. Tải lại bản mới sẽ bỏ thay đổi của bạn; hãy chép thay đổi của bạn trước nếu cần.",
     "reloadLatest": "Tải lại bản mới",
-    "copyMine": "Chép thay đổi của tôi"
+    "copyMine": "Chép thay đổi của tôi",
+    "wrap": "Xuống dòng",
+    "cursor": "Dòng {{line}}, Cột {{column}}",
+    "stateSaved": "Đã lưu",
+    "stateUnsaved": "Chưa lưu",
+    "encoding": "UTF-8",
+    "language": {
+      "json": "JSON",
+      "yaml": "YAML",
+      "toml": "TOML",
+      "properties": "Properties",
+      "shell": "Shell",
+      "text": "Văn bản"
+    }
   },
   "auth": {
     "checking": "Đang kiểm tra đăng nhập…",
