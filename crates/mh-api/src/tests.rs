@@ -478,7 +478,6 @@ fn openapi_lists_all_routes() {
 
 #[path = "tests_files.rs"]
 mod tests_files;
-
 #[path = "tests_files_ops.rs"]
 mod tests_files_ops;
 
