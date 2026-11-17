@@ -171,7 +171,7 @@ stateDiagram-v2
 ### 4.4 Cổng
 
 Mặc định 25565. Nếu cổng đó đã có server MineHost khác dùng, hoặc đang bị chương trình khác chiếm
-(thử bind `0.0.0.0:<port>`), thì lấy cổng trống tiếp theo, tối đa tới 25600.
+(thử bind `0.0.0.0:<port>` rồi `[::]:<port>`), thì lấy cổng trống tiếp theo, tối đa tới 25600.
 
 ### 4.5 Mã lỗi mới trong `ErrorCode`
 
@@ -291,7 +291,11 @@ Lệnh chạy:
 - Mỗi server một actor (task tokio). Nhận `Command` qua `mpsc`: `Start`, `Stop`, `Restart`, `Kill`,
   `Send(line)`. Phát `ServerEvent`/`ConsoleLine` qua `broadcast`.
 - **Trước khi bật:** EULA đã đồng ý; ghi `server-port` vào `server.properties`; cổng còn trống; Java
-  đã có (thiếu thì chạy `ensure`).
+  đã có (thiếu thì chạy `ensure`). Từ 2026-11-17 cổng còn trống nghĩa là: bind được cả `0.0.0.0` lẫn
+  `[::]` (máy không có IPv6 thì bỏ qua `[::]`); có `server-ip` thì bind được đúng địa chỉ đó; có
+  `enable-rcon=true` thì `rcon.port` (mặc định 25575) cũng trống, bận thì `PORT_IN_USE` kèm
+  `kind: "rcon"`. Cổng query (UDP) chưa kiểm tra. Kiểm tra rồi Java mới bind sau vài giây, nên chương
+  trình khác vẫn có thể chiếm cổng ở giữa; khi đó log có `FAILED TO BIND TO PORT` như cũ.
 - **Sẵn sàng:** dòng khớp regex `\]: Done \(` thì chuyển sang `Running`. Sau 5 phút chưa thấy thì vẫn
   giữ `Starting` nhưng phát cảnh báo; không tự kill.
 - **Bật hỏng mà process không thoát** (thêm ngày 2026-11-16, P3): Forge 1.20.1 in
