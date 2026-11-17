@@ -30,7 +30,7 @@ Mỗi dòng: ý tưởng, vì sao đáng làm, nguồn (ai đề xuất hoặc t
 | TPS và MSPT trên trang Tổng quan, cảnh báo khi lag | "Server lag" là phàn nàn thường gặp nhất; spec P2 đã loại khỏi P2 | Rà soát B3 | P3 |
 | "Bác sĩ server": đọc `crash-reports/` và `hs_err_pid*.log`, chỉ ra mod gây lỗi, thiếu dependency, sai Java, kèm nút sửa | Khung `ErrorCode` kèm gợi ý sửa đã có; các panel khác chỉ đưa log thô | Rà soát, phần lợi thế | P3 (cùng mod) |
 | Tích hợp Spark profiler | Chuẩn chẩn đoán lag của cộng đồng | Yêu cầu rà soát | P5 |
-| Lịch sử chỉ số dài hơn 1 giờ | Hiện mất khi tắt controller | Spec P2, "không làm" | Cùng lúc với SQLite (P5) |
+| Lịch sử chỉ số dài hơn 1 giờ | Đã có lưu đa tầng trong RAM (tới 9.999 ngày, xem [spec nâng cấp biểu đồ](specs/nang-cap-bieu-do.md)), nhưng tắt controller vẫn mất; cần chuyển phần lưu giữ sang SQLite để giữ bền vững qua lần tắt máy | Spec P2, "không làm"; nâng cấp biểu đồ | Cùng lúc với SQLite (P5) |
 
 ## Mạng và người chơi
 

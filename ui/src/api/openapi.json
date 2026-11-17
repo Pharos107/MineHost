@@ -2970,6 +2970,31 @@
                 "null"
               ]
             }
+          },
+          {
+            "name": "until",
+            "in": "path",
+            "description": "RFC 3339. Chỉ lấy mẫu tới (bao gồm) thời điểm này.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "max_points",
+            "in": "path",
+            "description": "Giới hạn số điểm trả về (gộp theo khung đều, 1..=2000).",
+            "required": true,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
           }
         ],
         "responses": {
@@ -4815,12 +4840,27 @@
             "type": "string",
             "description": "RFC 3339."
           },
+          "cpu_max": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "float"
+          },
           "cpu_percent": {
             "type": "number",
             "format": "float"
           },
           "memory_bytes": {
             "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "memory_max_bytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
             "minimum": 0
           },
@@ -4831,6 +4871,14 @@
             ],
             "format": "int32",
             "description": "`null` cho tới khi có theo dõi người chơi.",
+            "minimum": 0
+          },
+          "players_max": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
             "minimum": 0
           }
         }
@@ -4938,6 +4986,15 @@
                 "type": "null"
               }
             ]
+          },
+          "metrics_retention_minutes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Thời gian giữ lịch sử chỉ số trong RAM (phút), từ `5` tới `14398560`.",
+            "minimum": 0
           },
           "name": {
             "type": [
@@ -5863,6 +5920,15 @@
               }
             ]
           },
+          "metrics_retention_minutes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Thời gian giữ lịch sử chỉ số trong RAM (phút).",
+            "minimum": 0
+          },
           "minecraft": {
             "type": [
               "string",
@@ -5938,7 +6004,9 @@
       "ServerMetricsDto": {
         "type": "object",
         "required": [
-          "samples"
+          "samples",
+          "retention_minutes",
+          "step_seconds"
         ],
         "properties": {
           "disk_bytes": {
@@ -5947,6 +6015,19 @@
               "null"
             ],
             "format": "int64",
+            "minimum": 0
+          },
+          "oldest_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Thời điểm mẫu cũ nhất đang giữ (RFC 3339)."
+          },
+          "retention_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Thời gian giữ lịch sử chỉ số đang đặt cho server (phút).",
             "minimum": 0
           },
           "running_since": {
@@ -5961,6 +6042,12 @@
             "items": {
               "$ref": "#/components/schemas/MetricSampleDto"
             }
+          },
+          "step_seconds": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Bước thời gian giữa các điểm tính bằng giây.",
+            "minimum": 0
           }
         }
       },

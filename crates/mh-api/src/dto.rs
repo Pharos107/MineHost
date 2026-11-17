@@ -88,6 +88,8 @@ pub struct ServerDto {
     /// Giờ khởi động lại hằng ngày (giờ máy), dạng `HH:MM`, đã sắp xếp.
     pub restart_at: Option<Vec<String>>,
     pub backup: Option<BackupSettingsDto>,
+    /// Thời gian giữ lịch sử chỉ số trong RAM (phút).
+    pub metrics_retention_minutes: Option<u32>,
     pub eula_accepted: bool,
     /// RFC 3339.
     pub created_at: Option<String>,
@@ -129,6 +131,7 @@ impl From<ServerView> for ServerDto {
             restart_on_crash: None,
             restart_at: None,
             backup: None,
+            metrics_retention_minutes: None,
             eula_accepted: false,
             created_at: None,
             job_id: None,
@@ -177,6 +180,7 @@ impl From<ServerView> for ServerDto {
                 schedule: spec.backup.schedule.to_string(),
                 keep: spec.backup.keep,
             });
+            dto.metrics_retention_minutes = Some(spec.metrics.retention_minutes);
             dto.eula_accepted = spec.eula_accepted();
             dto.created_at = spec.created_at.format(&Rfc3339).ok();
             dto.modpack = spec.modpack.as_ref().map(Into::into);
@@ -235,6 +239,8 @@ pub struct PatchServerBody {
     pub backup: Option<BackupSettingsBody>,
     /// Phiên bản Java chính (`8`, `11`, `17`, `21`, `25`).
     pub java_major: Option<u16>,
+    /// Thời gian giữ lịch sử chỉ số trong RAM (phút), từ `5` tới `14398560`.
+    pub metrics_retention_minutes: Option<u32>,
 }
 
 /// Sao lưu tự động của một server (spec P2, mục 4.1).
@@ -442,9 +448,15 @@ pub struct MetricSampleDto {
     /// RFC 3339.
     pub at: String,
     pub cpu_percent: f32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cpu_max: Option<f32>,
     pub memory_bytes: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_max_bytes: Option<u64>,
     /// `null` cho tới khi có theo dõi người chơi.
     pub players: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub players_max: Option<u32>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -453,6 +465,13 @@ pub struct ServerMetricsDto {
     pub disk_bytes: Option<u64>,
     /// RFC 3339. Có khi server đang ở trạng thái chạy.
     pub running_since: Option<String>,
+    /// Thời điểm mẫu cũ nhất đang giữ (RFC 3339).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub oldest_at: Option<String>,
+    /// Thời gian giữ lịch sử chỉ số đang đặt cho server (phút).
+    pub retention_minutes: u32,
+    /// Bước thời gian giữa các điểm tính bằng giây.
+    pub step_seconds: u32,
 }
 
 impl From<MetricSample> for MetricSampleDto {
@@ -460,8 +479,11 @@ impl From<MetricSample> for MetricSampleDto {
         Self {
             at: sample.at.format(&Rfc3339).unwrap_or_default(),
             cpu_percent: sample.cpu_percent,
+            cpu_max: sample.cpu_max,
             memory_bytes: sample.memory_bytes,
+            memory_max_bytes: sample.memory_max_bytes,
             players: sample.players,
+            players_max: sample.players_max,
         }
     }
 }
@@ -474,6 +496,9 @@ impl From<ServerMetrics> for ServerMetricsDto {
             running_since: metrics
                 .running_since
                 .and_then(|at| at.format(&Rfc3339).ok()),
+            oldest_at: metrics.oldest_at.and_then(|at| at.format(&Rfc3339).ok()),
+            retention_minutes: metrics.retention_minutes,
+            step_seconds: metrics.step_seconds,
         }
     }
 }

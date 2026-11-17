@@ -1261,14 +1261,20 @@ export interface components {
             /** @description RFC 3339. */
             at: string;
             /** Format: float */
+            cpu_max?: number | null;
+            /** Format: float */
             cpu_percent: number;
             /** Format: int64 */
             memory_bytes: number;
+            /** Format: int64 */
+            memory_max_bytes?: number | null;
             /**
              * Format: int32
              * @description `null` cho tới khi có theo dõi người chơi.
              */
             players?: number | null;
+            /** Format: int32 */
+            players_max?: number | null;
         };
         MissingDepDto: {
             id: string;
@@ -1296,6 +1302,11 @@ export interface components {
              */
             java_major?: number | null;
             memory_mb?: components["schemas"]["MemoryDto"] | null;
+            /**
+             * Format: int32
+             * @description Thời gian giữ lịch sử chỉ số trong RAM (phút), từ `5` tới `14398560`.
+             */
+            metrics_retention_minutes?: number | null;
             name?: string | null;
             /** Format: int32 */
             port?: number | null;
@@ -1524,6 +1535,11 @@ export interface components {
             /** @description Bản mod loader; chỉ có với Fabric, Quilt, Forge, NeoForge. */
             loader_version?: string | null;
             memory_mb?: components["schemas"]["MemoryDto"] | null;
+            /**
+             * Format: int32
+             * @description Thời gian giữ lịch sử chỉ số trong RAM (phút).
+             */
+            metrics_retention_minutes?: number | null;
             minecraft?: string | null;
             modpack?: components["schemas"]["ServerModpackDto"] | null;
             name?: string | null;
@@ -1545,9 +1561,21 @@ export interface components {
         ServerMetricsDto: {
             /** Format: int64 */
             disk_bytes?: number | null;
+            /** @description Thời điểm mẫu cũ nhất đang giữ (RFC 3339). */
+            oldest_at?: string | null;
+            /**
+             * Format: int32
+             * @description Thời gian giữ lịch sử chỉ số đang đặt cho server (phút).
+             */
+            retention_minutes: number;
             /** @description RFC 3339. Có khi server đang ở trạng thái chạy. */
             running_since?: string | null;
             samples: components["schemas"]["MetricSampleDto"][];
+            /**
+             * Format: int32
+             * @description Bước thời gian giữa các điểm tính bằng giây.
+             */
+            step_seconds: number;
         };
         /** @description `[modpack]` của server: nguồn, project và bản đang cài. */
         ServerModpackDto: {
@@ -3854,6 +3882,10 @@ export interface operations {
                 id: string;
                 /** @description RFC 3339. Chỉ lấy mẫu sau thời điểm này. Dấu `+` trong offset phải viết `%2B`. */
                 since: string | null;
+                /** @description RFC 3339. Chỉ lấy mẫu tới (bao gồm) thời điểm này. */
+                until: string | null;
+                /** @description Giới hạn số điểm trả về (gộp theo khung đều, 1..=2000). */
+                max_points: number | null;
             };
             cookie?: never;
         };

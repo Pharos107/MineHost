@@ -29,7 +29,7 @@ export function OverviewPage() {
   return (
     <Stack gap={4}>
       <Tiles server={server} samples={samples} disk={metrics.data?.disk_bytes ?? null} since={metrics.data?.running_since ?? null} now={now} />
-      {online ? <OverviewCharts server={server} samples={samples} now={now} /> : <Notice tone="info">{t("overview.offline")}</Notice>}
+      {online ? <OverviewCharts server={server} liveMetrics={metrics.data} now={now} /> : <Notice tone="info">{t("overview.offline")}</Notice>}
       <Columns count={2}>
         <ServerInfoCard server={server} />
         <ConsoleTail server={server} />

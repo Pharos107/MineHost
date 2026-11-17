@@ -8,7 +8,7 @@ export { BlockBanner } from "./BlockBanner";
 export { BlockWordmark } from "./BlockWordmark";
 export { Breadcrumb, type Crumb } from "./Breadcrumb";
 export { Button, IconButton, type ButtonSize, type ButtonVariant } from "./Button";
-export { Card, PageHeader } from "./Card";
+export { Card, PageHeader, type RectBox } from "./Card";
 export { ChoiceGroup, type Choice } from "./ChoiceGroup";
 export { CodeEditor } from "./CodeEditor";
 export { languageFor, type CodeLanguage } from "./codeLanguage";

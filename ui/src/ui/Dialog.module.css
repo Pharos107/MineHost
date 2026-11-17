@@ -13,6 +13,10 @@
   width: min(44rem, calc(100vw - 32px));
 }
 
+.xl {
+  width: min(72rem, calc(100vw - 32px));
+}
+
 .dialog::backdrop {
   background: rgb(3 8 15 / 0.6);
 }

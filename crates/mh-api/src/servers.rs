@@ -6,7 +6,7 @@ use axum::Json;
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
-use mh_app::{App, CreateRequest, SettingsPatch};
+use mh_app::{App, CreateRequest, MetricsRange, SettingsPatch};
 use mh_core::{
     BackupSchedule, DailyTime, GamePort, LoaderKind, LoaderVersion, McVersion, MemoryLimits,
     ServerName,
@@ -106,6 +106,7 @@ pub async fn patch(
             .map_err(|_| ApiError::invalid("backup.schedule"))?,
         backup_keep: body.backup.as_ref().and_then(|b| b.keep),
         java_major: body.java_major,
+        metrics_retention_minutes: body.metrics_retention_minutes,
     };
     app.update_settings(id, patch)?;
     Ok(Json(app.get(id)?.into()))
@@ -247,6 +248,10 @@ pub async fn put_properties(
 pub struct MetricsQuery {
     /// RFC 3339. Chỉ lấy mẫu sau thời điểm này. Dấu `+` trong offset phải viết `%2B`.
     pub since: Option<String>,
+    /// RFC 3339. Chỉ lấy mẫu tới (bao gồm) thời điểm này.
+    pub until: Option<String>,
+    /// Giới hạn số điểm trả về (gộp theo khung đều, 1..=2000).
+    pub max_points: Option<usize>,
 }
 
 #[utoipa::path(get, path = "/api/v1/servers/{id}/metrics", tag = "servers",
@@ -261,12 +266,29 @@ pub async fn metrics(
     IdPath(id): IdPath,
     Query(query): Query<MetricsQuery>,
 ) -> ApiResult<Json<ServerMetricsDto>> {
-    let since = query.since.as_deref().map(parse_since).transpose()?;
-    Ok(Json(app.metrics(id, since)?.into()))
+    let since = query
+        .since
+        .as_deref()
+        .map(|s| parse_rfc3339(s, "since"))
+        .transpose()?;
+    let until = query
+        .until
+        .as_deref()
+        .map(|s| parse_rfc3339(s, "until"))
+        .transpose()?;
+    if matches!(query.max_points, Some(0)) {
+        return Err(ApiError::invalid("max_points"));
+    }
+    let range = MetricsRange {
+        since,
+        until,
+        max_points: query.max_points.map(|n| n.min(2_000)),
+    };
+    Ok(Json(app.metrics_range(id, range)?.into()))
 }
 
-fn parse_since(text: &str) -> Result<OffsetDateTime, ApiError> {
-    OffsetDateTime::parse(text, &Rfc3339).map_err(|_| ApiError::invalid("since"))
+fn parse_rfc3339(text: &str, field: &'static str) -> Result<OffsetDateTime, ApiError> {
+    OffsetDateTime::parse(text, &Rfc3339).map_err(|_| ApiError::invalid(field))
 }
 
 pub(crate) fn memory(m: MemoryDto) -> ApiResult<MemoryLimits> {

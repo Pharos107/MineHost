@@ -33,9 +33,10 @@ export interface ChartStats {
 export function summarize(points: ChartPoint[]): ChartStats | undefined {
   const last = points.at(-1);
   if (!last) return undefined;
-  const values = points.map((p) => p.v);
-  const sum = values.reduce((total, v) => total + v, 0);
-  return { last: last.v, average: sum / values.length, max: Math.max(...values), min: Math.min(...values) };
+  const sum = points.reduce((total, p) => total + p.v, 0);
+  const max = Math.max(...points.map((p) => p.vMax ?? p.v));
+  const min = Math.min(...points.map((p) => p.v));
+  return { last: last.v, average: sum / points.length, max, min };
 }
 
 /** Màn hình đủ rộng để xếp biểu đồ cạnh nhau (cùng mốc 900 px với `Columns`). jsdom thì coi là rộng. */

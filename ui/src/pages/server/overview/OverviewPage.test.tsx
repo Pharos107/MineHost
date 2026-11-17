@@ -46,15 +46,22 @@ function sample(at: string, cpu: number, memory: number, players: number | null 
   return { at, cpu_percent: cpu, memory_bytes: memory, players };
 }
 
-function renderPage(s: Server, metrics: ServerMetrics) {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (url: string) => {
-      if (url === "/api/v1/servers/A/metrics") return Response.json(metrics);
-      if (url === "/api/v1/servers/A/players") return Response.json(PLAYERS);
-      return Response.json({}, { status: 404 });
-    }),
-  );
+function metricsPayload(patch: Partial<ServerMetrics>): ServerMetrics {
+  return { samples: [], disk_bytes: null, running_since: null, retention_minutes: 60, step_seconds: 5, ...patch };
+}
+
+function renderPage(s: Server, metrics: Partial<ServerMetrics>) {
+  const payload = metricsPayload(metrics);
+  const fetchSpy = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url.startsWith("/api/v1/servers/A/metrics")) return Response.json(payload);
+    if (url === "/api/v1/servers/A/players") return Response.json(PLAYERS);
+    if (url === "/api/v1/servers/A" && init?.method === "PATCH") {
+      const body = JSON.parse(String(init.body)) as { metrics_retention_minutes?: number };
+      return Response.json({ ...s, metrics_retention_minutes: body.metrics_retention_minutes ?? s.metrics_retention_minutes });
+    }
+    return Response.json({}, { status: 404 });
+  });
+  vi.stubGlobal("fetch", fetchSpy);
   // `OverviewPage` đọc server từ `Outlet` của `ServerLayout`; ở đây dựng một layout giả.
   function Layout() {
     return <Routes><Route element={<OutletWith server={s} />}><Route index element={<OverviewPage />} /></Route></Routes>;
@@ -66,6 +73,7 @@ function renderPage(s: Server, metrics: ServerMetrics) {
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  return fetchSpy;
 }
 
 function OutletWith({ server: s }: { server: Server }) {
@@ -109,11 +117,36 @@ describe("OverviewPage", () => {
     expect(document.querySelector("[data-columns]")?.getAttribute("data-columns")).toBe("1");
     expect(localStorage.getItem("minehost.overview.charts")).toBe("stacked");
 
-    await userEvent.click(screen.getAllByRole("button", { name: "Xem chi tiết" })[0]!);
+    await userEvent.click(screen.getByRole("button", { name: "Mở chi tiết: CPU trong 1 giờ qua" }));
     const dialog = screen.getByRole("dialog", { name: "CPU trong 1 giờ qua" });
     expect(dialog.textContent).toContain("Trung bình20 %");
     expect(dialog.textContent).toContain("Cao nhất30 %");
     expect(dialog.textContent).toContain("Thấp nhất10 %");
+    expect(screen.getByRole("combobox", { name: "Chọn ngày xem" })).toBeTruthy();
+  });
+
+  it("bấm bánh răng mở cài đặt biểu đồ, đổi khung hiển thị và thời gian lưu server", async () => {
+    const now = new Date().toISOString();
+    const fetchSpy = renderPage(server({ metrics_retention_minutes: 60 }), { samples: [sample(now, 15, GB)] });
+    await screen.findByRole("img", { name: "CPU trong 1 giờ qua: 15 %" });
+
+    await userEvent.click(screen.getAllByRole("button", { name: "Cài đặt biểu đồ" })[0]!);
+    const dialog = screen.getByRole("dialog", { name: "Cài đặt: CPU trong 1 giờ qua" });
+    expect(dialog).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Hủy" })).toBeTruthy();
+    expect(screen.queryByLabelText("Thời lượng tùy chỉnh")).toBeNull();
+
+    await userEvent.click(screen.getAllByRole("button", { name: "Tùy chỉnh" })[1]!);
+    expect(screen.getByRole("spinbutton", { name: "Thời lượng tùy chỉnh" })).toBeTruthy();
+
+    await userEvent.click(screen.getAllByRole("button", { name: "30 phút" })[0]!);
+    await userEvent.click(screen.getAllByRole("button", { name: "1 ngày" })[1]!);
+    await userEvent.click(screen.getByRole("button", { name: "Lưu" }));
+
+    expect(await screen.findByRole("img", { name: "CPU trong 30 phút qua: 15 %" })).toBeTruthy();
+    const patchCall = fetchSpy.mock.calls.find(([u, init]) => u === "/api/v1/servers/A" && init?.method === "PATCH");
+    expect(patchCall).toBeTruthy();
+    expect(JSON.parse(String(patchCall?.[1]?.body))).toEqual({ metrics_retention_minutes: 1440 });
   });
 
   it("thẻ Thông tin server, biểu đồ Người chơi và vài dòng console cuối", async () => {
@@ -143,7 +176,7 @@ describe("OverviewPage", () => {
 describe("chỉ số", () => {
   it("giữ tối đa 720 mẫu", () => {
     const many = Array.from({ length: MAX_SAMPLES }, (_, i) => sample(String(i), i, 0));
-    const next = appendSample({ samples: many, disk_bytes: null, running_since: null }, sample("x", 1, 0));
+    const next = appendSample(metricsPayload({ samples: many }), sample("x", 1, 0));
     expect(next?.samples).toHaveLength(MAX_SAMPLES);
     expect(next?.samples[0]?.at).toBe("1");
     expect(next?.samples.at(-1)?.at).toBe("x");

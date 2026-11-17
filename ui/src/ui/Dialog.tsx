@@ -1,8 +1,9 @@
 import { X } from "lucide-react";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button, IconButton } from "./Button";
+import type { RectBox } from "./Card";
 import { cx } from "./cx";
 import styles from "./Dialog.module.css";
 import { Field } from "./Field";
@@ -12,7 +13,9 @@ interface DialogProps {
   open: boolean;
   onClose: () => void;
   title: string;
-  size?: "md" | "lg";
+  size?: "md" | "lg" | "xl";
+  /** Vị trí thẻ nguồn để phóng to mượt khi mở. */
+  originRect?: RectBox | null;
   /** `false` khi người dùng phải chọn một nút (ví dụ EULA): Esc và bấm ra ngoài không đóng. */
   dismissible?: boolean;
   children: ReactNode;
@@ -22,26 +25,41 @@ interface DialogProps {
  * Hộp thoại dựa trên `<dialog>` để trình duyệt lo khóa focus và nền mờ. Nội dung chỉ được
  * dựng khi mở, nên trạng thái bên trong (ô đã gõ…) tự xóa sau mỗi lần đóng.
  */
-export function Dialog({ open, onClose, title, size = "md", dismissible = true, children }: DialogProps) {
+export function Dialog({ open, onClose, title, size = "md", originRect, dismissible = true, children }: DialogProps) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
     if (open && !dialog.open) {
       dialog.showModal();
-      // `showModal` tự focus phần tử đầu tiên (nút đóng); ô cần gõ ngay thì đánh dấu `data-autofocus`.
       dialog.querySelector<HTMLElement>("[data-autofocus]")?.focus();
+      if (originRect && typeof dialog.animate === "function" && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+        const dest = dialog.getBoundingClientRect();
+        if (dest.width > 0 && dest.height > 0) {
+          const dx = originRect.left + originRect.width / 2 - (dest.left + dest.width / 2);
+          const dy = originRect.top + originRect.height / 2 - (dest.top + dest.height / 2);
+          const sx = Math.max(0.25, originRect.width / dest.width);
+          const sy = Math.max(0.25, originRect.height / dest.height);
+          dialog.animate(
+            [
+              { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, opacity: 0.5 },
+              { transform: "translate(0, 0) scale(1, 1)", opacity: 1 },
+            ],
+            { duration: 200, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+          );
+        }
+      }
     }
     if (!open && dialog.open) dialog.close();
-  }, [open]);
+  }, [open, originRect]);
 
   return (
     <dialog
       ref={ref}
-      className={cx(styles.dialog, size === "lg" && styles.lg)}
+      className={cx(styles.dialog, size === "lg" && styles.lg, size === "xl" && styles.xl)}
       aria-labelledby={titleId}
       onCancel={(e) => {
         // Đóng theo prop `open`, không để trình duyệt tự đóng rồi lệch với state của React.

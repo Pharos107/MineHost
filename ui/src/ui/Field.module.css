@@ -70,6 +70,7 @@
 .selectWrap {
   position: relative;
   display: flex;
+  flex-shrink: 0;
   min-width: 0;
 }
 
