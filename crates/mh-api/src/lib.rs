@@ -17,6 +17,7 @@ mod guard;
 mod import;
 mod jobs;
 mod lan;
+mod metrics_dto;
 mod modpack;
 mod players;
 mod preflight;
