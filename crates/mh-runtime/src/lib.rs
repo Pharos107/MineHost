@@ -90,13 +90,16 @@ pub enum RuntimeError {
     /// Mỗi lệnh console là một dòng; ký tự xuống dòng sẽ biến nó thành nhiều lệnh.
     #[error("lệnh console không được chứa ký tự xuống dòng")]
     MultiLine,
+    /// Server chưa đọc stdin (đang nạp mod, hay treo) và hàng lệnh chờ đã đầy.
+    #[error("server chưa đọc các lệnh trước, hàng lệnh chờ đã đầy")]
+    StdinFull,
 }
 
 impl RuntimeError {
     pub fn code(&self) -> ErrorCode {
         match self {
             Self::NoTokio | Self::Spawn { .. } => ErrorCode::Internal,
-            Self::Exited => ErrorCode::ServerBusy,
+            Self::Exited | Self::StdinFull => ErrorCode::ServerBusy,
             Self::MultiLine => ErrorCode::InvalidInput,
         }
     }
@@ -187,15 +190,19 @@ impl ProcessRuntime {
 }
 
 impl ProcessControl {
-    /// Gửi một dòng vào stdin, kèm `\n`.
+    /// Gửi một dòng vào stdin, kèm `\n`. Không bao giờ chờ: server không đọc stdin (Forge đang nạp
+    /// mod, hay đang treo) thì pipe và hàng lệnh đầy, và người gọi (actor của server) mà chờ ở đây thì
+    /// cả nút Buộc dừng cũng không tới được.
     pub async fn send_line(&self, line: &str) -> Result<(), RuntimeError> {
         if line.contains(['\n', '\r']) {
             return Err(RuntimeError::MultiLine);
         }
         self.stdin
-            .send(line.to_owned())
-            .await
-            .map_err(|_| RuntimeError::Exited)
+            .try_send(line.to_owned())
+            .map_err(|err| match err {
+                TrySendError::Full(_) => RuntimeError::StdinFull,
+                TrySendError::Closed(_) => RuntimeError::Exited,
+            })
     }
 
     /// Kill ngay, không chờ server lưu world. Gọi nhiều lần không sao.
