@@ -769,6 +769,11 @@
       "submit": "Search",
       "none": "No files found",
       "truncated": "Showing only the first {{count}} results; try a more specific name."
+    },
+    "jobDone": {
+      "compress_files": "Compression finished.",
+      "extract_files": "Extraction finished.",
+      "other": "Done."
     }
   },
   "auth": {

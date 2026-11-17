@@ -15,6 +15,8 @@ import { UploadZone } from "./UploadZone";
 
 const rowKey = (e: FileEntry) => `${e.kind}:${e.name}`;
 const isZip = (e: FileEntry) => e.kind === "file" && e.name.toLowerCase().endsWith(".zip");
+/** File nén và jar chắc chắn không phải văn bản: không mở trình sửa, chỉ tải xuống hoặc giải nén. */
+const isBinary = (name: string) => /\.(zip|jar|gz|7z|rar|mca|dat)$/i.test(name);
 
 /** Trang Tệp (spec P2 mục 6.6, spec trang Tệp mục 2): duyệt, chọn nhiều, di chuyển, tìm, nén, giải nén. */
 export function FilesPage() {
@@ -26,7 +28,7 @@ export function FilesPage() {
   const list = useQuery({ queryKey: ["files", server.id, dir], queryFn: () => filesApi.list(server.id, dir) });
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ["files", server.id] });
   const [dialog, setDialog] = useState<FileDialog | null>(null);
-  const [outcome, setOutcome] = useState<DialogOutcome & { failed?: Job }>({});
+  const [outcome, setOutcome] = useState<Outcome>({});
   // Chọn gắn với thư mục: sang thư mục khác thì coi như bỏ chọn.
   const [picked, setPicked] = useState<{ dir: string; keys: Set<string> }>({ dir, keys: new Set() });
   const selected = picked.dir === dir ? picked.keys : new Set<string>();
@@ -42,7 +44,7 @@ export function FilesPage() {
     refresh();
   };
   const onJobFinish = (job: Job) => {
-    setOutcome(job.state === "failed" ? { failed: job } : {});
+    setOutcome(job.state === "failed" ? { failed: job } : { finished: job });
     refresh();
   };
 
@@ -95,7 +97,7 @@ export function FilesPage() {
         label={t("files.path")}
         items={[{ label: t("files.root"), to: "?path=" }, ...pathSteps(dir).map((s) => ({ label: s.name, to: `?path=${encodeURIComponent(s.path)}` }))]}
       />
-      <Outcome outcome={outcome} onJobFinish={onJobFinish} />
+      <OutcomeNotice outcome={outcome} onJobFinish={onJobFinish} />
       <UploadZone serverId={server.id} dir={dir} onDone={refresh} />
       {list.isError ? (
         <Notice tone="danger">{errorMessage(t, list.error)}</Notice>
@@ -128,11 +130,14 @@ export function FilesPage() {
   );
 }
 
-/** Thông báo sau thao tác: mục đã vào thùng rác, tiến độ Job nén / giải nén, hoặc lỗi của Job đó. */
-function Outcome({ outcome, onJobFinish }: { outcome: DialogOutcome & { failed?: Job }; onJobFinish: (job: Job) => void }) {
+type Outcome = DialogOutcome & { failed?: Job; finished?: Job };
+
+/** Thông báo sau thao tác: mục đã vào thùng rác, tiến độ Job nén / giải nén, rồi kết quả của Job đó. */
+function OutcomeNotice({ outcome, onJobFinish }: { outcome: Outcome; onJobFinish: (job: Job) => void }) {
   const { t } = useTranslation();
   if (outcome.jobId !== undefined) return <JobProgress key={outcome.jobId} jobId={outcome.jobId} onFinish={onJobFinish} />;
   if (outcome.failed) return <Notice tone="danger">{errorMessage(t, jobError(outcome.failed))}</Notice>;
+  if (outcome.finished) return <Notice tone="success">{t(`files.jobDone.${outcome.finished.kind}`, { defaultValue: t("files.jobDone.other") })}</Notice>;
   if (outcome.trashed && outcome.trashed.length > 0) {
     return (
       <Notice tone="success" title={t("files.trashed")}>
@@ -186,7 +191,7 @@ function EntryName({ serverId, dir, entry }: { serverId: string; dir: string; en
     </Stack>
   );
   if (entry.kind === "dir") return <Link to={`?path=${encodeURIComponent(path)}`}>{label}</Link>;
-  if ((entry.size ?? 0) <= EDITABLE_MAX_BYTES) {
+  if ((entry.size ?? 0) <= EDITABLE_MAX_BYTES && !isBinary(entry.name)) {
     return <Link to={`/servers/${serverId}/files/edit?path=${encodeURIComponent(path)}`}>{label}</Link>;
   }
   return label;

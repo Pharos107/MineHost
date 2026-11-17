@@ -49,7 +49,7 @@ export function MoveDialog({ serverId, from, paths, loading, error, onCancel, on
         {list.isSuccess && folders.length === 0 && <EmptyState icon={Folder} title={t("files.move.noFolders")} />}
         <Stack gap={1}>
           {folders.map((entry) => (
-            <Button key={entry.name} variant="ghost" icon={Folder} onClick={() => setDir(joinPath(dir, entry.name))}>
+            <Button key={entry.name} variant="ghost" icon={Folder} fullWidth align="start" onClick={() => setDir(joinPath(dir, entry.name))}>
               {entry.name}
             </Button>
           ))}

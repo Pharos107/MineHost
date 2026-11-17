@@ -15,6 +15,8 @@ interface ButtonProps extends NativeProps {
   size?: ButtonSize;
   /** Trải nút hết chiều ngang khung chứa. */
   fullWidth?: boolean;
+  /** `start`: chữ dồn trái, dùng cho nút là một dòng trong danh sách (ví dụ chọn thư mục). */
+  align?: "center" | "start";
   /** Đang chờ kết quả: hiện vòng quay và không cho bấm lại. */
   loading?: boolean;
   icon?: LucideIcon;
@@ -25,6 +27,7 @@ export function Button({
   variant = "secondary",
   size = "md",
   fullWidth = false,
+  align = "center",
   loading = false,
   icon: Icon,
   disabled,
@@ -36,7 +39,7 @@ export function Button({
     <button
       {...rest}
       type={type}
-      className={cx(styles.button, styles[variant], styles[size], fullWidth && styles.fullWidth)}
+      className={cx(styles.button, styles[variant], styles[size], fullWidth && styles.fullWidth, align === "start" && styles.alignStart)}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
     >

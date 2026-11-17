@@ -88,7 +88,7 @@ test("nén, giải nén, tìm và xóa nhiều mục", async ({ page, request })
   const compress = page.getByRole("dialog", { name: "Nén 1 mục" });
   await compress.getByRole("textbox", { name: "Tên file zip" }).fill("cau-hinh.zip");
   await compress.getByRole("button", { name: "Nén" }).click();
-  await expect(table.getByRole("link", { name: "cau-hinh.zip" })).toBeVisible({ timeout: 15_000 });
+  await expect(table.getByText("cau-hinh.zip", { exact: true })).toBeVisible({ timeout: 15_000 });
 
   await table.getByRole("button", { name: "Thao tác khác cho cau-hinh.zip" }).click();
   await page.getByRole("menuitem", { name: "Giải nén" }).click();
@@ -108,5 +108,5 @@ test("nén, giải nén, tìm và xóa nhiều mục", async ({ page, request })
   await page.getByRole("button", { name: "Xóa", exact: true }).click();
   await page.getByRole("dialog", { name: "Xóa 2 mục?" }).getByRole("button", { name: "Xóa" }).click();
   await expect(page.getByText("Đã chuyển vào thùng rác")).toBeVisible();
-  await expect(table.getByRole("link", { name: "cau-hinh.zip" })).toBeHidden();
+  await expect(table.getByText("cau-hinh.zip", { exact: true })).toBeHidden();
 });

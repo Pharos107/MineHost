@@ -769,6 +769,11 @@
       "submit": "Tìm",
       "none": "Không thấy file nào",
       "truncated": "Chỉ hiện {{count}} kết quả đầu, hãy gõ cụ thể hơn."
+    },
+    "jobDone": {
+      "compress_files": "Đã nén xong.",
+      "extract_files": "Đã giải nén xong.",
+      "other": "Đã xong."
     }
   },
   "auth": {
