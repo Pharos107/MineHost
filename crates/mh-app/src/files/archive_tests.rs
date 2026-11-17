@@ -133,6 +133,28 @@ fn zip_thoat_ra_ngoai_bi_tu_choi_va_khong_ghi_gi() {
 }
 
 #[test]
+fn ten_co_dau_gach_nguoc_bi_tu_choi() {
+    let (tmp, root) = tree();
+    raw_zip(tmp.path(), "bs.zip", &[("a\\..\\..\\evil.txt", b"x")]);
+    let err = plan_extract(&root, "bs.zip", "out", None).unwrap_err();
+    assert_eq!(err.code, ErrorCode::PathOutsideRoot);
+    assert!(!tmp.path().join("out").exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink_chen_vao_sau_khi_kiem_thi_khong_ghi_ra_ngoai() {
+    let (tmp, root) = tree();
+    let outside_dir = tempfile::tempdir().unwrap();
+    raw_zip(tmp.path(), "p.zip", &[("sub/x.txt", b"x")]);
+    let plan = plan_extract(&root, "p.zip", "out", None).unwrap();
+    std::os::unix::fs::symlink(outside_dir.path(), tmp.path().join("out")).unwrap();
+    let err = extract_sync(plan, &mut |_| Ok(())).unwrap_err();
+    assert_eq!(err.code, ErrorCode::PathOutsideRoot);
+    assert!(!outside_dir.path().join("sub").exists());
+}
+
+#[test]
 fn trung_file_da_co_thi_bao_duong_dan_thu_muc_thi_gop() {
     let (tmp, root) = tree();
     raw_zip(

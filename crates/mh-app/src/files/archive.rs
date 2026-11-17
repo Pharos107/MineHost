@@ -191,6 +191,8 @@ impl Drop for PartFile {
 #[derive(Debug)]
 pub(crate) struct ExtractPlan {
     archive: ZipArchive<File>,
+    /// Gốc server đã `canonicalize`, để lúc ghi kiểm lại không có symlink chen vào.
+    root: PathBuf,
     dest: PathBuf,
     items: Vec<ExtractItem>,
     pub(crate) total: u64,
@@ -241,6 +243,12 @@ pub(crate) fn plan_extract(
         };
         let user_path = child_path(dest, &rel);
         let target = join_user(root, &user_path)?;
+        // Chặn thêm ở đây chứ không chỉ tin `SafeRoot`: mục phải nằm trong thư mục đích.
+        if !target.as_path().starts_with(dest_path.as_path())
+            || target.as_path() == dest_path.as_path()
+        {
+            return Err(outside(&user_path));
+        }
         let node = node_at(target.as_path())?;
         let size = (!entry.is_dir()).then(|| entry.size());
         // Thư mục đã có thì gộp vào; file nào đã có thì không ghi đè.
@@ -262,8 +270,10 @@ pub(crate) fn plan_extract(
             format!("cần {total} byte, còn {free} byte"),
         ));
     }
+    let real_root = fs::canonicalize(root.path()).map_err(|err| io_err(root.path(), err))?;
     Ok(ExtractPlan {
         archive,
+        root: real_root,
         dest: dest_path.into_path_buf(),
         items,
         total,
@@ -271,11 +281,14 @@ pub(crate) fn plan_extract(
 }
 
 /// `enclosed_name` đã bỏ `..` và gốc; ghép lại bằng `/` cho `SafeRoot`. Rỗng thì không có tên.
+///
+/// Trên Linux `a\..` là một thành phần, nhưng `SafeRoot` tách cả `\`: từ chối luôn `\` và `:`
+/// (ổ đĩa, luồng dữ liệu phụ trên Windows) để hai bên không hiểu khác nhau.
 fn slash_path(path: &Path) -> Option<String> {
     let parts: Option<Vec<&str>> = path
         .components()
         .map(|part| match part {
-            Component::Normal(name) => name.to_str(),
+            Component::Normal(name) => name.to_str().filter(|name| !name.contains(['\\', ':'])),
             _ => None,
         })
         .collect();
@@ -285,15 +298,15 @@ fn slash_path(path: &Path) -> Option<String> {
 
 /// Giải nén theo `plan`. Lỗi giữa chừng thì giữ các file đã ghi (spec trang Tệp, mục 3).
 pub(crate) fn extract_sync(mut plan: ExtractPlan, progress: Progress<'_>) -> Result<(), AppError> {
-    fs::create_dir_all(&plan.dest).map_err(|err| io_err(&plan.dest, err))?;
+    make_dirs_inside(&plan.root, &plan.dest)?;
     let mut done = 0u64;
     for item in &plan.items {
         let Some(size) = item.size else {
-            fs::create_dir_all(&item.target).map_err(|err| io_err(&item.target, err))?;
+            make_dirs_inside(&plan.root, &item.target)?;
             continue;
         };
         if let Some(parent) = item.target.parent() {
-            fs::create_dir_all(parent).map_err(|err| io_err(parent, err))?;
+            make_dirs_inside(&plan.root, parent)?;
         }
         let mut entry = plan.archive.by_index(item.index).map_err(zip_err)?;
         let mut out = File::create_new(&item.target).map_err(|err| io_err(&item.target, err))?;
@@ -315,6 +328,29 @@ pub(crate) fn extract_sync(mut plan: ExtractPlan, progress: Progress<'_>) -> Res
         }
     }
     Ok(())
+}
+
+/// Tạo `dir` nhưng chỉ khi nó thật sự nằm trong gốc: từ lúc lập kế hoạch tới lúc ghi, một symlink
+/// có thể đã được đặt vào (mod đang chạy chẳng hạn). File cuối dùng `create_new` nên không đi theo link.
+fn make_dirs_inside(root: &Path, dir: &Path) -> Result<(), AppError> {
+    let mut existing = dir;
+    while !existing.exists() {
+        existing = existing
+            .parent()
+            .ok_or_else(|| outside(&dir.display().to_string()))?;
+    }
+    ensure_inside(root, existing)?;
+    fs::create_dir_all(dir).map_err(|err| io_err(dir, err))?;
+    ensure_inside(root, dir)
+}
+
+fn ensure_inside(root: &Path, path: &Path) -> Result<(), AppError> {
+    let real = fs::canonicalize(path).map_err(|err| io_err(path, err))?;
+    if real.starts_with(root) {
+        Ok(())
+    } else {
+        Err(outside(&path.display().to_string()))
+    }
 }
 
 fn file_name(path: &Path) -> Result<String, AppError> {
