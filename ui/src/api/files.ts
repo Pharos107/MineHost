@@ -3,6 +3,8 @@ import type { components } from "./schema";
 
 export type FileEntry = components["schemas"]["FileEntryDto"];
 export type TextFile = components["schemas"]["TextFileDto"];
+export type FoundEntry = components["schemas"]["FoundEntryDto"];
+export type SearchResult = components["schemas"]["FileSearchDto"];
 
 function filesPath(id: string, sub: string, path: string): string {
   return `${serverPath(id)}/files${sub}?path=${encodeURIComponent(path)}`;
@@ -19,6 +21,13 @@ export const filesApi = {
   rename: (id: string, from: string, to: string) => request<void>("POST", `${serverPath(id)}/files/rename`, { from, to }),
   remove: (id: string, path: string) => request<Trashed>("DELETE", filesPath(id, "", path)),
   downloadUrl: (id: string, path: string) => `/api/v1${filesPath(id, "/download", path)}`,
+  /** Tìm theo tên trong `path` và mọi thư mục con (spec trang Tệp, mục 3). */
+  search: (id: string, path: string, q: string) =>
+    request<SearchResult>("GET", `${filesPath(id, "/search", path)}&q=${encodeURIComponent(q)}`),
+  /** Một zip gồm các mục đã chọn; thư mục cũng tải được theo cách này. */
+  archiveUrl: (id: string, paths: string[]) => `/api/v1${serverPath(id)}/files/archive?paths=${encodeURIComponent(JSON.stringify(paths))}`,
+  compress: (id: string, paths: string[], dest: string) => request<{ job_id: number }>("POST", `${serverPath(id)}/files/compress`, { paths, dest }),
+  extract: (id: string, path: string, dest: string) => request<{ job_id: number }>("POST", `${serverPath(id)}/files/extract`, { path, dest }),
 };
 
 /**
@@ -65,6 +74,12 @@ export function joinPath(dir: string, name: string): string {
 export function pathSteps(path: string): Array<{ name: string; path: string }> {
   const parts = path.split("/").filter(Boolean);
   return parts.map((name, i) => ({ name, path: parts.slice(0, i + 1).join("/") }));
+}
+
+/** Thư mục chứa `path`; `""` là gốc. */
+export function parentOf(path: string): string {
+  const cut = path.lastIndexOf("/");
+  return cut === -1 ? "" : path.slice(0, cut);
 }
 
 /** Giống giới hạn của backend: file lớn hơn thì chỉ tải xuống, không mở trình sửa. */

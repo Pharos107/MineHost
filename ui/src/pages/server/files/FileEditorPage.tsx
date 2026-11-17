@@ -5,17 +5,12 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router";
 
 import { ApiError, errorMessage } from "../../../api/client";
-import { filesApi, pathSteps } from "../../../api/files";
+import { filesApi, parentOf, pathSteps } from "../../../api/files";
 import { formatBytes } from "../../../format";
 import { Breadcrumb, Button, CodeEditor, languageFor, Notice, Spinner, Stack, Switch } from "../../../ui";
 import { useServer } from "../ServerLayout";
 
 const WRAP_KEY = "minehost.editor.wrap";
-
-function parentOf(path: string): string {
-  const cut = path.lastIndexOf("/");
-  return cut === -1 ? "" : path.slice(0, cut);
-}
 
 /** Trình sửa code cho file văn bản ≤ 1 MiB (spec trang Tệp, mục 1). Lưu bằng nút hoặc Ctrl+S. */
 export function FileEditorPage() {

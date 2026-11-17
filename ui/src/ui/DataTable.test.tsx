@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Play, Square, SquareTerminal, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { DataTable, type Column, type RowAction } from ".";
@@ -97,5 +98,44 @@ describe("DataTable", () => {
     await userEvent.click(screen.getByRole("button", { name: "Thao tác khác cho Server 2" }));
     await userEvent.click(screen.getByRole("menuitem", { name: "Xóa" }));
     expect(remove).toHaveBeenCalledWith(ROWS[2]);
+  });
+});
+
+describe("DataTable chọn nhiều", () => {
+  function Picker() {
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+    return (
+      <DataTable
+        label="Server"
+        columns={COLUMNS}
+        rows={ROWS}
+        rowKey={(row) => row.id}
+        rowLabel={(row) => row.name}
+        toolbar={<button type="button">Tạo</button>}
+        searchText={(row) => row.name}
+        selection={{ selected, onChange: setSelected, actions: <button type="button">Xóa hết {selected.size}</button> }}
+        empty={<p>trống</p>}
+      />
+    );
+  }
+
+  it("chọn từng hàng, chọn tất cả hàng đang lọc, thanh hàng loạt thay thanh công cụ", async () => {
+    render(<Picker />);
+    const all = screen.getByRole("checkbox", { name: "Chọn tất cả hàng đang hiện" }) as HTMLInputElement;
+    await userEvent.click(screen.getByRole("checkbox", { name: "Chọn Server 2" }));
+    expect(screen.getByText("Đã chọn 1")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Xóa hết 1" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Tạo" })).toBeNull();
+    expect(all.indeterminate).toBe(true);
+
+    await userEvent.click(all);
+    expect(screen.getByText("Đã chọn 3")).toBeTruthy();
+    expect(all.checked).toBe(true);
+
+    await userEvent.click(screen.getByRole("button", { name: "Bỏ chọn" }));
+    expect(screen.getByRole("button", { name: "Tạo" })).toBeTruthy();
+    await userEvent.type(screen.getByRole("searchbox", { name: "Tìm kiếm" }), "server");
+    await userEvent.click(screen.getByRole("checkbox", { name: "Chọn tất cả hàng đang hiện" }));
+    expect(screen.getByText("Đã chọn 2")).toBeTruthy();
   });
 });

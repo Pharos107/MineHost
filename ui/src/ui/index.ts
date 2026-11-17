@@ -13,7 +13,7 @@ export { CodeEditor } from "./CodeEditor";
 export { languageFor, type CodeLanguage } from "./codeLanguage";
 export { Columns } from "./Columns";
 export { CopyField } from "./CopyField";
-export { DataTable, type Column, type RowAction } from "./DataTable";
+export { DataTable, type Column, type RowAction, type TableSelection } from "./DataTable";
 export { ConfirmDialog, Dialog, DialogBody, DialogFooter } from "./Dialog";
 export { EmptyState } from "./EmptyState";
 export { type ChartPoint } from "./chart-utils";

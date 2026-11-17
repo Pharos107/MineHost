@@ -1,20 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, File, FilePlus, Folder, FolderPlus, Pencil, Trash2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Archive, Download, File, FilePlus, Folder, FolderInput, FolderPlus, PackageOpen, Pencil, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router";
 
-import { errorMessage } from "../../../api/client";
+import { errorMessage, type Job } from "../../../api/client";
 import { EDITABLE_MAX_BYTES, filesApi, joinPath, pathSteps, type FileEntry } from "../../../api/files";
 import { formatBytes } from "../../../format";
-import { Breadcrumb, Button, ConfirmDialog, DataTable, EmptyState, Notice, Stack, type Column, type RowAction } from "../../../ui";
+import { Breadcrumb, Button, DataTable, EmptyState, Notice, Stack, type Column, type RowAction } from "../../../ui";
+import { JobProgress, jobError } from "../JobProgress";
 import { useServer } from "../ServerLayout";
-import { NameDialog } from "./NameDialog";
+import { FileDialogs, type DialogOutcome, type FileDialog } from "./FileDialogs";
 import { UploadZone } from "./UploadZone";
 
-type Dialog = { kind: "file" } | { kind: "dir" } | { kind: "rename"; entry: FileEntry } | null;
+const rowKey = (e: FileEntry) => `${e.kind}:${e.name}`;
+const isZip = (e: FileEntry) => e.kind === "file" && e.name.toLowerCase().endsWith(".zip");
 
-/** Trang Tệp (spec P2, mục 6.6): duyệt, tạo, đổi tên, xóa vào thùng rác, tải lên và tải xuống. */
+/** Trang Tệp (spec P2 mục 6.6, spec trang Tệp mục 2): duyệt, chọn nhiều, di chuyển, tìm, nén, giải nén. */
 export function FilesPage() {
   const { t } = useTranslation();
   const server = useServer();
@@ -23,41 +25,69 @@ export function FilesPage() {
   const queryClient = useQueryClient();
   const list = useQuery({ queryKey: ["files", server.id, dir], queryFn: () => filesApi.list(server.id, dir) });
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ["files", server.id] });
-  const [dialog, setDialog] = useState<Dialog>(null);
-  const [deleting, setDeleting] = useState<FileEntry | null>(null);
-  const [trashed, setTrashed] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<FileDialog | null>(null);
+  const [outcome, setOutcome] = useState<DialogOutcome & { failed?: Job }>({});
+  // Chọn gắn với thư mục: sang thư mục khác thì coi như bỏ chọn.
+  const [picked, setPicked] = useState<{ dir: string; keys: Set<string> }>({ dir, keys: new Set() });
+  const selected = picked.dir === dir ? picked.keys : new Set<string>();
+  const select = (keys: Set<string>) => setPicked({ dir, keys });
+  const selectedPaths = (list.data ?? []).filter((e) => selected.has(rowKey(e))).map((e) => joinPath(dir, e.name));
   const columns = useColumns(server.id, dir);
+  const pathOf = (e: FileEntry) => joinPath(dir, e.name);
 
-  const save = useMutation({
-    mutationFn: async ({ d, name }: { d: NonNullable<Dialog>; name: string }) => {
-      if (d.kind === "file") return filesApi.write(server.id, joinPath(dir, name), "");
-      if (d.kind === "dir") return filesApi.mkdir(server.id, joinPath(dir, name));
-      return filesApi.rename(server.id, joinPath(dir, d.entry.name), joinPath(dir, name));
-    },
-    onSuccess: () => {
-      setDialog(null);
-      refresh();
-    },
-  });
-  const remove = useMutation({
-    mutationFn: (entry: FileEntry) => filesApi.remove(server.id, joinPath(dir, entry.name)),
-    onSuccess: (result) => {
-      setDeleting(null);
-      setTrashed(result.trash_path);
-      refresh();
-    },
-  });
+  const onDone = (result: DialogOutcome) => {
+    setDialog(null);
+    setOutcome(result);
+    select(new Set());
+    refresh();
+  };
+  const onJobFinish = (job: Job) => {
+    setOutcome(job.state === "failed" ? { failed: job } : {});
+    refresh();
+  };
 
   const actions: RowAction<FileEntry>[] = [
     {
       label: t("files.download"),
       icon: Download,
-      onSelect: (e) => window.location.assign(filesApi.downloadUrl(server.id, joinPath(dir, e.name))),
-      hidden: (e) => e.kind !== "file",
+      onSelect: (e) => window.location.assign(e.kind === "file" ? filesApi.downloadUrl(server.id, pathOf(e)) : filesApi.archiveUrl(server.id, [pathOf(e)])),
     },
     { label: t("files.rename"), icon: Pencil, onSelect: (e) => setDialog({ kind: "rename", entry: e }) },
-    { label: t("files.delete"), icon: Trash2, tone: "danger", onSelect: setDeleting },
+    { label: t("files.move.action"), icon: FolderInput, onSelect: (e) => setDialog({ kind: "move", paths: [pathOf(e)] }) },
+    { label: t("files.compress.action"), icon: Archive, onSelect: (e) => setDialog({ kind: "compress", paths: [pathOf(e)] }) },
+    { label: t("files.extract.action"), icon: PackageOpen, onSelect: (e) => setDialog({ kind: "extract", path: pathOf(e) }), hidden: (e) => !isZip(e) },
+    { label: t("files.delete"), icon: Trash2, tone: "danger", onSelect: (e) => setDialog({ kind: "delete", paths: [pathOf(e)] }) },
   ];
+
+  const toolbar = (
+    <>
+      <Button size="sm" icon={FilePlus} onClick={() => setDialog({ kind: "file" })}>
+        {t("files.newFile")}
+      </Button>
+      <Button size="sm" icon={FolderPlus} onClick={() => setDialog({ kind: "dir" })}>
+        {t("files.newDir")}
+      </Button>
+      <Button size="sm" icon={Search} onClick={() => setDialog({ kind: "search" })}>
+        {t("files.search.action")}
+      </Button>
+    </>
+  );
+  const bulk = (
+    <>
+      <Button size="sm" icon={Download} onClick={() => window.location.assign(filesApi.archiveUrl(server.id, selectedPaths))}>
+        {t("files.download")}
+      </Button>
+      <Button size="sm" icon={FolderInput} onClick={() => setDialog({ kind: "move", paths: selectedPaths })}>
+        {t("files.move.action")}
+      </Button>
+      <Button size="sm" icon={Archive} onClick={() => setDialog({ kind: "compress", paths: selectedPaths })}>
+        {t("files.compress.action")}
+      </Button>
+      <Button size="sm" icon={Trash2} variant="danger" onClick={() => setDialog({ kind: "delete", paths: selectedPaths })}>
+        {t("files.delete")}
+      </Button>
+    </>
+  );
 
   return (
     <Stack gap={4}>
@@ -65,20 +95,7 @@ export function FilesPage() {
         label={t("files.path")}
         items={[{ label: t("files.root"), to: "?path=" }, ...pathSteps(dir).map((s) => ({ label: s.name, to: `?path=${encodeURIComponent(s.path)}` }))]}
       />
-      {trashed && (
-        <Notice tone="success" title={t("files.trashed")}>
-          <code>{trashed}</code>
-        </Notice>
-      )}
-      {/* Nằm ngoài bảng: thư mục trống thì bảng chỉ hiện màn hình trống, nút vẫn phải còn. */}
-      <Stack direction="row" gap={2} wrap>
-        <Button size="sm" icon={FilePlus} onClick={() => setDialog({ kind: "file" })}>
-          {t("files.newFile")}
-        </Button>
-        <Button size="sm" icon={FolderPlus} onClick={() => setDialog({ kind: "dir" })}>
-          {t("files.newDir")}
-        </Button>
-      </Stack>
+      <Outcome outcome={outcome} onJobFinish={onJobFinish} />
       <UploadZone serverId={server.id} dir={dir} onDone={refresh} />
       {list.isError ? (
         <Notice tone="danger">{errorMessage(t, list.error)}</Notice>
@@ -87,46 +104,47 @@ export function FilesPage() {
           label={t("files.table")}
           columns={columns}
           rows={list.data ?? []}
-          rowKey={(e) => `${e.kind}:${e.name}`}
+          rowKey={rowKey}
           rowLabel={(e) => e.name}
           actions={actions}
           inlineActions={1}
+          toolbar={toolbar}
           searchText={(e) => e.name}
           loading={list.isPending}
-          empty={<EmptyState icon={Folder} title={t("files.empty")} />}
+          selection={{ selected, onChange: select, actions: bulk }}
+          empty={
+            <Stack gap={3}>
+              {/* Thư mục trống thì bảng chỉ hiện màn hình trống, nút tạo vẫn phải còn. */}
+              <Stack direction="row" gap={2} wrap>
+                {toolbar}
+              </Stack>
+              <EmptyState icon={Folder} title={t("files.empty")} />
+            </Stack>
+          }
         />
       )}
-      {dialog && (
-        <NameDialog
-          title={t(`files.dialog.${dialog.kind}`)}
-          label={dialog.kind === "dir" ? t("files.dirName") : t("files.fileName")}
-          confirmLabel={dialog.kind === "rename" ? t("files.rename") : t("files.create")}
-          initial={dialog.kind === "rename" ? dialog.entry.name : ""}
-          loading={save.isPending}
-          error={save.isError ? errorMessage(t, save.error) : undefined}
-          onCancel={() => {
-            setDialog(null);
-            save.reset();
-          }}
-          onConfirm={(name) => save.mutate({ d: dialog, name })}
-        />
-      )}
-      <ConfirmDialog
-        open={deleting !== null}
-        title={t("files.deleteTitle", { name: deleting?.name ?? "" })}
-        confirmLabel={t("files.delete")}
-        loading={remove.isPending}
-        onCancel={() => {
-          setDeleting(null);
-          remove.reset();
-        }}
-        onConfirm={() => deleting && remove.mutate(deleting)}
-      >
-        <p>{t("files.deleteBody")}</p>
-        {remove.isError && <Notice tone="danger">{errorMessage(t, remove.error)}</Notice>}
-      </ConfirmDialog>
+      {dialog && <FileDialogs serverId={server.id} dir={dir} dialog={dialog} onClose={() => setDialog(null)} onDone={onDone} />}
     </Stack>
   );
+}
+
+/** Thông báo sau thao tác: mục đã vào thùng rác, tiến độ Job nén / giải nén, hoặc lỗi của Job đó. */
+function Outcome({ outcome, onJobFinish }: { outcome: DialogOutcome & { failed?: Job }; onJobFinish: (job: Job) => void }) {
+  const { t } = useTranslation();
+  if (outcome.jobId !== undefined) return <JobProgress key={outcome.jobId} jobId={outcome.jobId} onFinish={onJobFinish} />;
+  if (outcome.failed) return <Notice tone="danger">{errorMessage(t, jobError(outcome.failed))}</Notice>;
+  if (outcome.trashed && outcome.trashed.length > 0) {
+    return (
+      <Notice tone="success" title={t("files.trashed")}>
+        {outcome.trashed.map((path) => (
+          <div key={path}>
+            <code>{path}</code>
+          </div>
+        ))}
+      </Notice>
+    );
+  }
+  return null;
 }
 
 function useColumns(serverId: string, dir: string): Column<FileEntry>[] {
