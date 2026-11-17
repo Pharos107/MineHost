@@ -265,6 +265,9 @@ Lệnh chạy:
 
 - Thư mục làm việc là `servers/<id>/server/`. stdin, stdout và stderr đều là pipe; stdout và stderr
   được gộp thành một luồng `ConsoleLine { seq, stream, text }`, giải mã UTF-8 kiểu lossy.
+- **Gửi lệnh không bao giờ chờ (sửa 2026-11-17):** hàng lệnh stdin giữ 64 lệnh. Server chưa đọc stdin
+  (Forge đang nạp mod, hay treo) mà pipe và hàng đã đầy thì lệnh mới trả `SERVER_BUSY` ngay. Trước đây
+  actor của server chờ ở đây, nên cả Tắt lẫn Buộc dừng đều kẹt cho tới khi server đọc lại stdin.
 - Các cờ `encoding` là bắt buộc: Java trên Windows ghi ra pipe theo code page của hệ thống, nên
   thiếu chúng là tiếng Việt trong log bị vỡ.
 - **Windows:** cờ `CREATE_NO_WINDOW`; gán process vào một Job Object có `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`.
