@@ -171,7 +171,7 @@ stateDiagram-v2
 ### 4.4 Cổng
 
 Mặc định 25565. Nếu cổng đó đã có server MineHost khác dùng, hoặc đang bị chương trình khác chiếm
-(thử bind `0.0.0.0:<port>`), thì lấy cổng trống tiếp theo, tối đa tới 25600.
+(thử bind `0.0.0.0:<port>` rồi `[::]:<port>`), thì lấy cổng trống tiếp theo, tối đa tới 25600.
 
 ### 4.5 Mã lỗi mới trong `ErrorCode`
 
@@ -265,8 +265,16 @@ Lệnh chạy:
 
 - Thư mục làm việc là `servers/<id>/server/`. stdin, stdout và stderr đều là pipe; stdout và stderr
   được gộp thành một luồng `ConsoleLine { seq, stream, text }`, giải mã UTF-8 kiểu lossy.
+- **Server spam log (sửa 2026-11-17):** pipe luôn được đọc hết, không bao giờ dừng (dừng là server
+  treo khi ghi log). Dòng dài quá 16 KiB bị cắt, thêm đuôi `…[MineHost: dòng quá dài, đã cắt]`. Hàng
+  đợi tới actor giữ tối đa 4.096 dòng; đầy thì bỏ dòng mới và khi có chỗ thì chèn một dòng
+  `[MineHost] đã bỏ N dòng log…`. Trong actor, hẹn giờ (kill sau `stop`, sau dòng bật hỏng, tự bật
+  lại) được xét trước dòng log, để log liên tục không làm chúng không bao giờ tới lượt.
 - Các cờ `encoding` là bắt buộc: Java trên Windows ghi ra pipe theo code page của hệ thống, nên
   thiếu chúng là tiếng Việt trong log bị vỡ.
+- **Gửi lệnh không bao giờ chờ (sửa 2026-11-17):** hàng lệnh stdin giữ 64 lệnh. Server chưa đọc stdin
+  (Forge đang nạp mod, hay treo) mà pipe và hàng đã đầy thì lệnh mới trả `SERVER_BUSY` ngay. Trước đây
+  actor của server chờ ở đây, nên cả Tắt lẫn Buộc dừng đều kẹt cho tới khi server đọc lại stdin.
 - **Windows:** cờ `CREATE_NO_WINDOW`; gán process vào một Job Object có `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`.
   Handle của Job Object do controller giữ, nên controller chết thì OS kill Java.
 - **Linux:** `prctl(PR_SET_PDEATHSIG, SIGKILL)` trong `pre_exec`. Lưu ý: tín hiệu này gắn với **luồng**
@@ -288,7 +296,11 @@ Lệnh chạy:
 - Mỗi server một actor (task tokio). Nhận `Command` qua `mpsc`: `Start`, `Stop`, `Restart`, `Kill`,
   `Send(line)`. Phát `ServerEvent`/`ConsoleLine` qua `broadcast`.
 - **Trước khi bật:** EULA đã đồng ý; ghi `server-port` vào `server.properties`; cổng còn trống; Java
-  đã có (thiếu thì chạy `ensure`).
+  đã có (thiếu thì chạy `ensure`). Từ 2026-11-17 cổng còn trống nghĩa là: bind được cả `0.0.0.0` lẫn
+  `[::]` (máy không có IPv6 thì bỏ qua `[::]`); có `server-ip` thì bind được đúng địa chỉ đó; có
+  `enable-rcon=true` thì `rcon.port` (mặc định 25575) cũng trống, bận thì `PORT_IN_USE` kèm
+  `kind: "rcon"`. Cổng query (UDP) chưa kiểm tra. Kiểm tra rồi Java mới bind sau vài giây, nên chương
+  trình khác vẫn có thể chiếm cổng ở giữa; khi đó log có `FAILED TO BIND TO PORT` như cũ.
 - **Sẵn sàng:** dòng khớp regex `\]: Done \(` thì chuyển sang `Running`. Sau 5 phút chưa thấy thì vẫn
   giữ `Starting` nhưng phát cảnh báo; không tự kill.
 - **Bật hỏng mà process không thoát** (thêm ngày 2026-11-16, P3): Forge 1.20.1 in
@@ -302,7 +314,9 @@ Lệnh chạy:
 - **Crash:** process thoát mà không do người dùng yêu cầu. Nếu `restart_on_crash` thì tự bật lại
   sau 5 s, 15 s, 30 s; quá 3 lần trong 10 phút thì dừng ở `Crashed`.
 - **Console:** bộ đệm vòng 5.000 dòng, `seq` tăng dần không bao giờ lặp. Đồng thời ghi
-  `servers/<id>/logs/console-YYYY-MM-DD.log`, giữ 14 ngày.
+  `servers/<id>/logs/console-YYYY-MM-DD.log`, giữ 14 ngày. File ghi qua bộ đệm, flush khi hết dòng chờ
+  xử lý. Mỗi ngày tối đa 100 MB: chạm trần thì ghi một dòng báo rồi ngừng ghi file tới ngày sau (giờ
+  UTC); console trên giao diện vẫn đủ.
 - **Dấu đang chạy:** khi bật, tạo file `servers/<id>/.running`; khi dừng sạch, xóa file đó. Lúc
   controller khởi động, server nào còn file này (tức controller đã chết giữa chừng) hoặc có
   `autostart = true` thì được bật lại. Các server bật song song, sau khi web đã mở. Server còn

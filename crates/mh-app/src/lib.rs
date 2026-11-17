@@ -320,5 +320,14 @@ pub(crate) fn host_deps_parts() -> (PortProbe, FreeSpaceFn, u64) {
 }
 
 fn port_is_free(port: u16) -> bool {
-    std::net::TcpListener::bind(("0.0.0.0", port)).is_ok()
+    use std::net::{Ipv4Addr, Ipv6Addr, TcpListener};
+    if TcpListener::bind((Ipv4Addr::UNSPECIFIED, port)).is_err() {
+        return false;
+    }
+    // Java nghe trên `[::]` khi máy có IPv6; chương trình khác chỉ giữ `[::]` thì bind IPv4 ở trên
+    // vẫn được. Máy tắt IPv6 thì lỗi khác "đang dùng": không tính là bận.
+    !matches!(
+        TcpListener::bind((Ipv6Addr::UNSPECIFIED, port)),
+        Err(e) if e.kind() == std::io::ErrorKind::AddrInUse
+    )
 }

@@ -166,11 +166,11 @@ async fn slow_save_keeps_extending_stop_deadline() {
     assert!(console_has(&sup, "All dimensions are saved"));
 }
 
-/// Server cứ in log mãi vẫn bị kill khi chạm trần `stop_max`.
+/// Server spam log không nghỉ vẫn bị kill khi chạm trần `stop_max`: hạn kill không bị dòng log lấn lượt.
 #[tokio::test]
 async fn stop_max_caps_extensions() {
     let (sup, _) = supervisor(Setup {
-        args: &["--slow-stop-ms", "5000"],
+        args: &["--spam-on-stop"],
         config: SupervisorConfig {
             stop_max: Duration::from_millis(700),
             ..config()

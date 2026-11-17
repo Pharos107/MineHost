@@ -61,9 +61,24 @@ impl AppLauncher {
         // Người dùng đã đồng ý (có `accepted_at`), nên ghi lại `eula.txt` nếu nó bị xóa là đúng ý họ.
         write_eula(&paths.server_dir)?;
         let port = spec.network.port;
-        set_properties(&paths.server_dir, &[("server-port", &port.to_string())])?;
-        if !(self.port_free)(port.get()) {
+        let mut props = read_properties(&paths.server_dir)?;
+        props.set("server-port", &port.to_string());
+        write_properties(&paths.server_dir, &props)?;
+        if !(self.port_free)(port.get()) || bound_ip_busy(&props, port.get()) {
             return Err(port_in_use(port, None));
+        }
+        for (kind, extra) in extra_ports(&props) {
+            if !(self.port_free)(extra) {
+                return Err(AppError::new(
+                    ErrorCode::PortInUse,
+                    format!("cổng {kind} {extra} đang bận"),
+                )
+                .with_params(serde_json::json!({
+                    "port": extra,
+                    "suggested_port": null,
+                    "kind": kind,
+                })));
+            }
         }
         let java = self.ensure_java(spec.game.java_major).await?;
         Ok(JavaLaunch {
@@ -122,6 +137,36 @@ pub(crate) fn port_in_use(port: GamePort, suggested: Option<GamePort>) -> AppErr
     AppError::new(ErrorCode::PortInUse, format!("cổng {port} đang bận")).with_params(params)
 }
 
+/// Cổng TCP khác mà server sẽ mở theo `server.properties`. Bận thì Java vẫn bật lên rồi tắt hỏng,
+/// nên báo trước như cổng game. Cổng query là UDP, không kiểm tra được bằng cách này.
+fn extra_ports(props: &Properties) -> Vec<(&'static str, u16)> {
+    let mut ports = Vec::new();
+    if props.get("enable-rcon").map(str::trim) == Some("true") {
+        let rcon = props
+            .get("rcon.port")
+            .and_then(|p| p.trim().parse().ok())
+            .unwrap_or(25575);
+        ports.push(("rcon", rcon));
+    }
+    ports
+}
+
+/// `server-ip` đặt một địa chỉ cụ thể thì Java chỉ nghe ở đó. Trên Windows, bind `0.0.0.0` vẫn được
+/// khi chương trình khác đã giữ đúng địa chỉ đó, nên thử bind chính nó. Lỗi khác "đang dùng" (địa chỉ
+/// không thuộc máy này) thì để Java tự báo.
+fn bound_ip_busy(props: &Properties, port: u16) -> bool {
+    let Some(ip) = props
+        .get("server-ip")
+        .and_then(|ip| ip.trim().parse::<std::net::IpAddr>().ok())
+    else {
+        return false;
+    };
+    matches!(
+        std::net::TcpListener::bind((ip, port)),
+        Err(e) if e.kind() == std::io::ErrorKind::AddrInUse
+    )
+}
+
 /// Chỉ gọi sau khi người dùng đã bấm đồng ý EULA.
 pub(crate) fn write_eula(server_dir: &Path) -> Result<(), AppError> {
     let text =
@@ -148,11 +193,27 @@ pub(crate) fn write_properties(server_dir: &Path, props: &Properties) -> Result<
     Ok(())
 }
 
-/// Sửa vài khóa, giữ nguyên phần còn lại của file.
-pub(crate) fn set_properties(server_dir: &Path, entries: &[(&str, &str)]) -> Result<(), AppError> {
-    let mut props = read_properties(server_dir)?;
-    for (key, value) in entries {
-        props.set(key, value);
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rcon_port_is_checked_only_when_enabled() {
+        assert!(extra_ports(&Properties::parse("rcon.port=25580\n")).is_empty());
+        let on = Properties::parse("enable-rcon=true\nrcon.port=25580\n");
+        assert_eq!(extra_ports(&on), [("rcon", 25580)]);
+        let default = Properties::parse("enable-rcon=true\n");
+        assert_eq!(extra_ports(&default), [("rcon", 25575)]);
     }
-    write_properties(server_dir, &props)
+
+    #[test]
+    fn specific_server_ip_is_probed_directly() {
+        let held = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = held.local_addr().unwrap().port();
+        let props = Properties::parse("server-ip=127.0.0.1\n");
+        assert!(bound_ip_busy(&props, port));
+        assert!(!bound_ip_busy(&Properties::parse("server-ip=\n"), port));
+        drop(held);
+        assert!(!bound_ip_busy(&props, port));
+    }
 }

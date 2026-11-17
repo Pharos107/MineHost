@@ -236,6 +236,33 @@ async fn dropping_runtime_kills_children() {
     exit_code(proc).await;
 }
 
+/// Server không đọc stdin: gửi lệnh báo đầy ngay thay vì chờ, và kill vẫn có tác dụng.
+#[tokio::test]
+async fn full_stdin_fails_fast_and_kill_still_works() {
+    let rt = ProcessRuntime::new().unwrap();
+    let mut proc = rt.spawn(fake_mc(&["--fail-start-hang"])).await.unwrap();
+    read_until(&mut proc, "Failed to start").await;
+
+    let command = format!("say {}", "x".repeat(4096));
+    let full = tokio::time::timeout(WAIT, async {
+        for _ in 0..10_000 {
+            match proc.control.send_line(&command).await {
+                Ok(()) => tokio::task::yield_now().await,
+                Err(err) => return Some(err),
+            }
+        }
+        None
+    })
+    .await
+    .unwrap();
+    assert!(
+        matches!(full, Some(mh_runtime::RuntimeError::StdinFull)),
+        "{full:?}"
+    );
+    proc.control.kill();
+    exit_code(proc).await;
+}
+
 /// Process cháu (plugin chạy chương trình ngoài) chết theo khi server bị kill.
 #[cfg(target_os = "linux")]
 #[tokio::test]
