@@ -361,6 +361,12 @@ request tới `127.0.0.1:7878`. Vì vậy:
 - **Khay (Windows):** `tray-icon` chạy vòng lặp sự kiện trên luồng chính, tokio chạy trên các luồng
   khác. Menu gồm "Mở MineHost", "Thoát". Tooltip: "MineHost — 2 server đang chạy".
 - **Thoát:** từ khay, `/app/shutdown`, Ctrl+C hoặc `SIGTERM` đều đi qua cùng một `shutdown_all()`.
+- **Tắt máy, đăng xuất trên Windows (sửa 2026-11-17):** luồng `mh-session` giữ một cửa sổ ẩn cấp cao
+  nhất (có hay không có khay). `WM_QUERYENDSESSION` thì đăng ký `ShutdownBlockReasonCreate` ("MineHost
+  đang lưu world và tắt các server") để Windows chờ thay vì kết thúc process sau vài giây;
+  `WM_ENDSESSION` thật thì gọi cùng `shutdown_all()` và chờ tới 10 phút, controller thoát xong thì
+  Windows tắt tiếp. Chạy từ terminal thì `CTRL_CLOSE`, `CTRL_LOGOFF`, `CTRL_SHUTDOWN` cũng dẫn tới
+  `shutdown_all()`, nhưng Windows chỉ cho vài giây. Người dùng bấm "Vẫn tắt máy" thì server vẫn bị kill.
 
 ## 6. Giao diện (`ui/`)
 

@@ -209,7 +209,9 @@ async fn shutdown_signal() {
             }
         }
     };
-    #[cfg(not(unix))]
+    #[cfg(windows)]
+    let terminate = windows_terminate();
+    #[cfg(not(any(unix, windows)))]
     let terminate = std::future::pending::<()>();
 
     tokio::select! {
@@ -217,4 +219,61 @@ async fn shutdown_signal() {
         () = terminate => {}
     }
     tracing::info!("nhận tín hiệu tắt, đang dừng");
+}
+
+/// Windows báo phiên sắp kết thúc qua cửa sổ ẩn của `win32` (bản release không có console).
+#[cfg(windows)]
+static SESSION_END: tokio::sync::Notify = tokio::sync::Notify::const_new();
+
+/// Gọi từ luồng cửa sổ khi Windows tắt máy hoặc đăng xuất. Gọi trước khi controller kịp chờ vẫn
+/// không lỡ: `notify_one` giữ lại một lượt.
+#[cfg(windows)]
+pub fn request_session_end() {
+    SESSION_END.notify_one();
+}
+
+/// Tắt máy, đăng xuất, hay đóng cửa sổ terminal đang chạy controller.
+#[cfg(windows)]
+async fn windows_terminate() {
+    use tokio::signal::windows::{ctrl_close, ctrl_logoff, ctrl_shutdown};
+
+    // Có console (chạy từ terminal) thì Windows gửi sự kiện console; không có thì chỉ cửa sổ ẩn biết.
+    let close = async {
+        match ctrl_close() {
+            Ok(mut signal) => signal.recv().await,
+            Err(_) => std::future::pending().await,
+        }
+    };
+    let logoff = async {
+        match ctrl_logoff() {
+            Ok(mut signal) => signal.recv().await,
+            Err(_) => std::future::pending().await,
+        }
+    };
+    let shutdown = async {
+        match ctrl_shutdown() {
+            Ok(mut signal) => signal.recv().await,
+            Err(_) => std::future::pending().await,
+        }
+    };
+    tokio::select! {
+        _ = close => {}
+        _ = logoff => {}
+        _ = shutdown => {}
+        () = SESSION_END.notified() => {}
+    }
+}
+
+#[cfg(all(test, windows))]
+mod tests {
+    use std::time::Duration;
+
+    /// Windows báo tắt máy trước khi controller kịp chờ (ví dụ lúc đang reconcile) vẫn dẫn tới thoát.
+    #[tokio::test]
+    async fn session_end_before_waiting_still_stops() {
+        super::request_session_end();
+        tokio::time::timeout(Duration::from_secs(5), super::windows_terminate())
+            .await
+            .unwrap();
+    }
 }

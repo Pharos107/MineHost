@@ -29,3 +29,6 @@ module, mỗi khối `unsafe` có comment `// SAFETY:`. Phần còn lại của 
 - Thêm hai feature của `windows-sys`: `Win32_System_Console`, `Win32_UI_WindowsAndMessaging`.
 - Ở khay không có hộp thoại hỏi lại khi Thoát. Thay vào đó chữ trên menu ghi rõ
   "Thoát (tắt an toàn N server)"; thoát luôn đi qua `shutdown_all`, không server nào bị kill.
+- Từ 2026-11-17 module này còn tạo một cửa sổ ẩn để nhận báo tắt máy (`WM_QUERYENDSESSION`,
+  `WM_ENDSESSION`) và chặn tắt máy tới khi các server lưu xong. Thêm các feature `Win32_Graphics_Gdi`
+  (kiểu `WNDCLASSW`), `Win32_System_LibraryLoader`, `Win32_System_Shutdown` của `windows-sys`.
