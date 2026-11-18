@@ -11,11 +11,10 @@ Spec gốc đã lệch với code ở vài chỗ; danh sách chỗ lệch nằm 
 giai đoạn trong `docs/specs/` và ADR trong `docs/adr/` là bản đúng. Mục lục mọi tài liệu:
 [docs/README.md](docs/README.md).
 
-## Giai đoạn hiện tại: P4 — Truy cập từ Internet, Docker, service, Tauri
+## Giai đoạn hiện tại: P4 — Chơi qua Internet, Docker, chạy cùng máy, tự cập nhật
 
-- Spec P4 **chưa viết**. Việc đầu tiên của P4 là viết spec và kế hoạch PR trong `docs/specs/`, chủ dự án
-  duyệt rồi mới code. Ý tưởng P4 đang nằm ở [backlog](docs/backlog.md) (tunnel, chặn mở Internet khi
-  `online-mode=false`, cổng phụ).
+- Spec P4 **đang chờ duyệt**: [spec P4](docs/specs/p4-truy-cap-internet.md),
+  [kế hoạch PR](docs/specs/p4-ke-hoach-pr.md). Chưa code việc nào của P4 trước khi chủ dự án duyệt.
 - P3 đã xong, phát hành `v0.5.0` ([spec P3](docs/specs/p3-mod-va-modpack.md),
   [kế hoạch PR](docs/specs/p3-ke-hoach-pr.md)). Workflow `modpacks` vẫn chạy hằng đêm; đêm nào đỏ thì
   sửa trước việc của P4. Không có `v0.4.0`; tag `v0.3.0` chỉ để nháp.
@@ -34,7 +33,7 @@ Chỉ làm việc thuộc giai đoạn hiện tại. Ý tưởng ngoài phạm v
 | P1 | Paper, tự tải Java, runtime Process, supervisor, console, wizard, EULA, chạy nền có icon khay | Người mới dựng Paper dưới 5 phút trên Windows sạch |
 | P2 | Nhiều server, backup/khôi phục, file manager, người chơi, mật khẩu admin, LAN | 10 server chạy 72 giờ; khôi phục backup chơi được |
 | P3 | Fabric, Quilt, Forge, NeoForge, Modrinth, CurseForge, modpack | 20 modpack cố định khởi động tới `Done` trong CI hằng đêm |
-| P4 | playit.gg, UPnP, Docker, service, Tauri, tự cập nhật | Bạn bè vào từ Internet không cần mở cổng router |
+| P4 | playit.gg, UPnP, HTTPS cho LAN, Docker, chạy cùng máy, tự cập nhật (Tauri đã bỏ) | Bạn bè vào từ Internet không cần mở cổng router |
 | P5 | Backlog: nhiều tài khoản, audit, MCP, Velocity, metrics | Chọn theo nhu cầu thật |
 
 ## Kiến trúc crate
