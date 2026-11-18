@@ -9,7 +9,7 @@ Một bản phát hành: `v0.5.0` (PR-38) chốt cả P3. Kế hoạch ban đầ
 
 ## Tiến độ
 
-Cập nhật 2026-11-17, khi làm PR-49. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-18, khi đóng PR-37. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -52,7 +52,7 @@ chính PR ấy.
 | 34b | Mục Phiên bản, cập nhật modpack | Đã merge | [#106](https://github.com/Pharos107/MineHost/pull/106) |
 | 35 | Bộ nhớ đệm tải về, trạng thái giới hạn tài nguyên | Đã merge | [#107](https://github.com/Pharos107/MineHost/pull/107) |
 | 36 | Runner tự host cho modpack | Đã merge | [#112](https://github.com/Pharos107/MineHost/pull/112) |
-| 37 | Workflow 20 modpack | Đang làm: đủ 20 pack (37a, 37b), chờ hai đêm liền xanh | [#113](https://github.com/Pharos107/MineHost/pull/113), [#126](https://github.com/Pharos107/MineHost/pull/126) |
+| 37 | Workflow 20 modpack | Xong: hai đêm liền xanh 20/20 pack (lịch chạy đêm 17 và 18/11) | [#113](https://github.com/Pharos107/MineHost/pull/113), [#126](https://github.com/Pharos107/MineHost/pull/126), [#170](https://github.com/Pharos107/MineHost/pull/170) |
 | 39 | Spec trình duyệt mod, làm gọn trang Mod ([spec](p3-trinh-duyet-mod.md)) | Đã merge | [#134](https://github.com/Pharos107/MineHost/pull/134) |
 | 40 | Thêm mod khi server đang chạy | Đã merge | [#136](https://github.com/Pharos107/MineHost/pull/136) |
 | 41 | Cài nhiều mục trong một Job, sắp xếp khi tìm | Đã merge | [#137](https://github.com/Pharos107/MineHost/pull/137) |
