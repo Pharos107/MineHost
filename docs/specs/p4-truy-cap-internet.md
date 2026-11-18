@@ -1,6 +1,6 @@
 # Spec P4 — Chơi qua Internet, Docker, chạy cùng máy, tự cập nhật
 
-- Trạng thái: **bản nháp, chờ chủ dự án duyệt.** Chưa code gì của P4 trước khi duyệt.
+- Trạng thái: đã duyệt (#174). Mục 3.4, 3.5, 5.2, 5.3 sửa theo [khảo sát](p4-khao-sat.md) ở PR-01.
 - Ngày: 2026-11-18
 - Spec gốc: "MineHost v2 — Spec kiến trúc (Rust)", phần Runtime, Bảo mật, Đóng gói và Lộ trình P4
 - Kế hoạch PR: [p4-ke-hoach-pr.md](p4-ke-hoach-pr.md)
@@ -45,6 +45,10 @@ trang quản lý router và không phải hiểu NAT là gì. Cụ thể:
 - [ ] Windows: bật "Khởi động cùng Windows" thì đăng nhập lại MineHost tự chạy, có icon khay.
       Linux: `minehost service install` tạo unit systemd user chạy được sau khi đăng xuất SSH.
 - [ ] Mỗi trang và mục mới ở mục 6 có ít nhất một test Playwright chạy với API thật (nguồn ngoài giả).
+- [ ] Tài nguyên, đo khi thử tay ở PR-10, ghi cạnh số đo gốc ở [khảo sát mục 4](p4-khao-sat.md#4-tài-nguyên):
+  - Agent playit có một tunnel và một người chơi dùng dưới 30 MB RAM và trung bình dưới 1% một nhân.
+  - Lúc không ai chơi, CPU gần 0%.
+  - Controller khi bật hết tính năng P4 trừ Docker vẫn dưới 80 MB RAM.
 
 ### Không làm trong P4
 
@@ -112,53 +116,69 @@ chơi Minecraft Java phổ thông:
 Ghi lại ở mục "Đã cân nhắc và không làm" của backlog. Tailscale vẫn là cách được hướng dẫn để
 **quản lý** từ xa (mục 3.1).
 
-### 3.4 Tích hợp playit: khảo sát trước khi chốt
+### 3.4 Tích hợp playit
 
 Agent playit là mã nguồn mở (BSD-2-Clause, `playit-cloud/playit-agent`). Bản 2.x tách thành daemon
-`playitd` (tùy chọn `--secret-path`, socket IPC) và CLI. Dự án cũ mc-controller chạy agent 0.15 và
-không gọi API điều khiển không có tài liệu, nên người dùng phải tự tạo tunnel trên web playit rồi dán
-địa chỉ vào: đúng nhưng quá khó cho người dùng của MineHost.
+`playitd` và CLI. Kết quả đầy đủ ở [khảo sát P4](p4-khao-sat.md#1-playitgg) (PR-01, agent 2.0.2).
+Tóm tắt những gì đã chốt:
 
-PR-01 khảo sát trên bản agent mới nhất và ghi kết quả vào [khảo sát P4](p4-khao-sat.md) (tạo ở PR-01):
+- **Liên kết tài khoản:** `mh-app` tự gọi `/claim/setup` và `/claim/exchange` trên `api.playit.gg` qua
+  `mh-net`, với `agent_type = self-managed`, giống plugin Minecraft chính thức của playit. Người dùng
+  bấm "Liên kết tài khoản" rồi bấm đồng ý trên trang `playit.gg/claim/<mã>`, không cần terminal.
+  Chưa có tài khoản thì playit tạo tài khoản khách.
+- **Tunnel cho từng server:** khi server có cách mở playit được bật, MineHost tìm trong
+  `/v1/tunnels/list` tunnel `minecraft-java` trỏ về agent này với `local_port` bằng cổng server.
+  - Không có thì tạo bằng `/v1/tunnels/create` và đặt tên `MineHost <tên server>`.
+  - Địa chỉ cho người chơi lấy từ `connect_addresses`. Không có bước dán địa chỉ như mc-controller.
+  - Đổi cổng server, hay xóa server: chỉ xóa và tạo lại tunnel do MineHost tạo.
+- **Điều khoản:** API này không có tài liệu công khai. Mục 3.4 của điều khoản playit đòi đồng ý bằng
+  văn bản khi "distribute" dịch vụ cho bên thứ ba. Chủ dự án hỏi playit trước khi phát hành
+  (khảo sát mục 1.7).
+  - Bước tạo tự động nằm sau một cờ trong code, chỉ bật khi playit đồng ý.
+  - Khi cờ tắt: UI mở trang tạo tunnel của playit kèm hướng dẫn điền cổng, rồi MineHost tự nhận tunnel
+    ở lần dò sau.
+- **Giới hạn bản miễn phí:** `minecraft-java` và UDP miễn phí. TCP tùy chỉnh cần Premium, nên cổng phụ
+  TCP như BlueMap không mở được qua playit miễn phí (mục 3.8). Số tunnel tối đa không công bố;
+  MineHost hiện đúng lỗi playit trả về.
+- **Độ trễ:** chưa đo, vì cần tài khoản thật. Bản miễn phí đi qua mạng anycast toàn cầu; máy chủ gần
+  nhất ở Singapore và Nhật. Đo khi thử tay ở PR-10.
 
-1. Luồng liên kết tài khoản: lấy mã claim, mở `https://playit.gg/claim/<mã>`, nhận secret. Làm được
-   mà không cần TUI hay nhập tay vào terminal không.
-2. Tạo tunnel Minecraft Java cho một cổng cục bộ bằng CLI hay API mà agent dùng, có tài liệu hay được
-   playit chấp nhận cho phần mềm bên thứ ba không (đọc điều khoản; hỏi playit nếu không rõ).
-3. Một agent phục vụ nhiều tunnel (nhiều server) và tunnel UDP (cổng phụ) không; giới hạn của tài
-   khoản miễn phí.
-4. Độ trễ thật từ Việt Nam qua tunnel miễn phí (ping từ một máy ở mạng khác).
-5. Chạy agent như process con: thoát khi controller chết, log ra stdout, không cần terminal.
-
-Thiết kế mặc định nếu (2) làm được: MineHost tạo và xóa tunnel cho từng server, người dùng chỉ bấm
-"Liên kết tài khoản" một lần. Nếu không: giữ cách của mc-controller (mở trang tạo tunnel, dán địa chỉ,
-MineHost kiểm tra địa chỉ trước khi hiện), có hình hướng dẫn từng bước. Khảo sát xong thì sửa mục này
-và mục 5.2 trong cùng PR-01; chủ dự án duyệt lại phần đó.
-
-Cách chạy agent đã chốt dù kết quả ra sao:
+Cách chạy agent:
 
 - Tải binary chính thức từ GitHub Releases của playit, phiên bản và SHA-256 ghim trong code MineHost
   (như Java: chỉ dùng agent do MineHost tải). Đổi phiên bản agent là một PR.
+- Lệnh: `playitd --secret-path <data>/playit/secret.toml --socket-path <đường dẫn riêng>`.
+  - Socket riêng để không đụng bản playit người dùng có thể đã cài làm service.
+  - Log đi ra stderr.
+  - File secret do MineHost viết từ `secrets.toml` lúc bật agent, quyền chỉ người dùng đọc được, xóa
+    khi agent tắt.
+  - Không dùng `--secret`, vì key sẽ lộ trong danh sách tiến trình.
 - Chạy qua `mh-runtime` như process con có Job Object hoặc `PR_SET_PDEATHSIG`; supervisor riêng cho
   agent: chết thì bật lại sau 5, 15, 30 giây, quá 3 lần trong 10 phút thì báo lỗi và dừng thử.
-- Chỉ chạy khi có ít nhất một server đang bật với cách mở playit.
+- Chỉ chạy khi có ít nhất một server đang bật với cách mở playit. Agent rỗi đo được khoảng 5 MB RAM,
+  0% CPU (khảo sát mục 4.2).
+- Secret sai thì agent không thoát mà nằm chờ, nên `PlayitAgent` nhận ra qua log
+  (`InvalidAgentKey`) và chuyển sang `needs_link`.
 - Secret của agent lưu trong `<data>/secrets.toml` cạnh key CurseForge (spec gốc muốn dùng keyring
   của OS; giữ một chỗ cho mọi bí mật, xem mục 8). Không bao giờ trả ra API, log hay backup.
 
 ### 3.5 Kiểm tra từ bên ngoài
 
 Kiểm tra cổng từ chính máy host không chứng minh được gì (router thường không cho đi vòng). MineHost
-không có máy chủ riêng, nên dùng một dịch vụ công khai thử kết nối Minecraft từ ngoài. PR-01 chọn
-dịch vụ theo tiêu chí: không cần key, thử bắt tay Minecraft thật (không chỉ mở TCP), cho biết thời
-gian cache kết quả, điều khoản cho phép gọi từ phần mềm. Ứng viên đầu tiên: API của `mcsrvstat.us`.
+không có máy chủ riêng, nên dùng một dịch vụ công khai thử kết nối Minecraft từ ngoài: API
+`api.mcstatus.io/v2/status/java/<địa chỉ>` (khảo sát mục 2). Dịch vụ này không cần key, thử bắt tay
+Minecraft thật, cache 60 giây và có công bố giới hạn 5 request/giây. `mcsrvstat.us` cache 5 phút nên
+chỉ để dự phòng.
 
 - Chỉ chạy khi người dùng bấm "Kiểm tra từ Internet". Nút ghi rõ: "MineHost sẽ gửi địa chỉ công khai
   và cổng của server tới <dịch vụ> để thử kết nối từ ngoài."
 - Với tunnel playit, kiểm tra địa chỉ playit; với UPnP, kiểm tra `IP công khai:cổng`.
 - Kết quả: vào được (kèm phiên bản và MOTD đọc được), không vào được (kèm lý do đoán từ bước trước:
   router từ chối ánh xạ, CGNAT, tường lửa Windows chặn Java), hoặc dịch vụ lỗi.
-- IP công khai lấy từ UPnP (`GetExternalIPAddress`) và từ kết quả dịch vụ kiểm tra; không gọi thêm
-  dịch vụ "IP của tôi" nào khác.
+- IP công khai chỉ lấy từ UPnP (`GetExternalIPAddress`); không gọi thêm dịch vụ "IP của tôi" nào.
+  `mcstatus.io` không trả IP người gọi, nên CGNAT chỉ nhận ra khi IP router báo là địa chỉ riêng (mục
+  3.2). Trường hợp hiếm CGNAT cấp IP công khai thì hiện là "không vào được" kèm các lý do có thể.
+- Kết quả ghi giờ lấy (`expires_at` của dịch vụ) và câu "kết quả có thể cũ tới 60 giây".
 
 Tường lửa Windows: lần đầu Java mở cổng, Windows hỏi người dùng. MineHost không tự thêm luật (cần
 quyền Administrator, mục 3.6); trang Cài đặt mạng hướng dẫn bấm "Cho phép" và cách kiểm tra lại.
@@ -200,8 +220,9 @@ Plugin như Geyser (UDP 19132), Simple Voice Chat (UDP 24454), BlueMap (TCP 8100
 `instance.toml` có danh sách cổng phụ (mục 4.1), người dùng thêm tay trong Cài đặt server:
 
 - Kiểm tra trùng với cổng game và cổng phụ của server khác, như kiểm tra cổng của P2.
-- Cổng phụ có cờ `internet`: bật thì được ánh xạ UPnP hoặc tunnel playit (UDP nếu khảo sát cho phép)
-  cùng lúc với cổng game; khi chạy trong Docker thì được publish.
+- Cổng phụ có cờ `internet`: bật thì được ánh xạ UPnP hoặc tunnel playit cùng lúc với cổng game; khi
+  chạy trong Docker thì được publish. playit miễn phí chỉ cho UDP tùy chỉnh. Cổng phụ TCP với cách mở
+  playit thì UI ghi "cần playit Premium" và hiện lỗi `RequiresPlayitPremium` nếu playit từ chối.
 - MineHost không đọc file cấu hình của plugin để đoán cổng và không sửa chúng; mỗi dòng có ô ghi chú.
 
 ### 3.9 Không làm Tauri
@@ -299,9 +320,12 @@ làm bộ đệm console, và đưa actor vào `Running`. Container của server
 dừng (`stop` qua stdin, quá hạn thì kill) rồi xóa. Container tạo với `restart: no` và `auto_remove`
 tắt (để đọc mã thoát), MineHost tự xóa sau khi đọc.
 
-**Hiệu năng trên Windows (cần đo ở PR-01):** thư mục trên ổ NTFS mount vào Linux container của Docker
-Desktop đi qua lớp chia sẻ file của WSL2, chậm hơn ổ thật. PR-01 đo thời gian tạo world và lưu world
-với Paper; nếu chậm quá 3 lần so với cách thường thì UI Windows ghi cảnh báo cạnh lựa chọn Docker.
+**Hiệu năng trên Windows:** thư mục trên ổ NTFS mount vào Linux container của Docker Desktop đi qua lớp
+chia sẻ file của WSL2. PR-01 đo với Paper 26.3 ([khảo sát mục 3](p4-khao-sat.md#3-docker-desktop-trên-windows)):
+
+- Khởi động chậm khoảng 2 lần, lưu chunk chậm khoảng 4,5 lần so với cách thường.
+- Vượt ngưỡng 3 lần nên UI Windows hiện cảnh báo cạnh lựa chọn Docker.
+- Named volume nhanh hơn, nhưng world sẽ nằm ngoài thư mục server nên không dùng; giữ bind mount.
 
 ## 4. Mô hình dữ liệu
 
@@ -310,8 +334,9 @@ với Paper; nếu chậm quá 3 lần so với cách thường thì UI Windows 
 ```toml
 [network]                      # mới, tùy chọn; thiếu nghĩa là không mở ra Internet
 internet = "playit"            # off | upnp | playit
-playit_tunnel = "…"            # id tunnel playit của server này (nếu khảo sát cho tạo tự động)
-playit_address = "…"           # địa chỉ playit đã kiểm tra
+playit_tunnel = "…"            # id tunnel playit đang dùng cho server này
+playit_created = true          # tunnel do MineHost tạo (được phép xóa và tạo lại)
+playit_address = "…"           # địa chỉ playit lần cuối, hiện khi agent chưa chạy
 
 [[network.ports]]              # cổng phụ, mục 3.8
 name = "Geyser"
@@ -344,7 +369,8 @@ Cập nhật [du-lieu.md](../architecture/du-lieu.md) trong PR thêm từng file
 ### 4.3 Mã lỗi mới
 
 `INTERNET_REQUIRES_WHITELIST`, `UPNP_UNAVAILABLE`, `UPNP_CGNAT`, `UPNP_MAPPING_FAILED`,
-`PLAYIT_NOT_LINKED`, `PLAYIT_AGENT_FAILED`, `PLAYIT_TUNNEL_FAILED`, `EXTERNAL_CHECK_FAILED`,
+`PLAYIT_NOT_LINKED`, `PLAYIT_LINK_REJECTED`, `PLAYIT_AGENT_FAILED`, `PLAYIT_TUNNEL_FAILED`,
+`PLAYIT_TUNNEL_REJECTED`, `EXTERNAL_CHECK_FAILED`,
 `PORT_IN_USE` (đã có, dùng cho cổng phụ), `DOCKER_UNAVAILABLE`, `DOCKER_IMAGE_FAILED`,
 `UPDATE_SIGNATURE_INVALID`, `UPDATE_SELF_TEST_FAILED`, `UPDATE_ROLLED_BACK`, `AUTOSTART_FAILED`. Mỗi mã
 có bản dịch `vi` và `en`, kèm `params` cần cho câu gợi ý.
@@ -376,14 +402,30 @@ Thêm một crate và hai cạnh phụ thuộc; sửa bảng crate trong AGENTS.
 
 ### 5.2 playit (`mh-expose`, `mh-app`)
 
-Viết lại sau PR-01. Khung đã chốt: `PlayitAgent` trong `mh-app` là một actor có trạng thái
-`not_installed | needs_link | starting | online | failed`, bật khi server playit đầu tiên bật, tắt khi
-server cuối cùng tắt. Trạng thái và địa chỉ đi qua bus sự kiện như trạng thái server.
+- `mh-expose::playit` gồm `PlayitApi`, một client nhỏ trên `mh-net`, và phần dựng lệnh chạy agent.
+  - `PlayitApi` gọi `claim/setup`, `claim/exchange`, `v1/agents/rundata`, `v1/tunnels/list`,
+    `v1/tunnels/create`, `tunnels/delete` với header `Authorization: Agent-Key <secret>`.
+  - Chỉ mô tả các trường MineHost dùng; trường lạ bị bỏ qua để playit thêm trường không làm hỏng.
+  - Kiểu lỗi playit trả về (`RequiresPlayitPremium`, `RequiresVerifiedAccount`, …) chuyển thành
+    `PLAYIT_TUNNEL_REJECTED` kèm `params.reason`.
+- `PlayitAgent` trong `mh-app` là một actor.
+  - Trạng thái: `not_installed | needs_link | linking | starting | online | failed`.
+  - Bật khi server playit đầu tiên bật, tắt khi server cuối cùng tắt.
+  - Liên kết: tạo mã, trả link claim cho UI, hỏi `claim/setup` mỗi 2 giây tới khi `UserAccepted`,
+    `UserRejected` hoặc hết 10 phút.
+- `PlayitTunnels` trong `mh-app` khớp tunnel với server theo mục 3.4. Nó dò lại `v1/tunnels/list` mỗi
+  10 giây tới khi có địa chỉ, sau đó mỗi 5 phút.
+- Trạng thái agent và địa chỉ của từng server đi qua bus sự kiện như trạng thái server.
+- Cờ `PLAYIT_AUTO_CREATE` là hằng số trong `mh-app`. Tắt thì `PlayitTunnels` chỉ tìm tunnel, không
+  tạo; UI hiện hướng dẫn tạo tay.
+- `fake-playit`, binary cho test, giả cả API (wiremock) lẫn agent (process in log rồi chờ tín hiệu).
 
 ### 5.3 Kiểm tra từ ngoài (`mh-expose`)
 
-`ExternalCheck::probe(addr) -> ProbeResult { reachable, version, motd, cached_until }`. Test bằng
-wiremock với fixture ghi từ dịch vụ thật. Mỗi server tối đa một lần mỗi 30 giây.
+`ExternalCheck::probe(addr) -> ProbeResult { reachable, version, motd, cached_until }` gọi
+`api.mcstatus.io/v2/status/java/<addr>` với `User-Agent: MineHost/<phiên bản>`, giới hạn 30 giây.
+`cached_until` lấy từ `expires_at`. Test bằng wiremock với fixture ghi từ dịch vụ thật (khảo sát mục
+2). Mỗi server tối đa một lần mỗi 30 giây.
 
 ### 5.4 API
 
@@ -418,7 +460,7 @@ trong actor.
 - **playit.gg** (Cài đặt chung): trạng thái agent, nút "Liên kết tài khoản" mở trang playit ở tab
   mới, tự cập nhật trạng thái khi liên kết xong, nút "Gỡ liên kết".
 - **Cách chạy** (Cài đặt server): Thường / Docker, câu giải thích về cô lập, cảnh báo hiệu năng trên
-  Windows nếu PR-01 đo thấy chậm, digest image và nút cập nhật image.
+  Windows (PR-01 đo thấy chậm), digest image và nút cập nhật image.
 - **Cập nhật** (Cài đặt chung): phiên bản đang chạy, bản mới, ghi chú, công tắc tự kiểm tra, nút cập
   nhật; hộp thoại xác nhận liệt kê server sẽ dừng.
 - **Khởi động cùng máy** (Cài đặt chung): Windows có công tắc; Linux hiện lệnh `minehost service
@@ -480,14 +522,15 @@ Test thường không gọi mạng thật; test gọi playit, dịch vụ kiểm
 
 | Rủi ro | Cách giảm |
 | --- | --- |
-| playit đổi agent, API hay điều khoản; tài khoản miễn phí bị giới hạn thêm | Ghim phiên bản agent; khảo sát trước (PR-01); UPnP vẫn chạy độc lập; luồng dán địa chỉ tay làm dự phòng |
+| playit đổi agent, API hay điều khoản; tài khoản miễn phí bị giới hạn thêm | Ghim phiên bản agent; client chỉ đọc trường cần dùng; cờ `PLAYIT_AUTO_CREATE` tắt được bước tạo tunnel; UPnP vẫn chạy độc lập |
+| playit không đồng ý cho tạo tunnel tự động (điều khoản mục 3.4) | Hỏi trước khi phát hành (khảo sát mục 1.7); tắt cờ, người dùng tạo tunnel trên web, MineHost tự nhận |
 | Agent playit chết lặp (đã thấy trên dangserver tháng 10) | Supervisor có giới hạn bật lại, trạng thái `failed` hiện rõ kèm 40 dòng log cuối |
 | Router báo UPnP thành công mà không chuyển gói | Không bao giờ coi ánh xạ thành công là "vào được"; chỉ nút kiểm tra từ ngoài mới cho kết luận |
 | Dịch vụ kiểm tra từ ngoài ngừng hoặc cache lâu | Ghi rõ `cached_until`; đổi dịch vụ là một PR nhỏ vì nằm sau một trait |
 | Người dùng mất quyền vào giao diện qua LAN vì cảnh báo chứng chỉ | Hướng dẫn cụ thể từng trình duyệt; dấu vân tay để so; `127.0.0.1` vẫn HTTP |
 | Bản cập nhật lỗi làm hỏng dữ liệu, quay về rồi vẫn hỏng | Không đổi định dạng file trong bản cập nhật (ADR 0008); `self-test` trước khi thay |
 | Mất hoặc lộ khóa ký bản phát hành | Khóa chỉ ở secret GitHub và một bản sao ngoại tuyến của chủ dự án; quy trình xoay khóa mục 8 |
-| Docker Desktop trên Windows chậm hoặc khó dùng | Tùy chọn, mặc định vẫn là cách thường; đo ở PR-01 và cảnh báo trong UI |
+| Docker Desktop trên Windows chậm hoặc khó dùng | Tùy chọn, mặc định vẫn là cách thường; đã đo ở PR-01 (lưu chunk chậm khoảng 4,5 lần), cảnh báo trong UI |
 | Container gắn lại sai server | Nhãn chứa id server và đường dẫn mount; khớp cả hai mới gắn |
 | Phạm vi P4 lớn | Sáu nhóm, hai bản phát hành (mục 11) |
 
@@ -509,3 +552,5 @@ Test thường không gọi mạng thật; test gọi playit, dịch vụ kiểm
 4. Thứ tự: đặt Docker (nhóm E) sau tự cập nhật như kế hoạch, hay làm sớm hơn.
 5. Lần thử tay 5 phút của P1 trên Windows mới cài vẫn còn mở: làm trước nhóm B, hay gộp vào lần thử
    tay của P4 (người chơi ở mạng khác vào server vừa tạo).
+6. Gửi câu hỏi ở [khảo sát mục 1.7](p4-khao-sat.md#17-câu-hỏi-gửi-playit-chủ-dự-án-gửi) cho playit và
+   quyết định bật cờ `PLAYIT_AUTO_CREATE` khi phát hành nếu chưa có trả lời.

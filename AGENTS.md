@@ -13,8 +13,8 @@ giai đoạn trong `docs/specs/` và ADR trong `docs/adr/` là bản đúng. M�
 
 ## Giai đoạn hiện tại: P4 — Chơi qua Internet, Docker, chạy cùng máy, tự cập nhật
 
-- Spec P4 **đang chờ duyệt**: [spec P4](docs/specs/p4-truy-cap-internet.md),
-  [kế hoạch PR](docs/specs/p4-ke-hoach-pr.md). Chưa code việc nào của P4 trước khi chủ dự án duyệt.
+- Spec P4 đã duyệt: [spec P4](docs/specs/p4-truy-cap-internet.md), [kế hoạch PR](docs/specs/p4-ke-hoach-pr.md),
+  [kết quả khảo sát](docs/specs/p4-khao-sat.md). Làm theo thứ tự trong kế hoạch.
 - P3 đã xong, phát hành `v0.5.0` ([spec P3](docs/specs/p3-mod-va-modpack.md),
   [kế hoạch PR](docs/specs/p3-ke-hoach-pr.md)). Workflow `modpacks` vẫn chạy hằng đêm; đêm nào đỏ thì
   sửa trước việc của P4. Không có `v0.4.0`; tag `v0.3.0` chỉ để nháp.

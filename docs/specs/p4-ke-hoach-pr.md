@@ -4,7 +4,7 @@ Spec: [p4-truy-cap-internet.md](p4-truy-cap-internet.md). P4 chia thành 26 PR t
 một việc, khoảng 400 dòng trở xuống (không tính fixture và code sinh tự động), có test, CI xanh mới
 merge.
 
-- Trạng thái: **chờ duyệt cùng spec.** Không PR nào bắt đầu trước khi duyệt.
+- Trạng thái: spec và kế hoạch đã merge ở #174. Câu hỏi ở spec mục 12 chưa chốt; chốt trước PR cần đến.
 - Hai bản phát hành đề xuất (spec mục 11): `v0.6.0` ở PR-18, `v0.7.0` ở PR-26.
 
 ## Tiến độ
@@ -13,8 +13,8 @@ PR nào merge thì sửa dòng của nó ở đây trong chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
 | --- | --- | --- | --- |
-| 00 | Spec P4 và kế hoạch này | Chờ duyệt | |
-| 01 | Khảo sát playit, dịch vụ kiểm tra, Docker Desktop | Chưa làm | |
+| 00 | Spec P4 và kế hoạch này | Xong | #174 |
+| 01 | Khảo sát playit, dịch vụ kiểm tra, Docker Desktop | Xong | #175 |
 | 02 | Bảng `[network]`, `[runtime]`, mã lỗi, crate `mh-expose` rỗng | Chưa làm | |
 | 03 | UPnP | Chưa làm | |
 | 04 | Kiểm tra từ ngoài, nhận CGNAT | Chưa làm | |
@@ -108,7 +108,7 @@ Nhóm C và PR-14 không phụ thuộc nhóm B nên làm song song được. Ch�
 
 #### PR-04 · `feat(expose)`: kiểm tra từ ngoài, nhận CGNAT
 
-- Phạm vi: `ExternalCheck` với dịch vụ chọn ở PR-01, giới hạn 30 giây; nhận CGNAT (spec mục 3.2).
+- Phạm vi: `ExternalCheck` gọi `mcstatus.io` (chọn ở PR-01), giới hạn 30 giây; nhận CGNAT (spec mục 3.2).
 - Test: wiremock với fixture ghi từ dịch vụ thật; bảng địa chỉ riêng và `100.64/10`.
 
 #### PR-05 · `feat(app)`: mở/đóng Internet theo vòng đời server
@@ -125,9 +125,11 @@ Nhóm C và PR-14 không phụ thuộc nhóm B nên làm song song được. Ch�
 
 #### PR-07 · `feat(app)`: tunnel playit cho từng server
 
-- Phạm vi: theo kết quả PR-01: tạo và xóa tunnel tự động, hoặc nhận địa chỉ người dùng dán rồi kiểm
-  tra; ghi `playit_tunnel`, `playit_address`.
-- Test: với `fake-playit`; địa chỉ dán sai định dạng bị từ chối.
+- Phạm vi: `PlayitTunnels` (spec mục 3.4, 5.2): tìm tunnel theo `local_port`, tạo khi cờ
+  `PLAYIT_AUTO_CREATE` bật, xóa và tạo lại khi đổi cổng; ghi `playit_tunnel`, `playit_created`,
+  `playit_address`.
+- Test: với `fake-playit`; cờ tắt thì không gọi `create`; lỗi `RequiresPlayitPremium` thành
+  `PLAYIT_TUNNEL_REJECTED`; không xóa tunnel người dùng tự tạo.
 
 #### PR-08 · `feat(api)`: route mạng
 
@@ -143,7 +145,8 @@ Nhóm C và PR-14 không phụ thuộc nhóm B nên làm song song được. Ch�
 #### PR-10 · `test`: E2E mạng, thử tay
 
 - Phạm vi: Playwright với IGD giả, `fake-playit` và dịch vụ kiểm tra giả ở chế độ e2e; thử tay tiêu
-  chí 1 và 2 trên mạng thật, ghi `docs/specs/p4-ket-qua-thu-tay.md`.
+  chí 1 và 2 trên mạng thật, đo tài nguyên theo tiêu chí cuối của spec mục 1 (agent playit và
+  controller, lúc rỗi và khi có người chơi), ghi `docs/specs/p4-ket-qua-thu-tay.md`.
 
 ### Nhóm C · HTTPS và chạy cùng máy
 
