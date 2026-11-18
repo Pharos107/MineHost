@@ -21,8 +21,13 @@
 }
 
 .link {
+  padding: 0;
+  background: transparent;
+  border: 0;
   color: var(--mh-primary);
+  font: inherit;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .link:hover {

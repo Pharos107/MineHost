@@ -57,15 +57,17 @@ interface IconButtonProps extends NativeProps {
   size?: ButtonSize;
   /** Icon màu đỏ trên nền trong suốt: thao tác phá hủy nằm giữa các nút thường (ví dụ trong bảng). */
   tone?: "danger";
+  /** Đang bật (ví dụ bộ lọc tìm kiếm đang kích hoạt). */
+  active?: boolean;
 }
 
-export function IconButton({ icon: Icon, label, variant = "ghost", size = "md", tone, type = "button", ...rest }: IconButtonProps) {
+export function IconButton({ icon: Icon, label, variant = "ghost", size = "md", tone, active, type = "button", ...rest }: IconButtonProps) {
   const iconSize = size === "sm" ? 14 : size === "lg" ? 20 : 18;
   return (
     <button
       {...rest}
       type={type}
-      className={cx(styles.button, styles.iconOnly, styles[variant], styles[size], tone === "danger" && styles.dangerText)}
+      className={cx(styles.button, styles.iconOnly, styles[variant], styles[size], tone === "danger" && styles.dangerText, active && styles.active)}
       aria-label={label}
       title={label}
     >

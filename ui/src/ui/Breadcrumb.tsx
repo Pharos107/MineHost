@@ -7,6 +7,8 @@ export interface Crumb {
   label: string;
   /** Có thì bấm được; mục cuối (đang ở đó) để trống. */
   to?: string;
+  /** Dùng khi điều hướng trong hộp thoại không đổi URL. */
+  onClick?: () => void;
 }
 
 /** Đường dẫn dạng "Gốc › world › region". Mục cuối có `aria-current="page"`. */
@@ -23,6 +25,10 @@ export function Breadcrumb({ items, label }: { items: Crumb[]; label: string }) 
                 <Link to={item.to} className={styles.link}>
                   {item.label}
                 </Link>
+              ) : item.onClick && !last ? (
+                <button type="button" className={styles.link} onClick={item.onClick}>
+                  {item.label}
+                </button>
               ) : (
                 <span className={styles.current} aria-current={last ? "page" : undefined}>
                   {item.label}

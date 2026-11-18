@@ -18,25 +18,31 @@ export function foundToEntry(dir: string, found: FoundEntry): FileEntry {
  */
 export function useDeepSearch(serverId: string, dir: string) {
   const [deep, setDeep] = useState(false);
-  const [query, setQuery] = useState("");
-  const [settled, setSettled] = useState("");
+  // Gắn từ khóa với thư mục đang mở: đổi thư mục tự xóa từ khóa cũ (spec nâng cấp trang Tệp).
+  const [input, setInput] = useState({ dir, query: "" });
+  const query = input.dir === dir ? input.query : "";
+  const [settled, setSettled] = useState({ dir, value: "" });
   useEffect(() => {
-    const timer = window.setTimeout(() => setSettled(query.trim()), DEBOUNCE_MS);
+    const trimmed = query.trim();
+    const timer = window.setTimeout(() => setSettled({ dir, value: trimmed }), DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [query]);
-  const active = deep && settled !== "";
+  }, [dir, query]);
+  const settledValue = settled.dir === dir ? settled.value : "";
+  const active = deep && query.trim() !== "" && settledValue !== "";
   const search = useQuery({
-    queryKey: ["files", serverId, "search", dir, settled],
-    queryFn: () => filesApi.search(serverId, dir, settled),
+    queryKey: ["files", serverId, "search", dir, settledValue],
+    queryFn: () => filesApi.search(serverId, dir, settledValue),
     enabled: active,
   });
+  const typing = deep && query.trim() !== "" && settledValue !== query.trim();
   return {
     deep,
     toggle: () => setDeep((value) => !value),
-    setQuery,
+    query,
+    setQuery: (next: string) => setInput({ dir, query: next }),
     active,
-    rows: active ? (search.data?.items ?? []).map((found) => foundToEntry(dir, found)) : undefined,
-    pending: active && search.isPending,
+    searching: typing || (active && search.isFetching),
+    rows: active && search.data ? search.data.items.map((found) => foundToEntry(dir, found)) : undefined,
     truncated: active && search.data?.truncated === true,
     error: active ? search.error : null,
   };

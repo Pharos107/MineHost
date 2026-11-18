@@ -1,5 +1,5 @@
 import { Upload, type LucideIcon } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import { Button, type ButtonSize, type ButtonVariant } from "./Button";
 
@@ -8,6 +8,8 @@ interface FileButtonProps {
   onFiles: (files: File[]) => void;
   accept?: string;
   multiple?: boolean;
+  /** Bật để chọn cả thư mục (`webkitdirectory`); mỗi `File` giữ `webkitRelativePath`. */
+  directory?: boolean;
   disabled?: boolean;
   loading?: boolean;
   icon?: LucideIcon;
@@ -21,6 +23,7 @@ export function FileButton({
   onFiles,
   accept,
   multiple = true,
+  directory = false,
   disabled = false,
   loading = false,
   icon = Upload,
@@ -28,6 +31,9 @@ export function FileButton({
   size = "md",
 }: FileButtonProps) {
   const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (input.current) input.current.webkitdirectory = directory;
+  }, [directory]);
   return (
     <>
       <Button

@@ -229,6 +229,7 @@
       "run_installer": "Cài {{loader}}",
       "resolve_content": "Đọc thông tin mod",
       "download_content": "Tải {{name}}",
+      "download_file": "Tải {{name}}",
       "download_modpack": "Tải modpack {{name}}",
       "download_pack_file": "Tải file modpack ({{index}}/{{total}}): {{name}}",
       "apply_overrides": "Áp dụng cấu hình modpack"
@@ -875,7 +876,8 @@
       "change_version": "Đổi phiên bản",
       "update_modpack": "Cập nhật modpack",
       "compress_files": "Nén file",
-      "extract_files": "Giải nén"
+      "extract_files": "Giải nén",
+      "fetch_file": "Tải từ URL"
     },
     "states": {
       "running": "Đang chạy",
@@ -1061,7 +1063,56 @@
     "jobDone": {
       "compress_files": "Đã nén xong.",
       "extract_files": "Đã giải nén xong.",
+      "fetch_file": "Đã tải file về server.",
       "other": "Đã xong."
+    },
+    "uploadMenu": "Tải lên",
+    "uploadFolder": "Tải thư mục",
+    "emptyFolderDrop": "Thư mục kéo vào không có file nào.",
+    "openFolder": "Mở thư mục chứa",
+    "copy": {
+      "action": "Nhân bản",
+      "title": "Nhân bản “{{name}}”",
+      "label": "Tên bản sao",
+      "submit": "Nhân bản",
+      "suffix": "{{name}} (bản sao)"
+    },
+    "sizeCalc": {
+      "action": "Tính dung lượng",
+      "truncated": "Hơn {{size}}"
+    },
+    "fetch": {
+      "action": "Tải từ URL",
+      "title": "Tải file về từ URL",
+      "url": "Đường dẫn (http hoặc https)",
+      "urlPlaceholder": "https://example.com/file.zip",
+      "badUrl": "URL phải bắt đầu bằng http:// hoặc https://",
+      "filename": "Tên file lưu (tùy chọn)",
+      "filenameHint": "Để trống sẽ tự lấy theo tên ở cuối URL.",
+      "submit": "Tải về"
+    },
+    "trash": {
+      "action": "Thùng rác",
+      "title": "Thùng rác của server",
+      "empty": "Thùng rác trống",
+      "restore": "Khôi phục",
+      "restored": "Đã khôi phục {{count}} mục.",
+      "emptyAll": "Dọn sạch thùng rác",
+      "deleteBatch": "Xóa đợt này",
+      "deletedBatch": "Đã xóa vĩnh viễn khỏi thùng rác.",
+      "emptyConfirm": "Xóa vĩnh viễn toàn bộ thùng rác?",
+      "emptyBody": "Các file trong thùng rác của server sẽ bị xóa hẳn khỏi đĩa, không thể hoàn tác.",
+      "emptied": "Đã dọn sạch thùng rác.",
+      "itemsCount_one": "{{count}} mục",
+      "itemsCount_other": "{{count}} mục"
+    },
+    "preview": {
+      "largeBanner": "File lớn ({{total}}) — đang xem {{shown}} cuối ở chế độ chỉ đọc.",
+      "nbtBanner": "File NBT ({{kind}}) — đang xem cấu trúc JSON ở chế độ chỉ đọc.",
+      "nbtGzip": "nén gzip",
+      "nbtRaw": "không nén",
+      "imageMeta": "{{width}} × {{height}} px · {{size}}",
+      "imageError": "Không tải được ảnh xem trước."
     },
     "dropHint": "Thả để tải lên {{dir}}",
     "uploadFailed": "Tải lên không xong"

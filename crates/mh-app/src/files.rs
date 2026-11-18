@@ -6,12 +6,17 @@
 
 mod archive;
 mod disk;
+mod extra;
 mod ops;
 mod search;
+mod tar_extract;
+mod trash;
 
 pub(crate) use disk::delete_sync;
+pub use extra::{DirSize, NbtPreview, PREVIEW_MAX_BYTES, TextPreview};
 pub use ops::ZipStream;
 pub use search::{FoundEntry, SEARCH_MAX_RESULTS, SearchResult};
+pub use trash::TrashBatch;
 
 use std::path::{Path, PathBuf};
 
@@ -133,6 +138,86 @@ impl App {
         let (dest, part) =
             blocking(move || disk::upload_paths(&store, id, &dir, &file_name)).await?;
         stream_upload(dest, part, reader, max_bytes).await
+    }
+
+    /// Tải lên giữ nguyên đường dẫn tương đối (`a/b/c.txt`), tạo thư mục con an toàn trong `dir`.
+    pub async fn save_upload_relative(
+        &self,
+        id: ServerId,
+        dir: &str,
+        rel_path: &str,
+        reader: impl AsyncRead + Send + Unpin,
+        max_bytes: u64,
+    ) -> Result<String, AppError> {
+        let rel = extra::normalize_relative_path(rel_path)?;
+        self.guard_jar(id, &child_path(dir, &rel))?;
+        let (store, dir, rel_copy) = (self.store.clone(), dir.to_owned(), rel.clone());
+        let (dest, part) =
+            blocking(move || extra::upload_relative_paths(&store, id, &dir, &rel_copy)).await?;
+        stream_upload(dest, part, reader, max_bytes).await?;
+        Ok(rel)
+    }
+
+    pub async fn copy_file(&self, id: ServerId, from: &str, to: &str) -> Result<(), AppError> {
+        self.guard_jar(id, to)?;
+        let (store, from, to) = (self.store.clone(), from.to_owned(), to.to_owned());
+        blocking(move || extra::copy_sync(&disk::open_root(&store, id)?, &from, &to)).await
+    }
+
+    pub async fn dir_size(&self, id: ServerId, path: &str) -> Result<DirSize, AppError> {
+        let (store, path) = (self.store.clone(), path.to_owned());
+        blocking(move || extra::dir_size_sync(&disk::open_root(&store, id)?, &path)).await
+    }
+
+    pub async fn read_preview(&self, id: ServerId, path: &str) -> Result<TextPreview, AppError> {
+        let (store, path) = (self.store.clone(), path.to_owned());
+        blocking(move || extra::read_preview_sync(&disk::open_root(&store, id)?, &path)).await
+    }
+
+    pub async fn read_nbt(&self, id: ServerId, path: &str) -> Result<NbtPreview, AppError> {
+        let (store, path) = (self.store.clone(), path.to_owned());
+        blocking(move || extra::read_nbt_sync(&disk::open_root(&store, id)?, &path)).await
+    }
+
+    pub async fn open_image(
+        &self,
+        id: ServerId,
+        path: &str,
+    ) -> Result<(String, &'static str, tokio::fs::File), AppError> {
+        let (store, path) = (self.store.clone(), path.to_owned());
+        let (name, mime, file) =
+            blocking(move || extra::open_image_sync(&store, id, &path)).await?;
+        Ok((name, mime, tokio::fs::File::from_std(file)))
+    }
+
+    pub async fn list_trash(&self, id: ServerId) -> Result<Vec<TrashBatch>, AppError> {
+        let (store, trash) = (self.store.clone(), self.dirs.trash());
+        blocking(move || {
+            store.load(id)?;
+            trash::list_trash_sync(&trash, id)
+        })
+        .await
+    }
+
+    pub async fn restore_trash(&self, id: ServerId, batch: &str) -> Result<Vec<String>, AppError> {
+        let (store, trash, batch) = (self.store.clone(), self.dirs.trash(), batch.to_owned());
+        if trash::trash_batch_has_server_jar(&trash, id, &batch) {
+            self.guard_jar(id, SERVER_JAR)?;
+        }
+        blocking(move || trash::restore_trash_sync(&store, &trash, id, &batch)).await
+    }
+
+    pub async fn empty_trash(&self, id: ServerId, batch: Option<&str>) -> Result<(), AppError> {
+        let (store, trash, batch) = (
+            self.store.clone(),
+            self.dirs.trash(),
+            batch.map(str::to_owned),
+        );
+        blocking(move || {
+            store.load(id)?;
+            trash::empty_trash_sync(&trash, id, batch.as_deref())
+        })
+        .await
     }
 
     /// `server.jar` đúng ở gốc đang bị process Java mở. Không tạo supervisor chỉ để hỏi.

@@ -7,26 +7,136 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { ApiError, errorMessage } from "../../../api/client";
 import { filesApi, parentOf, pathSteps } from "../../../api/files";
 import { formatBytes } from "../../../format";
-import { Breadcrumb, Button, CodeEditor, languageFor, Notice, Spinner, Stack, Switch } from "../../../ui";
+import { Breadcrumb, Button, CodeEditor, ImagePreview, languageFor, Notice, Spinner, Stack, Switch } from "../../../ui";
 import { useServer } from "../ServerLayout";
 
 const WRAP_KEY = "minehost.editor.wrap";
+const isImage = (path: string) => /\.(png|jpe?g|gif|webp)$/i.test(path);
+const isNbt = (path: string) => /\.(dat|dat_old|nbt)$/i.test(path);
 
-/** Trình sửa code cho file văn bản ≤ 1 MiB (spec trang Tệp, mục 1). Lưu bằng nút hoặc Ctrl+S. */
+/** Trình sửa code và xem trước ảnh / NBT / file log lớn (spec trang Tệp & nâng cấp). */
 export function FileEditorPage() {
-  const { t } = useTranslation();
   const server = useServer();
   const path = useSearchParams()[0].get("path") ?? "";
-  const key = ["file", server.id, path];
+  if (isImage(path)) return <ImageView key={path} serverId={server.id} path={path} />;
+  if (isNbt(path)) return <NbtView key={path} serverId={server.id} path={path} />;
+  return <TextEditorView key={path} serverId={server.id} path={path} />;
+}
+
+function ImageView({ serverId, path }: { serverId: string; path: string }) {
+  const { t, i18n } = useTranslation();
+  const [failed, setFailed] = useState(false);
+  const list = useQuery({ queryKey: ["files", serverId, parentOf(path)], queryFn: () => filesApi.list(serverId, parentOf(path)) });
+  const size = list.data?.find((e) => e.name === path.slice(path.lastIndexOf("/") + 1))?.size;
+
+  return (
+    <Stack gap={4}>
+      <Stack direction="row" gap={3} align="center" justify="between" wrap>
+        <Header serverId={serverId} path={path} />
+        <Button size="sm" icon={Download} onClick={() => window.location.assign(filesApi.downloadUrl(serverId, path))}>
+          {t("files.download")}
+        </Button>
+      </Stack>
+      {failed ? (
+        <Notice
+          tone="warning"
+          action={
+            <Link to={filesApi.downloadUrl(serverId, path)} reloadDocument>
+              <Stack direction="row" gap={1} align="center">
+                <Download size={16} aria-hidden />
+                {t("files.download")}
+              </Stack>
+            </Link>
+          }
+        >
+          {t("files.preview.imageError")}
+        </Notice>
+      ) : (
+        <ImagePreview
+          src={filesApi.rawUrl(serverId, path)}
+          alt={path}
+          onError={() => setFailed(true)}
+          caption={(dims) =>
+            dims && size != null ? t("files.preview.imageMeta", { width: dims.width, height: dims.height, size: formatBytes(size, i18n.language) }) : ""
+          }
+        />
+      )}
+    </Stack>
+  );
+}
+
+function NbtView({ serverId, path }: { serverId: string; path: string }) {
+  const { t, i18n } = useTranslation();
+  const [wrap, setWrap] = useWrapSetting();
+  const [cursor, setCursor] = useState({ line: 1, column: 1 });
+  const nbt = useQuery({ queryKey: ["file-nbt", serverId, path], queryFn: () => filesApi.nbt(serverId, path) });
+
+  return (
+    <Stack gap={4}>
+      <Stack direction="row" gap={3} align="center" justify="between" wrap>
+        <Header serverId={serverId} path={path} />
+        <Stack direction="row" gap={3} align="center" wrap>
+          {nbt.isSuccess && <Switch label={t("files.wrap")} checked={wrap} onChange={setWrap} />}
+          <Button size="sm" icon={Download} onClick={() => window.location.assign(filesApi.downloadUrl(serverId, path))}>
+            {t("files.download")}
+          </Button>
+        </Stack>
+      </Stack>
+      {nbt.isPending && <Spinner label={t("ui.loading")} />}
+      {nbt.isError && <ReadError serverId={serverId} path={path} error={nbt.error} />}
+      {nbt.isSuccess && (
+        <>
+          <Notice tone="info">
+            {t("files.preview.nbtBanner", { kind: t(nbt.data.compressed ? "files.preview.nbtGzip" : "files.preview.nbtRaw") })}
+          </Notice>
+          <CodeEditor
+            label={t("files.editorLabel", { path })}
+            value={nbt.data.json}
+            onChange={() => {}}
+            language="json"
+            readOnly
+            wrap={wrap}
+            onCursor={(line, column) => setCursor({ line, column })}
+            status={
+              <>
+                <span>{t("files.cursor", cursor)}</span>
+                <span>{t("files.language.json")}</span>
+                <span>{formatBytes(nbt.data.size, i18n.language)}</span>
+              </>
+            }
+          />
+        </>
+      )}
+    </Stack>
+  );
+}
+
+function TextEditorView({ serverId, path }: { serverId: string; path: string }) {
+  const { t, i18n } = useTranslation();
+  const key = ["file", serverId, path];
   const queryClient = useQueryClient();
-  const file = useQuery({ queryKey: key, queryFn: () => filesApi.read(server.id, path), staleTime: Infinity });
+  const file = useQuery({
+    queryKey: key,
+    queryFn: () => filesApi.read(serverId, path),
+    staleTime: Infinity,
+    retry: false,
+  });
+  const tooLarge = file.error instanceof ApiError && file.error.code === "FILE_TOO_LARGE";
+  const preview = useQuery({
+    queryKey: ["file-preview", serverId, path],
+    queryFn: () => filesApi.preview(serverId, path),
+    enabled: tooLarge,
+    retry: false,
+  });
+
   const [draft, setDraft] = useState<string | null>(null);
   const [wrap, setWrap] = useWrapSetting();
+  const [cursor, setCursor] = useState({ line: 1, column: 1 });
   const text = draft ?? file.data?.text ?? "";
   const dirty = draft !== null && draft !== file.data?.text;
 
   const save = useMutation({
-    mutationFn: () => filesApi.write(server.id, path, text, file.data?.etag),
+    mutationFn: () => filesApi.write(serverId, path, text, file.data?.etag),
     onSuccess: ({ etag }) => {
       queryClient.setQueryData(key, { text, etag, size: new TextEncoder().encode(text).length });
       setDraft(null);
@@ -47,21 +157,50 @@ export function FileEditorPage() {
   return (
     <Stack gap={4}>
       <Stack direction="row" gap={3} align="center" justify="between" wrap>
-        <Header serverId={server.id} path={path} />
-        {file.isSuccess && (
+        <Header serverId={serverId} path={path} />
+        {(file.isSuccess || preview.isSuccess) && (
           <Stack direction="row" gap={3} align="center" wrap>
             <Switch label={t("files.wrap")} checked={wrap} onChange={setWrap} />
-            <Button size="sm" icon={Download} onClick={() => window.location.assign(filesApi.downloadUrl(server.id, path))}>
+            <Button size="sm" icon={Download} onClick={() => window.location.assign(filesApi.downloadUrl(serverId, path))}>
               {t("files.download")}
             </Button>
-            <Button size="sm" variant="primary" icon={Save} disabled={!dirty} loading={save.isPending} onClick={trySave}>
-              {t("files.save")}
-            </Button>
+            {file.isSuccess && (
+              <Button size="sm" variant="primary" icon={Save} disabled={!dirty} loading={save.isPending} onClick={trySave}>
+                {t("files.save")}
+              </Button>
+            )}
           </Stack>
         )}
       </Stack>
-      {file.isPending && <Spinner label={t("ui.loading")} />}
-      {file.isError && <ReadError serverId={server.id} path={path} error={file.error} />}
+      {(file.isPending || (tooLarge && preview.isPending)) && <Spinner label={t("ui.loading")} />}
+      {file.isError && !tooLarge && <ReadError serverId={serverId} path={path} error={file.error} />}
+      {tooLarge && preview.isError && <ReadError serverId={serverId} path={path} error={preview.error} />}
+      {tooLarge && preview.isSuccess && (
+        <>
+          <Notice tone="info">
+            {t("files.preview.largeBanner", {
+              total: formatBytes(preview.data.total_bytes, i18n.language),
+              shown: formatBytes(preview.data.shown_bytes, i18n.language),
+            })}
+          </Notice>
+          <CodeEditor
+            label={t("files.editorLabel", { path })}
+            value={preview.data.text}
+            onChange={() => {}}
+            language={languageFor(path)}
+            readOnly
+            wrap={wrap}
+            onCursor={(line, column) => setCursor({ line, column })}
+            status={
+              <>
+                <span>{t("files.cursor", cursor)}</span>
+                <span>{t(`files.language.${languageFor(path)}`)}</span>
+                <span>{formatBytes(preview.data.total_bytes, i18n.language)}</span>
+              </>
+            }
+          />
+        </>
+      )}
       {file.isSuccess && (
         <>
           {changedOnDisk ? (

@@ -27,7 +27,7 @@ test("tạo thư mục, tải lên, đổi tên và xóa file", async ({ page, r
   await table.getByRole("link", { name: "ghi-chu" }).click();
   await expect(page.getByText("Thư mục này trống")).toBeVisible();
 
-  await page.locator('input[type="file"]').setInputFiles({
+  await page.getByLabel("Tải file lên").setInputFiles({
     name: "nhat-ky.txt",
     mimeType: "text/plain",
     buffer: Buffer.from("Ngày đầu tiên trên server.\n", "utf8"),

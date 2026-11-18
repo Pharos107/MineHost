@@ -278,7 +278,7 @@ fn ensure_etag(path: &Path, if_match: Option<&str>) -> Result<(), AppError> {
     }
 }
 
-fn file_etag(path: &Path) -> Result<String, AppError> {
+pub(super) fn file_etag(path: &Path) -> Result<String, AppError> {
     let mut file = File::open(path).map_err(|err| io_err(path, err))?;
     let mut hasher = Sha256::new();
     let mut buf = [0u8; 64 * 1024];

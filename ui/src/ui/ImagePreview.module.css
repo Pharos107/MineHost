@@ -1,0 +1,24 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--mh-space-3);
+  padding: var(--mh-space-5);
+  background: var(--mh-surface);
+  border: 1px solid var(--mh-border);
+  border-radius: var(--mh-radius-lg);
+}
+
+.image {
+  display: block;
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border-radius: var(--mh-radius-sm);
+  image-rendering: pixelated;
+}
+
+.caption {
+  color: var(--mh-text-muted);
+  font-size: var(--mh-text-sm);
+}

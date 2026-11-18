@@ -229,6 +229,7 @@
       "run_installer": "Installing {{loader}}",
       "resolve_content": "Resolving mod dependencies",
       "download_content": "Downloading {{name}}",
+      "download_file": "Downloading {{name}}",
       "download_modpack": "Downloading modpack {{name}}",
       "download_pack_file": "Downloading pack file ({{index}}/{{total}}): {{name}}",
       "apply_overrides": "Applying modpack overrides"
@@ -875,7 +876,8 @@
       "change_version": "Change version",
       "update_modpack": "Update modpack",
       "compress_files": "Compress files",
-      "extract_files": "Extract archive"
+      "extract_files": "Extract archive",
+      "fetch_file": "Download from URL"
     },
     "states": {
       "running": "Running",
@@ -1061,7 +1063,56 @@
     "jobDone": {
       "compress_files": "Compression finished.",
       "extract_files": "Extraction finished.",
+      "fetch_file": "File downloaded to server.",
       "other": "Done."
+    },
+    "uploadMenu": "Upload",
+    "uploadFolder": "Upload folder",
+    "emptyFolderDrop": "The dropped folder contains no files.",
+    "openFolder": "Open folder",
+    "copy": {
+      "action": "Duplicate",
+      "title": "Duplicate “{{name}}”",
+      "label": "Copy name",
+      "submit": "Duplicate",
+      "suffix": "{{name}} (copy)"
+    },
+    "sizeCalc": {
+      "action": "Calculate size",
+      "truncated": "Over {{size}}"
+    },
+    "fetch": {
+      "action": "Download from URL",
+      "title": "Download file from URL",
+      "url": "URL (http or https)",
+      "urlPlaceholder": "https://example.com/file.zip",
+      "badUrl": "URL must start with http:// or https://",
+      "filename": "Save as (optional)",
+      "filenameHint": "Leave blank to use the name at the end of the URL.",
+      "submit": "Download"
+    },
+    "trash": {
+      "action": "Trash",
+      "title": "Server trash",
+      "empty": "Trash is empty",
+      "restore": "Restore",
+      "restored": "Restored {{count}} item(s).",
+      "emptyAll": "Empty trash",
+      "deleteBatch": "Delete this batch",
+      "deletedBatch": "Permanently removed from trash.",
+      "emptyConfirm": "Permanently delete everything in trash?",
+      "emptyBody": "All files in this server's trash will be permanently removed from disk.",
+      "emptied": "Trash emptied.",
+      "itemsCount_one": "{{count}} item",
+      "itemsCount_other": "{{count}} items"
+    },
+    "preview": {
+      "largeBanner": "Large file ({{total}}) — showing the last {{shown}} in read-only mode.",
+      "nbtBanner": "NBT file ({{kind}}) — showing decoded JSON in read-only mode.",
+      "nbtGzip": "gzip compressed",
+      "nbtRaw": "uncompressed",
+      "imageMeta": "{{width}} × {{height}} px · {{size}}",
+      "imageError": "Could not load image preview."
     },
     "dropHint": "Drop to upload to {{dir}}",
     "uploadFailed": "Upload failed"

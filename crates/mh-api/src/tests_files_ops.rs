@@ -175,3 +175,6 @@ fn openapi_lists_file_ops_routes() {
         assert!(spec.paths.paths.contains_key(&path), "{path}");
     }
 }
+
+#[path = "tests_files_extra.rs"]
+mod tests_files_extra;

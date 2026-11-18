@@ -41,6 +41,12 @@ pub enum NetError {
     #[error("ổ đĩa chỉ còn {available} byte trống")]
     NotEnoughDisk { available: u64 },
 
+    #[error("file tải về vượt giới hạn {max} byte")]
+    FileTooLarge { max: u64 },
+
+    #[error("đã có `{path}`")]
+    FileExists { path: String },
+
     #[error("lỗi I/O tại `{path}`: {source}")]
     Io {
         path: PathBuf,
@@ -68,6 +74,8 @@ impl NetError {
             Self::HostNotAllowed { .. } => ErrorCode::DownloadHostNotAllowed,
             Self::RateLimited { .. } => ErrorCode::UpstreamRateLimited,
             Self::NotEnoughDisk { .. } => ErrorCode::NotEnoughDisk,
+            Self::FileTooLarge { .. } => ErrorCode::FileTooLarge,
+            Self::FileExists { .. } => ErrorCode::FileExists,
             Self::Io { .. } => ErrorCode::Internal,
         }
     }

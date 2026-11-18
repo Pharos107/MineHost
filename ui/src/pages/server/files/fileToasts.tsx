@@ -1,16 +1,21 @@
 import type { TFunction } from "i18next";
 
 import { errorMessage, type Job } from "../../../api/client";
-import { uploadFiles } from "../../../api/files";
+import { uploadFiles, type UploadItem } from "../../../api/files";
 import { ProgressBar, toast } from "../../../ui";
 import { JobProgress, jobError } from "../JobProgress";
+
+function itemLabel(item: File | UploadItem): string {
+  return item instanceof File ? item.name : item.path ?? item.file.name;
+}
 
 /**
  * Tải lên với tiến độ trong một toast (spec trang Tệp, mục 2): toast ở lại khi còn gửi, xong thì
  * báo kết quả rồi tự tắt sau 5 giây. Không chèn gì vào trang nên bảng không bị đẩy xuống.
  */
-export async function uploadWithToast(t: TFunction, serverId: string, dir: string, files: File[], onDone: () => void) {
-  const label = t("files.uploading", { names: files.map((f) => f.name).join(", ") });
+export async function uploadWithToast(t: TFunction, serverId: string, dir: string, files: Array<File | UploadItem>, onDone: () => void) {
+  const namesList = files.slice(0, 3).map(itemLabel).join(", ") + (files.length > 3 ? ` (+${files.length - 3})` : "");
+  const label = t("files.uploading", { names: namesList });
   const id = toast.show({ sticky: true, body: <ProgressBar label={label} value={0} /> });
   let shown = 0;
   try {
@@ -25,6 +30,8 @@ export async function uploadWithToast(t: TFunction, serverId: string, dir: strin
     onDone();
   } catch (e) {
     toast.update(id, { tone: "danger", title: t("files.uploadFailed"), body: errorMessage(t, e), sticky: false });
+    // Thư mục nhiều file có thể đã lên xong các lô đầu trước khi gặp lỗi ở lô sau.
+    onDone();
   }
 }
 

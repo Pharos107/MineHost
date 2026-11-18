@@ -59,8 +59,8 @@ pub use create::{CreateRequest, Created};
 pub use curseforge::{CurseforgeKeySource, CurseforgeStatus};
 pub use error::AppError;
 pub use files::{
-    FileEntry, FileKind, FoundEntry, SEARCH_MAX_RESULTS, SearchResult, TEXT_LIMIT, TextFile,
-    ZipStream,
+    DirSize, FileEntry, FileKind, FoundEntry, NbtPreview, PREVIEW_MAX_BYTES, SEARCH_MAX_RESULTS,
+    SearchResult, TEXT_LIMIT, TextFile, TextPreview, TrashBatch, ZipStream,
 };
 pub use import::{Detected, ImportRequest};
 pub use jobs::{JobId, JobRunner, JobSnapshot, JobState};

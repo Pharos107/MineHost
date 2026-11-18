@@ -56,16 +56,18 @@ const entries: FileEntry[] = [
   { name: "world", kind: "dir" },
   { name: "server.properties", kind: "file", size: 1200, modified: "2026-10-27T01:00:00Z" },
   { name: "big.log", kind: "file", size: 5 * 1024 * 1024 },
+  { name: "pack.zip", kind: "file", size: 2048 },
 ];
 
 describe("FilesPage", () => {
-  it("thư mục mở được, file nhỏ mở trình sửa, file lớn chỉ tải xuống", async () => {
+  it("thư mục mở được, file văn bản/log mở trang xem sửa, file nén chỉ tải xuống", async () => {
     mockFetch((url) => (url.startsWith("/api/v1/servers/A/files?path=") ? Response.json(entries) : undefined));
     renderAt("/servers/A/files");
     const table = await screen.findByRole("table");
     expect(within(table).getByRole("link", { name: "world" }).getAttribute("href")).toBe("/servers/A/files?path=world");
     expect(within(table).getByRole("link", { name: "server.properties" }).getAttribute("href")).toBe("/servers/A/files/edit?path=server.properties");
-    expect(within(table).queryByRole("link", { name: "big.log" })).toBeNull();
+    expect(within(table).getByRole("link", { name: "big.log" }).getAttribute("href")).toBe("/servers/A/files/edit?path=big.log");
+    expect(within(table).queryByRole("link", { name: "pack.zip" })).toBeNull();
     expect(within(table).getByText("1,2 KB")).toBeTruthy();
   });
 
@@ -204,9 +206,73 @@ describe("FileEditorPage", () => {
 
   it("file nhị phân không mở được thì vẫn có link tải xuống", async () => {
     mockFetch((url) => (url.startsWith("/api/v1/servers/A/files/content") ? Response.json({ code: "FILE_NOT_TEXT", params: {} }, { status: 415 }) : undefined));
-    renderAt("/servers/A/files/edit?path=world/level.dat");
+    renderAt("/servers/A/files/edit?path=world/region.mca");
     const link = await screen.findByRole("link", { name: "Tải xuống" });
-    expect(link.getAttribute("href")).toBe("/api/v1/servers/A/files/download?path=world%2Flevel.dat");
+    expect(link.getAttribute("href")).toBe("/api/v1/servers/A/files/download?path=world%2Fregion.mca");
+  });
+
+  it("file lớn tự chuyển sang xem trước phần cuối chỉ đọc, và file NBT giải mã sang JSON", async () => {
+    mockFetch((url) => {
+      if (url.startsWith("/api/v1/servers/A/files/content")) return Response.json({ code: "FILE_TOO_LARGE", params: {} }, { status: 413 });
+      if (url.startsWith("/api/v1/servers/A/files/preview")) {
+        return Response.json({ text: "dòng log cuối\n", total_bytes: 2 * 1024 * 1024, shown_bytes: 15, truncated: true });
+      }
+      if (url.startsWith("/api/v1/servers/A/files/nbt")) {
+        return Response.json({ json: '{\n  "LevelName": "world"\n}', size: 512, compressed: true });
+      }
+      return undefined;
+    });
+    renderAt("/servers/A/files/edit?path=logs/latest.log");
+    expect(await screen.findByText(/đang xem .* cuối ở chế độ chỉ đọc/)).toBeTruthy();
+    expect((await screen.findByRole("textbox", { name: "Nội dung logs/latest.log" }) as HTMLTextAreaElement).value).toBe("dòng log cuối\n");
+
+    renderAt("/servers/A/files/edit?path=world/level.dat");
+    expect(await screen.findByText(/nén gzip/)).toBeTruthy();
+    expect((await screen.findByRole("textbox", { name: "Nội dung world/level.dat" }) as HTMLTextAreaElement).value).toContain('"LevelName": "world"');
+  });
+});
+
+describe("FilesPage nâng cấp", () => {
+  it("nhân bản, tính dung lượng thư mục, tải từ URL và quản lý thùng rác", async () => {
+    let trashed = [{ id: "20261118-120000", deleted_at: "2026-11-18T12:00:00Z", items: ["old.txt"], bytes: 42 }];
+    const fetchMock = mockFetch((url, init) => {
+      if (url === "/api/v1/servers/A/files/copy" && init?.method === "POST") return new Response(null, { status: 204 });
+      if (url === "/api/v1/servers/A/files/size?path=world") return Response.json({ bytes: 4096, files: 3, dirs: 1, truncated: false });
+      if (url === "/api/v1/servers/A/files/fetch" && init?.method === "POST") return Response.json({ job_id: 12 }, { status: 202 });
+      if (url === "/api/v1/jobs/12") return Response.json({ id: 12, kind: "fetch_file", state: "succeeded" });
+      if (url === "/api/v1/servers/A/files/trash" && (!init?.method || init.method === "GET")) return Response.json(trashed);
+      if (url === "/api/v1/servers/A/files/trash/restore" && init?.method === "POST") {
+        trashed = [];
+        return Response.json(["old.txt"]);
+      }
+      if (url.startsWith("/api/v1/servers/A/files?path=")) return Response.json(entries);
+      return undefined;
+    });
+    renderAt("/servers/A/files");
+
+    // Tính dung lượng thư mục world
+    await userEvent.click(await screen.findByRole("button", { name: "Thao tác khác cho world" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Tính dung lượng" }));
+    expect(await screen.findByText("4 KB")).toBeTruthy();
+
+    // Nhân bản server.properties
+    await userEvent.click(screen.getByRole("button", { name: "Thao tác khác cho server.properties" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Nhân bản" }));
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Nhân bản" }));
+    const copyCall = fetchMock.mock.calls.find(([u]) => u === "/api/v1/servers/A/files/copy");
+    expect(JSON.parse(String(copyCall?.[1]?.body))).toEqual({ from: "server.properties", to: "server (bản sao).properties" });
+
+    // Mở menu Tải lên -> Tải từ URL
+    await userEvent.click(screen.getByRole("button", { name: "Tải lên" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Tải từ URL" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Đường dẫn (http hoặc https)" }), "https://example.com/plugin.jar");
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Tải về" }));
+    expect(await screen.findByText("Đã tải file về server.")).toBeTruthy();
+
+    // Mở thùng rác và khôi phục
+    await userEvent.click(screen.getByRole("button", { name: "Thùng rác" }));
+    await userEvent.click(await within(screen.getByRole("dialog")).findByRole("button", { name: "Khôi phục" }));
+    expect(await screen.findByText("Đã khôi phục 1 mục.")).toBeTruthy();
   });
 });
 

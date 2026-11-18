@@ -116,3 +116,12 @@
 .dangerText:hover:not(:disabled) {
   background: var(--mh-danger-soft);
 }
+
+.active {
+  background: var(--mh-primary-soft);
+  color: var(--mh-primary);
+}
+
+.active:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--mh-primary) 18%, transparent);
+}

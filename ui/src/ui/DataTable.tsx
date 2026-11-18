@@ -65,6 +65,12 @@ interface DataTableProps<T> {
   searchOptions?: ReactNode;
   /** Thay chữ mặc định "Tìm kiếm" của ô tìm. */
   searchLabel?: string;
+  /** Khi truyền, ô tìm do trang quản lý giá trị (ví dụ reset khi đổi thư mục). */
+  searchValue?: string;
+  /** `false` khi tìm trực tiếp trên server, tránh lọc cục bộ trong lúc chờ debounce. */
+  searchClientFilter?: boolean;
+  /** Hiện vòng quay nhỏ trong ô tìm thay vì ẩn cả bảng. */
+  searching?: boolean;
   /** Báo chuỗi đang gõ, cho trang tự tìm thêm (ví dụ tìm trên server). */
   onSearchChange?: (query: string) => void;
 }
@@ -75,19 +81,20 @@ interface DataTableProps<T> {
  */
 export function DataTable<T>(props: DataTableProps<T>) {
   const { label, columns, rows, rowKey, actions, toolbar, searchText, defaultSort, loading, empty, selection } = props;
-  const { searchOptions, searchLabel, onSearchChange } = props;
+  const { searchOptions, searchLabel, searchValue, searchClientFilter = true, searching = false, onSearchChange } = props;
   const { t, i18n } = useTranslation();
-  const [query, setQuery] = useState("");
+  const [internalQuery, setInternalQuery] = useState("");
+  const query = searchValue ?? internalQuery;
   const [sort, setSort] = useState<SortState | null>(defaultSort ?? null);
 
   const visible = useMemo(() => {
-    const filtered = searchText ? filterRows(rows, query, searchText) : rows;
+    const filtered = searchText && searchClientFilter ? filterRows(rows, query, searchText) : rows;
     const sortValue = columns.find((column) => column.id === sort?.columnId)?.sortValue;
     return sort && sortValue ? sortRows(filtered, sortValue, sort.direction, i18n.language) : filtered;
-  }, [rows, query, searchText, columns, sort, i18n.language]);
+  }, [rows, query, searchText, searchClientFilter, columns, sort, i18n.language]);
 
   // Đang tìm (có thể tìm trên server) mà không ra gì thì vẫn giữ bảng và ô tìm, chỉ báo không khớp.
-  if (!loading && rows.length === 0 && query === "") return <>{empty}</>;
+  if (!loading && !searching && rows.length === 0 && query === "") return <>{empty}</>;
   const picking = selection !== undefined && selection.selected.size > 0;
 
   return (
@@ -110,10 +117,11 @@ export function DataTable<T>(props: DataTableProps<T>) {
               <SearchInput
                 value={query}
                 onChange={(value) => {
-                  setQuery(value);
+                  if (searchValue === undefined) setInternalQuery(value);
                   onSearchChange?.(value);
                 }}
                 label={searchLabel ?? t("ui.table.search")}
+                loading={searching}
                 trailing={searchOptions}
               />
             </div>
@@ -153,7 +161,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
           </table>
         </div>
       )}
-      {!loading && visible.length === 0 && <p className={styles.state}>{t("ui.table.noMatch", { query })}</p>}
+      {!loading && !searching && visible.length === 0 && <p className={styles.state}>{t("ui.table.noMatch", { query })}</p>}
       {!loading && <footer className={styles.footer}>{t("ui.table.count", { shown: visible.length, total: rows.length })}</footer>}
     </div>
   );
