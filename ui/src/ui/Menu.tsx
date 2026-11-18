@@ -1,7 +1,7 @@
 import { Check, Ellipsis, type LucideIcon } from "lucide-react";
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 
-import { IconButton, type ButtonSize } from "./Button";
+import { Button, IconButton, type ButtonSize, type ButtonVariant } from "./Button";
 import { cx } from "./cx";
 import styles from "./Menu.module.css";
 
@@ -21,10 +21,15 @@ interface MenuProps {
   items: MenuItem[];
   icon?: LucideIcon;
   size?: ButtonSize;
+  /** Có thì hiện nút chữ đầy đủ (ví dụ "Tải lên") thay vì nút chỉ có icon. */
+  triggerLabel?: string;
+  variant?: ButtonVariant;
+  /** Tô nổi nút khi menu đang bật một tùy chọn lọc. */
+  active?: boolean;
 }
 
 /** Menu thả xuống cho các thao tác ít dùng. Esc, Tab, bấm ra ngoài hoặc cuộn trang thì đóng. */
-export function Menu({ label, items, icon = Ellipsis, size = "md" }: MenuProps) {
+export function Menu({ label, items, icon = Ellipsis, size = "md", triggerLabel, variant = "secondary", active }: MenuProps) {
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -71,15 +76,30 @@ export function Menu({ label, items, icon = Ellipsis, size = "md" }: MenuProps) 
 
   return (
     <div className={styles.root} ref={root}>
-      <IconButton
-        icon={icon}
-        label={label}
-        size={size}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-controls={open ? menuId : undefined}
-        onClick={() => setOpen((value) => !value)}
-      />
+      {triggerLabel ? (
+        <Button
+          icon={icon}
+          variant={variant}
+          size={size}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-controls={open ? menuId : undefined}
+          onClick={() => setOpen((value) => !value)}
+        >
+          {triggerLabel}
+        </Button>
+      ) : (
+        <IconButton
+          icon={icon}
+          label={label}
+          size={size}
+          active={active}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-controls={open ? menuId : undefined}
+          onClick={() => setOpen((value) => !value)}
+        />
+      )}
       {open && (
         <div className={styles.menu} id={menuId} role="menu" aria-label={label} ref={list} onKeyDown={onKeyDown}>
           {items.map(({ label: itemLabel, icon: Icon, onSelect, tone, disabled, checked }) => (
@@ -115,10 +135,16 @@ function placeBelowOrAbove(trigger: HTMLElement | null | undefined, menu: HTMLEl
   const gap = 4;
   // clientWidth/Height không tính thanh cuộn, khớp với gốc tọa độ của `position: fixed`.
   const { clientWidth, clientHeight } = document.documentElement;
+  // Tổ tiên có transform/backdrop-filter làm `position: fixed` bám theo tổ tiên đó thay vì viewport.
+  menu.style.top = "0px";
+  menu.style.right = "0px";
+  const origin = menu.getBoundingClientRect();
   const rect = trigger.getBoundingClientRect();
   const fitsBelow = rect.bottom + gap + menu.offsetHeight <= clientHeight;
-  menu.style.top = `${fitsBelow ? rect.bottom + gap : Math.max(gap, rect.top - gap - menu.offsetHeight)}px`;
-  menu.style.right = `${Math.max(gap, clientWidth - rect.right)}px`;
+  const top = fitsBelow ? rect.bottom + gap : Math.max(gap, rect.top - gap - menu.offsetHeight);
+  const right = Math.max(gap, clientWidth - rect.right);
+  menu.style.top = `${top - origin.top}px`;
+  menu.style.right = `${right - (clientWidth - origin.right)}px`;
 }
 
 function moveFocus(container: HTMLElement | null, step: 1 | -1) {

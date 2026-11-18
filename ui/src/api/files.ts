@@ -5,6 +5,15 @@ export type FileEntry = components["schemas"]["FileEntryDto"];
 export type TextFile = components["schemas"]["TextFileDto"];
 export type FoundEntry = components["schemas"]["FoundEntryDto"];
 export type SearchResult = components["schemas"]["FileSearchDto"];
+export type DirSize = components["schemas"]["DirSizeDto"];
+export type TextPreview = components["schemas"]["TextPreviewDto"];
+export type NbtPreview = components["schemas"]["NbtPreviewDto"];
+export type TrashBatch = components["schemas"]["TrashBatchDto"];
+
+export interface UploadItem {
+  file: File;
+  path?: string;
+}
 
 function filesPath(id: string, sub: string, path: string): string {
   return `${serverPath(id)}/files${sub}?path=${encodeURIComponent(path)}`;
@@ -28,21 +37,65 @@ export const filesApi = {
   archiveUrl: (id: string, paths: string[]) => `/api/v1${serverPath(id)}/files/archive?paths=${encodeURIComponent(JSON.stringify(paths))}`,
   compress: (id: string, paths: string[], dest: string) => request<{ job_id: number }>("POST", `${serverPath(id)}/files/compress`, { paths, dest }),
   extract: (id: string, path: string, dest: string) => request<{ job_id: number }>("POST", `${serverPath(id)}/files/extract`, { path, dest }),
+  copy: (id: string, from: string, to: string) => request<void>("POST", `${serverPath(id)}/files/copy`, { from, to }),
+  size: (id: string, path: string) => request<DirSize>("GET", filesPath(id, "/size", path)),
+  preview: (id: string, path: string) => request<TextPreview>("GET", filesPath(id, "/preview", path)),
+  nbt: (id: string, path: string) => request<NbtPreview>("GET", filesPath(id, "/nbt", path)),
+  rawUrl: (id: string, path: string) => `/api/v1${filesPath(id, "/raw", path)}`,
+  fetch: (id: string, dir: string, url: string, filename?: string) =>
+    request<{ job_id: number }>("POST", `${serverPath(id)}/files/fetch`, { dir, url, filename }),
+  trashList: (id: string) => request<TrashBatch[]>("GET", `${serverPath(id)}/files/trash`),
+  trashRestore: (id: string, batch: string) => request<string[]>("POST", `${serverPath(id)}/files/trash/restore`, { batch }),
+  trashEmpty: (id: string, batch?: string) =>
+    request<void>("DELETE", batch ? `${serverPath(id)}/files/trash?batch=${encodeURIComponent(batch)}` : `${serverPath(id)}/files/trash`),
 };
 
+const UPLOAD_BATCH = 50;
+
 /**
- * Tải file lên thư mục `dir`. Dùng `XMLHttpRequest` thay `fetch` vì cần tiến độ gửi đi cho file lớn
- * (tới 512 MiB). Lỗi trả về đúng `ApiError` như các route khác.
+ * Tải file (hoặc cả thư mục giữ đường dẫn con) lên thư mục `dir`. Dùng `XMLHttpRequest` vì cần
+ * tiến độ gửi đi cho file lớn (tới 512 MiB).
  */
-export function uploadFiles(id: string, dir: string, files: File[], onProgress: (sent: number, total: number) => void): Promise<string[]> {
+export async function uploadFiles(
+  id: string,
+  dir: string,
+  files: Array<File | UploadItem>,
+  onProgress: (sent: number, total: number) => void,
+): Promise<string[]> {
+  const normalized = files.map((item) => (item instanceof File ? { file: item, path: item.webkitRelativePath || item.name } : { file: item.file, path: item.path ?? item.file.name }));
+  const relative = normalized.some((item) => item.path.includes("/"));
+  const totalBytes = normalized.reduce((sum, item) => sum + item.file.size, 0);
+  let sentBefore = 0;
+  const uploaded: string[] = [];
+  for (let i = 0; i < normalized.length; i += UPLOAD_BATCH) {
+    const batch = normalized.slice(i, i + UPLOAD_BATCH);
+    const batchBytes = batch.reduce((sum, item) => sum + item.file.size, 0);
+    const names = await sendUploadBatch(id, dir, batch, relative, (sent) => onProgress(sentBefore + sent, totalBytes));
+    sentBefore += batchBytes;
+    uploaded.push(...names);
+  }
+  return uploaded;
+}
+
+function sendUploadBatch(
+  id: string,
+  dir: string,
+  batch: Array<{ file: File; path: string }>,
+  relative: boolean,
+  onProgress: (sent: number) => void,
+): Promise<string[]> {
   const form = new FormData();
-  for (const file of files) form.append("file", file, file.name);
+  for (const item of batch) {
+    if (relative) form.append("path", item.path);
+    form.append("file", item.file, item.file.name);
+  }
+  const url = relative ? `/api/v1${filesPath(id, "/upload", dir)}&relative=true` : `/api/v1${filesPath(id, "/upload", dir)}`;
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `/api/v1${filesPath(id, "/upload", dir)}`);
+    xhr.open("POST", url);
     for (const [name, value] of Object.entries(mutationHeaders())) xhr.setRequestHeader(name, value);
     xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(e.loaded, e.total);
+      if (e.lengthComputable) onProgress(e.loaded);
     };
     xhr.onload = () => {
       const body = parseJson(xhr.responseText);

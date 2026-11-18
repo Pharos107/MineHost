@@ -146,10 +146,11 @@
 
 .searchTrailing {
   position: absolute;
-  top: 50%;
+  inset-block: 0;
   right: var(--mh-space-1);
-  transform: translateY(-50%);
   display: flex;
+  align-items: center;
+  gap: var(--mh-space-1);
 }
 
 .searchIcon {

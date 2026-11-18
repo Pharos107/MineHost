@@ -12,6 +12,7 @@ mod curseforge;
 mod dto;
 mod error;
 mod files;
+mod files_extra;
 mod files_ops;
 mod guard;
 mod import;
@@ -101,6 +102,15 @@ pub use lan::{LanState, lan_listener};
         files_ops::archive,
         files_ops::compress,
         files_ops::extract,
+        files_extra::copy_file,
+        files_extra::dir_size,
+        files_extra::preview,
+        files_extra::nbt,
+        files_extra::raw,
+        files_extra::fetch_file,
+        files_extra::list_trash,
+        files_extra::restore_trash,
+        files_extra::empty_trash,
         content::search,
         content::project,
         content::versions,
@@ -181,6 +191,13 @@ pub use lan::{LanState, lan_listener};
         files_ops::FileSearchDto,
         files_ops::CompressBody,
         files_ops::ExtractBody,
+        files_extra::CopyBody,
+        files_extra::DirSizeDto,
+        files_extra::TextPreviewDto,
+        files_extra::NbtPreviewDto,
+        files_extra::FetchBody,
+        files_extra::TrashBatchDto,
+        files_extra::RestoreTrashBody,
         files::FileKindDto,
         files::TextFileDto,
         files::TextBody,
@@ -334,6 +351,20 @@ fn api_routes(state: auth::ApiState, upload_max_bytes: u64) -> Router {
         .route("/servers/{id}/files/archive", get(files_ops::archive))
         .route("/servers/{id}/files/compress", post(files_ops::compress))
         .route("/servers/{id}/files/extract", post(files_ops::extract))
+        .route("/servers/{id}/files/copy", post(files_extra::copy_file))
+        .route("/servers/{id}/files/size", get(files_extra::dir_size))
+        .route("/servers/{id}/files/preview", get(files_extra::preview))
+        .route("/servers/{id}/files/nbt", get(files_extra::nbt))
+        .route("/servers/{id}/files/raw", get(files_extra::raw))
+        .route("/servers/{id}/files/fetch", post(files_extra::fetch_file))
+        .route(
+            "/servers/{id}/files/trash",
+            get(files_extra::list_trash).delete(files_extra::empty_trash),
+        )
+        .route(
+            "/servers/{id}/files/trash/restore",
+            post(files_extra::restore_trash),
+        )
         // Chỉ route này nới giới hạn body. Route khác giữ mặc định 2 MiB của axum.
         .route(
             "/servers/{id}/files/upload",

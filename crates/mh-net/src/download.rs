@@ -170,6 +170,51 @@ impl HttpClient {
             .map_err(|e| NetError::io(req.dest, e))
     }
 
+    /// Tải trực tiếp một URL HTTP(S) vào `dest` không qua cache và không kiểm hash (dùng cho URL
+    /// người dùng nhập ở trang Tệp). Giới hạn tối đa `max_bytes`.
+    pub async fn download_to(
+        &self,
+        url: &str,
+        dest: &Path,
+        max_bytes: u64,
+        mut progress: impl FnMut(u64, Option<u64>),
+        cancel: &CancellationToken,
+    ) -> Result<(), NetError> {
+        if cancel.is_cancelled() {
+            return Err(NetError::Cancelled);
+        }
+        let dir = dest.parent().unwrap_or(Path::new("."));
+        tokio::fs::create_dir_all(dir)
+            .await
+            .map_err(|e| NetError::io(dir, e))?;
+        self.check_free_space(dir)?;
+        let part = part_path(dest);
+        let opts = StreamOpts {
+            part: &part,
+            allowed_hosts: None,
+            max_bytes: Some(max_bytes),
+            checked: None,
+        };
+        let result = self.stream_to_part(url, opts, &mut progress, cancel).await;
+        if let Err(err) = result {
+            let _ = tokio::fs::remove_file(&part).await;
+            return Err(err);
+        }
+        // Không ghi đè nếu file đích mới xuất hiện trong lúc đang tải.
+        if tokio::fs::try_exists(dest)
+            .await
+            .map_err(|e| NetError::io(dest, e))?
+        {
+            let _ = tokio::fs::remove_file(&part).await;
+            return Err(NetError::FileExists {
+                path: dest.display().to_string(),
+            });
+        }
+        tokio::fs::rename(&part, dest)
+            .await
+            .map_err(|e| NetError::io(dest, e))
+    }
+
     async fn fetch_to_part(
         &self,
         req: &Download<'_>,
@@ -177,56 +222,108 @@ impl HttpClient {
         progress: &mut impl FnMut(u64, Option<u64>),
         cancel: &CancellationToken,
     ) -> Result<(), NetError> {
-        let mut resp = tokio::select! {
-            () = cancel.cancelled() => return Err(NetError::Cancelled),
-            resp = self.send_download(req.url, req.allowed_hosts) => resp?,
+        let opts = StreamOpts {
+            part,
+            allowed_hosts: req.allowed_hosts,
+            max_bytes: None,
+            checked: Some((req.size, req.checksum)),
         };
-        let total = resp.content_length().or(req.size);
-        // Cỡ khai báo (index modpack, API) có trước thì làm trần; nguồn gửi nhiều hơn là hỏng
-        // hoặc cố ý làm đầy đĩa, không đợi tới lúc so hash.
-        let limit = req.size.or(resp.content_length());
-        let dir = part.parent().unwrap_or(Path::new("."));
-        let mut next_space_check = SPACE_CHECK_EVERY;
-        let mut file = tokio::fs::File::create(part)
-            .await
-            .map_err(|e| NetError::io(part, e))?;
-        let mut hasher = Hasher::new(req.checksum);
-        let mut done = 0u64;
-        loop {
-            let chunk = tokio::select! {
-                () = cancel.cancelled() => return Err(NetError::Cancelled),
-                chunk = resp.chunk() => chunk.map_err(|e| download_error(req.url, &e))?,
-            };
-            let Some(chunk) = chunk else { break };
-            file.write_all(&chunk)
-                .await
-                .map_err(|e| NetError::io(part, e))?;
-            hasher.update(&chunk);
-            done += chunk.len() as u64;
-            if let Some(max) = limit.filter(|&max| done > max) {
-                return Err(NetError::Download {
-                    url: req.url.to_owned(),
-                    reason: format!("nhận hơn {max} byte đã khai báo"),
-                });
-            }
-            if done >= next_space_check {
-                self.check_free_space(dir)?;
-                next_space_check = done.saturating_add(SPACE_CHECK_EVERY);
-            }
-            progress(done, total);
-        }
-        // Người dùng có thể hủy ngay trong `progress` của đoạn cuối.
-        if cancel.is_cancelled() {
-            return Err(NetError::Cancelled);
-        }
-        file.sync_all().await.map_err(|e| NetError::io(part, e))?;
-        let actual = hasher.finish();
-        if actual != req.checksum.hex() {
+        let actual = self.stream_to_part(req.url, opts, progress, cancel).await?;
+        if let Some(actual) = actual
+            && actual != req.checksum.hex()
+        {
             return Err(NetError::ChecksumMismatch {
                 url: req.url.to_owned(),
                 expected: req.checksum.hex().to_owned(),
                 actual,
             });
+        }
+        Ok(())
+    }
+
+    async fn stream_to_part(
+        &self,
+        url: &str,
+        opts: StreamOpts<'_>,
+        progress: &mut impl FnMut(u64, Option<u64>),
+        cancel: &CancellationToken,
+    ) -> Result<Option<String>, NetError> {
+        let mut resp = tokio::select! {
+            () = cancel.cancelled() => return Err(NetError::Cancelled),
+            resp = self.send_download(url, opts.allowed_hosts) => resp?,
+        };
+        let known_size = opts.checked.and_then(|(s, _)| s);
+        let total = resp.content_length().or(known_size);
+        if let (Some(max), Some(len)) = (opts.max_bytes, resp.content_length())
+            && len > max
+        {
+            return Err(NetError::FileTooLarge { max });
+        }
+        let limits = StreamLimits {
+            max_bytes: opts.max_bytes,
+            declared: opts
+                .checked
+                .and_then(|_| known_size.or(resp.content_length())),
+            total,
+        };
+        let mut file = tokio::fs::File::create(opts.part)
+            .await
+            .map_err(|e| NetError::io(opts.part, e))?;
+        let mut hasher = opts.checked.map(|(_, c)| Hasher::new(c));
+        self.copy_response_chunks(
+            url,
+            &mut resp,
+            &mut file,
+            opts.part,
+            &limits,
+            hasher.as_mut(),
+            progress,
+            cancel,
+        )
+        .await?;
+        file.sync_all()
+            .await
+            .map_err(|e| NetError::io(opts.part, e))?;
+        Ok(hasher.map(Hasher::finish))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    async fn copy_response_chunks(
+        &self,
+        url: &str,
+        resp: &mut reqwest::Response,
+        file: &mut tokio::fs::File,
+        part: &Path,
+        limits: &StreamLimits,
+        mut hasher: Option<&mut Hasher>,
+        progress: &mut impl FnMut(u64, Option<u64>),
+        cancel: &CancellationToken,
+    ) -> Result<(), NetError> {
+        let dir = part.parent().unwrap_or(Path::new("."));
+        let mut next_space_check = SPACE_CHECK_EVERY;
+        let mut done = 0u64;
+        loop {
+            let chunk = tokio::select! {
+                () = cancel.cancelled() => return Err(NetError::Cancelled),
+                chunk = resp.chunk() => chunk.map_err(|e| download_error(url, &e))?,
+            };
+            let Some(chunk) = chunk else { break };
+            done += chunk.len() as u64;
+            check_stream_limits(url, done, limits)?;
+            file.write_all(&chunk)
+                .await
+                .map_err(|e| NetError::io(part, e))?;
+            if let Some(h) = hasher.as_deref_mut() {
+                h.update(&chunk);
+            }
+            if done >= next_space_check {
+                self.check_free_space(dir)?;
+                next_space_check = done.saturating_add(SPACE_CHECK_EVERY);
+            }
+            progress(done, limits.total);
+        }
+        if cancel.is_cancelled() {
+            return Err(NetError::Cancelled);
         }
         Ok(())
     }
@@ -249,6 +346,34 @@ impl HttpClient {
             .join(&hex[..2])
             .join(hex)
     }
+}
+
+struct StreamOpts<'a> {
+    part: &'a Path,
+    allowed_hosts: Option<&'a HostAllowlist>,
+    max_bytes: Option<u64>,
+    checked: Option<(Option<u64>, &'a Checksum)>,
+}
+
+struct StreamLimits {
+    max_bytes: Option<u64>,
+    declared: Option<u64>,
+    total: Option<u64>,
+}
+
+fn check_stream_limits(url: &str, done: u64, limits: &StreamLimits) -> Result<(), NetError> {
+    if let Some(max) = limits.max_bytes.filter(|&max| done > max) {
+        return Err(NetError::FileTooLarge { max });
+    }
+    if limits.max_bytes.is_none()
+        && let Some(max) = limits.declared.filter(|&max| done > max)
+    {
+        return Err(NetError::Download {
+            url: url.to_owned(),
+            reason: format!("nhận hơn {max} byte đã khai báo"),
+        });
+    }
+    Ok(())
 }
 
 fn part_path(dest: &Path) -> PathBuf {

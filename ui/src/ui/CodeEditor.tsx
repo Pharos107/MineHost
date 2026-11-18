@@ -15,6 +15,8 @@ interface CodeEditorProps {
   value: string;
   onChange: (text: string) => void;
   language: CodeLanguage;
+  /** Chế độ chỉ đọc (xem trước file lớn hoặc NBT). */
+  readOnly?: boolean;
   /** Tự xuống dòng khi dòng dài hơn khung. */
   wrap?: boolean;
   /** Ctrl+S (Cmd+S) khi đang gõ trong trình sửa. */
@@ -49,7 +51,7 @@ const PHRASES: Record<string, string> = {
  * Trình sửa code dựa trên CodeMirror 6 (spec trang Tệp, mục 1): số dòng, tô màu theo ngôn ngữ,
  * tìm và thay, gập khối. CodeMirror tải riêng khi component hiện; tải lỗi thì dùng ô văn bản thường.
  */
-export function CodeEditor({ label, value, onChange, language, wrap = false, onSave, onCursor, status }: CodeEditorProps) {
+export function CodeEditor({ label, value, onChange, language, readOnly = false, wrap = false, onSave, onCursor, status }: CodeEditorProps) {
   const { t } = useTranslation();
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<View | null>(null);
@@ -73,6 +75,7 @@ export function CodeEditor({ label, value, onChange, language, wrap = false, onS
             doc: initial.current.value,
             language,
             label,
+            readOnly,
             phrases,
             onChange: (text) => latest.current.onChange(text),
             onCursor: (line, column) => latest.current.onCursor?.(line, column),
@@ -92,8 +95,8 @@ export function CodeEditor({ label, value, onChange, language, wrap = false, onS
       view.current?.destroy();
       view.current = null;
     };
-    // Dựng lại khi đổi ngôn ngữ hoặc nhãn; nội dung và xuống dòng cập nhật ở hai effect dưới.
-  }, [language, label, t]);
+    // Dựng lại khi đổi ngôn ngữ, nhãn hoặc chế độ chỉ đọc; nội dung và xuống dòng cập nhật riêng.
+  }, [language, label, readOnly, t]);
 
   // Nội dung đổi từ ngoài (tải lại bản mới trên đĩa): thay cả văn bản.
   useEffect(() => {
@@ -118,7 +121,10 @@ export function CodeEditor({ label, value, onChange, language, wrap = false, onS
           variant="code"
           aria-label={label}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          readOnly={readOnly}
+          onChange={(e) => {
+            if (!readOnly) onChange(e.target.value);
+          }}
           onKeyDown={(e) => {
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
               e.preventDefault();

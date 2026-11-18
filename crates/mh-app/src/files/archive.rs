@@ -17,8 +17,8 @@ use super::{AppError, child_path, exists, invalid, io_err, outside};
 /// Zip có nhiều mục hơn thế bị từ chối khi giải nén.
 pub const EXTRACT_MAX_ENTRIES: usize = 100_000;
 /// Chừa lại trên đĩa sau khi giải nén, để server và log còn chỗ ghi.
-const DISK_MARGIN: u64 = 1024 * 1024 * 1024;
-const CHUNK: usize = 64 * 1024;
+pub(super) const DISK_MARGIN: u64 = 1024 * 1024 * 1024;
+pub(super) const CHUNK: usize = 64 * 1024;
 
 /// Báo số byte đã xử lý; trả lỗi khi Job bị hủy để dừng giữa chừng.
 pub(crate) type Progress<'a> = &'a mut dyn FnMut(u64) -> Result<(), AppError>;
@@ -284,15 +284,19 @@ pub(crate) fn plan_extract(
 ///
 /// Trên Linux `a\..` là một thành phần, nhưng `SafeRoot` tách cả `\`: từ chối luôn `\` và `:`
 /// (ổ đĩa, luồng dữ liệu phụ trên Windows) để hai bên không hiểu khác nhau.
-fn slash_path(path: &Path) -> Option<String> {
-    let parts: Option<Vec<&str>> = path
-        .components()
-        .map(|part| match part {
-            Component::Normal(name) => name.to_str().filter(|name| !name.contains(['\\', ':'])),
-            _ => None,
-        })
-        .collect();
-    let joined = parts?.join("/");
+pub(super) fn slash_path(path: &Path) -> Option<String> {
+    let mut parts = Vec::new();
+    for part in path.components() {
+        match part {
+            Component::CurDir => {}
+            Component::Normal(name) => {
+                let name = name.to_str().filter(|name| !name.contains(['\\', ':']))?;
+                parts.push(name);
+            }
+            _ => return None,
+        }
+    }
+    let joined = parts.join("/");
     (!joined.is_empty()).then_some(joined)
 }
 
@@ -332,7 +336,7 @@ pub(crate) fn extract_sync(mut plan: ExtractPlan, progress: Progress<'_>) -> Res
 
 /// Tạo `dir` nhưng chỉ khi nó thật sự nằm trong gốc: từ lúc lập kế hoạch tới lúc ghi, một symlink
 /// có thể đã được đặt vào (mod đang chạy chẳng hạn). File cuối dùng `create_new` nên không đi theo link.
-fn make_dirs_inside(root: &Path, dir: &Path) -> Result<(), AppError> {
+pub(super) fn make_dirs_inside(root: &Path, dir: &Path) -> Result<(), AppError> {
     let mut existing = dir;
     while !existing.exists() {
         existing = existing

@@ -59,6 +59,16 @@ pub struct FileQuery {
     pub path: String,
 }
 
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
+pub struct UploadQuery {
+    /// Đường dẫn tương đối trong thư mục server. Rỗng là gốc.
+    #[serde(default)]
+    pub path: String,
+    /// Bật khi tải cả thư mục: giữ nguyên đường dẫn con trong trường `path` hoặc tên file.
+    #[serde(default)]
+    pub relative: bool,
+}
+
 #[derive(Debug, Clone, Copy, Serialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 #[schema(rename_all = "snake_case")]
@@ -187,18 +197,36 @@ pub async fn download(
 
 #[utoipa::path(post, path = "/api/v1/servers/{id}/files/upload", tag = "files",
     description = "multipart/form-data, một hoặc nhiều phần tên `file`, mỗi file tối đa 512 MiB.",
-    params(("id" = String, Path), FileQuery),
+    params(("id" = String, Path), UploadQuery),
     responses((status = 200, body = [String]), (status = 413, body = ErrorBody)))]
 pub async fn upload(
     State(app): State<Arc<App>>,
     Extension(UploadLimit(max_bytes)): Extension<UploadLimit>,
     IdPath(id): IdPath,
-    Query(query): Query<FileQuery>,
+    Query(query): Query<UploadQuery>,
     mut multipart: Multipart,
 ) -> ApiResult<Json<Vec<String>>> {
     let mut names = Vec::new();
+    let mut pending_path: Option<String> = None;
     while let Some(field) = multipart.next_field().await.map_err(from_multipart)? {
-        if let Some(name) = save_field(&app, id, &query.path, max_bytes, field).await? {
+        if field.name() == Some("path") {
+            let text = read_small_text(field, 4096).await?;
+            if query.relative {
+                pending_path = Some(text);
+            }
+            continue;
+        }
+        if let Some(name) = save_field(
+            &app,
+            id,
+            &query.path,
+            max_bytes,
+            query.relative,
+            pending_path.take(),
+            field,
+        )
+        .await?
+        {
             names.push(name);
         }
     }
@@ -289,6 +317,8 @@ async fn save_field(
     id: mh_core::ServerId,
     dir: &str,
     max_bytes: u64,
+    relative: bool,
+    relative_path: Option<String>,
     field: Field<'_>,
 ) -> Result<Option<String>, ApiError> {
     if field.name() != Some("file") {
@@ -303,14 +333,33 @@ async fn save_field(
     let reader = tokio_util::io::StreamReader::new(
         field.map(|chunk| chunk.map_err(|err| std::io::Error::other(err.to_string()))),
     );
-    app.save_upload(id, dir, &file_name, reader, max_bytes)
-        .await?;
-    Ok(Some(file_name))
+    if relative {
+        let rel = relative_path.unwrap_or_else(|| file_name.clone());
+        let saved = app
+            .save_upload_relative(id, dir, &rel, reader, max_bytes)
+            .await?;
+        Ok(Some(saved))
+    } else {
+        app.save_upload(id, dir, &file_name, reader, max_bytes)
+            .await?;
+        Ok(Some(file_name))
+    }
 }
 
 pub(crate) async fn drain_field(mut field: Field<'_>) -> Result<(), ApiError> {
     while field.chunk().await.map_err(from_multipart)?.is_some() {}
     Ok(())
+}
+
+async fn read_small_text(mut field: Field<'_>, max_bytes: usize) -> Result<String, ApiError> {
+    let mut buf = Vec::new();
+    while let Some(chunk) = field.chunk().await.map_err(from_multipart)? {
+        if buf.len().saturating_add(chunk.len()) > max_bytes {
+            return Err(ApiError::invalid("path"));
+        }
+        buf.extend_from_slice(&chunk);
+    }
+    String::from_utf8(buf).map_err(|_| ApiError::invalid("path"))
 }
 
 pub(crate) fn from_multipart(err: MultipartError) -> ApiError {

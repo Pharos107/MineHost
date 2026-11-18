@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorMessage } from "../../../api/client";
-import { filesApi, joinPath, parentOf } from "../../../api/files";
-import { Button, Dialog, DialogBody, DialogFooter, EmptyState, Notice, Spinner, Stack } from "../../../ui";
+import { filesApi, joinPath, parentOf, pathSteps } from "../../../api/files";
+import { Breadcrumb, Button, Dialog, DialogBody, DialogFooter, EmptyState, Notice, Spinner, Stack } from "../../../ui";
 
 interface MoveDialogProps {
   serverId: string;
@@ -25,8 +25,8 @@ export function canMoveInto(dest: string, paths: string[]): boolean {
 }
 
 /**
- * Chọn thư mục đích để di chuyển (spec trang Tệp, mục 2): bấm thư mục con để vào, "Lên trên" để ra,
- * "Chuyển vào đây" để chọn thư mục đang xem.
+ * Chọn thư mục đích để di chuyển (spec trang Tệp, mục 2): bấm thư mục con để vào, breadcrumb hoặc
+ * "Lên trên" để nhảy ra, "Chuyển vào đây" để chọn thư mục đang xem.
  */
 export function MoveDialog({ serverId, from, paths, loading, error, onCancel, onConfirm }: MoveDialogProps) {
   const { t } = useTranslation();
@@ -42,7 +42,13 @@ export function MoveDialog({ serverId, from, paths, loading, error, onCancel, on
           <Button size="sm" variant="ghost" icon={ArrowUp} disabled={dir === ""} onClick={() => setDir(parentOf(dir))}>
             {t("files.move.up")}
           </Button>
-          <code>/{dir}</code>
+          <Breadcrumb
+            label={t("files.path")}
+            items={[
+              { label: t("files.root"), onClick: () => setDir("") },
+              ...pathSteps(dir).map((step) => ({ label: step.name, onClick: () => setDir(step.path) })),
+            ]}
+          />
         </Stack>
         {list.isPending && <Spinner label={t("ui.loading")} />}
         {list.isError && <Notice tone="danger">{errorMessage(t, list.error)}</Notice>}

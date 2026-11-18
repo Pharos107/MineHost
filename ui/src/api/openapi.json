@@ -2653,6 +2653,48 @@
         }
       }
     },
+    "/api/v1/servers/{id}/files/copy": {
+      "post": {
+        "tags": [
+          "files"
+        ],
+        "operationId": "copy_file",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Đã nhân bản"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}/files/download": {
       "get": {
         "tags": [
@@ -2753,6 +2795,55 @@
         }
       }
     },
+    "/api/v1/servers/{id}/files/fetch": {
+      "post": {
+        "tags": [
+          "files"
+        ],
+        "operationId": "fetch_file",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Job tải từ URL đã chạy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStartedDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}/files/mkdir": {
       "post": {
         "tags": [
@@ -2784,6 +2875,141 @@
             "description": "Đã tạo"
           },
           "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/files/nbt": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "operationId": "nbt",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "Đường dẫn tương đối trong thư mục server. Rỗng là gốc.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NbtPreviewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/files/preview": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "operationId": "preview",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "Đường dẫn tương đối trong thư mục server. Rỗng là gốc.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextPreviewDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/files/raw": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "operationId": "raw",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "Đường dẫn tương đối trong thư mục server. Rỗng là gốc.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nội dung ảnh để xem trước"
+          },
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
@@ -2893,6 +3119,168 @@
         }
       }
     },
+    "/api/v1/servers/{id}/files/size": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "operationId": "dir_size",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "Đường dẫn tương đối trong thư mục server. Rỗng là gốc.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirSizeDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/files/trash": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "operationId": "list_trash",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TrashBatchDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "files"
+        ],
+        "operationId": "empty_trash",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "batch",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Đã dọn thùng rác"
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/files/trash/restore": {
+      "post": {
+        "tags": [
+          "files"
+        ],
+        "operationId": "restore_trash",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreTrashBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/servers/{id}/files/upload": {
       "post": {
         "tags": [
@@ -2916,6 +3304,15 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "relative",
+            "in": "path",
+            "description": "Bật khi tải cả thư mục: giữ nguyên đường dẫn con trong trường `path` hoặc tên file.",
+            "required": true,
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -4117,6 +4514,21 @@
           }
         }
       },
+      "CopyBody": {
+        "type": "object",
+        "required": [
+          "from",
+          "to"
+        ],
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        }
+      },
       "CrashDto": {
         "type": "object",
         "required": [
@@ -4378,6 +4790,35 @@
           }
         }
       },
+      "DirSizeDto": {
+        "type": "object",
+        "required": [
+          "bytes",
+          "files",
+          "dirs",
+          "truncated"
+        ],
+        "properties": {
+          "bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "dirs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "files": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      },
       "DiskDto": {
         "type": "object",
         "required": [
@@ -4469,6 +4910,26 @@
           "path": {
             "type": "string",
             "description": "File zip."
+          }
+        }
+      },
+      "FetchBody": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "dir": {
+            "type": "string"
+          },
+          "filename": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "url": {
+            "type": "string"
           }
         }
       },
@@ -4910,6 +5371,27 @@
         "properties": {
           "path": {
             "type": "string"
+          }
+        }
+      },
+      "NbtPreviewDto": {
+        "type": "object",
+        "required": [
+          "json",
+          "size",
+          "compressed"
+        ],
+        "properties": {
+          "compressed": {
+            "type": "boolean"
+          },
+          "json": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
           }
         }
       },
@@ -5613,6 +6095,17 @@
           "confirm": {
             "type": "boolean",
             "description": "Phải là `true`: người dùng đã tích \"Tôi hiểu\" trong hộp thoại."
+          }
+        }
+      },
+      "RestoreTrashBody": {
+        "type": "object",
+        "required": [
+          "batch"
+        ],
+        "properties": {
+          "batch": {
+            "type": "string"
           }
         }
       },
@@ -6334,6 +6827,33 @@
           }
         }
       },
+      "TextPreviewDto": {
+        "type": "object",
+        "required": [
+          "text",
+          "total_bytes",
+          "shown_bytes",
+          "truncated"
+        ],
+        "properties": {
+          "shown_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "text": {
+            "type": "string"
+          },
+          "total_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      },
       "ToggleContentBody": {
         "type": "object",
         "required": [
@@ -6342,6 +6862,36 @@
         "properties": {
           "enabled": {
             "type": "boolean"
+          }
+        }
+      },
+      "TrashBatchDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "items",
+          "bytes"
+        ],
+        "properties": {
+          "bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "deleted_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },

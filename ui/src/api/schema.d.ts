@@ -648,6 +648,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/files/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["copy_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}/files/download": {
         parameters: {
             query?: never;
@@ -680,6 +696,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/servers/{id}/files/fetch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["fetch_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{id}/files/mkdir": {
         parameters: {
             query?: never;
@@ -690,6 +722,54 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["mkdir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/files/nbt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["nbt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/files/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/files/raw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["raw"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -722,6 +802,54 @@ export interface paths {
         get: operations["search"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/files/size": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["dir_size"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/files/trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_trash"];
+        put?: never;
+        post?: never;
+        delete: operations["empty_trash"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/servers/{id}/files/trash/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restore_trash"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1061,6 +1189,10 @@ export interface components {
             version_number?: string | null;
             version_type: string;
         };
+        CopyBody: {
+            from: string;
+            to: string;
+        };
         CrashDto: {
             /** Format: int32 */
             exit_code?: number | null;
@@ -1129,6 +1261,15 @@ export interface components {
             loader_version?: string | null;
             minecraft?: string | null;
         };
+        DirSizeDto: {
+            /** Format: int64 */
+            bytes: number;
+            /** Format: int64 */
+            dirs: number;
+            /** Format: int64 */
+            files: number;
+            truncated: boolean;
+        };
         DiskDto: {
             /** Format: int64 */
             available_bytes: number;
@@ -1162,6 +1303,11 @@ export interface components {
             dest?: string;
             /** @description File zip. */
             path: string;
+        };
+        FetchBody: {
+            dir?: string;
+            filename?: string | null;
+            url: string;
         };
         FileEntryDto: {
             kind: components["schemas"]["FileKindDto"];
@@ -1283,6 +1429,12 @@ export interface components {
         };
         MkdirBody: {
             path: string;
+        };
+        NbtPreviewDto: {
+            compressed: boolean;
+            json: string;
+            /** Format: int64 */
+            size: number;
         };
         PasswordBody: {
             current?: string | null;
@@ -1460,6 +1612,9 @@ export interface components {
         RestoreBody: {
             /** @description Phải là `true`: người dùng đã tích "Tôi hiểu" trong hộp thoại. */
             confirm: boolean;
+        };
+        RestoreTrashBody: {
+            batch: string;
         };
         SearchHitDto: {
             categories: string[];
@@ -1663,8 +1818,23 @@ export interface components {
             size: number;
             text: string;
         };
+        TextPreviewDto: {
+            /** Format: int64 */
+            shown_bytes: number;
+            text: string;
+            /** Format: int64 */
+            total_bytes: number;
+            truncated: boolean;
+        };
         ToggleContentBody: {
             enabled: boolean;
+        };
+        TrashBatchDto: {
+            /** Format: int64 */
+            bytes: number;
+            deleted_at?: string | null;
+            id: string;
+            items: string[];
         };
         TrashedDto: {
             /** @description Thư mục trong thùng rác, để người dùng tự lấy lại. */
@@ -3673,6 +3843,38 @@ export interface operations {
             };
         };
     };
+    copy_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopyBody"];
+            };
+        };
+        responses: {
+            /** @description Đã nhân bản */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     download: {
         parameters: {
             query?: never;
@@ -3746,6 +3948,40 @@ export interface operations {
             };
         };
     };
+    fetch_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FetchBody"];
+            };
+        };
+        responses: {
+            /** @description Job tải từ URL đã chạy */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStartedDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     mkdir: {
         parameters: {
             query?: never;
@@ -3769,6 +4005,98 @@ export interface operations {
                 content?: never;
             };
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    nbt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Đường dẫn tương đối trong thư mục server. Rỗng là gốc. */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NbtPreviewDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Đường dẫn tương đối trong thư mục server. Rỗng là gốc. */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TextPreviewDto"];
+                };
+            };
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    raw: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Đường dẫn tương đối trong thư mục server. Rỗng là gốc. */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Nội dung ảnh để xem trước */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3843,6 +4171,112 @@ export interface operations {
             };
         };
     };
+    dir_size: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Đường dẫn tương đối trong thư mục server. Rỗng là gốc. */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirSizeDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_trash: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashBatchDto"][];
+                };
+            };
+        };
+    };
+    empty_trash: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                batch: string | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã dọn thùng rác */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    restore_trash: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestoreTrashBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     upload: {
         parameters: {
             query?: never;
@@ -3851,6 +4285,8 @@ export interface operations {
                 id: string;
                 /** @description Đường dẫn tương đối trong thư mục server. Rỗng là gốc. */
                 path: string;
+                /** @description Bật khi tải cả thư mục: giữ nguyên đường dẫn con trong trường `path` hoặc tên file. */
+                relative: boolean;
             };
             cookie?: never;
         };

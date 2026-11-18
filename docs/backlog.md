@@ -20,7 +20,7 @@ Mỗi dòng: ý tưởng, vì sao đáng làm, nguồn (ai đề xuất hoặc t
 | Backup lưu theo hash từng file | File region ít thay đổi; tránh chép lại cả world mỗi lần | Rà soát A4 | Sau P3, chưa xếp giai đoạn |
 | Tự kiểm tra backup định kỳ (hash, mở được `level.dat`) | Backup chỉ có giá trị khi khôi phục được | Rà soát, phần lợi thế | Sau P3, chưa xếp giai đoạn |
 | Đích backup S3, Backblaze B2, Google Drive | Chuẩn của các panel khác | Yêu cầu rà soát | P5, sau thư mục thứ hai |
-| Dọn `trash/` theo tuổi hoặc dung lượng | `trash/` hiện chỉ lớn lên | [du-lieu.md](architecture/du-lieu.md) | Sau P3, chưa xếp giai đoạn |
+| Dọn `trash/` tự động theo tuổi hoặc dung lượng (dọn tay đã vào [spec nâng cấp trang Tệp](specs/p3-nang-cap-trang-tep.md)) | `trash/` hiện chỉ lớn lên | [du-lieu.md](architecture/du-lieu.md) | Sau P3, chưa xếp giai đoạn |
 | Quét bytecode jar mod và plugin tìm dấu hiệu mã độc (`Runtime.exec`, `URLClassLoader` tải từ mạng, đọc file trình duyệt hay ví, kiểu Fractureiser) trước khi bật | Bổ sung cho dòng cô lập process ở trên: Job Object không chặn mod đọc file của user. Quét tĩnh hợp với bảo mật hơn hiệu năng (cảnh báo hiệu năng tĩnh nhiều báo động giả, JFR làm tốt hơn). Ý tưởng chưa kiểm tra: chưa đo tỉ lệ báo động giả trên modpack thật | Thảo luận 2026-11-18, chưa kiểm tra | Sau v0.5.0 |
 
 ## Hiệu năng và chẩn đoán
@@ -66,7 +66,7 @@ hoặc "cần kiểm tra". Hai điều đã thấy tận mắt (2026-11-18): Jav
 | --- | --- | --- | --- |
 | Hàng đợi thay đổi mod khi server đang chạy: bật/tắt, gỡ, cập nhật được ghi lại rồi áp dụng lúc server tắt | Hiện chỉ thêm được mod mới khi đang chạy; jar đang mở không thay được (nhất là trên Windows) | [Spec trình duyệt mod](specs/p3-trinh-duyet-mod.md), mục Không làm | Sau P3 |
 | Thư viện ảnh, changelog từng bản, danh sách mod trong một modpack ở khung chi tiết | Giúp chọn mod và chọn bản pack dễ hơn | Như trên | Sau P3 |
-| Trang Tệp: tải file về server từ URL, tìm theo nội dung, giải nén `.tar.gz` / `.7z`, xem ảnh và NBT | Dự án cũ có tải từ URL; người dùng hay nhận world, plugin qua link | [Spec trang Tệp](specs/p3-quan-ly-tep.md), mục Không làm | Sau P3 |
+| Trang Tệp: tìm theo nội dung, giải nén `.7z` / `.rar` (tải từ URL, `.tar`/`.tar.gz`, xem ảnh/NBT đã vào [spec nâng cấp trang Tệp](specs/p3-nang-cap-trang-tep.md)) | Người dùng hay nhận world, modpack qua nhiều định dạng | [Spec trang Tệp](specs/p3-quan-ly-tep.md), mục Không làm | Sau P3 |
 
 ## Từ spec gốc (P5)
 

@@ -9,6 +9,8 @@ publish.workspace = true
 
 [dependencies]
 argon2.workspace = true
+fastnbt.workspace = true
+flate2.workspace = true
 jiff.workspace = true
 mh-backup.workspace = true
 mh-core.workspace = true
@@ -23,12 +25,14 @@ serde.workspace = true
 serde_json.workspace = true
 sha1.workspace = true
 sha2.workspace = true
+tar.workspace = true
 thiserror.workspace = true
 time.workspace = true
 tokio.workspace = true
 toml.workspace = true
 tracing.workspace = true
 ulid.workspace = true
+url.workspace = true
 zip.workspace = true
 
 [features]

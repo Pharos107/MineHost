@@ -21,6 +21,8 @@ pub enum JobKind {
     /// Nén file ở trang Tệp thành zip (spec trang Tệp, mục 3).
     CompressFiles,
     ExtractFiles,
+    /// Tải file từ URL về thư mục server (spec nâng cấp trang Tệp).
+    FetchFile,
 }
 
 /// Bước đang làm. UI dịch theo `kind`, ví dụ "Tải Java 21 (48/61 MB)".
@@ -57,6 +59,9 @@ pub enum JobStep {
     },
     ResolveContent,
     DownloadContent {
+        name: String,
+    },
+    DownloadFile {
         name: String,
     },
     DownloadModpack {

@@ -10,7 +10,8 @@ use zip::ZipWriter;
 
 use super::archive::{self, Progress};
 use super::search::{self, SEARCH_MAX_RESULTS, SEARCH_MAX_VISITED, SearchResult};
-use super::{AppError, blocking, disk};
+use super::tar_extract;
+use super::{AppError, blocking, child_path, disk, exists, invalid, validate_file_name};
 use crate::App;
 use crate::jobs::{JobContext, JobId, JobKind, JobStep};
 
@@ -113,11 +114,29 @@ impl App {
         path: &str,
         dest: &str,
     ) -> Result<JobId, AppError> {
-        let (store, path, dest) = (self.store.clone(), path.to_owned(), dest.to_owned());
+        let (store, path_str, dest) = (self.store.clone(), path.to_owned(), dest.to_owned());
+        if let Some(gzip) = tar_extract::is_tar_archive(&path_str) {
+            let plan = blocking(move || {
+                let root = disk::open_root(&store, id)?;
+                let free = mh_platform::system::free_space(root.path());
+                tar_extract::plan_tar_extract(&root, &path_str, &dest, free, gzip)
+            })
+            .await?;
+            return Ok(self
+                .jobs
+                .spawn(JobKind::ExtractFiles, Some(id), move |ctx| async move {
+                    ctx.step(JobStep::Unpack, 1, 1);
+                    let total = plan.total;
+                    with_progress(&ctx, total, move |progress| {
+                        tar_extract::extract_tar_sync(plan, progress)
+                    })
+                    .await
+                }));
+        }
         let plan = blocking(move || {
             let root = disk::open_root(&store, id)?;
             let free = mh_platform::system::free_space(root.path());
-            archive::plan_extract(&root, &path, &dest, free)
+            archive::plan_extract(&root, &path_str, &dest, free)
         })
         .await?;
         Ok(self
@@ -131,6 +150,80 @@ impl App {
                 .await
             }))
     }
+
+    /// Tải một file từ URL HTTP(S) vào thư mục `dir` thành Job nền (tối đa `max_bytes`).
+    pub async fn fetch_file(
+        self: &Arc<Self>,
+        id: ServerId,
+        dir: &str,
+        raw_url: &str,
+        filename: Option<&str>,
+        max_bytes: u64,
+    ) -> Result<JobId, AppError> {
+        let parsed = parse_http_url(raw_url)?;
+        let name = resolve_fetch_name(&parsed, filename)?;
+        self.guard_jar(id, &child_path(dir, &name))?;
+        let (store, dir, name_copy) = (self.store.clone(), dir.to_owned(), name.clone());
+        let dest = blocking(move || {
+            let root = disk::open_root(&store, id)?;
+            let dir_path = disk::join_user(&root, &dir)?;
+            disk::require_dir(dir_path.as_path(), &dir)?;
+            let rel = child_path(&dir, &name_copy);
+            let dest = disk::join_user(&root, &rel)?;
+            if disk::node_at(dest.as_path())? != disk::Node::Missing {
+                return Err(exists(&rel));
+            }
+            Ok(dest.into_path_buf())
+        })
+        .await?;
+        let net = match self.http.clone() {
+            Some(http) => http,
+            None => Arc::new(
+                mh_net::HttpClient::new(mh_net::NetConfig::new(self.dirs.cache()))?
+                    .with_free_space(Arc::clone(&self.free_space)),
+            ),
+        };
+        let url_str = parsed.to_string();
+        Ok(self
+            .jobs
+            .spawn(JobKind::FetchFile, Some(id), move |ctx| async move {
+                ctx.step(JobStep::DownloadFile { name }, 1, 1);
+                net.download_to(
+                    &url_str,
+                    &dest,
+                    max_bytes,
+                    |done, total| ctx.bytes(done, total),
+                    &ctx.cancel,
+                )
+                .await?;
+                Ok(())
+            }))
+    }
+}
+
+fn parse_http_url(raw: &str) -> Result<url::Url, AppError> {
+    let parsed = url::Url::parse(raw.trim()).map_err(|_| invalid("URL không hợp lệ"))?;
+    let ok = matches!(parsed.scheme(), "http" | "https") && parsed.host_str().is_some();
+    if !ok {
+        return Err(invalid("URL phải bắt đầu bằng http:// hoặc https://"));
+    }
+    Ok(parsed)
+}
+
+fn resolve_fetch_name(parsed: &url::Url, explicit: Option<&str>) -> Result<String, AppError> {
+    let candidate = explicit
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_owned)
+        .unwrap_or_else(|| {
+            parsed
+                .path_segments()
+                .and_then(|mut segs| segs.rfind(|s| !s.is_empty()))
+                .unwrap_or("download")
+                .to_owned()
+        });
+    validate_file_name(&candidate)?;
+    Ok(candidate)
 }
 
 /// Chạy `work` trong `spawn_blocking`, chuyển tiến độ về Job; Job bị hủy thì `work` dừng ở khúc kế.

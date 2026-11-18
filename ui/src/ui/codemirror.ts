@@ -101,6 +101,7 @@ export interface EditorSetup {
   doc: string;
   language: CodeLanguage;
   label: string;
+  readOnly?: boolean;
   /** Câu chữ của hộp tìm / thay, đã dịch. */
   phrases: Record<string, string>;
   onChange: (text: string) => void;
@@ -147,6 +148,7 @@ export function createState(setup: EditorSetup, wrap: boolean): EditorState {
       languageExtension(setup.language),
       syntaxHighlighting(highlight),
       theme,
+      setup.readOnly ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : [],
       wrapCompartment.of(wrapExtension(wrap)),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) setup.onChange(update.state.doc.toString());

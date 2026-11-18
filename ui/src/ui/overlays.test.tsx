@@ -117,6 +117,31 @@ describe("Menu", () => {
     await userEvent.click(screen.getByText("ngoài"));
     expect(screen.queryByRole("menu")).toBeNull();
   });
+
+  it("đặt đúng cạnh nút cả khi nằm trong tổ tiên có transform", async () => {
+    const clientWidth = vi.spyOn(document.documentElement, "clientWidth", "get").mockReturnValue(1000);
+    const clientHeight = vi.spyOn(document.documentElement, "clientHeight", "get").mockReturnValue(800);
+    render(<Menu label="Cài đặt" items={[{ label: "Tìm cả thư mục con", checked: false, onSelect: vi.fn() }]} />);
+    const trigger = screen.getByRole("button", { name: "Cài đặt" });
+    trigger.getBoundingClientRect = () => ({ top: 200, bottom: 228, right: 900, left: 872, width: 28, height: 28, x: 872, y: 200, toJSON: () => ({}) });
+
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    const spy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      if (this.getAttribute("role") === "menu") {
+        return { top: 196, bottom: 240, right: 904, left: 712, width: 192, height: 44, x: 712, y: 196, toJSON: () => ({}) };
+      }
+      return originalRect.call(this);
+    });
+
+    await userEvent.click(trigger);
+    const menu = screen.getByRole("menu");
+    expect(menu.style.top).toBe("36px");
+    expect(menu.style.right).toBe("4px");
+
+    spy.mockRestore();
+    clientWidth.mockRestore();
+    clientHeight.mockRestore();
+  });
 });
 
 describe("CopyField", () => {

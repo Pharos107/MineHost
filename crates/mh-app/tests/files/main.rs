@@ -2,6 +2,7 @@
 
 #![allow(clippy::unwrap_used)]
 
+mod extra;
 mod support;
 
 use std::io::Cursor;
