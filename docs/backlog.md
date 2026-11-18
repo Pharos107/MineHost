@@ -52,13 +52,8 @@ hoặc "cần kiểm tra". Hai điều đã thấy tận mắt (2026-11-18): Jav
 
 | Ý tưởng | Vì sao | Nguồn | Gợi ý |
 | --- | --- | --- | --- |
-| "Mời bạn bằng một đường link": tunnel tích hợp kèm chẩn đoán tường lửa, CGNAT, kiểm tra cổng từ ngoài | Nhóm bạn hiếm khi chung LAN; các panel khác để người dùng tự lo mạng | Spec gốc P4; rà soát B6 | P4 |
-| Thêm lựa chọn tunnel: Cloudflare Tunnel, Tailscale, ngrok | Spec gốc chỉ có playit.gg và UPnP | Yêu cầu rà soát | P4 |
-| Chặn mở ra Internet khi `online-mode=false` mà không bật whitelist | Ai cũng vào được bằng tên của op | Rà soát | P4 |
 | Geyser và Floodgate một cú bấm (người chơi Bedrock, điện thoại) | Phù hợp nhóm người dùng tiếng Việt. Là phán đoán, chưa có số liệu | Rà soát, phần lợi thế | Sau P3 |
-| Hướng dẫn an toàn cho server offline-mode | Offline-mode phổ biến; rủi ro mạo danh | Rà soát, phần lợi thế | Sau P2 |
-| Cấp và kiểm tra cổng phụ (UDP của Geyser, voice chat, bản đồ web) | Hiện chỉ quản lý cổng game | Rà soát C6 | P4 |
-| TLS cho giao diện qua LAN | Mật khẩu admin đang đi qua HTTP | Spec P2 mục 3.4; rà soát A3 | Đang đề nghị kéo về P2 |
+| Lưu secret (playit, CurseForge) trong keyring của OS thay cho `secrets.toml` | Spec gốc muốn vậy; cần thêm thư viện và cách xử lý khi máy không có keyring | [Spec P4](specs/p4-truy-cap-internet.md#8-bảo-mật) | Sau P4 |
 
 ## Mod và nội dung
 
@@ -67,6 +62,14 @@ hoặc "cần kiểm tra". Hai điều đã thấy tận mắt (2026-11-18): Jav
 | Hàng đợi thay đổi mod khi server đang chạy: bật/tắt, gỡ, cập nhật được ghi lại rồi áp dụng lúc server tắt | Hiện chỉ thêm được mod mới khi đang chạy; jar đang mở không thay được (nhất là trên Windows) | [Spec trình duyệt mod](specs/p3-trinh-duyet-mod.md), mục Không làm | Sau P3 |
 | Thư viện ảnh, changelog từng bản, danh sách mod trong một modpack ở khung chi tiết | Giúp chọn mod và chọn bản pack dễ hơn | Như trên | Sau P3 |
 | Trang Tệp: tìm theo nội dung, giải nén `.7z` / `.rar` (tải từ URL, `.tar`/`.tar.gz`, xem ảnh/NBT đã vào [spec nâng cấp trang Tệp](specs/p3-nang-cap-trang-tep.md)) | Người dùng hay nhận world, modpack qua nhiều định dạng | [Spec trang Tệp](specs/p3-quan-ly-tep.md), mục Không làm | Sau P3 |
+
+## Phân phối và chạy nền
+
+| Ý tưởng | Vì sao | Nguồn | Gợi ý |
+| --- | --- | --- | --- |
+| App desktop Tauri | Cửa sổ riêng thay cho tab trình duyệt. Chủ dự án bỏ khỏi P4 ngày 2026-11-18: khay và trình duyệt đã đủ | Spec gốc P4; [spec P4](specs/p4-truy-cap-internet.md#39-không-làm-tauri) | Chưa xếp giai đoạn |
+| Windows service thật (chạy khi chưa ai đăng nhập, tự bật lại khi controller crash) | P4 chỉ có tự chạy khi đăng nhập; service cần app khay riêng và đổi chỗ thư mục dữ liệu | [Spec P4](specs/p4-truy-cap-internet.md#310-khởi-động-cùng-máy) | Chưa xếp giai đoạn |
+| Gói `.deb` và trình cài MSI | Spec gốc có; P4 dùng zip, tar.gz và tự cập nhật | Spec gốc | Chưa xếp giai đoạn |
 
 ## Từ spec gốc (P5)
 
@@ -80,5 +83,6 @@ làm nguồn plugin bên cạnh Modrinth.
 | --- | --- |
 | Nhiều node, một bảng điều khiển cho nhiều máy | Ngoài phạm vi v2.0 (spec gốc). Không phải thị trường của MineHost |
 | Host thương mại, hạn mức theo gói | Ngoài phạm vi v2.0 (spec gốc) |
+| Cloudflare Tunnel, Tailscale, ngrok làm cách cho người chơi vào server | Người chơi phải cài thêm phần mềm, hoặc địa chỉ đổi mỗi lần chạy ([spec P4 mục 3.3](specs/p4-truy-cap-internet.md#33-chỉ-playitgg-làm-tunnel-trong-p4)). Tailscale vẫn là cách hướng dẫn để quản lý từ xa |
 | Tự xây lớp chống DDoS tầng 7 | Khi mở ra Internet thì dùng tunnel che IP thay vì tự chống |
 | Bedrock Dedicated Server | Ngoài phạm vi v2.0; Geyser là đường ngắn hơn |

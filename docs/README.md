@@ -40,6 +40,8 @@ quy tắc code và lộ trình nằm ở [AGENTS.md](../AGENTS.md).
 | [specs/p3-ke-hoach-pr.md](specs/p3-ke-hoach-pr.md) | Kế hoạch PR của P3 |
 | [specs/p3-trinh-duyet-mod.md](specs/p3-trinh-duyet-mod.md) | Bổ sung P3: trình duyệt mod có khung chi tiết, thêm mod khi server đang chạy, chọn mod khi tạo server, trang Mod gọn |
 | [specs/p3-quan-ly-tep.md](specs/p3-quan-ly-tep.md) | Bổ sung P3: trình sửa code CodeMirror, chọn nhiều, di chuyển, tìm, nén / giải nén zip ở trang Tệp |
+| [specs/p4-truy-cap-internet.md](specs/p4-truy-cap-internet.md) | Spec P4: chơi qua Internet (UPnP, playit), HTTPS cho LAN, Docker, chạy cùng máy, tự cập nhật (chờ duyệt) |
+| [specs/p4-ke-hoach-pr.md](specs/p4-ke-hoach-pr.md) | Kế hoạch PR của P4 |
 | [backlog.md](backlog.md) | Ý tưởng ngoài giai đoạn hiện tại |
 | [ra-soat/2026-11-11-kien-truc.md](ra-soat/2026-11-11-kien-truc.md) | Rà soát kiến trúc: điểm yếu, bằng chứng, việc cần làm |
 
