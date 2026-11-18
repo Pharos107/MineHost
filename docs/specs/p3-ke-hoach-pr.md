@@ -9,7 +9,7 @@ Một bản phát hành: `v0.5.0` (PR-38) chốt cả P3. Kế hoạch ban đầ
 
 ## Tiến độ
 
-Cập nhật 2026-11-18, khi đóng PR-37. PR nào merge thì sửa dòng của nó ở đây trong
+Cập nhật 2026-11-18, khi làm PR-38. P3 đã xong. PR nào merge thì sửa dòng của nó ở đây trong
 chính PR ấy.
 
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
@@ -64,9 +64,9 @@ chính PR ấy.
 | 47 | Spec trang Tệp, trình sửa code CodeMirror ([spec](p3-quan-ly-tep.md)) | Đã merge | [#147](https://github.com/Pharos107/MineHost/pull/147) |
 | 48 | Tìm file, tải zip, nén, giải nén (backend) | Đã merge | [#149](https://github.com/Pharos107/MineHost/pull/149) |
 | 49 | Bảng file: chọn nhiều, di chuyển, tìm, nén / giải nén, toast | Đã merge | [#151](https://github.com/Pharos107/MineHost/pull/151) |
-| 38 | Phát hành `v0.5.0` | Chưa bắt đầu | |
+| 38 | Phát hành `v0.5.0` | Đã merge; tag `v0.5.0` gắn trên `main` sau khi merge | [#172](https://github.com/Pharos107/MineHost/pull/172) |
 
-Ngoài kế hoạch, sửa lỗi tìm ra khi chạy thử modpack thật cho PR-37: [#108](https://github.com/Pharos107/MineHost/pull/108), [#109](https://github.com/Pharos107/MineHost/pull/109), [#110](https://github.com/Pharos107/MineHost/pull/110), [#111](https://github.com/Pharos107/MineHost/pull/111), [#114](https://github.com/Pharos107/MineHost/pull/114), [#115](https://github.com/Pharos107/MineHost/pull/115), [#117](https://github.com/Pharos107/MineHost/pull/117), [#123](https://github.com/Pharos107/MineHost/pull/123), [#124](https://github.com/Pharos107/MineHost/pull/124). Theo yêu cầu của chủ dự án: mở giao diện qua Tailscale khi bật LAN [#116](https://github.com/Pharos107/MineHost/pull/116). Sửa 4 lỗi mức High tìm ra khi soát code (2026-11-17): [#153](https://github.com/Pharos107/MineHost/pull/153), [#154](https://github.com/Pharos107/MineHost/pull/154), [#155](https://github.com/Pharos107/MineHost/pull/155), [#156](https://github.com/Pharos107/MineHost/pull/156). Sửa 7 lỗi mức Medium cùng đợt soát: [#157](https://github.com/Pharos107/MineHost/pull/157), [#158](https://github.com/Pharos107/MineHost/pull/158), [#159](https://github.com/Pharos107/MineHost/pull/159), [#160](https://github.com/Pharos107/MineHost/pull/160), [#161](https://github.com/Pharos107/MineHost/pull/161). Lỗi mức Low: [#163](https://github.com/Pharos107/MineHost/pull/163), [#164](https://github.com/Pharos107/MineHost/pull/164), [#165](https://github.com/Pharos107/MineHost/pull/165), [#166](https://github.com/Pharos107/MineHost/pull/166).
+Ngoài kế hoạch, sửa lỗi tìm ra khi chạy thử modpack thật cho PR-37: [#108](https://github.com/Pharos107/MineHost/pull/108), [#109](https://github.com/Pharos107/MineHost/pull/109), [#110](https://github.com/Pharos107/MineHost/pull/110), [#111](https://github.com/Pharos107/MineHost/pull/111), [#114](https://github.com/Pharos107/MineHost/pull/114), [#115](https://github.com/Pharos107/MineHost/pull/115), [#117](https://github.com/Pharos107/MineHost/pull/117), [#123](https://github.com/Pharos107/MineHost/pull/123), [#124](https://github.com/Pharos107/MineHost/pull/124). Theo yêu cầu của chủ dự án: mở giao diện qua Tailscale khi bật LAN [#116](https://github.com/Pharos107/MineHost/pull/116). Sửa 4 lỗi mức High tìm ra khi soát code (2026-11-17): [#153](https://github.com/Pharos107/MineHost/pull/153), [#154](https://github.com/Pharos107/MineHost/pull/154), [#155](https://github.com/Pharos107/MineHost/pull/155), [#156](https://github.com/Pharos107/MineHost/pull/156). Sửa 7 lỗi mức Medium cùng đợt soát: [#157](https://github.com/Pharos107/MineHost/pull/157), [#158](https://github.com/Pharos107/MineHost/pull/158), [#159](https://github.com/Pharos107/MineHost/pull/159), [#160](https://github.com/Pharos107/MineHost/pull/160), [#161](https://github.com/Pharos107/MineHost/pull/161). Lỗi mức Low: [#163](https://github.com/Pharos107/MineHost/pull/163), [#164](https://github.com/Pharos107/MineHost/pull/164), [#165](https://github.com/Pharos107/MineHost/pull/165), [#166](https://github.com/Pharos107/MineHost/pull/166). Test Playwright cho Cài đặt chung (tiêu chí 6 của spec): [#171](https://github.com/Pharos107/MineHost/pull/171).
 
 Khi bắt đầu một nhóm thì tách dòng của nhóm thành từng PR.
 

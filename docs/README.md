@@ -36,7 +36,7 @@ quy tắc code và lộ trình nằm ở [AGENTS.md](../AGENTS.md).
 | [specs/nang-cap-bieu-do.md](specs/nang-cap-bieu-do.md) | Nâng cấp biểu đồ Tổng quan: sửa trần RAM, lưu đa tầng trong RAM, bánh răng cài đặt, zoom/pan và lọc ngày |
 | [specs/lenh-cua-server.md](specs/lenh-cua-server.md) | Gợi ý lệnh theo mod và plugin: quét `help` của server, lưu `commands.json` |
 | [specs/lam-moi-trang-nguoi-choi.md](specs/lam-moi-trang-nguoi-choi.md) | Làm mới trang Người chơi: ô số, danh sách gộp có lọc, khung chi tiết thay hộp thoại |
-| [specs/p3-mod-va-modpack.md](specs/p3-mod-va-modpack.md) | Spec P3: loader, mod, plugin, modpack (xong nhóm A–E; còn F–H) |
+| [specs/p3-mod-va-modpack.md](specs/p3-mod-va-modpack.md) | Spec P3: loader, mod, plugin, modpack (đã xong, `v0.5.0`) |
 | [specs/p3-ke-hoach-pr.md](specs/p3-ke-hoach-pr.md) | Kế hoạch PR của P3 |
 | [specs/p3-trinh-duyet-mod.md](specs/p3-trinh-duyet-mod.md) | Bổ sung P3: trình duyệt mod có khung chi tiết, thêm mod khi server đang chạy, chọn mod khi tạo server, trang Mod gọn |
 | [specs/p3-quan-ly-tep.md](specs/p3-quan-ly-tep.md) | Bổ sung P3: trình sửa code CodeMirror, chọn nhiều, di chuyển, tìm, nén / giải nén zip ở trang Tệp |

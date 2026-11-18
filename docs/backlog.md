@@ -16,20 +16,20 @@ Mỗi dòng: ý tưởng, vì sao đáng làm, nguồn (ai đề xuất hoặc t
 | Ý tưởng | Vì sao | Nguồn | Gợi ý |
 | --- | --- | --- | --- |
 | Cô lập process server không cần Docker: Job Object giới hạn RAM và số process (Windows); Landlock và cgroup v2 (Linux) | Plugin, mod đang chạy với toàn quyền của user. Pterodactyl bắt buộc Docker, Crafty chạy trần: đây là chỗ MineHost có thể đi trước. Lưu ý: Job Object chỉ giới hạn tài nguyên, **không** chặn mod đọc file của user (mã độc kiểu Fractureiser chạy ngay trong JVM). Chặn file trên Windows cần AppContainer hoặc token mức thấp, chưa rõ có chạy được với JVM không; trên Linux thì Landlock làm được | Rà soát A1 | Giới hạn RAM và số process đã vào [spec P3](specs/p3-mod-va-modpack.md#38-giới-hạn-tài-nguyên-của-process-server-rà-soát-a1-phần-đầu); còn lại chặn đọc file: sau P3 |
-| Thư mục backup thứ hai (ổ khác, NAS, thư mục đồng bộ đám mây) | Backup cùng ổ với world thì hỏng ổ là mất cả hai. Dùng thư mục đồng bộ sẵn có nên không cần tích hợp API đám mây nào | Rà soát A4 | P3 |
-| Backup lưu theo hash từng file | File region ít thay đổi; tránh chép lại cả world mỗi lần | Rà soát A4 | P3 trở đi |
-| Tự kiểm tra backup định kỳ (hash, mở được `level.dat`) | Backup chỉ có giá trị khi khôi phục được | Rà soát, phần lợi thế | P3 |
+| Thư mục backup thứ hai (ổ khác, NAS, thư mục đồng bộ đám mây) | Backup cùng ổ với world thì hỏng ổ là mất cả hai. Dùng thư mục đồng bộ sẵn có nên không cần tích hợp API đám mây nào | Rà soát A4 | Sau P3, chưa xếp giai đoạn |
+| Backup lưu theo hash từng file | File region ít thay đổi; tránh chép lại cả world mỗi lần | Rà soát A4 | Sau P3, chưa xếp giai đoạn |
+| Tự kiểm tra backup định kỳ (hash, mở được `level.dat`) | Backup chỉ có giá trị khi khôi phục được | Rà soát, phần lợi thế | Sau P3, chưa xếp giai đoạn |
 | Đích backup S3, Backblaze B2, Google Drive | Chuẩn của các panel khác | Yêu cầu rà soát | P5, sau thư mục thứ hai |
-| Dọn `trash/` theo tuổi hoặc dung lượng | `trash/` hiện chỉ lớn lên | [du-lieu.md](architecture/du-lieu.md) | P3 |
+| Dọn `trash/` theo tuổi hoặc dung lượng | `trash/` hiện chỉ lớn lên | [du-lieu.md](architecture/du-lieu.md) | Sau P3, chưa xếp giai đoạn |
 | Quét bytecode jar mod và plugin tìm dấu hiệu mã độc (`Runtime.exec`, `URLClassLoader` tải từ mạng, đọc file trình duyệt hay ví, kiểu Fractureiser) trước khi bật | Bổ sung cho dòng cô lập process ở trên: Job Object không chặn mod đọc file của user. Quét tĩnh hợp với bảo mật hơn hiệu năng (cảnh báo hiệu năng tĩnh nhiều báo động giả, JFR làm tốt hơn). Ý tưởng chưa kiểm tra: chưa đo tỉ lệ báo động giả trên modpack thật | Thảo luận 2026-11-18, chưa kiểm tra | Sau v0.5.0 |
 
 ## Hiệu năng và chẩn đoán
 
 | Ý tưởng | Vì sao | Nguồn | Gợi ý |
 | --- | --- | --- | --- |
-| Preset cờ JVM (Aikar cho Paper, ZGC khi nhiều RAM), `Xms = Xmx` | Hiện chỉ có `-Xms`, `-Xmx`. Chọn cờ theo major: `-XX:+ZGenerational` chỉ cần ở Java 21–22, từ Java 23 là mặc định. `Xms = Xmx` giữ chặt RAM cả khi không ai chơi, nên để người dùng tắt được trên máy cá nhân | Rà soát B2 | P3 |
-| TPS và MSPT trên trang Tổng quan, cảnh báo khi lag | "Server lag" là phàn nàn thường gặp nhất; spec P2 đã loại khỏi P2 | Rà soát B3 | P3 |
-| "Bác sĩ server": đọc `crash-reports/` và `hs_err_pid*.log`, chỉ ra mod gây lỗi, thiếu dependency, sai Java, kèm nút sửa | Khung `ErrorCode` kèm gợi ý sửa đã có; các panel khác chỉ đưa log thô | Rà soát, phần lợi thế | P3 (cùng mod) |
+| Preset cờ JVM (Aikar cho Paper, ZGC khi nhiều RAM), `Xms = Xmx` | Hiện chỉ có `-Xms`, `-Xmx`. Chọn cờ theo major: `-XX:+ZGenerational` chỉ cần ở Java 21–22, từ Java 23 là mặc định. `Xms = Xmx` giữ chặt RAM cả khi không ai chơi, nên để người dùng tắt được trên máy cá nhân | Rà soát B2 | Sau `v0.5.0` (quyết định 2026-11-18), chưa xếp giai đoạn |
+| TPS và MSPT trên trang Tổng quan, cảnh báo khi lag | "Server lag" là phàn nàn thường gặp nhất; spec P2 đã loại khỏi P2 | Rà soát B3 | Sau P3, chưa xếp giai đoạn |
+| "Bác sĩ server": đọc `crash-reports/` và `hs_err_pid*.log`, chỉ ra mod gây lỗi, thiếu dependency, sai Java, kèm nút sửa | Khung `ErrorCode` kèm gợi ý sửa đã có; các panel khác chỉ đưa log thô | Rà soát, phần lợi thế | Sau P3, chưa xếp giai đoạn |
 | Tích hợp Spark profiler | Chuẩn chẩn đoán lag của cộng đồng | Yêu cầu rà soát | P5 |
 | Lịch sử chỉ số dài hơn 1 giờ | Đã có lưu đa tầng trong RAM (tới 9.999 ngày, xem [spec nâng cấp biểu đồ](specs/nang-cap-bieu-do.md)), nhưng tắt controller vẫn mất; cần chuyển phần lưu giữ sang SQLite để giữ bền vững qua lần tắt máy | Spec P2, "không làm"; nâng cấp biểu đồ | Cùng lúc với SQLite (P5) |
 
@@ -52,12 +52,12 @@ hoặc "cần kiểm tra". Hai điều đã thấy tận mắt (2026-11-18): Jav
 
 | Ý tưởng | Vì sao | Nguồn | Gợi ý |
 | --- | --- | --- | --- |
-| "Mời bạn bằng một đường link": tunnel tích hợp kèm chẩn đoán tường lửa, CGNAT, kiểm tra cổng từ ngoài | Nhóm bạn hiếm khi chung LAN; các panel khác để người dùng tự lo mạng | Spec gốc P4; rà soát B6 | P4, xét đưa lên trước P3 |
+| "Mời bạn bằng một đường link": tunnel tích hợp kèm chẩn đoán tường lửa, CGNAT, kiểm tra cổng từ ngoài | Nhóm bạn hiếm khi chung LAN; các panel khác để người dùng tự lo mạng | Spec gốc P4; rà soát B6 | P4 |
 | Thêm lựa chọn tunnel: Cloudflare Tunnel, Tailscale, ngrok | Spec gốc chỉ có playit.gg và UPnP | Yêu cầu rà soát | P4 |
 | Chặn mở ra Internet khi `online-mode=false` mà không bật whitelist | Ai cũng vào được bằng tên của op | Rà soát | P4 |
 | Geyser và Floodgate một cú bấm (người chơi Bedrock, điện thoại) | Phù hợp nhóm người dùng tiếng Việt. Là phán đoán, chưa có số liệu | Rà soát, phần lợi thế | Sau P3 |
 | Hướng dẫn an toàn cho server offline-mode | Offline-mode phổ biến; rủi ro mạo danh | Rà soát, phần lợi thế | Sau P2 |
-| Cấp và kiểm tra cổng phụ (UDP của Geyser, voice chat, bản đồ web) | Hiện chỉ quản lý cổng game | Rà soát C6 | P3, P4 |
+| Cấp và kiểm tra cổng phụ (UDP của Geyser, voice chat, bản đồ web) | Hiện chỉ quản lý cổng game | Rà soát C6 | P4 |
 | TLS cho giao diện qua LAN | Mật khẩu admin đang đi qua HTTP | Spec P2 mục 3.4; rà soát A3 | Đang đề nghị kéo về P2 |
 
 ## Mod và nội dung

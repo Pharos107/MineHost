@@ -11,16 +11,19 @@ Spec gốc đã lệch với code ở vài chỗ; danh sách chỗ lệch nằm 
 giai đoạn trong `docs/specs/` và ADR trong `docs/adr/` là bản đúng. Mục lục mọi tài liệu:
 [docs/README.md](docs/README.md).
 
-## Giai đoạn hiện tại: P3 — Mod, plugin và modpack
+## Giai đoạn hiện tại: P4 — Truy cập từ Internet, Docker, service, Tauri
 
-- [Spec P3](docs/specs/p3-mod-va-modpack.md) (đã duyệt) và
-  [kế hoạch PR](docs/specs/p3-ke-hoach-pr.md): 38 PR, nhóm A → H, một bản phát hành `v0.5.0` khi
-  xong P3 (bỏ `v0.4.0`). Tiến độ ghi ở đầu kế hoạch PR; PR nào merge thì sửa bảng đó trong chính PR ấy.
-- P2 đã xong, tag `v0.3.0` chỉ để nháp, không công khai ([kết quả chạy dài](docs/specs/p2-ket-qua-chay-dai.md)).
+- Spec P4 **chưa viết**. Việc đầu tiên của P4 là viết spec và kế hoạch PR trong `docs/specs/`, chủ dự án
+  duyệt rồi mới code. Ý tưởng P4 đang nằm ở [backlog](docs/backlog.md) (tunnel, chặn mở Internet khi
+  `online-mode=false`, cổng phụ).
+- P3 đã xong, phát hành `v0.5.0` ([spec P3](docs/specs/p3-mod-va-modpack.md),
+  [kế hoạch PR](docs/specs/p3-ke-hoach-pr.md)). Workflow `modpacks` vẫn chạy hằng đêm; đêm nào đỏ thì
+  sửa trước việc của P4. Không có `v0.4.0`; tag `v0.3.0` chỉ để nháp.
 - Còn mở từ P1: lần thử tay 5 phút trên Windows mới cài
-  ([kết quả thử tay](docs/specs/p1-ket-qua-thu-tay.md)). Lỗi tìm được ở đó sửa trước việc của P3.
-- Quyết định từ P1, P2 vẫn giữ: chưa dùng SQLite (ADR 0004); chỉ dùng Java do MineHost tải; icon khay
-  chỉ có trên Windows; xóa server hay file là chuyển vào `trash/`; điều khiển qua console, không RCON.
+  ([kết quả thử tay](docs/specs/p1-ket-qua-thu-tay.md)). Lỗi tìm được ở đó sửa trước việc của P4.
+- Quyết định từ P1–P3 vẫn giữ: chưa dùng SQLite (ADR 0004); chỉ dùng Java do MineHost tải; icon khay
+  chỉ có trên Windows; xóa server hay file là chuyển vào `trash/`; điều khiển qua console, không RCON;
+  provider trả kế hoạch cài, `mh-app` chạy installer (ADR 0006).
 
 Chỉ làm việc thuộc giai đoạn hiện tại. Ý tưởng ngoài phạm vi ghi vào
 [docs/backlog.md](docs/backlog.md), không code.
