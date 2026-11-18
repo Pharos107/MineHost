@@ -1,6 +1,6 @@
 # Spec P3 — Mod, plugin và modpack
 
-- Trạng thái: đã duyệt ngày 2026-11-13, đang làm. Tiến độ từng PR: [kế hoạch PR](p3-ke-hoach-pr.md#tiến-độ).
+- Trạng thái: đã duyệt ngày 2026-11-13, xong ngày 2026-11-18 (phát hành `v0.5.0`). Tiến độ từng PR: [kế hoạch PR](p3-ke-hoach-pr.md#tiến-độ).
 - Ngày: 2026-11-13
 - Spec gốc: "MineHost v2 — Spec kiến trúc (Rust)", phần Providers, Modpack và Lộ trình P3
 - Kế hoạch PR: [p3-ke-hoach-pr.md](p3-ke-hoach-pr.md)
@@ -23,15 +23,17 @@ tải tay từng file và không phải đọc log để đoán vì sao server k
 
 - [x] 20 modpack cố định (mục 9.2), cả Modrinth và CurseForge, đủ bốn loader, cài và khởi động tới
       `Done` trong workflow `modpacks` chạy hằng đêm trên runner tự host.
-- [ ] Mod bị CurseForge cấm phân phối được liệt kê rõ kèm link tải. Người dùng kéo file vào thì cài
-      tiếp được, server bật được (test Playwright với nguồn giả và test tích hợp với một pack thật).
-- [ ] Mỗi loader có test tích hợp trong job `integration`: tạo server, bật tới `Done`, tắt sạch, trên
-      Windows và Linux.
+- [x] Mod bị CurseForge cấm phân phối được liệt kê rõ kèm link tải. Người dùng kéo file vào thì cài
+      tiếp được, server bật được (test Playwright `curseforge-pending.spec.ts` với nguồn giả; test tích
+      hợp `crates/mh-app/tests/modpack_cf` với API giả thay cho pack thật, xem lý do ở mục 9.2).
+- [x] Mỗi loader có test tích hợp trong job `integration`: tạo server, bật tới `Done`, tắt sạch, trên
+      Windows và Linux (`crates/minehost/tests/loaders.rs`).
 - [x] Cập nhật một modpack lên bản mới: có bản backup `before_update`; khôi phục bản đó thì server quay
       về bản cũ và bật được (test `crates/mh-app/tests/modpack/update.rs`, Java là `fake-mc`).
-- [ ] Server vượt giới hạn RAM của MineHost bị dừng và hiện lý do "vượt giới hạn RAM", không làm
-      treo máy (test với `fake-mc` trên Windows và Linux có cgroup).
-- [ ] Mỗi trang mới ở mục 6 có ít nhất một test Playwright chạy với API thật.
+- [x] Server vượt giới hạn RAM của MineHost bị dừng và hiện lý do "vượt giới hạn RAM", không làm
+      treo máy (test với `fake-mc` trên Windows và Linux có cgroup: `crates/mh-runtime/tests/limits.rs`).
+- [x] Mỗi trang mới ở mục 6 có ít nhất một test Playwright chạy với API thật (`ui/e2e/`; Cài đặt chung
+      ở `app-settings.spec.ts`).
 
 ### Không làm trong P3
 
@@ -179,7 +181,9 @@ file vẫn ở backlog.
 
 - Giới hạn RAM của một server là `max × 1,5 + 1024` MB (`max` là `-Xmx`). Lần chạy dài của P2 đo
   được Paper nhàn rỗi với `-Xmx512M` chiếm khoảng 1 GB RSS, tức gấp đôi heap. Công thức trên chừa đủ
-  cho trường hợp đó và cho modpack lớn. Cần đo lại trong workflow modpack (mục 9.2).
+  cho trường hợp đó và cho modpack lớn. Đo lại bằng workflow modpack (mục 9.2) hai đêm 17 và 18/11:
+  RSS lúc `Done` từ 0,33 tới 1,29 lần heap; nặng nhất là All the Mods 9 (Forge, 414 mod, heap 8 GB) đạt
+  10,5 GB, tức 79% giới hạn 13 GB; mọi pack khác dưới 56%. Giữ nguyên công thức.
 - **Windows:** đặt thêm `JobMemoryLimit` và `ActiveProcessLimit = 16` vào Job Object đang có
   (`mh-runtime/src/os/windows.rs`).
 - **Linux:** nếu controller có cgroup v2 ghi được (chạy dưới `systemd-run --user`, hoặc unit có
