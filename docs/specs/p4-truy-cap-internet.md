@@ -45,6 +45,10 @@ trang quản lý router và không phải hiểu NAT là gì. Cụ thể:
 - [ ] Windows: bật "Khởi động cùng Windows" thì đăng nhập lại MineHost tự chạy, có icon khay.
       Linux: `minehost service install` tạo unit systemd user chạy được sau khi đăng xuất SSH.
 - [ ] Mỗi trang và mục mới ở mục 6 có ít nhất một test Playwright chạy với API thật (nguồn ngoài giả).
+- [ ] Tài nguyên, đo khi thử tay ở PR-10, ghi cạnh số đo gốc ở [khảo sát mục 4](p4-khao-sat.md#4-tài-nguyên):
+  - Agent playit có một tunnel và một người chơi dùng dưới 30 MB RAM và trung bình dưới 1% một nhân.
+  - Lúc không ai chơi, CPU gần 0%.
+  - Controller khi bật hết tính năng P4 trừ Docker vẫn dưới 80 MB RAM.
 
 ### Không làm trong P4
 
@@ -151,7 +155,10 @@ Cách chạy agent:
   - Không dùng `--secret`, vì key sẽ lộ trong danh sách tiến trình.
 - Chạy qua `mh-runtime` như process con có Job Object hoặc `PR_SET_PDEATHSIG`; supervisor riêng cho
   agent: chết thì bật lại sau 5, 15, 30 giây, quá 3 lần trong 10 phút thì báo lỗi và dừng thử.
-- Chỉ chạy khi có ít nhất một server đang bật với cách mở playit.
+- Chỉ chạy khi có ít nhất một server đang bật với cách mở playit. Agent rỗi đo được khoảng 5 MB RAM,
+  0% CPU (khảo sát mục 4.2).
+- Secret sai thì agent không thoát mà nằm chờ, nên `PlayitAgent` nhận ra qua log
+  (`InvalidAgentKey`) và chuyển sang `needs_link`.
 - Secret của agent lưu trong `<data>/secrets.toml` cạnh key CurseForge (spec gốc muốn dùng keyring
   của OS; giữ một chỗ cho mọi bí mật, xem mục 8). Không bao giờ trả ra API, log hay backup.
 

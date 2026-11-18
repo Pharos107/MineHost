@@ -14,8 +14,8 @@ Nguồn đã đọc:
   2026-02-20), các file `PlayitKeysSetup.java`, `PlayitManager.java`.
 - [Điều khoản](https://playit.gg/terms) cập nhật 2026-02-20, [bảng giá](https://playit.gg/pricing).
 
-Chưa làm: chưa chạy binary agent, chưa liên kết tài khoản thật. Hai việc này cần tài khoản playit của
-chủ dự án, nên dời sang lần thử tay ở PR-06 và PR-10 (mục 1.6).
+Chưa liên kết tài khoản thật, vì cần tài khoản playit của chủ dự án; việc này dời sang lần thử tay ở
+PR-06 và PR-10 (mục 1.6). Binary agent đã chạy thử khi chưa liên kết để đo tài nguyên (mục 4).
 
 ### 1.1 Liên kết tài khoản: làm được không cần terminal
 
@@ -104,9 +104,11 @@ UPnP, ghi vào kết quả thử tay.
   `mh-runtime` lo trường hợp controller chết.
 - Bản phát hành có binary riêng cho từng nền tảng:
   - Windows: `playitd-windows-x86_64.exe` (7,8 MB) và bản `-signed`.
-  - Linux: binary gộp `playit-linux-amd64` và `-aarch64`.
-
-  PR-06 kiểm tra binary Linux có chạy được daemon ở foreground không, hay phải build `playitd`.
+  - Linux: `playit-linux-amd64` (8,9 MB) và `-aarch64`. Đã chạy thử: binary này chính là daemon, nhận
+    cùng tùy chọn với `playitd`, dừng gọn khi nhận SIGINT.
+- Secret sai thì agent ghi `InvalidAgentKey` rồi nằm chờ, không thoát và không thử lại liên tục.
+  `PlayitAgent` vì vậy phải đọc log hoặc hỏi `v1/agents/rundata` để biết secret hỏng, không thể chỉ dựa
+  vào việc process thoát.
 - Giấy phép BSD-2-Clause. Tải binary chính thức từ GitHub Releases thì không phải tự build.
 
 Thiết kế chốt cho PR-06 và PR-07:
@@ -129,7 +131,7 @@ Thiết kế chốt cho PR-06 và PR-07:
 - Liên kết bằng tài khoản thật và bằng tài khoản khách.
 - Tạo tunnel `minecraft-java` qua API. Người chơi vào được; đo ping từ Việt Nam.
 - Số tunnel tối đa của bản miễn phí; tunnel UDP cho Geyser.
-- `playit-linux-amd64` chạy daemon foreground được không.
+- RAM và CPU của agent khi có tunnel và người chơi thật (mục 4.2).
 
 ### 1.7 Câu hỏi gửi playit (chủ dự án gửi)
 
@@ -227,3 +229,60 @@ Kết luận:
 - **Giữ thiết kế bind mount** của spec. Câu cảnh báo: "Trên Windows, Docker ghi world chậm hơn cách
   thường khoảng 4 lần. Chỉ chọn Docker khi bạn cần cô lập server." Trên Linux, bind mount không đi qua
   lớp chia sẻ file nên không cảnh báo; đo lại ở PR-23 trên dangserver.
+
+## 4. Tài nguyên
+
+Đo ngày 2026-11-19, vì chủ dự án thấy dự án cũ mc-controller tốn hơn hẳn sau khi thêm playit.
+
+### 4.1 MineHost hiện tại (`v0.5.0`)
+
+| Nơi đo | RAM | CPU |
+| --- | --- | --- |
+| Máy phát triển Windows, bản debug, chạy khoảng 25 giờ, đang quản lý một server | Working set 27 MB, riêng 17 MB, 24 luồng | 252 giây CPU tổng, trung bình khoảng 0,3% một nhân |
+| dangserver, bản release, đang quản lý server Prominence II (Java khoảng 12 GB) | RSS 48 MB, 16 luồng | 0,0% |
+
+Binary release khoảng 4 MB. So với server Minecraft (1–12 GB), controller chiếm dưới 1%.
+
+### 4.2 Agent playit 2.0.2
+
+Chạy `playit-linux-amd64` trên dangserver mỗi trường hợp 60 giây, lấy mẫu `ps` mỗi 10 giây:
+
+```bash
+./playit --secret-path $D/secret.toml --socket-path $D/ipc.sock > log.txt 2>&1 &
+ps -o rss=,vsz=,nlwp=,pcpu=,cputime= -p $!
+```
+
+| Trạng thái | RSS | Luồng | CPU |
+| --- | --- | --- | --- |
+| Chưa có secret, chờ liên kết | 4,5 MB | 13 | 0% (`cputime` 0 giây) |
+| Đã gọi API qua TLS (secret giả, bị từ chối `InvalidAgentKey`) | 5,9 MB | 13 | 0% |
+
+Chưa đo khi có tunnel và người chơi, vì cần tài khoản thật. Ước lượng từ mã nguồn:
+
+- Mỗi kết nối TCP dùng hai bộ đệm 16 KB (`TCP_PIPE_BUFFER_SIZE` trong `tcp_pipe.rs`), khoảng 32 KB mỗi
+  người chơi. 10 người chơi thêm khoảng 0,3 MB.
+- Agent chỉ chép byte giữa hai socket, CPU nhỏ so với chính server Minecraft.
+- Băng thông gần như không đổi so với mở cổng trực tiếp: dữ liệu vẫn đi qua đường upload của máy host,
+  chỉ thêm gói giữ kết nối với playit.
+
+Kết luận: agent khi chạy thật dự kiến dưới 20 MB và gần 0% CPU lúc rỗi. PR-10 đo lại với tunnel thật;
+giới hạn chấp nhận ghi ở spec mục 1.
+
+Không có số đo của mc-controller để so. Hai nguyên nhân có thể của việc "tăng nhiều" ở dự án cũ:
+
+- mc-controller chạy mọi server trong Docker. Docker Desktop và máy ảo WSL2 nặng hơn agent nhiều lần
+  (mục 4.3).
+- mc-controller chạy agent 0.15. Repo playit từng có issue #42 "Consumes CPU while idle" (đóng năm 2023).
+
+### 4.3 Các phần khác của P4
+
+| Phần | Chạy ở đâu | Dự kiến thêm |
+| --- | --- | --- |
+| UPnP | Trong controller, gia hạn ánh xạ mỗi 30 phút | Không đáng kể |
+| Kiểm tra từ Internet | Trong controller, chỉ khi bấm nút | Không đáng kể |
+| HTTPS cho LAN, tự cập nhật, khởi động cùng máy | Trong controller | Không đáng kể khi chạy; binary tăng khoảng 1–3 MB vì thêm thư viện (ước lượng, đo ở PR-18) |
+| Docker trên Windows (tùy chọn) | Docker Desktop và máy ảo WSL2 | Đo trên máy phát triển lúc không có container: các process Docker Desktop khoảng 0,75 GB bộ nhớ riêng, `vmmemWSL` khoảng 1,8 GB |
+| Docker trên Linux (tùy chọn) | `dockerd`, `containerd` | Thường vài chục tới khoảng 100 MB |
+
+Docker là phần duy nhất làm tăng tài nguyên đáng kể, và chỉ bật khi người dùng tự chọn. UI Windows ghi
+rõ điều này cạnh lựa chọn Docker, cùng với cảnh báo hiệu năng ở mục 3.

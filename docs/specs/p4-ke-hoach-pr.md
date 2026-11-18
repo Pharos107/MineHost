@@ -145,7 +145,8 @@ Nhóm C và PR-14 không phụ thuộc nhóm B nên làm song song được. Ch�
 #### PR-10 · `test`: E2E mạng, thử tay
 
 - Phạm vi: Playwright với IGD giả, `fake-playit` và dịch vụ kiểm tra giả ở chế độ e2e; thử tay tiêu
-  chí 1 và 2 trên mạng thật, ghi `docs/specs/p4-ket-qua-thu-tay.md`.
+  chí 1 và 2 trên mạng thật, đo tài nguyên theo tiêu chí cuối của spec mục 1 (agent playit và
+  controller, lúc rỗi và khi có người chơi), ghi `docs/specs/p4-ket-qua-thu-tay.md`.
 
 ### Nhóm C · HTTPS và chạy cùng máy
 
