@@ -21,7 +21,7 @@ tải tay từng file và không phải đọc log để đoán vì sao server k
 
 ### Tiêu chí hoàn thành
 
-- [ ] 20 modpack cố định (mục 9.2), cả Modrinth và CurseForge, đủ bốn loader, cài và khởi động tới
+- [x] 20 modpack cố định (mục 9.2), cả Modrinth và CurseForge, đủ bốn loader, cài và khởi động tới
       `Done` trong workflow `modpacks` chạy hằng đêm trên runner tự host.
 - [ ] Mod bị CurseForge cấm phân phối được liệt kê rõ kèm link tải. Người dùng kéo file vào thì cài
       tiếp được, server bật được (test Playwright với nguồn giả và test tích hợp với một pack thật).
