@@ -14,7 +14,7 @@ PR nào merge thì sửa dòng của nó ở đây trong chính PR ấy.
 | PR kế hoạch | Việc | Trạng thái | PR GitHub |
 | --- | --- | --- | --- |
 | 00 | Spec P4 và kế hoạch này | Xong | #174 |
-| 01 | Khảo sát playit, dịch vụ kiểm tra, Docker Desktop | Chờ duyệt | |
+| 01 | Khảo sát playit, dịch vụ kiểm tra, Docker Desktop | Xong | #175 |
 | 02 | Bảng `[network]`, `[runtime]`, mã lỗi, crate `mh-expose` rỗng | Chưa làm | |
 | 03 | UPnP | Chưa làm | |
 | 04 | Kiểm tra từ ngoài, nhận CGNAT | Chưa làm | |
